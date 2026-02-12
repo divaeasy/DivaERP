@@ -1,0 +1,52 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block title %}Dossiers{% endblock %}
+
+{% block body %}
+
+<br/>
+<div class="input-group"  >
+
+<a class="btn btn-primary" href="{{path('dossier.edit')}}" role="button">Ajouter</a>
+
+
+</div>
+
+<br/>
+<div class="row">
+
+  <table class="table table-striped">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">Id</th>
+        <th scope="col">Nom</th>
+        <th scope="col">Adresse</th>
+        <th scope="col">RC</th>
+        <th scope="col">Logo</th>
+        <th scope="col">Devise</th>
+   
+        <th scope="col"></th>
+  
+      </tr>
+    </thead>
+    <tbody>
+      {% for dossier in dossiers %}
+      <tr>
+        <th scope="row"><a href="{{ path('dossier.edit',{id: dossier.id}) }}" >{{dossier.id}}</a></th>
+        <th scope="row">{{dossier.nom}}</th>
+        <td>{{dossier.adresse}}</td>
+        <td>{{dossier.rc}}</td>
+        <td>{{dossier.logo}}</td>
+        <td>{{dossier.devise}}</td>
+
+        
+        {%if is_granted('ROLE_ADMIN')%}
+        <td><a href="{{ path('dossier.edit',{id: dossier.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endblock %}

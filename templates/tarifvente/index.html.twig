@@ -1,0 +1,54 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block title %}Tarifs de vente{% endblock %}
+
+{% block body %}
+
+<br/>
+<div class="input-group"  >
+
+<a class="btn btn-primary" href="{{path('tarifvente.edit')}}" role="button">Ajouter</a>
+
+
+</div>
+
+<br/>
+<div class="row">
+
+  <table class="table table-striped">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">Id</th>
+        <th scope="col">Tarif</th>
+        <th scope="col">Client</th>
+        <th scope="col">Article</th>
+        <th scope="col">Devise</th>
+        <th scope="col">Date effet</th>
+        <th scope="col">Prix</th>
+        
+   
+        <th scope="col"></th>
+  
+      </tr>
+    </thead>
+    <tbody>
+      {% for tarifvente in tarifventes %}
+      <tr>
+        <th scope="row"><a href="{{ path('tarifvente.edit',{id: tarifvente.id}) }}" >{{tarifvente.id}}</a></th>
+        <th scope="row">{{tarifvente.tarif}}</th>
+        <th scope="row">{{tarifvente.client}}</th>
+        <th scope="row">{{tarifvente.article}}</th>
+        <th scope="row">{{tarifvente.devise}}</th>
+        <th scope="row">{{tarifvente.dateeffet|date('d/m/Y')}}</th>
+        <th scope="row">{{tarifvente.prix}}</th>      
+        
+        {%if is_granted('ROLE_ADMIN')%}
+        <td><a href="{{ path('tarifvente.edit',{id: tarifvente.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endblock %}

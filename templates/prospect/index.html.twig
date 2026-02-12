@@ -1,0 +1,57 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block title %}Prospects{% endblock %}
+
+{% block body %}
+{% include "components/search_data.html.twig" with {search: search} only %}
+<br/>
+<div class="input-group"  >
+
+<a class="btn btn-primary" href="{{path('prospect.edit')}}" role="button">Ajouter</a>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+
+  
+
+</div>
+
+<br/>
+<div class="row">
+
+  <table class="table table-striped">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">Id</th>
+        <th scope="col">Nom</th>
+        <th scope="col">Adresse</th>
+        <th scope="col">Rue</th>
+        <th scope="col">Code postal</th>
+        <th scope="col">Ville</th>
+        <th scope="col">Pays</th>
+      
+   
+        <th scope="col"></th>
+  
+      </tr>
+    </thead>
+    <tbody>
+      {% for prospect in prospects %}
+      <tr>
+        <th scope="row"><a href="{{ path('prospect.edit',{id: prospect.id}) }}" >{{prospect.id}}</a></th>
+        <th scope="row">{{prospect.nom}}</th>
+        <td>{{prospect.adr1}}</td>
+        <td>{{prospect.rue}}</td>
+        <td>{{prospect.codepostal}}</td>
+        <td>{{prospect.ville}}</td>
+        <td>{{prospect.pays}}</td>
+  
+        
+        {%if is_granted('ROLE_ADMIN')%}
+        <td><a href="{{ path('prospect.edit',{id: prospect.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% if search %}
+	{{ form_start(search) }}
+
+    <div class="row">
+        <div class="col">{{ form_widget(search.nom) }} </div>
+        <div class="col">{{ form_widget(search.tel) }} </div>
+        <button type="submit" class="col">Chercher</button>
+    </div>
+	
+	{{ form_end(search) }}
+{% endif %}
+

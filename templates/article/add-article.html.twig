@@ -1,0 +1,30 @@
+{% extends "template_oukatech.html.twig" %}
+{% block PageTitle%}
+    Article
+{% endblock %}
+{% block title %}Article{% endblock %}
+{% block body %}
+{{ form_start(form)}}
+    <div class="row">
+        
+        <div class="col">{{form_row(form.libelle)}}</div>
+        <div class="col">{{form_row(form.unite,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        <div class="col">{{form_row(form.tarif,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+    </div>
+    <div class="row">
+        
+        
+
+    </div>
+   
+
+    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
+{{form_rest(form)}}
+{% endblock %}
+{% block javascripts %}
+    <script>
+        $(document).ready(function() {
+            $('.js-example-basic-single').select2();
+        });
+    </script>
+{% endblock %}

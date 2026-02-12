@@ -1,0 +1,44 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block title %}Unités{% endblock %}
+
+{% block body %}
+
+<br/>
+<div class="input-group"  >
+
+<a class="btn btn-primary" href="{{path('unite.edit')}}" role="button">Ajouter</a>
+
+
+</div>
+
+<br/>
+<div class="row">
+
+  <table class="table table-striped">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">Id</th>
+        <th scope="col">Code</th>
+        <th scope="col">Libellé</th>
+        <th scope="col"></th>
+  
+      </tr>
+    </thead>
+    <tbody>
+      {% for unite in unites %}
+      <tr>
+        <th scope="row"><a href="{{ path('unite.edit',{id: unite.id}) }}" >{{unite.id}}</a></th>
+        <th scope="row">{{unite.code}}</th>
+        <th scope="row">{{unite.libelle}}</th>
+        
+        {%if is_granted('ROLE_ADMIN')%}
+        <td><a href="{{ path('unite.edit',{id: unite.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endblock %}

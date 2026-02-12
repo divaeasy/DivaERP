@@ -1,0 +1,62 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block title %}Entêtes de pièce{% endblock %}
+
+{% block body %}
+
+<br/>
+<div class="input-group"  >
+
+<a class="btn btn-primary" href="{{path('entetepiece.edit')}}" role="button">Ajouter</a>
+
+
+</div>
+
+<br/>
+<div class="row">
+
+  <table class="table table-striped">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">Id</th>
+        <th scope="col">Type pièce</th>
+        <th scope="col">Type tiers</th>
+        <th scope="col">Client</th>
+        <th scope="col">N° pièce</th>
+        <th scope="col">Référence</th>
+        <th scope="col">Remise</th>
+        <th scope="col">Délai</th>
+        <th scope="col">Statut</th>        
+        <th scope="col">Devise</th>
+        <th scope="col">Réglement</th>
+   
+        <th scope="col"></th>
+  
+      </tr>
+    </thead>
+    <tbody>
+      {% for entetepiece in entetepieces %}
+      <tr>
+        <th scope="row"><a href="{{ path('entetepiece.edit',{id: entetepiece.id}) }}" >{{entetepiece.id}}</a></th>
+        <th scope="row">{{entetepiece.type}}</th>
+        <td>{{entetepiece.typet}}</td>
+        <td>{{entetepiece.client}}</td>
+        <td>{{entetepiece.pieceno}}</td>
+        <td>{{entetepiece.pieceref}}</td>
+        <td>{{entetepiece.remise}}</td>
+        <td>{{entetepiece.delai}}</td>
+        <td>{{entetepiece.statut}}</td>
+        <td>{{entetepiece.devise}}</td>
+        <td>{{entetepiece.reglement}}</td>
+
+        
+        {%if is_granted('ROLE_ADMIN')%}
+        <td><a href="{{ path('entetepiece.edit',{id: entetepiece.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endblock %}

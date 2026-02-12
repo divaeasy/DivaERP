@@ -1,0 +1,131 @@
+<?php
+
+namespace App\Entity;
+
+use App\Repository\LignepieceRepository;
+use App\Traits\TimeStampTrait;
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity(repositoryClass: LignepieceRepository::class)]
+#[ORM\HasLifecycleCallbacks()]
+class Lignepiece
+{
+    use TimeStampTrait;
+    
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\ManyToOne]
+    private ?Entetepiece $piece = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Article $article = null;
+
+    #[ORM\Column]
+    private ?float $qte = null;
+
+    #[ORM\Column]
+    private ?float $pub = null;
+
+    #[ORM\Column]
+    private ?float $montant = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?float $remise = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Dossier $dossier = null;
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getDossier(): ?Dossier
+    {
+        return $this->dossier;
+    }
+
+    public function setDossier(?Dossier $dossier): static
+    {
+        $this->dossier = $dossier;
+
+        return $this;
+    }
+
+    public function getPiece(): ?Entetepiece
+    {
+        return $this->piece;
+    }
+
+    public function setPiece(?Entetepiece $piece): static
+    {
+        $this->piece = $piece;
+
+        return $this;
+    }
+
+    public function getArticle(): ?Article
+    {
+        return $this->article;
+    }
+
+    public function setArticle(?Article $article): static
+    {
+        $this->article = $article;
+
+        return $this;
+    }
+
+    public function getQte(): ?float
+    {
+        return $this->qte;
+    }
+
+    public function setQte(float $qte): static
+    {
+        $this->qte = $qte;
+
+        return $this;
+    }
+
+    public function getPub(): ?float
+    {
+        return $this->pub;
+    }
+
+    public function setPub(float $pub): static
+    {
+        $this->pub = $pub;
+
+        return $this;
+    }
+
+    public function getMontant(): ?float
+    {
+        return $this->montant;
+    }
+
+    public function setMontant(float $montant): static
+    {
+        $this->montant = $montant;
+
+        return $this;
+    }
+
+    public function getRemise(): ?float
+    {
+        return $this->remise;
+    }
+
+    public function setRemise(?float $remise): static
+    {
+        $this->remise = $remise;
+
+        return $this;
+    }
+}

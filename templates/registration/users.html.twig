@@ -1,0 +1,41 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block PageTitle %}Utilisateurs{% endblock %}
+{% block title %}Utilisateurs{% endblock %}
+{% block body %}
+    <div class="row">
+
+    <table class="table table-striped">
+    <thead class="thead-light">
+        <tr>
+        <th scope="col">Nom</th>
+        <th scope="col">Prénom</th>
+        <th scope="col">Email</th>
+        <th scope="col">Dossier</th>
+        <th scope="col"></th>
+        <th scope="col"></th>
+        
+        </tr>
+    </thead>
+    <tbody>
+        {% for utilisateur in utilisateurs %}
+        <tr>
+        <th scope="row">{{utilisateur.nom}}</th>
+        <th scope="row">{{utilisateur.prenom}}</th>
+        <td>{{utilisateur.email}}</td>
+        <td>{{utilisateur.dossier}}</td>
+        <!--<td><a href="{{ path('users.list',{id: utilisateur.id}) }}" ><i class="fa-solid fa-circle-info"></i></a></td> -->
+        {%if is_granted('ROLE_ADMIN')%}
+        <td><a href="{{ path('users.edit',{id: utilisateur.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
+        <td><a href="{{ path('users.delete',{id: utilisateur.id}) }}" ><i class="fa-solid fa-user-xmark"></i></a></td>
+        {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+    </table>
+
+    </div>
+    {% if isPagination is defined and isPagination %}
+
+    {% endif %}
+{% endblock %}

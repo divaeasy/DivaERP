@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Form;
+
+use App\Entity\Dossier;
+use App\Entity\Pays;
+use App\Entity\Prospects;
+use App\Entity\Reglement;
+use App\Entity\Tarifs;
+use App\Entity\Ville;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+
+class ProspectFormType extends AbstractType
+{
+    public function buildForm(FormBuilderInterface $builder, array $options): void
+    {
+        $builder
+        ->add('nom')
+        ->add('adr1')
+        ->add('adr2')
+        ->add('rue')
+        ->add('codepostal')
+        ->add('tel')
+        ->add('email')
+        ->add('web')
+        ->add('linkedin')
+        ->add('dossier', EntityType::class, [
+            'class' => Dossier::class,
+            'choice_label' => 'nom',
+        ])
+        ->add('ville', EntityType::class, [
+            'class' => Ville::class,
+            'choice_label' => 'libelle',
+        ])
+        ->add('pays', EntityType::class, [
+            'class' => Pays::class,
+            'choice_label' => 'libelle',
+        ])
+       
+        ;
+    }
+
+    public function configureOptions(OptionsResolver $resolver): void
+    {
+        $resolver->setDefaults([
+            'data_class' => Prospects::class,
+        ]);
+    }
+}

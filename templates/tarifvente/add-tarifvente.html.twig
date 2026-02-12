@@ -1,0 +1,37 @@
+{% extends "template_oukatech.html.twig" %}
+{% block PageTitle%}
+    Tarif de vente
+{% endblock %}
+{% block title %}Tarif de vente{% endblock %}
+{% block body %}
+{{ form_start(tarifvente)}}
+    <div class="row">
+        <div class="col">{{form_row(tarifvente.dossier,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        <div class="col">{{form_row(tarifvente.tarif,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+       
+    </div>
+    <div class="row">
+
+        <div class="col">{{form_row(tarifvente.client,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        <div class="col">{{form_row(tarifvente.article,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        
+
+    </div>
+   <div class="row">
+        
+        <div class="col">{{form_row(tarifvente.devise,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        <div class="col">{{form_row(tarifvente.dateeffet,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        <div class="col">{{form_row(tarifvente.prix)}}</div>
+
+    </div>
+
+    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
+{{form_rest(tarifvente)}}
+{% endblock %}
+{% block javascripts %}
+    <script>
+        $(document).ready(function() {
+            $('.js-example-basic-single').select2();
+        });
+    </script>
+{% endblock %}

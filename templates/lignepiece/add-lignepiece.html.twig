@@ -1,0 +1,34 @@
+{% extends "template_oukatech.html.twig" %}
+{% block PageTitle%}
+    Ligne de piece
+{% endblock %}
+{% block title %}Ligne de piece{% endblock %}
+{% block body %}
+{{ form_start(lignepiece)}}
+    <div class="row">
+        <div class="col">{{form_row(lignepiece.article,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        <div class="col">{{form_row(lignepiece.qte,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div> 
+        <div class="col">{{form_row(lignepiece.pub,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>       
+    </div>
+    <div class="row">        
+        
+        <div class="col">{{form_row(lignepiece.remise,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        <div class="col">{{form_row(lignepiece.montant,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        
+    </div>
+   
+    <div class="row">
+       
+    </div>
+    
+    
+    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
+{{form_rest(lignepiece)}}
+{% endblock %}
+{% block javascripts %}
+    <script>
+        $(document).ready(function() {
+            $('.js-example-basic-single').select2();
+        });
+    </script>
+{% endblock %}

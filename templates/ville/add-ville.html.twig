@@ -1,0 +1,22 @@
+{% extends "template_oukatech.html.twig" %}
+{% block PageTitle%}
+    Ville
+{% endblock %}
+{% block title %}Ville{% endblock %}
+{% block body %}
+{{ form_start(ville)}}
+    <div class="row">
+        <div class="col">{{form_row(ville.libelle)}}</div>
+       
+    </div>
+  
+    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
+{{form_rest(ville)}}
+{% endblock %}
+{% block javascripts %}
+    <script>
+        $(document).ready(function() {
+            $('.js-example-basic-single').select2();
+        });
+    </script>
+{% endblock %}

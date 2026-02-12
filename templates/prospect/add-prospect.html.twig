@@ -1,0 +1,45 @@
+{% extends "template_oukatech.html.twig" %}
+{% block PageTitle%}
+    Prospect
+{% endblock %}
+{% block title %}Prospect{% endblock %}
+{% block body %}
+{{ form_start(form)}}
+    <div class="row">
+        <div class="col">{{form_row(form.nom)}}</div>
+        <div class="col">{{form_row(form.adr1)}}</div>
+        <div class="col">{{form_row(form.adr2)}}</div>
+    </div>
+    <div class="row">
+        
+        <div class="col">{{form_row(form.rue)}}</div>
+        <div class="col">{{form_row(form.codepostal)}}</div>
+        <div class="col">{{ form_row(form.ville,{'attr': {'class': 'form-control js-example-basic-single'}}) }}</div>
+    </div>
+    <div class="row">
+        <div class="col">{{ form_row(form.pays,{'attr': {'class': 'form-control js-example-basic-single'}}) }}</div>
+        <div class="col">{{form_row(form.tel)}}</div>
+        <div class="col">{{form_row(form.email)}}</div>
+    </div>
+    <div class="row">
+        <div class="col">{{form_row(form.linkedin)}}</div>
+        <div class="col">{{form_row(form.web)}}</div>
+      
+    </div>
+
+    <div class="row">
+        
+        <div class="col">{{form_row(form.dossier,{'attr': {'class': 'form-control js-example-basic-single'  } } )}}</div>
+    
+    </div>
+
+    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
+{{form_rest(form)}}
+{% endblock %}
+{% block javascripts %}
+    <script>
+        $(document).ready(function() {
+            $('.js-example-basic-single').select2();
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "template_oukatech.html.twig" %}
+{% block PageTitle%}
+    Entête de piece
+{% endblock %}
+{% block title %}Entête de piece{% endblock %}
+{% block body %}
+{{ form_start(entetepiece)}}
+    <div class="row">
+        <div class="col">{{form_row(entetepiece.type,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        <div class="col">{{form_row(entetepiece.typet,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>        
+    </div>
+    <div class="row">        
+        <div class="col">{{form_row(entetepiece.client,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        <div class="col">{{form_row(entetepiece.statut,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+    </div>
+    <div class="row">
+        <div class="col">{{form_row(entetepiece.pieceref)}}</div>
+        <div class="col">{{form_row(entetepiece.remise)}}</div>
+        
+    </div>
+    <div class="row">
+        <div class="col">{{form_row(entetepiece.devise,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        <div class="col">{{form_row(entetepiece.reglement,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
+        
+    </div>
+    <div class="row">
+       
+        
+    </div>
+    
+    
+    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
+{{form_rest(entetepiece)}}
+<br/> <br/> <br/>
+{% if id>0  %}
+
+  <h1>Lignes</h1>
+  <a class="btn btn-primary" href="{{ path('lignepiece.add',{pceId: id})}}" role="button">Ajouter ligne</a>
+  <table class="table table-striped">
+      <thead class="thead-light">
+          <tr>
+          <th scope="col"></th>
+          <th scope="col">Article</th>
+          <th scope="col">Quantité</th>
+          <th scope="col">prix</th>
+          <th scope="col">Remise</th>
+          <th scope="col">Montant</th>
+          <th scope="col">Crée par</th>
+          <th scope="col">Crée le</th>
+          <th scope="col"></th>
+        
+          </tr>
+      </thead>
+      <tbody>
+          {% for lignepiece in lignepieces %}
+            <tr>
+           
+              <td><a href="{{ path('lignepiece.edit',{id: lignepiece.id, pceId: id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
+              <td>{{lignepiece.article}}</td>
+              <td>{{lignepiece.qte}}</td>
+              <td>{{lignepiece.pub}}</td>
+              <td>{{lignepiece.remise}}</td>
+              <td>{{lignepiece.montant}}</td>
+              <td>{{lignepiece.createdBy}}</td>
+              <td>{{lignepiece.createdAt|date('d-m-Y')}}</td>
+             
+              <td><a data-toggle="modal" data-target="#deleteModal{{ lignepiece.id }}" href="#deleteEntryModal{{ lignepiece.id }}" ><i class="fa-solid fa-user-xmark" ></i></a></td>
+              
+            </tr>
+            <div class="modal fade" id="deleteModal{{ lignepiece.id }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+              aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <h5 class="modal-title" id="exampleModalLabel">Suppression</h5>
+                          <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">×</span>
+                          </button>
+                      </div>
+                      <div class="modal-body">Confirmez vous la suppression de la lignepiece ?.</div>
+                      <div class="modal-footer">
+                          <button class="btn btn-secondary" type="button" data-dismiss="modal">Annuler</button>
+                          <a class="btn btn-primary" href="{{ path('lignepiece.delete',{id: lignepiece.id}) }}">Supprimer</a>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+{% endblock %}
+{% block javascripts %}
+    <script>
+        $(document).ready(function() {
+            $('.js-example-basic-single').select2();
+        });
+    </script>
+{% endblock %}
