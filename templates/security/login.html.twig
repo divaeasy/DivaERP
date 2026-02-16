@@ -3,35 +3,69 @@
 {% block title %}Log in!{% endblock %}
 
 {% block body %}
-<form method="post">
-    {% if error %}
-        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-    {% endif %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    {% if error %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ error.messageKey|trans(error.messageData, 'security') }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endif %}
 
-    {% if app.user %}
-        <div class="mb-3">
-            You are logged in as {{ app.user.userIdentifier }}, <a href="{{ path('app_logout') }}">Logout</a>
+                    {% for flash_message in app.flashes('success') %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ flash_message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+
+                    {% if app.user %}
+                        <div class="alert alert-info">
+                            You are logged in as <strong>{{ app.user.userIdentifier }}</strong>
+                            <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger float-right">Logout</a>
+                        </div>
+                    {% else %}
+                        <h2 class="mb-4 text-center">Welcome Back</h2>
+
+                        <form method="post">
+                            <div class="form-group">
+                                <label for="inputEmail">Email Address</label>
+                                <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control" autocomplete="email" required autofocus>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="inputPassword">Password</label>
+                                <input type="password" name="password" id="inputPassword" class="form-control" autocomplete="current-password" required>
+                            </div>
+
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                            <div class="form-group">
+                                <label class="custom-control custom-checkbox">
+                                    <input type="checkbox" name="_remember_me" class="custom-control-input">
+                                    <span class="custom-control-label">Remember me</span>
+                                </label>
+                            </div>
+
+                            <button class="btn btn-primary btn-block btn-lg" type="submit">Sign in</button>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <p class="text-center mb-0">
+                            Don't have an account? <a href="{{ path('app_register') }}" class="font-weight-bold">Register here</a>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-    {% endif %}
-
-    <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-    <label for="inputEmail">Email</label>
-    <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control" autocomplete="email" required autofocus>
-    <label for="inputPassword">Password</label>
-    <input type="password" name="password" id="inputPassword" class="form-control" autocomplete="current-password" required>
-
-    <input type="hidden" name="_csrf_token"
-           value="{{ csrf_token('authenticate') }}"
-    >
-
-    <div class="checkbox mb-3">
-        <label>
-            <input type="checkbox" name="_remember_me"> Remember me
-        </label>
     </div>
-
-    <button class="btn btn-lg btn-primary" type="submit">
-        Sign in
-    </button>
-</form>
+</div>
 {% endblock %}

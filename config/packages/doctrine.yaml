@@ -28,8 +28,6 @@ doctrine:
             auto_mapping: false
         dql:
             numeric_functions:                
-                month:          Doctrine\ORM\Query\AST\Functions\Month
-                year:           Doctrine\ORM\Query\AST\Functions\Year
                 CURRENT_DATE:   Doctrine\ORM\Query\AST\Functions\CurrentDateFunction
                 
 when@test:
