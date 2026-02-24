@@ -3,45 +3,61 @@
 {% block title %}Devises{% endblock %}
 
 {% block body %}
-
-<br/>
-<div class="input-group"  >
-
-<a class="btn btn-primary" href="{{path('devise.edit')}}" role="button">Ajouter</a>
-
-
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Gestion des Devises</h1>
+    </div>
 </div>
 
-<br/>
-<div class="row">
+<div class="action-bar">
+    <a class="btn-add" href="{{ path('devise.edit') }}">
+        <i class="fas fa-plus"></i> Nouvelle Devise
+    </a>
+</div>
 
-  <table class="table table-striped">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col">Id</th>
-        <th scope="col">Code</th>
-        <th scope="col">Libellé</th>
-   
-        <th scope="col"></th>
-  
-      </tr>
-    </thead>
-    <tbody>
-      {% for devise in devises %}
-      <tr>
-        <th scope="row"><a href="{{ path('devise.edit',{id: devise.id}) }}" >{{devise.id}}</a></th>
-        <th scope="row">{{devise.code}}</th>
-        <th scope="row">{{devise.libelle}}</th>
-       
-
-        
-        {%if is_granted('ROLE_ADMIN')%}
-        <td><a href="{{ path('devise.edit',{id: devise.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
+<div class="table-container">
+    {% if devises|length > 0 %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Code</th>
+                <th>Libellé</th>
+                <th class="text-center" style="width: 120px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for devise in devises %}
+            <tr>
+                <td><strong>#{{ devise.id }}</strong></td>
+                <td><span class="badge badge-info">{{ devise.code }}</span></td>
+                <td>{{ devise.libelle }}</td>
+                <td class="text-center">
+                    <a href="{{ path('devise.edit', {id: devise.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-delete delete-btn"
+                            data-delete-url="{{ path('devise.delete', {id: devise.id}) }}"
+                            data-item-name="{{ devise.code }}"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-euro-sign"></i>
+        <p>Aucune devise trouvée</p>
+        <a href="{{ path('devise.edit') }}" class="btn btn-primary mt-3">
+            <i class="fas fa-plus mr-2"></i>Créer la première devise
+        </a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

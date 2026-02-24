@@ -23,11 +23,15 @@ class ArticleFormType extends AbstractType
             ])
             ->add('unite', EntityType::class, [
                 'class' => Unite::class,
-                'choice_label' => 'libelle'
+                'choice_label' => 'libelle',
+                'required' => false,
+                'placeholder' => 'Sélectionner une unité',
             ])
             ->add('tarif', EntityType::class, [
                 'class' => Tarifs::class,
-                'choice_label' => 'libelle'
+                'choice_label' => 'libelle',
+                'required' => false,
+                'placeholder' => 'Sélectionner un tarif',
             ])
         ;
     }

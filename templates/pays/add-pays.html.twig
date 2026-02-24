@@ -1,23 +1,61 @@
 {% extends "template_oukatech.html.twig" %}
-{% block PageTitle%}
-    Pays
-{% endblock %}
-{% block title %}Pays{% endblock %}
+{% block PageTitle %}Pays{% endblock %}
+{% block title %}{{ id > 0 ? 'Modifier' : 'Nouveau' }} Pays{% endblock %}
+
 {% block body %}
-{{ form_start(pays)}}
-    <div class="row">
-        <div class="col">{{form_row(pays.libelle)}}</div>
-        
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('pays.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier le pays' : 'Nouveau pays' }}</h1>
+    </div>
+</div>
+
+<div class="form-card">
+    {{ form_start(pays, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    
+    <div class="card-header-custom">
+        <h5><i class="fas fa-globe mr-2"></i>Informations du pays</h5>
     </div>
     
-    
-    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
-{{form_rest(pays)}}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(pays.libelle, 'Libellé', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(pays.libelle, {'attr': {'class': 'form-control', 'placeholder': 'Nom du pays'}}) }}
+                <div class="invalid-feedback">Le libellé est obligatoire</div>
+                {{ form_errors(pays.libelle) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('pays.list') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(pays) }}
+    {{ form_end(pays) }}
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="fas fa-info-circle mr-1"></i>
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+</p>
 {% endblock %}
+
 {% block javascripts %}
-    <script>
-        $(document).ready(function() {
-            $('.js-example-basic-single').select2();
+<script>
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2({
+            theme: 'bootstrap-5',
+            allowClear: true
         });
-    </script>
+    });
+</script>
 {% endblock %}

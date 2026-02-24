@@ -3,42 +3,59 @@
 {% block title %}Villes{% endblock %}
 
 {% block body %}
-
-<br/>
-<div class="input-group"  >
-
-<a class="btn btn-primary" href="{{path('ville.edit')}}" role="button">Ajouter</a>
-
-
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Gestion des Villes</h1>
+    </div>
 </div>
 
-<br/>
-<div class="row">
+<div class="action-bar">
+    <a class="btn-add" href="{{ path('ville.edit') }}">
+        <i class="fas fa-plus"></i> Nouvelle Ville
+    </a>
+</div>
 
-  <table class="table table-striped">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col">Id</th>
-        <th scope="col">Libellé</th>
-       
-        <th scope="col"></th>
-  
-      </tr>
-    </thead>
-    <tbody>
-      {% for ville in villes %}
-      <tr>
-        <th scope="row"><a href="{{ path('ville.edit',{id: ville.id}) }}" >{{ville.id}}</a></th>
-        <th scope="row">{{ville.libelle}}</th>
-       
-        
-        {%if is_granted('ROLE_ADMIN')%}
-        <td><a href="{{ path('ville.edit',{id: ville.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
+<div class="table-container">
+    {% if villes|length > 0 %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Libellé</th>
+                <th class="text-center" style="width: 120px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ville in villes %}
+            <tr>
+                <td><strong>#{{ ville.id }}</strong></td>
+                <td>{{ ville.libelle }}</td>
+                <td class="text-center">
+                    <a href="{{ path('ville.edit', {id: ville.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-delete delete-btn"
+                            data-delete-url="{{ path('ville.delete', {id: ville.id}) }}"
+                            data-item-name="{{ ville.libelle }}"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-city"></i>
+        <p>Aucune ville trouvée</p>
+        <a href="{{ path('ville.edit') }}" class="btn btn-primary mt-3">
+            <i class="fas fa-plus mr-2"></i>Créer la première ville
+        </a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

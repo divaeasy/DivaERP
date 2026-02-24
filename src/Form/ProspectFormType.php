@@ -20,13 +20,13 @@ class ProspectFormType extends AbstractType
         $builder
         ->add('nom')
         ->add('adr1')
-        ->add('adr2')
-        ->add('rue')
-        ->add('codepostal')
-        ->add('tel')
-        ->add('email')
-        ->add('web')
-        ->add('linkedin')
+        ->add('adr2', null, ['required' => false])
+        ->add('rue', null, ['required' => false])
+        ->add('codepostal', null, ['required' => false])
+        ->add('tel', null, ['required' => false])
+        ->add('email', null, ['required' => false])
+        ->add('web', null, ['required' => false])
+        ->add('linkedin', null, ['required' => false])
         ->add('dossier', EntityType::class, [
             'class' => Dossier::class,
             'choice_label' => 'nom',
@@ -34,10 +34,13 @@ class ProspectFormType extends AbstractType
         ->add('ville', EntityType::class, [
             'class' => Ville::class,
             'choice_label' => 'libelle',
+            'required' => false,
+            'placeholder' => 'Sélectionner une ville',
         ])
         ->add('pays', EntityType::class, [
             'class' => Pays::class,
             'choice_label' => 'libelle',
+            'placeholder' => 'Sélectionner un pays',
         ])
        
         ;

@@ -1,0 +1,210 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block title %}Détails Client{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('client.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Détails du Client</h1>
+    </div>
+    <div class="page-actions">
+        <a href="{{ path('client.edit', {id: client.id}) }}" class="btn btn-primary">
+            <i class="fas fa-edit mr-2"></i>Modifier
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-user mr-2"></i>Informations Générales</h5>
+            </div>
+            
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <div class="detail-label">ID</div>
+                    <div class="detail-value"><strong>#{{ client.id }}</strong></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Nom</div>
+                    <div class="detail-value">{{ client.nom }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Email</div>
+                    <div class="detail-value">
+                        {% if client.email %}
+                            <a href="mailto:{{ client.email }}">{{ client.email }}</a>
+                        {% else %}
+                            <span class="text-muted">Non renseigné</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Téléphone</div>
+                    <div class="detail-value">
+                        {% if client.tel %}
+                            <a href="tel:{{ client.tel }}">{{ client.tel }}</a>
+                        {% else %}
+                            <span class="text-muted">Non renseigné</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-map-marker-alt mr-2"></i>Adresse</h5>
+            </div>
+            
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <div class="detail-label">Adresse</div>
+                    <div class="detail-value">{{ client.adr1 ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Complément</div>
+                    <div class="detail-value">{{ client.adr2 ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Rue</div>
+                    <div class="detail-value">{{ client.rue ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Code Postal</div>
+                    <div class="detail-value">{{ client.codepostal ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Ville</div>
+                    <div class="detail-value">{{ client.ville ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Pays</div>
+                    <div class="detail-value">{{ client.pays ?: '-' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-briefcase mr-2"></i>Informations Commerciales</h5>
+            </div>
+            
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <div class="detail-label">Tarif</div>
+                    <div class="detail-value">
+                        {% if client.tarif %}
+                            <span class="badge badge-primary">{{ client.tarif }}</span>
+                        {% else %}
+                            <span class="text-muted">Non défini</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Règlement</div>
+                    <div class="detail-value">{{ client.reglement ?: '-' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-globe mr-2"></i>Présence en ligne</h5>
+            </div>
+            
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <div class="detail-label">LinkedIn</div>
+                    <div class="detail-value">
+                        {% if client.linkedin %}
+                            <a href="{{ client.linkedin }}" target="_blank" rel="noopener">
+                                <i class="fab fa-linkedin mr-1"></i>Voir le profil
+                            </a>
+                        {% else %}
+                            <span class="text-muted">Non renseigné</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Site Web</div>
+                    <div class="detail-value">
+                        {% if client.web %}
+                            <a href="{{ client.web }}" target="_blank" rel="noopener">
+                                <i class="fas fa-external-link-alt mr-1"></i>Visiter
+                            </a>
+                        {% else %}
+                            <span class="text-muted">Non renseigné</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if client.createdAt or client.createdBy %}
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-history mr-2"></i>Historique</h5>
+            </div>
+            
+            <div class="detail-grid">
+                {% if client.createdAt %}
+                <div class="detail-row">
+                    <div class="detail-label">Créé le</div>
+                    <div class="detail-value">{{ client.createdAt|date('d/m/Y H:i') }}</div>
+                </div>
+                {% endif %}
+                {% if client.createdBy %}
+                <div class="detail-row">
+                    <div class="detail-label">Créé par</div>
+                    <div class="detail-value">{{ client.createdBy }}</div>
+                </div>
+                {% endif %}
+                {% if client.updatedAt %}
+                <div class="detail-row">
+                    <div class="detail-label">Modifié le</div>
+                    <div class="detail-value">{{ client.updatedAt|date('d/m/Y H:i') }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.detail-row {
+    display: flex;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.detail-row:last-child {
+    border-bottom: none;
+}
+.detail-label {
+    flex: 0 0 140px;
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 13px;
+}
+.detail-value {
+    flex: 1;
+    color: #333;
+}
+.page-actions {
+    display: flex;
+    gap: 10px;
+}
+</style>
+{% endblock %}

@@ -1,23 +1,69 @@
 {% extends "template_oukatech.html.twig" %}
-{% block PageTitle%}
-    Devise
-{% endblock %}
-{% block title %}Devise{% endblock %}
+{% block PageTitle %}Devise{% endblock %}
+{% block title %}{{ id > 0 ? 'Modifier' : 'Nouvelle' }} Devise{% endblock %}
+
 {% block body %}
-{{ form_start(devise)}}
-    <div class="row">
-        <div class="col">{{form_row(devise.code)}}</div>
-        <div class="col">{{form_row(devise.libelle)}}</div>
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('devise.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier la devise' : 'Nouvelle devise' }}</h1>
+    </div>
+</div>
+
+<div class="form-card">
+    {{ form_start(devise, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    
+    <div class="card-header-custom">
+        <h5><i class="fas fa-euro-sign mr-2"></i>Informations de la devise</h5>
     </div>
     
-    
-    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
-{{form_rest(devise)}}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(devise.code, 'Code', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(devise.code, {'attr': {'class': 'form-control', 'placeholder': 'Ex: EUR, USD'}}) }}
+                <div class="invalid-feedback">Le code est obligatoire</div>
+                {{ form_errors(devise.code) }}
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="form-group">
+                {{ form_label(devise.libelle, 'Libellé', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(devise.libelle, {'attr': {'class': 'form-control', 'placeholder': 'Ex: Euro, Dollar'}}) }}
+                <div class="invalid-feedback">Le libellé est obligatoire</div>
+                {{ form_errors(devise.libelle) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('devise.list') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(devise) }}
+    {{ form_end(devise) }}
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="fas fa-info-circle mr-1"></i>
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+</p>
 {% endblock %}
+
 {% block javascripts %}
-    <script>
-        $(document).ready(function() {
-            $('.js-example-basic-single').select2();
+<script>
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2({
+            theme: 'bootstrap-5',
+            allowClear: true
         });
-    </script>
+    });
+</script>
 {% endblock %}

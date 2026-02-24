@@ -1,45 +1,159 @@
 {% extends "template_oukatech.html.twig" %}
-{% block PageTitle%}
-    Prospect
-{% endblock %}
-{% block title %}Prospect{% endblock %}
+{% block PageTitle %}Prospect{% endblock %}
+{% block title %}{{ id > 0 ? 'Modifier' : 'Nouveau' }} Prospect{% endblock %}
+
 {% block body %}
-{{ form_start(form)}}
-    <div class="row">
-        <div class="col">{{form_row(form.nom)}}</div>
-        <div class="col">{{form_row(form.adr1)}}</div>
-        <div class="col">{{form_row(form.adr2)}}</div>
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('prospect.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier le prospect' : 'Nouveau prospect' }}</h1>
     </div>
-    <div class="row">
-        
-        <div class="col">{{form_row(form.rue)}}</div>
-        <div class="col">{{form_row(form.codepostal)}}</div>
-        <div class="col">{{ form_row(form.ville,{'attr': {'class': 'form-control js-example-basic-single'}}) }}</div>
-    </div>
-    <div class="row">
-        <div class="col">{{ form_row(form.pays,{'attr': {'class': 'form-control js-example-basic-single'}}) }}</div>
-        <div class="col">{{form_row(form.tel)}}</div>
-        <div class="col">{{form_row(form.email)}}</div>
-    </div>
-    <div class="row">
-        <div class="col">{{form_row(form.linkedin)}}</div>
-        <div class="col">{{form_row(form.web)}}</div>
-      
-    </div>
+</div>
 
-    <div class="row">
-        
-        <div class="col">{{form_row(form.dossier,{'attr': {'class': 'form-control js-example-basic-single'  } } )}}</div>
+<div class="form-card">
+    {{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
     
+    <div class="card-header-custom">
+        <h5><i class="fas fa-user-tie mr-2"></i>Informations générales</h5>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(form.nom, 'Nom', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(form.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom du prospect'}}) }}
+                <div class="invalid-feedback">Le nom est obligatoire</div>
+                {{ form_errors(form.nom) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(form.dossier, 'Dossier', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(form.dossier, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                <div class="invalid-feedback">Le dossier est obligatoire</div>
+                {{ form_errors(form.dossier) }}
+            </div>
+        </div>
     </div>
 
-    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
-{{form_rest(form)}}
+    <div class="card-header-custom mt-4">
+        <h5><i class="fas fa-map-marker-alt mr-2"></i>Adresse</h5>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(form.adr1, 'Adresse ligne 1') }}
+                {{ form_widget(form.adr1, {'attr': {'class': 'form-control', 'placeholder': 'Adresse principale'}}) }}
+                {{ form_errors(form.adr1) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(form.adr2, 'Adresse ligne 2') }}
+                {{ form_widget(form.adr2, {'attr': {'class': 'form-control', 'placeholder': 'Complément d\'adresse'}}) }}
+                {{ form_errors(form.adr2) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(form.rue, 'Rue') }}
+                {{ form_widget(form.rue, {'attr': {'class': 'form-control', 'placeholder': 'Nom de la rue'}}) }}
+                {{ form_errors(form.rue) }}
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="form-group">
+                {{ form_label(form.codepostal, 'Code postal') }}
+                {{ form_widget(form.codepostal, {'attr': {'class': 'form-control', 'placeholder': 'CP'}}) }}
+                {{ form_errors(form.codepostal) }}
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                {{ form_label(form.ville, 'Ville') }}
+                {{ form_widget(form.ville, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(form.ville) }}
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                {{ form_label(form.pays, 'Pays') }}
+                {{ form_widget(form.pays, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(form.pays) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="card-header-custom mt-4">
+        <h5><i class="fas fa-address-book mr-2"></i>Contact</h5>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(form.tel, 'Téléphone') }}
+                {{ form_widget(form.tel, {'attr': {'class': 'form-control', 'placeholder': '+33 ...'}}) }}
+                {{ form_errors(form.tel) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(form.email, 'Email') }}
+                {{ form_widget(form.email, {'attr': {'class': 'form-control', 'placeholder': 'email@exemple.com'}}) }}
+                {{ form_errors(form.email) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(form.linkedin, 'LinkedIn') }}
+                {{ form_widget(form.linkedin, {'attr': {'class': 'form-control', 'placeholder': 'URL LinkedIn'}}) }}
+                {{ form_errors(form.linkedin) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(form.web, 'Site web') }}
+                {{ form_widget(form.web, {'attr': {'class': 'form-control', 'placeholder': 'https://...'}}) }}
+                {{ form_errors(form.web) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('prospect.list') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(form) }}
+    {{ form_end(form) }}
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="fas fa-info-circle mr-1"></i>
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+</p>
 {% endblock %}
+
 {% block javascripts %}
-    <script>
-        $(document).ready(function() {
-            $('.js-example-basic-single').select2();
+<script>
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2({
+            theme: 'bootstrap-5',
+            allowClear: true
         });
-    </script>
+    });
+</script>
 {% endblock %}

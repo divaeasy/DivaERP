@@ -121,6 +121,27 @@ class ClientController extends AbstractController
         
     }
 
-    
+    #[Route('/delete/{id}', name: 'client.delete')]
+    public function deleteClient(ManagerRegistry $doctrine, $id): Response
+    {
+        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $repository = $doctrine->getRepository(Clients::class);
+        $client = $repository->find($id);
+        if($client){
+            $manager = $doctrine->getManager();
+            $manager->remove($client);
+            $manager->flush();
+            $this->addFlash(
+               'success',
+               "Le client a été supprimé avec succès"
+            );
+        }else{
+            $this->addFlash(
+                'error',
+                "Le client demandé n'existe pas"
+             );
+        }
+        return $this->redirectToRoute('client.list');
+    }
 }
 

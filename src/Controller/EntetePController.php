@@ -128,7 +128,7 @@ class EntetePController extends AbstractController
                 "l'entête de pièce demandé n'existe pas"
              );
         }
-        return $this->redirectToRoute('piece.list');
+        return $this->redirectToRoute('entetepiece.list');
         
     }
 

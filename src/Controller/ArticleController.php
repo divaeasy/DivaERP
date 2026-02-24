@@ -117,5 +117,26 @@ class ArticleController extends AbstractController
         
     }
 
-    
+    #[Route('/delete/{id}', name: 'article.delete')]
+    public function deleteArticle(ManagerRegistry $doctrine, $id): Response
+    {
+        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $repository = $doctrine->getRepository(Article::class);
+        $article = $repository->find($id);
+        if($article){
+            $manager = $doctrine->getManager();
+            $manager->remove($article);
+            $manager->flush();
+            $this->addFlash(
+               'success',
+               "L'article a été supprimé avec succès"
+            );
+        }else{
+            $this->addFlash(
+                'error',
+                "L'article demandé n'existe pas"
+             );
+        }
+        return $this->redirectToRoute('article.list');
+    }
 }

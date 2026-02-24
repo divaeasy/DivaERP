@@ -65,19 +65,29 @@ class EntetePieceFormType extends AbstractType
             ->add('rapport')
             ->add('dossier', EntityType::class, [
                 'class' => Dossier::class,
-                'choice_label' => 'id',
+                'choice_label' => 'nom',
             ])
             ->add('client', EntityType::class, [
                 'class' => Clients::class,
                 'choice_label' => 'nom',
+                'placeholder' => 'Sélectionner un client',
             ])
             ->add('devise', EntityType::class, [
                 'class' => Devises::class,
                 'choice_label' => 'libelle',
+                'required' => false,
+                'placeholder' => 'Sélectionner une devise',
             ])
             ->add('reglement', EntityType::class, [
                 'class' => Reglement::class,
                 'choice_label' => 'libelle',
+                'required' => false,
+                'placeholder' => 'Sélectionner un règlement',
+            ])
+            ->add('datep', null, [
+                'widget' => 'single_text',
+                'required' => false,
+                'label' => 'Date pièce',
             ])
         ;
     }

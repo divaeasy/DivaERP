@@ -1,23 +1,69 @@
 {% extends "template_oukatech.html.twig" %}
-{% block PageTitle%}
-    Unité
-{% endblock %}
-{% block title %}Unité{% endblock %}
+{% block PageTitle %}Unité{% endblock %}
+{% block title %}{{ id > 0 ? 'Modifier' : 'Nouvelle' }} Unité{% endblock %}
+
 {% block body %}
-{{ form_start(unite)}}
-    <div class="row">
-        <div class="col">{{form_row(unite.code)}}</div>
-        <div class="col">{{form_row(unite.libelle)}}</div>
-       
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('unite.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier l\'unité' : 'Nouvelle unité' }}</h1>
     </div>
-  
-    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
-{{form_rest(unite)}}
+</div>
+
+<div class="form-card">
+    {{ form_start(unite, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    
+    <div class="card-header-custom">
+        <h5><i class="fas fa-ruler mr-2"></i>Informations de l'unité</h5>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(unite.code, 'Code', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(unite.code, {'attr': {'class': 'form-control', 'placeholder': 'Ex: KG, L, M'}}) }}
+                <div class="invalid-feedback">Le code est obligatoire</div>
+                {{ form_errors(unite.code) }}
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="form-group">
+                {{ form_label(unite.libelle, 'Libellé', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(unite.libelle, {'attr': {'class': 'form-control', 'placeholder': 'Ex: Kilogramme, Litre, Mètre'}}) }}
+                <div class="invalid-feedback">Le libellé est obligatoire</div>
+                {{ form_errors(unite.libelle) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('unite.list') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(unite) }}
+    {{ form_end(unite) }}
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="fas fa-info-circle mr-1"></i>
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+</p>
 {% endblock %}
+
 {% block javascripts %}
-    <script>
-        $(document).ready(function() {
-            $('.js-example-basic-single').select2();
+<script>
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2({
+            theme: 'bootstrap-5',
+            allowClear: true
         });
-    </script>
+    });
+</script>
 {% endblock %}
