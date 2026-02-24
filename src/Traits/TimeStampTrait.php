@@ -13,6 +13,28 @@ trait TimeStampTrait
     public ?ManagerRegistry $doctrine = null;
     public ?User $user = null;
 
+    /**
+     * Exclude non-serializable properties from serialization
+     */
+    public function __serialize(): array
+    {
+        $vars = get_object_vars($this);
+        unset($vars['doctrine'], $vars['user']);
+        return $vars;
+    }
+
+    /**
+     * Restore properties after unserialization
+     */
+    public function __unserialize(array $data): void
+    {
+        foreach ($data as $key => $value) {
+            $this->$key = $value;
+        }
+        $this->doctrine = null;
+        $this->user = null;
+    }
+
     #[ORM\ManyToOne()]
     private ?User $createdBy = null;
 

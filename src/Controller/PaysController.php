@@ -64,8 +64,8 @@ class PaysController extends AbstractController
         return $this->redirectToRoute('pays.list');
        }else{
             return $this->render('pays/add-pays.html.twig', [
-     
-                'pays'=>$form->createView()
+                'pays'=>$form->createView(),
+                'id' => $id
             ]);
        }
         

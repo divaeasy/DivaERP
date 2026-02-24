@@ -9,11 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-   <title>
-        {% block PageName %}
-            MyERP
-        {% endblock %}
-    </title>
+   <title>{% block PageTitle %}MyERP{% endblock %} - DivaERP</title>
 
     <!-- Bootstrap CSS -->
     <link href="/node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -29,13 +25,36 @@
     
     <!-- Custom ERP Styles -->
     <style>
+        /* ===== FOUC (Flash of Unstyled Content) Prevention ===== */
+        .js-loading * {
+            animation-duration: 0s !important;
+            transition-duration: 0s !important;
+        }
+        .js-loading .sidebar-scroll-container,
+        .js-loading #content,
+        .js-loading .select2-container,
+        .js-loading .collapse {
+            opacity: 0;
+        }
+        .js-loaded .sidebar-scroll-container,
+        .js-loaded #content,
+        .js-loaded .select2-container,
+        .js-loaded .collapse {
+            opacity: 1;
+            transition: opacity 0.15s ease-in-out;
+        }
+
         /* ===== FIXED LAYOUT STRUCTURE ===== */
-        body {
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
         }
         #wrapper {
             display: flex;
             height: 100vh;
+            width: 100%;
             overflow: hidden;
         }
         
@@ -106,13 +125,46 @@
             z-index: 1020;
             flex-shrink: 0;
             margin-bottom: 0 !important;
+            background: white !important;
         }
         
-        /* Content area scrollable */
+        /* Content area - MUST be scrollable */
         #content {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
+            flex: 1 1 auto !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            min-height: 0 !important; /* Critical for flexbox scroll */
+            max-height: none !important;
+            height: auto !important;
+            padding-bottom: 20px;
+            scroll-behavior: smooth;
+        }
+        
+        /* Ensure body block content doesn't break scroll */
+        #content > .container-fluid {
+            flex-shrink: 0;
+            overflow: visible !important;
+        }
+        
+        /* Content area scrollbar styling */
+        #content::-webkit-scrollbar {
+            width: 8px;
+        }
+        #content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        #content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        #content::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        
+        /* Fix footer to not block scrolling */
+        .sticky-footer {
+            flex-shrink: 0;
+            padding: 1rem 0;
         }
         
         /* When sidebar is toggled */
@@ -142,27 +194,35 @@
         /* ===== LOADING SPINNER OVERLAY - Content Area Only ===== */
         .loading-overlay {
             display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
+            position: fixed;
+            top: 70px; /* Below topbar */
+            left: 224px; /* After sidebar */
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.92);
             z-index: 100;
             justify-content: center;
             align-items: center;
             backdrop-filter: blur(2px);
         }
-        #content {
-            position: relative;
-        }
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(3px);
-        }
         .loading-overlay.active {
             display: flex;
+        }
+        
+        /* Topbar dropdown z-index fix */
+        .topbar .dropdown-menu {
+            z-index: 1050 !important;
+        }
+        
+        /* Responsive loading overlay */
+        @media (max-width: 768px) {
+            .loading-overlay {
+                left: 0;
+                top: 56px;
+            }
+        }
+        .sidebar.toggled ~ #content-wrapper .loading-overlay {
+            left: 104px;
         }
         .loading-spinner {
             background: white;
@@ -221,11 +281,13 @@
         .select2-container--bootstrap-5 .select2-selection {
             border: 2px solid #d1d3e2 !important;
             border-radius: 6px !important;
-            padding: 8px 12px !important;
+            padding: 6px 12px !important;
             height: auto !important;
-            min-height: 45px !important;
+            min-height: 42px !important;
             background: linear-gradient(180deg, #fff 0%, #f8f9fc 100%) !important;
             transition: all 0.2s ease !important;
+            display: flex !important;
+            align-items: center !important;
         }
         .select2-container--bootstrap-5 .select2-selection:hover {
             border-color: #4e73df !important;
@@ -234,13 +296,36 @@
             border-color: #4e73df !important;
             box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.15) !important;
         }
+        .select2-container--bootstrap-5 .select2-selection__rendered {
+            color: #5a5c69 !important;
+            line-height: 28px !important;
+            padding: 0 !important;
+            padding-right: 30px !important;
+            overflow: visible !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            display: block !important;
+            width: 100% !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection--single {
+            height: 42px !important;
+            padding: 6px 12px !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection__placeholder {
+            color: #858796 !important;
+            line-height: 28px !important;
+        }
         .select2-container--bootstrap-5 .select2-selection__arrow {
             height: 100% !important;
-            right: 12px !important;
+            right: 10px !important;
+            top: 0 !important;
+            display: flex !important;
+            align-items: center !important;
         }
         .select2-container--bootstrap-5 .select2-selection__arrow b {
             border-color: #4e73df transparent transparent transparent !important;
             border-width: 6px 5px 0 5px !important;
+            margin-top: 2px !important;
         }
         .select2-container--bootstrap-5.select2-container--open .select2-selection__arrow b {
             border-color: transparent transparent #4e73df transparent !important;
@@ -251,24 +336,14 @@
             border-radius: 6px !important;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
         }
+        .select2-container--bootstrap-5 .select2-results__option {
+            padding: 10px 15px !important;
+        }
         .select2-container--bootstrap-5 .select2-results__option--highlighted {
             background-color: #4e73df !important;
         }
-        /* Dropdown indicator icon */
-        .select2-container--bootstrap-5 .select2-selection::after {
-            content: '\f107';
-            font-family: 'Font Awesome 5 Free';
-            font-weight: 900;
-            position: absolute;
-            right: 35px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
-            font-size: 14px;
-            pointer-events: none;
-        }
-        .select2-container--bootstrap-5 .select2-selection__rendered {
-            padding-right: 40px !important;
+        .select2-container--bootstrap-5 .select2-selection__clear {
+            margin-right: 5px !important;
         }
         /* Native select styling */
         select.form-control:not(.select2-hidden-accessible) {
@@ -574,7 +649,7 @@
 
 </head>
 
-<body id="page-top">
+<body id="page-top" class="js-loading">
 
     <!-- Page Wrapper -->
     <div id="wrapper">
@@ -821,14 +896,6 @@
             <!-- Main Content -->
             <div id="content">
 
-                <!-- Loading Spinner Overlay - Inside Content Area -->
-                <div class="loading-overlay" id="loadingOverlay">
-                    <div class="loading-spinner">
-                        <div class="spinner-circle"></div>
-                        <div class="loading-text">Chargement en cours...</div>
-                    </div>
-                </div>
-
                 <!-- Topbar -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
 
@@ -1050,18 +1117,18 @@
                 </nav>
                 <!-- End of Topbar -->
 
-                <!-- Begin Page Content -->
-                <div class="container-fluid">
-
-                    <!-- Page Heading -->
-                    <h1 class="h3 mb-4 text-gray-800">
-                    {% block title%}
-                        Blank Page
-                    {% endblock %}</h1>
-
+                <!-- Loading Spinner Overlay - Inside Content Area below Topbar -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner">
+                        <div class="spinner-circle"></div>
+                        <div class="loading-text">Chargement en cours...</div>
+                    </div>
                 </div>
-                <!-- /.container-fluid -->
-                <div class="container-fluid">
+
+                <!-- Begin Page Content -->
+                {# Hidden title block for backward compatibility - pages define their own H1 in page-header #}
+                {% block title %}{% endblock %}
+                <div class="container-fluid py-3">
                         {%for message in app.session.flashBag.get('info') %}
                             <div class="alert alert-info" role="alert">
                                 {{message}} 
@@ -1181,6 +1248,41 @@
     <!-- Global ERP Scripts -->
     <script>
         $(document).ready(function() {
+            // ===== FOUC Prevention - Show content after JS loaded =====
+            $('body').removeClass('js-loading').addClass('js-loaded');
+
+            // ===== ENSURE BOOTSTRAP DROPDOWNS WORK CONSISTENTLY =====
+            // Force reinitialize all Bootstrap 4 dropdowns
+            $('.dropdown-toggle').each(function() {
+                $(this).dropdown();
+            });
+            
+            // Handle topbar dropdown specifically for profile
+            $('#userDropdown').off('click.dropdown').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var $dropdownMenu = $(this).siblings('.dropdown-menu');
+                var isOpen = $dropdownMenu.hasClass('show');
+                
+                // Close all other open dropdowns
+                $('.dropdown-menu.show').removeClass('show');
+                $('.dropdown-toggle').attr('aria-expanded', 'false');
+                
+                // Toggle this dropdown
+                if (!isOpen) {
+                    $dropdownMenu.addClass('show');
+                    $(this).attr('aria-expanded', 'true');
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.dropdown').length) {
+                    $('.dropdown-menu.show').removeClass('show');
+                    $('.dropdown-toggle').attr('aria-expanded', 'false');
+                }
+            });
+
             // Loading Spinner Functions
             window.showLoading = function() {
                 $('#loadingOverlay').addClass('active');

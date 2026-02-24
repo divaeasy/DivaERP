@@ -64,8 +64,8 @@ class DevisesController extends AbstractController
         return $this->redirectToRoute('devise.list');
        }else{
             return $this->render('devises/add-devise.html.twig', [
-     
-                'devise'=>$form->createView()
+                'devise'=>$form->createView(),
+                'id' => $id
             ]);
        }
         

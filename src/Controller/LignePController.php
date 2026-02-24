@@ -65,8 +65,9 @@ class LignePController extends AbstractController
         return $this->redirectToRoute('entetepiece.edit', array('id' => $pceId));
        }else{
             return $this->render('lignepiece/add-lignepiece.html.twig', [
-     
-                'lignepiece'=>$form->createView()
+                'lignepiece'=>$form->createView(),
+                'id' => $id,
+                'pceId' => $pceId
             ]);
        }
         
@@ -102,8 +103,9 @@ class LignePController extends AbstractController
         return $this->redirectToRoute('entetepiece.edit', array('id' => $pceId));
        }else{
             return $this->render('lignepiece/add-lignepiece.html.twig', [
-     
-                'lignepiece'=>$form->createView()
+                'lignepiece'=>$form->createView(),
+                'id' => 0,
+                'pceId' => $pceId
             ]);
        }
         
