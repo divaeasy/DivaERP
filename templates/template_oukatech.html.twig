@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
 
@@ -9,29 +9,647 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-   <title>
-        {% block PageName %}
-            MyERP
-        {% endblock %}
-    </title>
+   <title>{% block PageTitle %}MyERP{% endblock %} - DivaERP</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="/node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom fonts for this template-->
-    <link href="/assets/css/all.min.css" rel="stylesheet" type="text/css">
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
+    <link href="/node_modules/@fortawesome/fontawesome-free/css/all.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
 
     <!-- Custom styles for this template-->
-    <link href="/assets/css/sb-admin-2.min.css" rel="stylesheet">
-    <link href="/assets/css/select2.min.css" rel="stylesheet" />
-    <link href="/node_modules/@fortawesome/fontawesome-free/css/all.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/node_modules/select2-bootstrap-theme/select2-bootstrap.min.css">
-   
-	
+    <link href="/node_modules/startbootstrap-sb-admin-2/css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="/node_modules/select2/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/node_modules/select2-bootstrap-5-theme/dist/select2-bootstrap-5.min.css">
+    
+    <!-- Custom ERP Styles -->
+    <style>
+        /* ===== FOUC (Flash of Unstyled Content) Prevention ===== */
+        .js-loading * {
+            animation-duration: 0s !important;
+            transition-duration: 0s !important;
+        }
+        .js-loading .sidebar-scroll-container,
+        .js-loading #content,
+        .js-loading .select2-container,
+        .js-loading .collapse {
+            opacity: 0;
+        }
+        .js-loaded .sidebar-scroll-container,
+        .js-loaded #content,
+        .js-loaded .select2-container,
+        .js-loaded .collapse {
+            opacity: 1;
+            transition: opacity 0.15s ease-in-out;
+        }
+
+        /* ===== FIXED LAYOUT STRUCTURE ===== */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #wrapper {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        /* Sidebar Fixed with internal scroll */
+        #accordionSidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 224px;
+            z-index: 1030;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #accordionSidebar .sidebar-brand {
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: inherit;
+        }
+        #accordionSidebar > hr:first-of-type {
+            flex-shrink: 0;
+        }
+        #accordionSidebar .nav-item,
+        #accordionSidebar .sidebar-heading,
+        #accordionSidebar > hr {
+            flex-shrink: 0;
+        }
+        
+        /* Sidebar scroll container */
+        .sidebar-scroll-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.3) transparent;
+        }
+        .sidebar-scroll-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar-scroll-container::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+        .sidebar-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        
+        /* Content wrapper adjustment */
+        #content-wrapper {
+            margin-left: 224px;
+            width: calc(100% - 224px);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Fixed topbar */
+        .topbar {
+            position: sticky !important;
+            top: 0;
+            z-index: 1020;
+            flex-shrink: 0;
+            margin-bottom: 0 !important;
+            background: white !important;
+        }
+        
+        /* Content area - MUST be scrollable */
+        #content {
+            flex: 1 1 auto !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            min-height: 0 !important; /* Critical for flexbox scroll */
+            max-height: none !important;
+            height: auto !important;
+            padding-bottom: 20px;
+            scroll-behavior: smooth;
+        }
+        
+        /* Ensure body block content doesn't break scroll */
+        #content > .container-fluid {
+            flex-shrink: 0;
+            overflow: visible !important;
+        }
+        
+        /* Content area scrollbar styling */
+        #content::-webkit-scrollbar {
+            width: 8px;
+        }
+        #content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        #content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        #content::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        
+        /* Fix footer to not block scrolling */
+        .sticky-footer {
+            flex-shrink: 0;
+            padding: 1rem 0;
+        }
+        
+        /* When sidebar is toggled */
+        .sidebar.toggled {
+            width: 104px !important;
+        }
+        .sidebar.toggled + #content-wrapper {
+            margin-left: 104px;
+            width: calc(100% - 104px);
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            #accordionSidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            #accordionSidebar.show {
+                transform: translateX(0);
+            }
+            #content-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+
+        /* ===== LOADING SPINNER OVERLAY - Content Area Only ===== */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 70px; /* Below topbar */
+            left: 224px; /* After sidebar */
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.92);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        /* Topbar dropdown z-index fix */
+        .topbar .dropdown-menu {
+            z-index: 1050 !important;
+        }
+        
+        /* Responsive loading overlay */
+        @media (max-width: 768px) {
+            .loading-overlay {
+                left: 0;
+                top: 56px;
+            }
+        }
+        .sidebar.toggled ~ #content-wrapper .loading-overlay {
+            left: 104px;
+        }
+        .loading-spinner {
+            background: white;
+            padding: 40px 60px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .spinner-circle {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #e9ecef;
+            border-top: 5px solid #4e73df;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: #5a5c69;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        /* ===== REQUIRED FIELD INDICATOR ===== */
+        .form-group label.required::after,
+        label.required::after {
+            content: " *";
+            color: #e74a3b;
+            font-weight: bold;
+        }
+        
+        /* ===== FORM CARD STYLING ===== */
+        .form-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .form-card .card-header-custom {
+            border-bottom: 1px solid #e3e6f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .form-card .card-header-custom h5 {
+            margin: 0;
+            color: #4e73df;
+            font-weight: 600;
+        }
+
+        /* ===== DROPDOWN/SELECT2 IMPROVEMENTS ===== */
+        .select2-container--bootstrap-5 .select2-selection {
+            border: 2px solid #d1d3e2 !important;
+            border-radius: 6px !important;
+            padding: 6px 12px !important;
+            height: auto !important;
+            min-height: 42px !important;
+            background: linear-gradient(180deg, #fff 0%, #f8f9fc 100%) !important;
+            transition: all 0.2s ease !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection:hover {
+            border-color: #4e73df !important;
+        }
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+            border-color: #4e73df !important;
+            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.15) !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection__rendered {
+            color: #5a5c69 !important;
+            line-height: 28px !important;
+            padding: 0 !important;
+            padding-right: 30px !important;
+            overflow: visible !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            display: block !important;
+            width: 100% !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection--single {
+            height: 42px !important;
+            padding: 6px 12px !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection__placeholder {
+            color: #858796 !important;
+            line-height: 28px !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection__arrow {
+            height: 100% !important;
+            right: 10px !important;
+            top: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection__arrow b {
+            border-color: #4e73df transparent transparent transparent !important;
+            border-width: 6px 5px 0 5px !important;
+            margin-top: 2px !important;
+        }
+        .select2-container--bootstrap-5.select2-container--open .select2-selection__arrow b {
+            border-color: transparent transparent #4e73df transparent !important;
+            border-width: 0 5px 6px 5px !important;
+        }
+        .select2-container--bootstrap-5 .select2-dropdown {
+            border: 2px solid #4e73df !important;
+            border-radius: 6px !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+        }
+        .select2-container--bootstrap-5 .select2-results__option {
+            padding: 10px 15px !important;
+        }
+        .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: #4e73df !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection__clear {
+            margin-right: 5px !important;
+        }
+        /* Native select styling */
+        select.form-control:not(.select2-hidden-accessible) {
+            appearance: none;
+            background: linear-gradient(180deg, #fff 0%, #f8f9fc 100%);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%234e73df' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px 12px;
+            border: 2px solid #d1d3e2;
+            border-radius: 6px;
+            padding: 10px 40px 10px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        select.form-control:not(.select2-hidden-accessible):hover {
+            border-color: #4e73df;
+        }
+        select.form-control:not(.select2-hidden-accessible):focus {
+            border-color: #4e73df;
+            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.15);
+        }
+
+        /* ===== VALIDATION STYLES ===== */
+        .form-control.is-invalid {
+            border-color: #e74a3b;
+            background-image: none;
+        }
+        .form-control.is-valid {
+            border-color: #1cc88a;
+            background-image: none;
+        }
+        .invalid-feedback {
+            display: none;
+            color: #e74a3b;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .form-control.is-invalid ~ .invalid-feedback,
+        .was-validated .form-control:invalid ~ .invalid-feedback {
+            display: block;
+        }
+
+        /* ===== TABLE IMPROVEMENTS ===== */
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            overflow: hidden;
+        }
+        .table-container .table {
+            margin-bottom: 0;
+        }
+        .table thead th {
+            background: #4e73df;
+            color: white;
+            border: none;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 15px 12px;
+            white-space: nowrap;
+        }
+        .table tbody td, .table tbody th {
+            padding: 12px;
+            vertical-align: middle;
+            border-color: #e3e6f0;
+        }
+        .table tbody tr:hover {
+            background-color: #f8f9fc;
+        }
+
+        /* ===== ACTION BUTTONS (NO WRAP) ===== */
+        .table td.text-center {
+            white-space: nowrap;
+        }
+        .btn-action {
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            margin: 0 2px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            transition: all 0.2s ease;
+        }
+        .btn-edit {
+            background-color: #4e73df;
+            color: white;
+            border: none;
+        }
+        .btn-edit:hover {
+            background-color: #2e59d9;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(78, 115, 223, 0.4);
+        }
+        .btn-delete {
+            background-color: #e74a3b;
+            color: white;
+            border: none;
+        }
+        .btn-delete:hover {
+            background-color: #c82333;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(231, 74, 59, 0.4);
+        }
+        .btn-view {
+            background-color: #36b9cc;
+            color: white;
+            border: none;
+        }
+        .btn-view:hover {
+            background-color: #2c9faf;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(54, 185, 204, 0.4);
+        }
+
+        /* ===== PAGE HEADER ===== */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e3e6f0;
+        }
+        .page-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .page-header .btn-back {
+            background: #858796;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        .page-header .btn-back:hover {
+            background: #5a5c69;
+            color: white;
+            text-decoration: none;
+        }
+
+        /* ===== UNIFIED ACTION BAR (Search + Create Button) ===== */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        }
+        .action-bar .btn-add {
+            background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .action-bar .btn-add:hover {
+            background: linear-gradient(180deg, #224abe 10%, #1a3a8c 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 115, 223, 0.4);
+            text-decoration: none;
+        }
+        .action-bar .search-box {
+            flex: 1;
+            max-width: 500px;
+            min-width: 250px;
+        }
+
+        /* ===== NAVIGATION SEARCH DROPDOWN ===== */
+        #navSearchResults {
+            max-height: 400px;
+            overflow-y: auto;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            border: 1px solid #e3e6f0;
+            margin-top: 5px;
+        }
+        #navSearchResults .dropdown-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #f8f9fc;
+            transition: all 0.2s;
+        }
+        #navSearchResults .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        #navSearchResults .dropdown-item:hover {
+            background: #f8f9fc;
+            color: #4e73df;
+        }
+        #navSearchResults .dropdown-item i {
+            width: 20px;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #858796;
+        }
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        .empty-state p {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        /* ===== DELETE MODAL STYLING ===== */
+        .modal-delete .modal-header {
+            background: #e74a3b;
+            color: white;
+            border-radius: 0;
+        }
+        .modal-delete .modal-header .close {
+            color: white;
+            opacity: 1;
+        }
+        .modal-delete .modal-body {
+            padding: 30px;
+            text-align: center;
+        }
+        .modal-delete .modal-body i {
+            font-size: 48px;
+            color: #e74a3b;
+            margin-bottom: 15px;
+        }
+        .modal-delete .btn-danger {
+            background: #e74a3b;
+            border-color: #e74a3b;
+        }
+
+        /* ===== FORM BUTTON GROUP ===== */
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e3e6f0;
+        }
+        .form-actions .btn {
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 6px;
+        }
+        .form-actions .btn-primary {
+            background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+            border: none;
+        }
+        .form-actions .btn-secondary {
+            background: #858796;
+            border: none;
+        }
+
+        /* Badges for status */
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-active { background: #1cc88a; color: white; }
+        .badge-draft { background: #f6c23e; color: white; }
+        .badge-expired { background: #858796; color: white; }
+    </style>
+    
+    {% block stylesheets %}
+        {{ importmap('app') }}
+    {% endblock %}
 
 </head>
 
-<body id="page-top">
+<body id="page-top" class="js-loading">
 
     <!-- Page Wrapper -->
     <div id="wrapper">
@@ -40,7 +658,7 @@
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ path('app_dash_bord') }}">
                 <div class="sidebar-brand-icon rotate-n-15">
                     <i class="fas fa-laugh-wink"></i>
                 </div>
@@ -50,9 +668,12 @@
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
+            <!-- Scrollable Sidebar Content -->
+            <div class="sidebar-scroll-container">
+
             <!-- Nav Item - Dashboard -->
             <li class="nav-item">
-                <a class="nav-link" href="index.html">
+                <a class="nav-link nav-loading" href="{{ path('app_dash_bord') }}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
@@ -69,48 +690,80 @@
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
-                    <i class="fas fa-fw fa-cog"></i>
+                    <i class="fas fa-fw fa-users"></i>
                     <span>Clients</span>
                 </a>
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item" href="{{path('client.list')}}">Liste</a>
-                        <a class="collapse-item" href="{{path('client.edit')}}">Ajout</a>
-                        <a class="collapse-item" href="">Statistiques</a>
+                        <a class="collapse-item nav-loading" href="{{path('client.list')}}">Liste</a>
+                        <a class="collapse-item nav-loading" href="{{path('client.edit')}}">Ajout</a>
                     </div>
                 </div>
             </li>
+            
+            <!-- Nav Item - Prospects -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseProspects"
+                    aria-expanded="true" aria-controls="collapseProspects">
+                    <i class="fas fa-fw fa-user-plus"></i>
+                    <span>Prospects</span>
+                </a>
+                <div id="collapseProspects" class="collapse" aria-labelledby="headingProspects" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">                        
+                        <a class="collapse-item nav-loading" href="{{path('prospect.list')}}">Liste</a>
+                        <a class="collapse-item nav-loading" href="{{path('prospect.edit')}}">Ajout</a>
+                    </div>
+                </div>
+            </li>
+            
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTree"
                     aria-expanded="true" aria-controls="collapseTree">
-                    <i class="fas fa-fw fa-cog"></i>
+                    <i class="fas fa-fw fa-boxes"></i>
                     <span>Articles</span>
                 </a>
                 <div id="collapseTree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item" href="{{path('article.list')}}">Liste</a>
-                        <a class="collapse-item" href="{{path('article.edit')}}">Ajout</a>
-                        <a class="collapse-item" href="">Statistiques</a>
+                        <a class="collapse-item nav-loading" href="{{path('article.list')}}">Liste</a>
+                        <a class="collapse-item nav-loading" href="{{path('article.edit')}}">Ajout</a>
                     </div>
                 </div>
             </li>
+            
+            <!-- Divider -->
+            <hr class="sidebar-divider">
 
-            <!-- Nav Item - Utilities Collapse Menu -->
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Facturation
+            </div>
+            
+            <!-- Nav Item - Pièces -->
             <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
-                    aria-expanded="true" aria-controls="collapseUtilities">
-                    <i class="fas fa-fw fa-wrench"></i>
-                    <span>Utilities</span>
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePieces"
+                    aria-expanded="true" aria-controls="collapsePieces">
+                    <i class="fas fa-fw fa-file-invoice"></i>
+                    <span>Pièces</span>
                 </a>
-                <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
-                    data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Paramètres</h6>
-                        <a class="collapse-item" href="{{path('dossier.list')}}">Dossier</a>
-                        <a class="collapse-item" href="utilities-color.html">Colors</a>
-                        <a class="collapse-item" href="utilities-border.html">Borders</a>
-                        <a class="collapse-item" href="utilities-animation.html">Animations</a>
-                        <a class="collapse-item" href="utilities-other.html">Other</a>
+                <div id="collapsePieces" class="collapse" aria-labelledby="headingPieces" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">                        
+                        <a class="collapse-item nav-loading" href="{{path('entetepiece.list')}}">Liste Pièces</a>
+                        <a class="collapse-item nav-loading" href="{{path('entetepiece.edit')}}">Nouvelle Pièce</a>
+                    </div>
+                </div>
+            </li>
+            
+            <!-- Nav Item - Règlements -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseReglements"
+                    aria-expanded="true" aria-controls="collapseReglements">
+                    <i class="fas fa-fw fa-money-bill-wave"></i>
+                    <span>Règlements</span>
+                </a>
+                <div id="collapseReglements" class="collapse" aria-labelledby="headingReglements" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">                        
+                        <a class="collapse-item nav-loading" href="{{path('reglement.list')}}">Liste</a>
+                        <a class="collapse-item nav-loading" href="{{path('reglement.edit')}}">Ajout</a>
                     </div>
                 </div>
             </li>
@@ -120,44 +773,111 @@
 
             <!-- Heading -->
             <div class="sidebar-heading">
-                Addons
+                Paramètres
             </div>
 
-            <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item active">
-                <a class="nav-link" href="#" data-toggle="collapse" data-target="#collapsePages" aria-expanded="true"
-                    aria-controls="collapsePages">
-                    <i class="fas fa-fw fa-folder"></i>
-                    <span>Pages</span>
+            <!-- Nav Item - Dossiers -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDossiers"
+                    aria-expanded="true" aria-controls="collapseDossiers">
+                    <i class="fas fa-fw fa-folder-open"></i>
+                    <span>Dossiers</span>
                 </a>
-                <div id="collapsePages" class="collapse show" aria-labelledby="headingPages"
-                    data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Login Screens:</h6>
-                        <a class="collapse-item" href="login.html">Login</a>
-                        <a class="collapse-item" href="register.html">Register</a>
-                        <a class="collapse-item" href="forgot-password.html">Forgot Password</a>
-                        <div class="collapse-divider"></div>
-                        <h6 class="collapse-header">Other Pages:</h6>
-                        <a class="collapse-item" href="404.html">404 Page</a>
-                        <a class="collapse-item active" href="blank.html">Blank Page</a>
+                <div id="collapseDossiers" class="collapse" aria-labelledby="headingDossiers" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">                        
+                        <a class="collapse-item nav-loading" href="{{path('dossier.list')}}">Liste</a>
+                        <a class="collapse-item nav-loading" href="{{path('dossier.edit')}}">Ajout</a>
                     </div>
                 </div>
             </li>
 
-            <!-- Nav Item - Charts -->
+            <!-- Nav Item - Devises -->
             <li class="nav-item">
-                <a class="nav-link" href="charts.html">
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Charts</span></a>
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDevises"
+                    aria-expanded="true" aria-controls="collapseDevises">
+                    <i class="fas fa-fw fa-euro-sign"></i>
+                    <span>Devises</span>
+                </a>
+                <div id="collapseDevises" class="collapse" aria-labelledby="headingDevises" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">                        
+                        <a class="collapse-item nav-loading" href="{{path('devise.list')}}">Liste</a>
+                        <a class="collapse-item nav-loading" href="{{path('devise.edit')}}">Ajout</a>
+                    </div>
+                </div>
             </li>
 
-            <!-- Nav Item - Tables -->
+            <!-- Nav Item - Tarifs -->
             <li class="nav-item">
-                <a class="nav-link" href="tables.html">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Tables</span></a>
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTarifs"
+                    aria-expanded="true" aria-controls="collapseTarifs">
+                    <i class="fas fa-fw fa-tags"></i>
+                    <span>Tarifs</span>
+                </a>
+                <div id="collapseTarifs" class="collapse" aria-labelledby="headingTarifs" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">                        
+                        <a class="collapse-item nav-loading" href="{{path('tarif.list')}}">Liste Tarifs</a>
+                        <a class="collapse-item nav-loading" href="{{path('tarif.edit')}}">Ajout Tarif</a>
+                        <a class="collapse-item nav-loading" href="{{path('tarifvente.list')}}">Tarifs Vente</a>
+                        <a class="collapse-item nav-loading" href="{{path('tarifvente.edit')}}">Ajout Tarif Vente</a>
+                    </div>
+                </div>
             </li>
+
+            <!-- Nav Item - Unités -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUnites"
+                    aria-expanded="true" aria-controls="collapseUnites">
+                    <i class="fas fa-fw fa-balance-scale"></i>
+                    <span>Unités</span>
+                </a>
+                <div id="collapseUnites" class="collapse" aria-labelledby="headingUnites" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">                        
+                        <a class="collapse-item nav-loading" href="{{path('unite.list')}}">Liste</a>
+                        <a class="collapse-item nav-loading" href="{{path('unite.edit')}}">Ajout</a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Localisation
+            </div>
+
+            <!-- Nav Item - Pays -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePays"
+                    aria-expanded="true" aria-controls="collapsePays">
+                    <i class="fas fa-fw fa-globe"></i>
+                    <span>Pays</span>
+                </a>
+                <div id="collapsePays" class="collapse" aria-labelledby="headingPays" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">                        
+                        <a class="collapse-item nav-loading" href="{{path('pays.list')}}">Liste</a>
+                        <a class="collapse-item nav-loading" href="{{path('pays.edit')}}">Ajout</a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- Nav Item - Villes -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseVilles"
+                    aria-expanded="true" aria-controls="collapseVilles">
+                    <i class="fas fa-fw fa-city"></i>
+                    <span>Villes</span>
+                </a>
+                <div id="collapseVilles" class="collapse" aria-labelledby="headingVilles" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">                        
+                        <a class="collapse-item nav-loading" href="{{path('ville.list')}}">Liste</a>
+                        <a class="collapse-item nav-loading" href="{{path('ville.edit')}}">Ajout</a>
+                    </div>
+                </div>
+            </li>
+
+            </div>
+            <!-- End Scrollable Sidebar Content -->
 
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
@@ -184,19 +904,21 @@
                         <i class="fa fa-bars"></i>
                     </button>
 
-                    <!-- Topbar Search -->
-                    <form
-                        class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+                    <!-- Topbar Navigation Search -->
+                    <div class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search position-relative">
                         <div class="input-group">
-                            <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..."
-                                aria-label="Search" aria-describedby="basic-addon2">
+                            <input type="text" id="navSearchInput" class="form-control bg-light border-0 small" 
+                                placeholder="Rechercher une interface..." aria-label="Search" autocomplete="off">
                             <div class="input-group-append">
                                 <button class="btn btn-primary" type="button">
                                     <i class="fas fa-search fa-sm"></i>
                                 </button>
                             </div>
                         </div>
-                    </form>
+                        <!-- Search Results Dropdown -->
+                        <div id="navSearchResults" class="dropdown-menu w-100" style="display:none;">
+                        </div>
+                    </div>
 
                     <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">
@@ -344,54 +1066,69 @@
 
                         <div class="topbar-divider d-none d-sm-block"></div>
 
-                        <!-- Nav Item - User Information -->
+                        {% if app.user %}
+                        <!-- Nav Item - User Information (when logged in) -->
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Douglas McGee</span>
-                                <img class="img-profile rounded-circle"
-                                    src="img/undraw_profile.svg">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ app.user.prenom }} {{ app.user.nom }}</span>
+                                <i class="fas fa-user-circle fa-2x text-gray-400"></i>
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="{{ path('app_profile') }}">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Profile
+                                    Mon Profil
                                 </a>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="{{ path('app_profile_edit') }}">
                                     <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Settings
+                                    Paramètres
                                 </a>
-                                <a class="dropdown-item" href="{{path('app_login')}}">
-                                    <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Login
+                                {% if is_granted('ROLE_ADMIN') %}
+                                <a class="dropdown-item" href="{{ path('users.list') }}">
+                                    <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Utilisateurs
                                 </a>
+                                {% endif %}
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="{{path('app_logout')}}" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
                             </div>
                         </li>
+                        {% else %}
+                        <!-- Auth Links (when not logged in) -->
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-outline-primary px-3 mr-2" href="{{ path('app_login') }}">
+                                <i class="fas fa-sign-in-alt mr-1"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-primary text-white px-3" href="{{ path('app_register') }}">
+                                <i class="fas fa-user-plus mr-1"></i> Register
+                            </a>
+                        </li>
+                        {% endif %}
 
                     </ul>
 
                 </nav>
                 <!-- End of Topbar -->
 
-                <!-- Begin Page Content -->
-                <div class="container-fluid">
-
-                    <!-- Page Heading -->
-                    <h1 class="h3 mb-4 text-gray-800">
-                    {% block title%}
-                        Blank Page
-                    {% endblock %}</h1>
-
+                <!-- Loading Spinner Overlay - Inside Content Area below Topbar -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner">
+                        <div class="spinner-circle"></div>
+                        <div class="loading-text">Chargement en cours...</div>
+                    </div>
                 </div>
-                <!-- /.container-fluid -->
-                <div class="container-fluid">
+
+                <!-- Begin Page Content -->
+                {# Hidden title block for backward compatibility - pages define their own H1 in page-header #}
+                {% block title %}{% endblock %}
+                <div class="container-fluid py-3">
                         {%for message in app.session.flashBag.get('info') %}
                             <div class="alert alert-info" role="alert">
                                 {{message}} 
@@ -443,15 +1180,40 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                    <h5 class="modal-title" id="exampleModalLabel">Déconnexion</h5>
                     <button class="close" type="button" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">×</span>
                     </button>
                 </div>
-                <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                <div class="modal-body">Êtes-vous sûr de vouloir vous déconnecter ?</div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="login.html">Logout</a>
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Annuler</button>
+                    <a class="btn btn-primary" href="{{ path('app_logout') }}">Déconnexion</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Delete Confirmation Modal -->
+    <div class="modal fade modal-delete" id="deleteConfirmModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel"><i class="fas fa-exclamation-triangle mr-2"></i>Confirmation de suppression</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <i class="fas fa-trash-alt"></i>
+                    <p class="mb-0">Êtes-vous sûr de vouloir supprimer <strong id="deleteModalItemName">cet élément</strong> ?</p>
+                    <p class="text-muted small mt-2">Cette action est irréversible.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Annuler</button>
+                    <a class="btn btn-danger btn-confirm-delete" id="confirmDeleteBtn" href="#">
+                        <i class="fas fa-trash mr-1"></i> Supprimer
+                    </a>
                 </div>
             </div>
         </div>
@@ -459,24 +1221,329 @@
 
 
 
+    <!-- jQuery (required for Bootstrap 4) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Popper.js (required for Bootstrap 4 tooltips/popovers) -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+
     <!-- Bootstrap core JavaScript-->
-    <script src="/assets/js/jquery.min.js"></script>
-    <script src="/assets/js/bootstrap.bundle.min.js"></script>
+    <script src="/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 
     <!-- Core plugin JavaScript-->
-    <script src="/assets/js/jquery.easing.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="/assets/js/sb-admin-2.min.js"></script>
+    <script src="/node_modules/startbootstrap-sb-admin-2/js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="/assets/js/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 
     <!-- Page level custom scripts -->
     <script src="/assets/js/chart-area-demo.js"></script>
     <script src="/assets/js/chart-pie-demo.js"></script>
-     <script src="/assets/js/select2.min.js"></script>
+    <script src="/node_modules/select2/dist/js/select2.min.js"></script>
     <script src="/node_modules/@fortawesome/fontawesome-free/js/all.js"></script>
+    
+    <!-- Global ERP Scripts -->
+    <script>
+        $(document).ready(function() {
+            // ===== FOUC Prevention - Show content after JS loaded =====
+            $('body').removeClass('js-loading').addClass('js-loaded');
+
+            // ===== ENSURE BOOTSTRAP DROPDOWNS WORK CONSISTENTLY =====
+            // Force reinitialize all Bootstrap 4 dropdowns
+            $('.dropdown-toggle').each(function() {
+                $(this).dropdown();
+            });
+            
+            // Handle topbar dropdown specifically for profile
+            $('#userDropdown').off('click.dropdown').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var $dropdownMenu = $(this).siblings('.dropdown-menu');
+                var isOpen = $dropdownMenu.hasClass('show');
+                
+                // Close all other open dropdowns
+                $('.dropdown-menu.show').removeClass('show');
+                $('.dropdown-toggle').attr('aria-expanded', 'false');
+                
+                // Toggle this dropdown
+                if (!isOpen) {
+                    $dropdownMenu.addClass('show');
+                    $(this).attr('aria-expanded', 'true');
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.dropdown').length) {
+                    $('.dropdown-menu.show').removeClass('show');
+                    $('.dropdown-toggle').attr('aria-expanded', 'false');
+                }
+            });
+
+            // Loading Spinner Functions
+            window.showLoading = function() {
+                $('#loadingOverlay').addClass('active');
+            };
+            window.hideLoading = function() {
+                $('#loadingOverlay').removeClass('active');
+            };
+
+            // ===== SHOW LOADING ON ALL NAVIGATION =====
+            // Intercept all link clicks (except those with data-toggle, hash links, and external links)
+            $(document).on('click', 'a', function(e) {
+                var $link = $(this);
+                var href = $link.attr('href');
+                
+                // Skip if: no href, hash link, external link, data-toggle (dropdowns/modals), or delete button
+                if (!href || 
+                    href === '#' || 
+                    href.startsWith('#') || 
+                    href.startsWith('javascript:') ||
+                    href.startsWith('mailto:') ||
+                    href.startsWith('tel:') ||
+                    $link.attr('data-toggle') ||
+                    $link.attr('target') === '_blank' ||
+                    $link.hasClass('delete-btn') ||
+                    $link.closest('.modal').length) {
+                    return; // Let the default behavior happen
+                }
+                
+                // Show loading spinner
+                showLoading();
+            });
+
+            // Show loading on form submit
+            $('form').on('submit', function() {
+                var form = $(this);
+                if (form[0].checkValidity() !== false) {
+                    showLoading();
+                }
+            });
+
+            // Show loading on delete confirmation
+            $('.btn-confirm-delete').on('click', function() {
+                showLoading();
+            });
+
+            // Hide loading when page fully loads (for browser back button)
+            $(window).on('pageshow', function(event) {
+                hideLoading();
+            });
+
+            // ===== FORM VALIDATION =====
+            $('form').each(function() {
+                var form = $(this);
+                
+                // Mark required fields labels
+                form.find('input[required], select[required], textarea[required]').each(function() {
+                    var label = $(this).closest('.form-group').find('label').first();
+                    if (label.length && !label.hasClass('required')) {
+                        label.addClass('required');
+                    }
+                    // Also check for parent row with label
+                    var parentLabel = $(this).parents('.form-group, .col').find('label').first();
+                    if (parentLabel.length && !parentLabel.hasClass('required')) {
+                        parentLabel.addClass('required');
+                    }
+                });
+
+                // Real-time validation
+                form.find('input, select, textarea').on('blur change', function() {
+                    validateField($(this));
+                });
+
+                // Form submit validation
+                form.on('submit', function(e) {
+                    var isValid = true;
+                    form.find('input[required], select[required], textarea[required]').each(function() {
+                        if (!validateField($(this))) {
+                            isValid = false;
+                        }
+                    });
+                    
+                    if (!isValid) {
+                        e.preventDefault();
+                        hideLoading();
+                        // Scroll to first error
+                        var firstError = form.find('.is-invalid').first();
+                        if (firstError.length) {
+                            $('html, body').animate({
+                                scrollTop: firstError.offset().top - 100
+                            }, 300);
+                        }
+                    }
+                });
+            });
+
+            function validateField(field) {
+                var isValid = true;
+                var value = field.val();
+                var feedbackDiv = field.siblings('.invalid-feedback');
+                
+                // Create feedback div if doesn't exist
+                if (!feedbackDiv.length) {
+                    feedbackDiv = $('<div class="invalid-feedback"></div>');
+                    field.after(feedbackDiv);
+                }
+
+                // Check if required
+                if (field.prop('required') && (!value || value.trim() === '')) {
+                    field.addClass('is-invalid').removeClass('is-valid');
+                    feedbackDiv.text('Ce champ est obligatoire');
+                    isValid = false;
+                }
+                // Check email format
+                else if (field.attr('type') === 'email' && value) {
+                    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(value)) {
+                        field.addClass('is-invalid').removeClass('is-valid');
+                        feedbackDiv.text('Veuillez entrer une adresse email valide');
+                        isValid = false;
+                    } else {
+                        field.addClass('is-valid').removeClass('is-invalid');
+                    }
+                }
+                // Check number
+                else if (field.attr('type') === 'number' && value) {
+                    if (isNaN(value)) {
+                        field.addClass('is-invalid').removeClass('is-valid');
+                        feedbackDiv.text('Veuillez entrer un nombre valide');
+                        isValid = false;
+                    } else {
+                        field.addClass('is-valid').removeClass('is-invalid');
+                    }
+                }
+                else if (value && value.trim() !== '') {
+                    field.addClass('is-valid').removeClass('is-invalid');
+                }
+                else {
+                    field.removeClass('is-invalid is-valid');
+                }
+
+                return isValid;
+            }
+
+            // Delete confirmation modal handler
+            $('.delete-btn').on('click', function(e) {
+                e.preventDefault();
+                var deleteUrl = $(this).data('delete-url');
+                var itemName = $(this).data('item-name') || 'cet élément';
+                
+                $('#deleteModalItemName').text(itemName);
+                $('#confirmDeleteBtn').attr('href', deleteUrl);
+                $('#deleteConfirmModal').modal('show');
+            });
+
+            // ===== INITIALIZE SELECT2 WITH IMPROVED STYLING =====
+            if ($.fn.select2) {
+                $('.js-example-basic-single').each(function() {
+                    if (!$(this).hasClass('select2-hidden-accessible')) {
+                        $(this).select2({
+                            theme: 'bootstrap-5',
+                            allowClear: true,
+                            placeholder: $(this).attr('placeholder') || 'Sélectionner...',
+                            width: '100%'
+                        });
+                    }
+                });
+            }
+
+            // ===== NAVIGATION SEARCH FUNCTIONALITY =====
+            var navItems = [
+                { name: 'Dashboard', url: '{{ path('app_dash_bord') }}', icon: 'fas fa-tachometer-alt' },
+                { name: 'Clients - Liste', url: '{{ path('client.list') }}', icon: 'fas fa-users' },
+                { name: 'Clients - Nouveau', url: '{{ path('client.edit') }}', icon: 'fas fa-user-plus' },
+                { name: 'Prospects - Liste', url: '{{ path('prospect.list') }}', icon: 'fas fa-user-plus' },
+                { name: 'Prospects - Nouveau', url: '{{ path('prospect.edit') }}', icon: 'fas fa-user-plus' },
+                { name: 'Articles - Liste', url: '{{ path('article.list') }}', icon: 'fas fa-boxes' },
+                { name: 'Articles - Nouveau', url: '{{ path('article.edit') }}', icon: 'fas fa-box' },
+                { name: 'Pièces - Liste', url: '{{ path('entetepiece.list') }}', icon: 'fas fa-file-invoice' },
+                { name: 'Pièces - Nouvelle', url: '{{ path('entetepiece.edit') }}', icon: 'fas fa-file-invoice' },
+                { name: 'Règlements - Liste', url: '{{ path('reglement.list') }}', icon: 'fas fa-money-bill-wave' },
+                { name: 'Règlements - Nouveau', url: '{{ path('reglement.edit') }}', icon: 'fas fa-money-bill-wave' },
+                { name: 'Dossiers - Liste', url: '{{ path('dossier.list') }}', icon: 'fas fa-folder-open' },
+                { name: 'Dossiers - Nouveau', url: '{{ path('dossier.edit') }}', icon: 'fas fa-folder-plus' },
+                { name: 'Devises - Liste', url: '{{ path('devise.list') }}', icon: 'fas fa-euro-sign' },
+                { name: 'Devises - Nouvelle', url: '{{ path('devise.edit') }}', icon: 'fas fa-euro-sign' },
+                { name: 'Tarifs - Liste', url: '{{ path('tarif.list') }}', icon: 'fas fa-tags' },
+                { name: 'Tarifs - Nouveau', url: '{{ path('tarif.edit') }}', icon: 'fas fa-tag' },
+                { name: 'Tarifs Vente - Liste', url: '{{ path('tarifvente.list') }}', icon: 'fas fa-tags' },
+                { name: 'Tarifs Vente - Nouveau', url: '{{ path('tarifvente.edit') }}', icon: 'fas fa-tag' },
+                { name: 'Unités - Liste', url: '{{ path('unite.list') }}', icon: 'fas fa-balance-scale' },
+                { name: 'Unités - Nouvelle', url: '{{ path('unite.edit') }}', icon: 'fas fa-balance-scale' },
+                { name: 'Pays - Liste', url: '{{ path('pays.list') }}', icon: 'fas fa-globe' },
+                { name: 'Pays - Nouveau', url: '{{ path('pays.edit') }}', icon: 'fas fa-globe' },
+                { name: 'Villes - Liste', url: '{{ path('ville.list') }}', icon: 'fas fa-city' },
+                { name: 'Villes - Nouvelle', url: '{{ path('ville.edit') }}', icon: 'fas fa-city' },
+                { name: 'Mon Profil', url: '{{ path('app_profile') }}', icon: 'fas fa-user' },
+                { name: 'Paramètres Profil', url: '{{ path('app_profile_edit') }}', icon: 'fas fa-cog' }
+            ];
+
+            var $navSearchInput = $('#navSearchInput');
+            var $navSearchResults = $('#navSearchResults');
+
+            $navSearchInput.on('input', function() {
+                var query = $(this).val().toLowerCase().trim();
+                $navSearchResults.empty();
+
+                if (query.length < 1) {
+                    $navSearchResults.hide();
+                    return;
+                }
+
+                var matches = navItems.filter(function(item) {
+                    return item.name.toLowerCase().includes(query);
+                }).slice(0, 8); // Limit to 8 results
+
+                if (matches.length > 0) {
+                    matches.forEach(function(item) {
+                        $navSearchResults.append(
+                            '<a class="dropdown-item" href="' + item.url + '">' +
+                            '<i class="' + item.icon + ' fa-fw mr-2 text-gray-400"></i>' + 
+                            item.name + '</a>'
+                        );
+                    });
+                    $navSearchResults.show();
+                } else {
+                    $navSearchResults.append(
+                        '<span class="dropdown-item text-muted">Aucun résultat trouvé</span>'
+                    );
+                    $navSearchResults.show();
+                }
+            });
+
+            $navSearchInput.on('focus', function() {
+                if ($(this).val().trim().length > 0) {
+                    $navSearchInput.trigger('input');
+                }
+            });
+
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.navbar-search').length) {
+                    $navSearchResults.hide();
+                }
+            });
+
+            // ===== SIDEBAR DROPDOWN TOGGLE ON CLICK =====
+            $('#accordionSidebar .nav-link[data-toggle="collapse"]').on('click', function(e) {
+                var $this = $(this);
+                var targetId = $this.attr('data-target');
+                var $target = $(targetId);
+                
+                // If already expanded, collapse it
+                if ($target.hasClass('show')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $target.collapse('hide');
+                    $this.attr('aria-expanded', 'false');
+                    $this.addClass('collapsed');
+                }
+            });
+        });
+    </script>
     
     {% block javascripts %}
         

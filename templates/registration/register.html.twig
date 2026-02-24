@@ -3,25 +3,72 @@
 {% block title %}Register{% endblock %}
 
 {% block body %}
-    {% for flash_error in app.flashes('verify_email_error') %}
-        <div class="alert alert-danger" role="alert">{{ flash_error }}</div>
-    {% endfor %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    {% for flash_error in app.flashes('verify_email_error') %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ flash_error }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
 
-    <h1>Register</h1>
+                    <h2 class="mb-4 text-center">Create Your Account</h2>
 
-    {{ form_errors(registrationForm) }}
+                    {{ form_errors(registrationForm) }}
 
-    {{ form_start(registrationForm) }}
-        {{ form_row(registrationForm.nom) }}
-        {{ form_row(registrationForm.prenom) }}
-        {{ form_row(registrationForm.email) }}
-        {{ form_row(registrationForm.plainPassword, {
-            label: 'Password'
-        }) }}
-        
-        {{form_row(registrationForm.dossier,{'attr': {'class': 'form-control js-example-basic-single'  } } )}}
-        {{ form_row(registrationForm.agreeTerms) }}
+                    {{ form_start(registrationForm, {'attr': {'class': 'needs-validation'}}) }}
+                        <div class="form-group">
+                            {{ form_label(registrationForm.nom) }}
+                            {{ form_widget(registrationForm.nom, {'attr': {'class': 'form-control'}}) }}
+                            {{ form_errors(registrationForm.nom) }}
+                        </div>
 
-        <button type="submit" class="btn btn-lg btn-primary mt-2">Register</button>
-    {{ form_end(registrationForm) }}
+                        <div class="form-group">
+                            {{ form_label(registrationForm.prenom) }}
+                            {{ form_widget(registrationForm.prenom, {'attr': {'class': 'form-control'}}) }}
+                            {{ form_errors(registrationForm.prenom) }}
+                        </div>
+
+                        <div class="form-group">
+                            {{ form_label(registrationForm.email) }}
+                            {{ form_widget(registrationForm.email, {'attr': {'class': 'form-control'}}) }}
+                            {{ form_errors(registrationForm.email) }}
+                        </div>
+
+                        <div class="form-group">
+                            {{ form_label(registrationForm.plainPassword, 'Password') }}
+                            {{ form_widget(registrationForm.plainPassword, {'attr': {'class': 'form-control'}}) }}
+                            {{ form_errors(registrationForm.plainPassword) }}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form_label(registrationForm.dossier) }}
+                            {{ form_widget(registrationForm.dossier, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                            {{ form_errors(registrationForm.dossier) }}
+                        </div>
+
+                        <div class="form-group">
+                            {{ form_widget(registrationForm.agreeTerms, {'attr': {'class': 'form-check-input'}}) }}
+                            {{ form_label(registrationForm.agreeTerms, 'I agree to the Terms and Conditions', {'label_attr': {'class': 'form-check-label'}}) }}
+                            {{ form_errors(registrationForm.agreeTerms) }}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-lg mt-4">Register</button>
+                    {{ form_end(registrationForm) }}
+
+                    <hr class="my-4">
+
+                    <p class="text-center mb-0">
+                        Already have an account? <a href="{{ path('app_login') }}" class="font-weight-bold">Login here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

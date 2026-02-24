@@ -29,6 +29,11 @@ class RegistrationController extends AbstractController
     #[Route('/register', name: 'app_register')]
     public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, Security $security, EntityManagerInterface $entityManager): Response
     {
+        // Redirect logged-in users to dashboard
+        if ($this->getUser()) {
+            return $this->redirectToRoute('app_dash_bord');
+        }
+
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
@@ -53,8 +58,12 @@ class RegistrationController extends AbstractController
             );
 
             // do anything else you need here, like send an email
+            $this->addFlash(
+                'success',
+                'Registration successful! Please check your email to verify your account.'
+            );
 
-            return $security->login($user, LoginAuthenticator::class, 'main');
+            return $this->redirectToRoute('app_login');
         }
 
         return $this->render('registration/register.html.twig', [
@@ -79,9 +88,9 @@ class RegistrationController extends AbstractController
         }
 
         // @TODO Change the redirect on success and handle or remove the flash message in your templates
-        $this->addFlash('success', 'Your email address has been verified.');
+        $this->addFlash('success', 'Your email address has been verified. You can now log in.');
 
-        return $this->redirectToRoute('app_register');
+        return $this->redirectToRoute('app_dash_bord');
     }
     #[Route('/users/{page?1}/{nbre?15}', name: 'users.list')]
     public function indexAlls(ManagerRegistry $doctrine,$page,$nbre): Response

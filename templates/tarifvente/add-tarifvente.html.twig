@@ -1,37 +1,120 @@
 {% extends "template_oukatech.html.twig" %}
-{% block PageTitle%}
-    Tarif de vente
-{% endblock %}
-{% block title %}Tarif de vente{% endblock %}
+{% block PageTitle %}Tarif de vente{% endblock %}
+
 {% block body %}
-{{ form_start(tarifvente)}}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('tarifvente.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier le tarif de vente' : 'Nouveau tarif de vente' }}</h1>
+    </div>
+</div>
+
+<div class="form-card">
+    {{ form_start(tarifvente, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    
+    <div class="card-header-custom">
+        <h5><i class="fas fa-dollar-sign mr-2"></i>Configuration du tarif</h5>
+    </div>
+    
     <div class="row">
-        <div class="col">{{form_row(tarifvente.dossier,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        <div class="col">{{form_row(tarifvente.tarif,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-       
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(tarifvente.dossier, 'Dossier', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(tarifvente.dossier, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                <div class="invalid-feedback">Le dossier est obligatoire</div>
+                {{ form_errors(tarifvente.dossier) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(tarifvente.tarif, 'Tarif', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(tarifvente.tarif, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                <div class="invalid-feedback">Le tarif est obligatoire</div>
+                {{ form_errors(tarifvente.tarif) }}
+            </div>
+        </div>
     </div>
+
+    <div class="card-header-custom mt-4">
+        <h5><i class="fas fa-link mr-2"></i>Relations</h5>
+    </div>
+
     <div class="row">
-
-        <div class="col">{{form_row(tarifvente.client,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        <div class="col">{{form_row(tarifvente.article,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        
-
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(tarifvente.client, 'Client') }}
+                {{ form_widget(tarifvente.client, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(tarifvente.client) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(tarifvente.article, 'Article') }}
+                {{ form_widget(tarifvente.article, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(tarifvente.article) }}
+            </div>
+        </div>
     </div>
-   <div class="row">
-        
-        <div class="col">{{form_row(tarifvente.devise,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        <div class="col">{{form_row(tarifvente.dateeffet,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        <div class="col">{{form_row(tarifvente.prix)}}</div>
 
+    <div class="card-header-custom mt-4">
+        <h5><i class="fas fa-money-bill-wave mr-2"></i>Prix et conditions</h5>
     </div>
 
-    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
-{{form_rest(tarifvente)}}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(tarifvente.devise, 'Devise', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(tarifvente.devise, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                <div class="invalid-feedback">La devise est obligatoire</div>
+                {{ form_errors(tarifvente.devise) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(tarifvente.dateeffet, 'Date d\'effet', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(tarifvente.dateeffet, {'attr': {'class': 'form-control'}}) }}
+                <div class="invalid-feedback">La date d'effet est obligatoire</div>
+                {{ form_errors(tarifvente.dateeffet) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(tarifvente.prix, 'Prix', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(tarifvente.prix, {'attr': {'class': 'form-control', 'placeholder': '0.00'}}) }}
+                <div class="invalid-feedback">Le prix est obligatoire</div>
+                {{ form_errors(tarifvente.prix) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('tarifvente.list') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(tarifvente) }}
+    {{ form_end(tarifvente) }}
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="fas fa-info-circle mr-1"></i>
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+</p>
 {% endblock %}
+
 {% block javascripts %}
-    <script>
-        $(document).ready(function() {
-            $('.js-example-basic-single').select2();
+<script>
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2({
+            theme: 'bootstrap-5',
+            allowClear: true
         });
-    </script>
+    });
+</script>
 {% endblock %}

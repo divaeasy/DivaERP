@@ -1,34 +1,108 @@
 {% extends "template_oukatech.html.twig" %}
-{% block PageTitle%}
-    Ligne de piece
-{% endblock %}
-{% block title %}Ligne de piece{% endblock %}
+{% block PageTitle %}Ligne de pièce{% endblock %}
+
 {% block body %}
-{{ form_start(lignepiece)}}
-    <div class="row">
-        <div class="col">{{form_row(lignepiece.article,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        <div class="col">{{form_row(lignepiece.qte,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div> 
-        <div class="col">{{form_row(lignepiece.pub,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>       
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('entetepiece.edit', {id: pceId}) }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour à la pièce
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier la ligne' : 'Nouvelle ligne' }}</h1>
     </div>
-    <div class="row">        
-        
-        <div class="col">{{form_row(lignepiece.remise,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        <div class="col">{{form_row(lignepiece.montant,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        
-    </div>
-   
-    <div class="row">
-       
+</div>
+
+<div class="form-card">
+    {{ form_start(lignepiece, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    
+    <div class="card-header-custom">
+        <h5><i class="fas fa-cube mr-2"></i>Article et quantité</h5>
     </div>
     
-    
-    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
-{{form_rest(lignepiece)}}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(lignepiece.article, 'Article', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(lignepiece.article, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                <div class="invalid-feedback">L'article est obligatoire</div>
+                {{ form_errors(lignepiece.article) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(lignepiece.qte, 'Quantité', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(lignepiece.qte, {'attr': {'class': 'form-control', 'placeholder': '1'}}) }}
+                <div class="invalid-feedback">La quantité est obligatoire</div>
+                {{ form_errors(lignepiece.qte) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(lignepiece.pub, 'Prix unitaire', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(lignepiece.pub, {'attr': {'class': 'form-control', 'placeholder': '0.00'}}) }}
+                <div class="invalid-feedback">Le prix unitaire est obligatoire</div>
+                {{ form_errors(lignepiece.pub) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="card-header-custom mt-4">
+        <h5><i class="fas fa-calculator mr-2"></i>Calcul du montant</h5>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(lignepiece.remise, 'Remise (%)') }}
+                {{ form_widget(lignepiece.remise, {'attr': {'class': 'form-control', 'placeholder': '0'}}) }}
+                {{ form_errors(lignepiece.remise) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(lignepiece.montant, 'Montant total') }}
+                {{ form_widget(lignepiece.montant, {'attr': {'class': 'form-control', 'placeholder': '0.00', 'readonly': 'readonly'}}) }}
+                {{ form_errors(lignepiece.montant) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('entetepiece.edit', {id: pceId}) }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(lignepiece) }}
+    {{ form_end(lignepiece) }}
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="fas fa-info-circle mr-1"></i>
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+</p>
 {% endblock %}
+
 {% block javascripts %}
-    <script>
-        $(document).ready(function() {
-            $('.js-example-basic-single').select2();
+<script>
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2({
+            theme: 'bootstrap-5',
+            allowClear: true
         });
-    </script>
+
+        // Auto-calculate montant
+        function calculateMontant() {
+            var qte = parseFloat($('#lignepiece_qte').val()) || 0;
+            var pub = parseFloat($('#lignepiece_pub').val()) || 0;
+            var remise = parseFloat($('#lignepiece_remise').val()) || 0;
+            var montant = qte * pub * (1 - remise / 100);
+            $('#lignepiece_montant').val(montant.toFixed(2));
+        }
+
+        $('#lignepiece_qte, #lignepiece_pub, #lignepiece_remise').on('input', calculateMontant);
+    });
+</script>
 {% endblock %}

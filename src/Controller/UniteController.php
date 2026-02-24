@@ -65,8 +65,8 @@ class UniteController extends AbstractController
         return $this->redirectToRoute('unite.list');
        }else{
             return $this->render('unite/add-unite.html.twig', [
-     
-                'unite'=>$form->createView()
+                'unite'=>$form->createView(),
+                'id' => $id
             ]);
        }
         

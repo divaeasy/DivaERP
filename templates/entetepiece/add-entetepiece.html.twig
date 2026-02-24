@@ -1,100 +1,193 @@
 {% extends "template_oukatech.html.twig" %}
-{% block PageTitle%}
-    Entête de piece
-{% endblock %}
-{% block title %}Entête de piece{% endblock %}
+{% block PageTitle %}Entête de pièce{% endblock %}
+
 {% block body %}
-{{ form_start(entetepiece)}}
-    <div class="row">
-        <div class="col">{{form_row(entetepiece.type,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        <div class="col">{{form_row(entetepiece.typet,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>        
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('entetepiece.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h1>
     </div>
-    <div class="row">        
-        <div class="col">{{form_row(entetepiece.client,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        <div class="col">{{form_row(entetepiece.statut,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-    </div>
-    <div class="row">
-        <div class="col">{{form_row(entetepiece.pieceref)}}</div>
-        <div class="col">{{form_row(entetepiece.remise)}}</div>
-        
-    </div>
-    <div class="row">
-        <div class="col">{{form_row(entetepiece.devise,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        <div class="col">{{form_row(entetepiece.reglement,{'attr': {'class': 'form-control js-example-basic-single'}})}}</div>
-        
-    </div>
-    <div class="row">
-       
-        
-    </div>
-    
-    
-    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
-{{form_rest(entetepiece)}}
-<br/> <br/> <br/>
-{% if id>0  %}
+</div>
 
-  <h1>Lignes</h1>
-  <a class="btn btn-primary" href="{{ path('lignepiece.add',{pceId: id})}}" role="button">Ajouter ligne</a>
-  <table class="table table-striped">
-      <thead class="thead-light">
-          <tr>
-          <th scope="col"></th>
-          <th scope="col">Article</th>
-          <th scope="col">Quantité</th>
-          <th scope="col">prix</th>
-          <th scope="col">Remise</th>
-          <th scope="col">Montant</th>
-          <th scope="col">Crée par</th>
-          <th scope="col">Crée le</th>
-          <th scope="col"></th>
-        
-          </tr>
-      </thead>
-      <tbody>
-          {% for lignepiece in lignepieces %}
-            <tr>
-           
-              <td><a href="{{ path('lignepiece.edit',{id: lignepiece.id, pceId: id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
-              <td>{{lignepiece.article}}</td>
-              <td>{{lignepiece.qte}}</td>
-              <td>{{lignepiece.pub}}</td>
-              <td>{{lignepiece.remise}}</td>
-              <td>{{lignepiece.montant}}</td>
-              <td>{{lignepiece.createdBy}}</td>
-              <td>{{lignepiece.createdAt|date('d-m-Y')}}</td>
-             
-              <td><a data-toggle="modal" data-target="#deleteModal{{ lignepiece.id }}" href="#deleteEntryModal{{ lignepiece.id }}" ><i class="fa-solid fa-user-xmark" ></i></a></td>
-              
-            </tr>
-            <div class="modal fade" id="deleteModal{{ lignepiece.id }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-              aria-hidden="true">
-              <div class="modal-dialog" role="document">
-                  <div class="modal-content">
-                      <div class="modal-header">
-                          <h5 class="modal-title" id="exampleModalLabel">Suppression</h5>
-                          <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                              <span aria-hidden="true">×</span>
-                          </button>
-                      </div>
-                      <div class="modal-body">Confirmez vous la suppression de la lignepiece ?.</div>
-                      <div class="modal-footer">
-                          <button class="btn btn-secondary" type="button" data-dismiss="modal">Annuler</button>
-                          <a class="btn btn-primary" href="{{ path('lignepiece.delete',{id: lignepiece.id}) }}">Supprimer</a>
-                      </div>
-                  </div>
-              </div>
-          </div>
-          {% endfor %}
-      </tbody>
-    </table>
-    {% endif %}
+<div class="form-card">
+    {{ form_start(entetepiece, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    
+    <div class="card-header-custom">
+        <h5><i class="fas fa-file-invoice mr-2"></i>Type de document</h5>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.type, 'Type de pièce', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(entetepiece.type, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                <div class="invalid-feedback">Le type de pièce est obligatoire</div>
+                {{ form_errors(entetepiece.type) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.typet, 'Type de tiers', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(entetepiece.typet, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                <div class="invalid-feedback">Le type de tiers est obligatoire</div>
+                {{ form_errors(entetepiece.typet) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="card-header-custom mt-4">
+        <h5><i class="fas fa-user mr-2"></i>Informations client</h5>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.client, 'Client', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(entetepiece.client, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                <div class="invalid-feedback">Le client est obligatoire</div>
+                {{ form_errors(entetepiece.client) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.statut, 'Statut', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(entetepiece.statut, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                <div class="invalid-feedback">Le statut est obligatoire</div>
+                {{ form_errors(entetepiece.statut) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="card-header-custom mt-4">
+        <h5><i class="fas fa-info-circle mr-2"></i>Détails de la pièce</h5>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.pieceref, 'Référence') }}
+                {{ form_widget(entetepiece.pieceref, {'attr': {'class': 'form-control', 'placeholder': 'Référence de la pièce'}}) }}
+                {{ form_errors(entetepiece.pieceref) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.remise, 'Remise (%)') }}
+                {{ form_widget(entetepiece.remise, {'attr': {'class': 'form-control', 'placeholder': '0'}}) }}
+                {{ form_errors(entetepiece.remise) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="card-header-custom mt-4">
+        <h5><i class="fas fa-money-check-alt mr-2"></i>Conditions de paiement</h5>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.devise, 'Devise') }}
+                {{ form_widget(entetepiece.devise, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(entetepiece.devise) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.reglement, 'Mode de règlement') }}
+                {{ form_widget(entetepiece.reglement, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(entetepiece.reglement) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('entetepiece.list') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(entetepiece) }}
+    {{ form_end(entetepiece) }}
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="fas fa-info-circle mr-1"></i>
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+</p>
+
+{% if id > 0 %}
+<div class="form-card mt-4">
+    <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-list mr-2"></i>Lignes de la pièce</h5>
+        <a class="btn btn-success btn-sm" href="{{ path('lignepiece.add', {pceId: id}) }}">
+            <i class="fas fa-plus mr-2"></i>Ajouter une ligne
+        </a>
+    </div>
+    
+    <div class="table-responsive mt-3">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Article</th>
+                    <th class="text-right">Quantité</th>
+                    <th class="text-right">Prix unitaire</th>
+                    <th class="text-right">Remise</th>
+                    <th class="text-right">Montant</th>
+                    <th>Créé par</th>
+                    <th>Créé le</th>
+                    <th class="text-center" style="width: 120px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lignepiece in lignepieces %}
+                <tr>
+                    <td>{{ lignepiece.article }}</td>
+                    <td class="text-right">{{ lignepiece.qte }}</td>
+                    <td class="text-right">{{ lignepiece.pub|number_format(2, ',', ' ') }}</td>
+                    <td class="text-right">{{ lignepiece.remise }}%</td>
+                    <td class="text-right"><strong>{{ lignepiece.montant|number_format(2, ',', ' ') }}</strong></td>
+                    <td>{{ lignepiece.createdBy }}</td>
+                    <td>{{ lignepiece.createdAt|date('d/m/Y') }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{{ path('lignepiece.edit', {id: lignepiece.id, pceId: id}) }}" class="btn-action btn-edit" title="Modifier">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button" class="btn-action btn-delete" title="Supprimer"
+                                    onclick="confirmDelete('{{ path('lignepiece.delete', {id: lignepiece.id}) }}', 'cette ligne')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                        Aucune ligne ajoutée
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 
 {% endblock %}
+
 {% block javascripts %}
-    <script>
-        $(document).ready(function() {
-            $('.js-example-basic-single').select2();
+<script>
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2({
+            theme: 'bootstrap-5',
+            allowClear: true
         });
-    </script>
+    });
+</script>
 {% endblock %}

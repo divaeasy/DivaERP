@@ -1,47 +1,61 @@
 {% extends 'template_oukatech.html.twig' %}
 
-{% block title %}Réglements{% endblock %}
-
 {% block body %}
-
-<br/>
-<div class="input-group"  >
-
-<a class="btn btn-primary" href="{{path('reglement.edit')}}" role="button">Ajouter</a>
-
-
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Gestion des Règlements</h1>
+    </div>
 </div>
 
-<br/>
-<div class="row">
+<div class="action-bar">
+    <a class="btn-add" href="{{ path('reglement.edit') }}">
+        <i class="fas fa-plus"></i> Nouveau Règlement
+    </a>
+</div>
 
-  <table class="table table-striped">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col">Id</th>
-        <th scope="col">Libellé</th>
-        <th scope="col">Echéance</th>
-        
-        <th scope="col"></th>
-  
-      </tr>
-    </thead>
-    <tbody>
-      {% for reglement in reglements %}
-      <tr>
-        <th scope="row"><a href="{{ path('reglement.edit',{id: reglement.id}) }}" >{{reglement.id}}</a></th>
-        <th scope="row">{{reglement.libelle}}</th>
-        <td>{{reglement.echeance}}</td>
-        
-
-        
-        {%if is_granted('ROLE_ADMIN')%}
-        <td><a href="{{ path('reglement.edit',{id: reglement.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
+<div class="table-container">
+    {% if reglements|length > 0 %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Libellé</th>
+                <th>Échéance</th>
+                <th class="text-center" style="width: 120px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reglement in reglements %}
+            <tr>
+                <td><strong>#{{ reglement.id }}</strong></td>
+                <td>{{ reglement.libelle }}</td>
+                <td><span class="badge badge-warning">{{ reglement.echeance }} jours</span></td>
+                <td class="text-center">
+                    <a href="{{ path('reglement.edit', {id: reglement.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-delete delete-btn"
+                            data-delete-url="{{ path('reglement.delete', {id: reglement.id}) }}"
+                            data-item-name="{{ reglement.libelle }}"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-money-bill-wave"></i>
+        <p>Aucun règlement trouvé</p>
+        <a href="{{ path('reglement.edit') }}" class="btn btn-primary mt-3">
+            <i class="fas fa-plus mr-2"></i>Créer le premier règlement
+        </a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

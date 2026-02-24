@@ -17,20 +17,31 @@ class EntetepieceRepository extends ServiceEntityRepository
     }
 
     public function getCaParAnnee($annee): array
-   {
-       $fields = array('year(ep.datep)','month(ep.datep) as mois');
-       return $this->createQueryBuilder('ep')
-           ->select($fields)
-           ->addSelect("SUM(ep.montant) As mont")
-           //->groupBy('a.nom')
-           //->addGroupBy('a.prenom')
-           //->addGroupBy('an.annee')
-           ->Where("YEAR(ep.datep) = YEAR(CURRENT_DATE()) - $annee ")
-           ->groupBy('mois')
-            //->addGroupBy("YEAR(ep.datep)")
-           ->getQuery()
-           ->getScalarResult()
-       ;
+    {
+        $currentYear = (int)date('Y');
+        $targetYear = $currentYear - $annee;
+        $startDate = "{$targetYear}-01-01";
+        $endDate = "{$targetYear}-12-31";
+        
+        $sql = "
+            SELECT 
+                MONTH(ep.datep) as mois,
+                SUM(ep.montant) as mont
+            FROM entetepiece ep
+            WHERE ep.datep >= :startDate 
+                AND ep.datep <= :endDate
+            GROUP BY MONTH(ep.datep)
+            ORDER BY MONTH(ep.datep) ASC
+        ";
+        
+        $connection = $this->getEntityManager()->getConnection();
+        $statement = $connection->prepare($sql);
+        $result = $statement->executeQuery([
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ]);
+        
+        return $result->fetchAllAssociative();
     }
 
     //    /**

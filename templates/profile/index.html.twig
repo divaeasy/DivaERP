@@ -1,0 +1,259 @@
+{% extends 'template_oukatech.html.twig' %}
+
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border-radius: 12px;
+        padding: 40px;
+        color: white;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .profile-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    }
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        color: #4e73df;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .profile-name {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    .profile-email {
+        opacity: 0.9;
+        font-size: 16px;
+    }
+    .profile-role {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 10px;
+    }
+    .profile-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        margin-bottom: 25px;
+    }
+    .profile-card-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #e3e6f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .profile-card-header h5 {
+        margin: 0;
+        font-weight: 600;
+        color: #5a5c69;
+    }
+    .profile-card-header i {
+        color: #4e73df;
+        margin-right: 10px;
+    }
+    .profile-card-body {
+        padding: 25px;
+    }
+    .info-row {
+        display: flex;
+        padding: 12px 0;
+        border-bottom: 1px solid #f8f9fc;
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .info-label {
+        width: 180px;
+        font-weight: 600;
+        color: #858796;
+        flex-shrink: 0;
+    }
+    .info-value {
+        color: #5a5c69;
+        flex: 1;
+    }
+    .btn-edit-profile {
+        background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 6px;
+        font-weight: 600;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+    .btn-edit-profile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+    }
+    .stat-item {
+        text-align: center;
+        padding: 20px;
+        background: #f8f9fc;
+        border-radius: 8px;
+    }
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #4e73df;
+    }
+    .stat-label {
+        font-size: 12px;
+        color: #858796;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="profile-header">
+    <div class="d-flex align-items-center">
+        <div class="profile-avatar">
+            <i class="fas fa-user"></i>
+        </div>
+        <div class="ml-4">
+            <div class="profile-name">{{ user.prenom }} {{ user.nom }}</div>
+            <div class="profile-email">{{ user.email }}</div>
+            <div class="profile-role">
+                {% for role in user.roles %}
+                    {% if role == 'ROLE_ADMIN' %}Administrateur{% elseif role == 'ROLE_USER' %}Utilisateur{% else %}{{ role }}{% endif %}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        <div class="ml-auto">
+            <a href="{{ path('app_profile_edit') }}" class="btn-edit-profile">
+                <i class="fas fa-edit"></i> Modifier le profil
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="profile-card">
+            <div class="profile-card-header">
+                <h5><i class="fas fa-user-circle"></i> Informations personnelles</h5>
+            </div>
+            <div class="profile-card-body">
+                <div class="info-row">
+                    <div class="info-label">Prénom</div>
+                    <div class="info-value">{{ user.prenom }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Nom</div>
+                    <div class="info-value">{{ user.nom }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Adresse email</div>
+                    <div class="info-value">{{ user.email }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Dossier actif</div>
+                    <div class="info-value">{{ user.dossier ? user.dossier.nom : '-' }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Compte vérifié</div>
+                    <div class="info-value">
+                        {% if user.isVerified %}
+                            <span class="badge badge-success"><i class="fas fa-check mr-1"></i> Vérifié</span>
+                        {% else %}
+                            <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i> En attente</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-card">
+            <div class="profile-card-header">
+                <h5><i class="fas fa-shield-alt"></i> Sécurité</h5>
+            </div>
+            <div class="profile-card-body">
+                <div class="info-row">
+                    <div class="info-label">Mot de passe</div>
+                    <div class="info-value">••••••••</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Rôles</div>
+                    <div class="info-value">
+                        {% for role in user.roles %}
+                            <span class="badge badge-primary mr-1">{{ role }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="profile-card">
+            <div class="profile-card-header">
+                <h5><i class="fas fa-chart-bar"></i> Activité</h5>
+            </div>
+            <div class="profile-card-body">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ user.dossier ? '1' : '0' }}</div>
+                        <div class="stat-label">Dossier</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ user.roles|length }}</div>
+                        <div class="stat-label">Rôles</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-card">
+            <div class="profile-card-header">
+                <h5><i class="fas fa-cog"></i> Actions rapides</h5>
+            </div>
+            <div class="profile-card-body">
+                <a href="{{ path('app_profile_edit') }}" class="btn btn-outline-primary btn-block mb-2">
+                    <i class="fas fa-edit mr-2"></i>Modifier mes informations
+                </a>
+                <a href="{{ path('app_dash_bord') }}" class="btn btn-outline-secondary btn-block">
+                    <i class="fas fa-home mr-2"></i>Retour au tableau de bord
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

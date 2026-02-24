@@ -64,8 +64,8 @@ class ReglementController extends AbstractController
         return $this->redirectToRoute('reglement.list');
        }else{
             return $this->render('reglement/add-reglement.html.twig', [
-     
-                'reglement'=>$form->createView()
+                'reglement'=>$form->createView(),
+                'id' => $id
             ]);
        }
         

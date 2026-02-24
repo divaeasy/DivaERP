@@ -38,8 +38,7 @@ class DossierController extends AbstractController
             $dossier = new Dossier();
             $new = true;
         }
-        $dossier->doctrine=$doctrine;
-        $dossier->user=$this->getUser();
+        // Dossier doesn't use TimeStampTrait, no need to set doctrine/user
         
        $form = $this->createForm(DossierFormType::class, $dossier);
        $form->handleRequest($request);
@@ -65,8 +64,8 @@ class DossierController extends AbstractController
         return $this->redirectToRoute('dossier.list');
        }else{
             return $this->render('dossier/add-dossier.html.twig', [
-     
-                'dossier'=>$form->createView()
+                'dossier'=>$form->createView(),
+                'id' => $id
             ]);
        }
         

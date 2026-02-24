@@ -64,8 +64,8 @@ class TarifsController extends AbstractController
         return $this->redirectToRoute('tarif.list');
        }else{
             return $this->render('tarifs/add-tarif.html.twig', [
-     
-                'tarif'=>$form->createView()
+                'tarif'=>$form->createView(),
+                'id' => $id
             ]);
        }
         

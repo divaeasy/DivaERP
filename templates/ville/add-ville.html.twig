@@ -1,22 +1,60 @@
 {% extends "template_oukatech.html.twig" %}
-{% block PageTitle%}
-    Ville
-{% endblock %}
-{% block title %}Ville{% endblock %}
+{% block PageTitle %}Ville{% endblock %}
+
 {% block body %}
-{{ form_start(ville)}}
-    <div class="row">
-        <div class="col">{{form_row(ville.libelle)}}</div>
-       
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('ville.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier la ville' : 'Nouvelle ville' }}</h1>
     </div>
-  
-    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
-{{form_rest(ville)}}
+</div>
+
+<div class="form-card">
+    {{ form_start(ville, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    
+    <div class="card-header-custom">
+        <h5><i class="fas fa-city mr-2"></i>Informations de la ville</h5>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(ville.libelle, 'Libellé', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(ville.libelle, {'attr': {'class': 'form-control', 'placeholder': 'Nom de la ville'}}) }}
+                <div class="invalid-feedback">Le libellé est obligatoire</div>
+                {{ form_errors(ville.libelle) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('ville.list') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(ville) }}
+    {{ form_end(ville) }}
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="fas fa-info-circle mr-1"></i>
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+</p>
 {% endblock %}
+
 {% block javascripts %}
-    <script>
-        $(document).ready(function() {
-            $('.js-example-basic-single').select2();
+<script>
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2({
+            theme: 'bootstrap-5',
+            allowClear: true
         });
-    </script>
+    });
+</script>
 {% endblock %}

@@ -64,8 +64,8 @@ class VilleController extends AbstractController
         return $this->redirectToRoute('ville.list');
        }else{
             return $this->render('ville/add-ville.html.twig', [
-     
-                'ville'=>$form->createView()
+                'ville'=>$form->createView(),
+                'id' => $id
             ]);
        }
         

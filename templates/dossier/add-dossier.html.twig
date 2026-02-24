@@ -1,28 +1,92 @@
 {% extends "template_oukatech.html.twig" %}
-{% block PageTitle%}
-    Dossier
-{% endblock %}
-{% block title %}Dossier{% endblock %}
+{% block PageTitle %}Dossier{% endblock %}
+
+
 {% block body %}
-{{ form_start(dossier)}}
-    <div class="row">
-        <div class="col">{{form_row(dossier.nom)}}</div>
-        <div class="col">{{form_row(dossier.adresse)}}</div>
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('dossier.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier le dossier' : 'Nouveau dossier' }}</h1>
     </div>
-    <div class="row">
-        
-        <div class="col">{{form_row(dossier.logo)}}</div>
-        <div class="col">{{form_row(dossier.rc)}}</div>
-        <div class="col">{{ form_row(dossier.devise,{'attr': {'class': 'form-control js-example-basic-single'}}) }}</div>
+</div>
+
+<div class="form-card">
+    {{ form_start(dossier, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    
+    <div class="card-header-custom">
+        <h5><i class="fas fa-folder mr-2"></i>Informations du dossier</h5>
     </div>
     
-    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
-{{form_rest(dossier)}}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(dossier.nom, 'Nom', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(dossier.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom du dossier'}}) }}
+                <div class="invalid-feedback">Le nom est obligatoire</div>
+                {{ form_errors(dossier.nom) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(dossier.adresse, 'Adresse') }}
+                {{ form_widget(dossier.adresse, {'attr': {'class': 'form-control', 'placeholder': 'Adresse du dossier'}}) }}
+                {{ form_errors(dossier.adresse) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(dossier.rc, 'RC') }}
+                {{ form_widget(dossier.rc, {'attr': {'class': 'form-control', 'placeholder': 'Registre du commerce'}}) }}
+                {{ form_errors(dossier.rc) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(dossier.logo, 'Logo') }}
+                {{ form_widget(dossier.logo, {'attr': {'class': 'form-control', 'placeholder': 'URL du logo'}}) }}
+                {{ form_errors(dossier.logo) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(dossier.devise, 'Devise') }}
+                {{ form_widget(dossier.devise, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(dossier.devise) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('dossier.list') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(dossier) }}
+    {{ form_end(dossier) }}
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="fas fa-info-circle mr-1"></i>
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+</p>
 {% endblock %}
+
 {% block javascripts %}
-    <script>
-        $(document).ready(function() {
-            $('.js-example-basic-single').select2();
+<script>
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2({
+            theme: 'bootstrap-5',
+            allowClear: true
         });
-    </script>
+    });
+</script>
 {% endblock %}

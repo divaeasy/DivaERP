@@ -1,62 +1,80 @@
 {% extends 'template_oukatech.html.twig' %}
 
-{% block title %}Entêtes de pièce{% endblock %}
 
 {% block body %}
-
-<br/>
-<div class="input-group"  >
-
-<a class="btn btn-primary" href="{{path('entetepiece.edit')}}" role="button">Ajouter</a>
-
-
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Gestion des Pièces</h1>
+    </div>
 </div>
 
-<br/>
-<div class="row">
+<div class="action-bar">
+    <a class="btn-add" href="{{ path('entetepiece.edit') }}">
+        <i class="fas fa-plus"></i> Nouvelle Pièce
+    </a>
+</div>
 
-  <table class="table table-striped">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col">Id</th>
-        <th scope="col">Type pièce</th>
-        <th scope="col">Type tiers</th>
-        <th scope="col">Client</th>
-        <th scope="col">N° pièce</th>
-        <th scope="col">Référence</th>
-        <th scope="col">Remise</th>
-        <th scope="col">Délai</th>
-        <th scope="col">Statut</th>        
-        <th scope="col">Devise</th>
-        <th scope="col">Réglement</th>
-   
-        <th scope="col"></th>
-  
-      </tr>
-    </thead>
-    <tbody>
-      {% for entetepiece in entetepieces %}
-      <tr>
-        <th scope="row"><a href="{{ path('entetepiece.edit',{id: entetepiece.id}) }}" >{{entetepiece.id}}</a></th>
-        <th scope="row">{{entetepiece.type}}</th>
-        <td>{{entetepiece.typet}}</td>
-        <td>{{entetepiece.client}}</td>
-        <td>{{entetepiece.pieceno}}</td>
-        <td>{{entetepiece.pieceref}}</td>
-        <td>{{entetepiece.remise}}</td>
-        <td>{{entetepiece.delai}}</td>
-        <td>{{entetepiece.statut}}</td>
-        <td>{{entetepiece.devise}}</td>
-        <td>{{entetepiece.reglement}}</td>
-
-        
-        {%if is_granted('ROLE_ADMIN')%}
-        <td><a href="{{ path('entetepiece.edit',{id: entetepiece.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
+<div class="table-container">
+    {% if entetepieces|length > 0 %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Client</th>
+                <th>N° Pièce</th>
+                <th>Référence</th>
+                <th class="text-right">Remise</th>
+                <th>Statut</th>
+                <th>Devise</th>
+                <th class="text-center" style="width: 120px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entetepiece in entetepieces %}
+            <tr>
+                <td><strong>#{{ entetepiece.id }}</strong></td>
+                <td><span class="badge badge-primary">{{ entetepiece.type }}</span></td>
+                <td>{{ entetepiece.client }}</td>
+                <td><strong>{{ entetepiece.pieceno }}</strong></td>
+                <td>{{ entetepiece.pieceref }}</td>
+                <td class="text-right">{{ entetepiece.remise }}%</td>
+                <td>
+                    {% if entetepiece.statut == 'validé' %}
+                        <span class="badge badge-success">{{ entetepiece.statut }}</span>
+                    {% elseif entetepiece.statut == 'brouillon' %}
+                        <span class="badge badge-secondary">{{ entetepiece.statut }}</span>
+                    {% else %}
+                        <span class="badge badge-warning">{{ entetepiece.statut }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ entetepiece.devise }}</td>
+                <td class="text-center">
+                    <a href="{{ path('entetepiece.edit', {id: entetepiece.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-delete delete-btn"
+                            data-delete-url="{{ path('entetepiece.delete', {id: entetepiece.id}) }}"
+                            data-item-name="Pièce #{{ entetepiece.pieceno }}"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-file-invoice"></i>
+        <p>Aucune pièce trouvée</p>
+        <a href="{{ path('entetepiece.edit') }}" class="btn btn-primary mt-3">
+            <i class="fas fa-plus mr-2"></i>Créer la première pièce
+        </a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

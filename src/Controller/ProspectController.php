@@ -115,4 +115,27 @@ class ProspectController extends AbstractController
        }
         
     }
+
+    #[Route('/delete/{id}', name: 'prospect.delete')]
+    public function deleteProspect(ManagerRegistry $doctrine, $id): Response
+    {
+        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $repository = $doctrine->getRepository(Prospects::class);
+        $prospect = $repository->find($id);
+        if($prospect){
+            $manager = $doctrine->getManager();
+            $manager->remove($prospect);
+            $manager->flush();
+            $this->addFlash(
+               'success',
+               "Le prospect a été supprimé avec succès"
+            );
+        }else{
+            $this->addFlash(
+                'error',
+                "Le prospect demandé n'existe pas"
+             );
+        }
+        return $this->redirectToRoute('prospect.list');
+    }
 }

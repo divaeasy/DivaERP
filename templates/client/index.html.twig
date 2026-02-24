@@ -1,57 +1,77 @@
 {% extends 'template_oukatech.html.twig' %}
 
-{% block title %}Clients{% endblock %}
-
 {% block body %}
-{% include "components/search_data.html.twig" with {search: search} only %}
-<br/>
-<div class="input-group"  >
-
-<a class="btn btn-primary" href="{{path('client.edit')}}" role="button">Ajouter</a>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
-
-  
-
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Gestion des Clients</h1>
+    </div>
 </div>
 
-<br/>
-<div class="row">
+<div class="action-bar">
+    <a class="btn-add" href="{{ path('client.edit') }}">
+        <i class="fas fa-plus"></i> Nouveau Client
+    </a>
+    <div class="search-box">
+        {% include "components/search_data.html.twig" with {search: search} only %}
+    </div>
+</div>
 
-  <table class="table table-striped">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col">Id</th>
-        <th scope="col">Nom</th>
-        <th scope="col">Adresse</th>
-        <th scope="col">Rue</th>
-        <th scope="col">Code postal</th>
-        <th scope="col">Ville</th>
-        <th scope="col">Pays</th>
-        <th scope="col">Tarif</th>
-   
-        <th scope="col"></th>
-  
-      </tr>
-    </thead>
-    <tbody>
-      {% for client in clients %}
-      <tr>
-        <th scope="row"><a href="{{ path('client.edit',{id: client.id}) }}" >{{client.id}}</a></th>
-        <th scope="row">{{client.nom}}</th>
-        <td>{{client.adr1}}</td>
-        <td>{{client.rue}}</td>
-        <td>{{client.codepostal}}</td>
-        <td>{{client.ville}}</td>
-        <td>{{client.pays}}</td>
-        <td>{{ client.tarif }}</td>
-        
-        {%if is_granted('ROLE_ADMIN')%}
-        <td><a href="{{ path('client.edit',{id: client.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
+<div class="table-container">
+    {% if clients|length > 0 %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Adresse</th>
+                <th>Ville</th>
+                <th>Pays</th>
+                <th>Téléphone</th>
+                <th>Email</th>
+                <th>Tarif</th>
+                <th class="text-center" style="width: 150px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td><strong>#{{ client.id }}</strong></td>
+                <td>{{ client.nom }}</td>
+                <td>{{ client.adr1 }}</td>
+                <td>{{ client.ville }}</td>
+                <td>{{ client.pays }}</td>
+                <td>{{ client.tel }}</td>
+                <td>{{ client.email }}</td>
+                <td>{{ client.tarif }}</td>
+                <td class="text-center">
+                    <a href="{{ path('client.detail', {id: client.id}) }}" class="btn btn-action btn-view" title="Voir">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{{ path('client.edit', {id: client.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-delete delete-btn" 
+                            data-delete-url="{{ path('client.delete', {id: client.id}) }}"
+                            data-item-name="{{ client.nom }}"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-users"></i>
+        <p>Aucun client trouvé</p>
+        <a href="{{ path('client.edit') }}" class="btn btn-primary mt-3">
+            <i class="fas fa-plus mr-2"></i>Créer le premier client
+        </a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

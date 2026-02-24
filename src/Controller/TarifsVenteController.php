@@ -64,8 +64,8 @@ class TarifsVenteController extends AbstractController
         return $this->redirectToRoute('tarifvente.list');
        }else{
             return $this->render('tarifvente/add-tarifvente.html.twig', [
-     
-                'tarifvente'=>$form->createView()
+                'tarifvente'=>$form->createView(),
+                'id' => $id
             ]);
        }
         
