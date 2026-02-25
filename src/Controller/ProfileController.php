@@ -16,7 +16,7 @@ class ProfileController extends AbstractController
     #[Route('/', name: 'app_profile')]
     public function index(): Response
     {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
         
         return $this->render('profile/index.html.twig', [
             'user' => $this->getUser(),
@@ -29,7 +29,7 @@ class ProfileController extends AbstractController
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher
     ): Response {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
         
         $user = $this->getUser();
         $form = $this->createForm(ProfileFormType::class, $user);
