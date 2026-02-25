@@ -136,13 +136,15 @@
             min-height: 0 !important; /* Critical for flexbox scroll */
             max-height: none !important;
             height: auto !important;
-            padding-bottom: 20px;
+            padding-bottom: 0;
             scroll-behavior: smooth;
+            display: flex;
+            flex-direction: column;
         }
         
         /* Ensure body block content doesn't break scroll */
         #content > .container-fluid {
-            flex-shrink: 0;
+            flex: 1 0 auto;
             overflow: visible !important;
         }
         
@@ -161,12 +163,17 @@
             background: #a1a1a1;
         }
         
-        /* Footer - flows naturally at bottom of content */
-        .sticky-footer {
+        /* Footer - always at bottom, scrolls with content */
+        .site-footer {
             flex-shrink: 0;
-            padding: 1rem 0;
-            position: static !important;
-            margin-top: auto;
+            padding: 0.75rem 0;
+            background: #f8f9fc;
+            border-top: 1px solid #e3e6f0;
+        }
+        .site-footer span {
+            font-size: 12px;
+            color: #b7b9cc;
+            letter-spacing: 0.3px;
         }
         
         /* When sidebar is toggled */
@@ -1168,14 +1175,12 @@
                     </div>
 
                     <!-- Footer -->
-                    <footer class="sticky-footer bg-white border-top" style="padding: 1.5rem 0;">
-                        <div class="container my-auto">
-                            <div class="copyright text-center my-auto">
-                                <span class="text-muted" style="font-size: 13px;">Copyright &copy; DivaERP {{ "now"|date("Y") }}</span>
-                            </div>
+                    <footer class="site-footer">
+                        <div class="text-center">
+                            <span>Copyright &copy; DivaERP {{ "now"|date("Y") }}</span>
                         </div>
                     </footer>
-                    <!-- End of Footer --> 
+                    <!-- End of Footer -->
             </div>
             
             <!-- End of Main Content -->
@@ -1260,7 +1265,6 @@
     <script src="/assets/js/chart-area-demo.js"></script>
     <script src="/assets/js/chart-pie-demo.js"></script>
     <script src="/node_modules/select2/dist/js/select2.min.js"></script>
-    <script src="/node_modules/@fortawesome/fontawesome-free/js/all.js"></script>
     
     <!-- Global ERP Scripts -->
     <script>

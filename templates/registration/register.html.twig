@@ -1,88 +1,300 @@
 {% extends 'template_oukatech.html.twig' %}
 
+{% block stylesheets %}
+{{ parent() }}
+<style>
+    .auth-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 200px);
+        padding: 40px 15px;
+    }
+    .auth-card {
+        width: 100%;
+        max-width: 520px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(78, 115, 223, 0.08), 0 2px 10px rgba(0,0,0,0.04);
+        overflow: hidden;
+        border: 1px solid rgba(78, 115, 223, 0.08);
+    }
+    .auth-header {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        padding: 35px 40px 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .auth-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -30%;
+        width: 80%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    }
+    .auth-header-icon {
+        width: 70px;
+        height: 70px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 18px;
+        backdrop-filter: blur(5px);
+    }
+    .auth-header-icon i {
+        font-size: 28px;
+        color: white;
+    }
+    .auth-header h1 {
+        color: white;
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 6px;
+        position: relative;
+    }
+    .auth-header p {
+        color: rgba(255,255,255,0.8);
+        font-size: 14px;
+        margin: 0;
+        position: relative;
+    }
+    .auth-body {
+        padding: 30px 40px 35px;
+    }
+    .auth-form .form-group {
+        margin-bottom: 20px;
+    }
+    .auth-form .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #5a5c69;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    .auth-form .form-control {
+        height: 46px;
+        border: 2px solid #e3e6f0;
+        border-radius: 10px;
+        padding: 10px 16px 10px 44px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        background-color: #f8f9fc;
+    }
+    .auth-form .form-control:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.12);
+        background-color: #fff;
+    }
+    .auth-form select.form-control {
+        padding-left: 44px;
+    }
+    .input-icon-wrapper {
+        position: relative;
+    }
+    .input-icon-wrapper > i,
+    .input-icon-wrapper > svg {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #b7b9cc;
+        font-size: 15px;
+        width: 15px;
+        height: 15px;
+        z-index: 2;
+        pointer-events: none;
+        transition: color 0.2s;
+    }
+    .input-icon-wrapper:focus-within > i,
+    .input-icon-wrapper:focus-within > svg {
+        color: #4e73df;
+    }
+    .auth-form .btn-register {
+        height: 48px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+    .auth-form .btn-register:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.35);
+    }
+    .auth-form .btn-register:active {
+        transform: translateY(0);
+    }
+    .auth-divider {
+        display: flex;
+        align-items: center;
+        margin: 22px 0;
+        color: #b7b9cc;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .auth-divider::before,
+    .auth-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #e3e6f0;
+    }
+    .auth-divider span {
+        padding: 0 15px;
+    }
+    .auth-footer-link {
+        text-align: center;
+        font-size: 14px;
+        color: #858796;
+    }
+    .auth-footer-link a {
+        color: #4e73df;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .auth-footer-link a:hover {
+        color: #224abe;
+        text-decoration: underline;
+    }
+    .form-row-double {
+        display: flex;
+        gap: 15px;
+    }
+    .form-row-double > .form-group {
+        flex: 1;
+    }
+    .terms-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px 16px;
+        background: #f8f9fc;
+        border-radius: 10px;
+        border: 2px solid #e3e6f0;
+        transition: border-color 0.2s;
+    }
+    .terms-checkbox:hover {
+        border-color: #4e73df;
+    }
+    .terms-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #4e73df;
+        cursor: pointer;
+        margin-top: 1px;
+        flex-shrink: 0;
+    }
+    .terms-checkbox label {
+        font-size: 13px !important;
+        color: #6e707e !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        margin: 0 !important;
+        cursor: pointer;
+        line-height: 1.4;
+    }
+</style>
+{% endblock %}
 
 {% block body %}
-
-<div class="text-center pt-5 pb-3">
-    <h1 class="fw-bold mb-2" style="font-size: 2rem; letter-spacing: -0.5px;">
-        Créer un compte
-    </h1>
-
-    <div class="mx-auto mb-3"
-         style="width: 50px; height: 4px; background: linear-gradient(90deg, #4e73df, #6f42c1); border-radius: 10px;">
-    </div>
-
-    <p class="text-muted mb-0" style="font-size: 0.95rem;">
-        Rejoignez-nous et accédez à votre espace sécurisé
-    </p>
-</div>
-
-
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-body p-5">
-                    {% for flash_error in app.flashes('verify_email_error') %}
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            {{ flash_error }}
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    {% endfor %}
-
-                    <h2 class="mb-4 text-center">Create Your Account</h2>
-
-                    {{ form_errors(registrationForm) }}
-
-                    {{ form_start(registrationForm, {'attr': {'class': 'needs-validation'}}) }}
-                        <div class="form-group">
-                            {{ form_label(registrationForm.nom) }}
-                            {{ form_widget(registrationForm.nom, {'attr': {'class': 'form-control'}}) }}
-                            {{ form_errors(registrationForm.nom) }}
-                        </div>
-
-                        <div class="form-group">
-                            {{ form_label(registrationForm.prenom) }}
-                            {{ form_widget(registrationForm.prenom, {'attr': {'class': 'form-control'}}) }}
-                            {{ form_errors(registrationForm.prenom) }}
-                        </div>
-
-                        <div class="form-group">
-                            {{ form_label(registrationForm.email) }}
-                            {{ form_widget(registrationForm.email, {'attr': {'class': 'form-control'}}) }}
-                            {{ form_errors(registrationForm.email) }}
-                        </div>
-
-                        <div class="form-group">
-                            {{ form_label(registrationForm.plainPassword, 'Password') }}
-                            {{ form_widget(registrationForm.plainPassword, {'attr': {'class': 'form-control'}}) }}
-                            {{ form_errors(registrationForm.plainPassword) }}
-                        </div>
-                        
-                        <div class="form-group">
-                            {{ form_label(registrationForm.dossier) }}
-                            {{ form_widget(registrationForm.dossier, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                            {{ form_errors(registrationForm.dossier) }}
-                        </div>
-
-                        <div class="form-group">
-                            {{ form_widget(registrationForm.agreeTerms, {'attr': {'class': 'form-check-input'}}) }}
-                            {{ form_label(registrationForm.agreeTerms, 'I agree to the Terms and Conditions', {'label_attr': {'class': 'form-check-label'}}) }}
-                            {{ form_errors(registrationForm.agreeTerms) }}
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-block btn-lg mt-4">Register</button>
-                    {{ form_end(registrationForm) }}
-
-                    <hr class="my-4">
-
-                    <p class="text-center mb-0">
-                        Already have an account? <a href="{{ path('app_login') }}" class="font-weight-bold">Login here</a>
-                    </p>
-                </div>
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-header-icon">
+                <i class="fas fa-user-plus"></i>
             </div>
+            <h1>Créer un compte</h1>
+            <p>Rejoignez-nous et accédez à votre espace sécurisé</p>
+        </div>
+        <div class="auth-body">
+            {% for flash_error in app.flashes('verify_email_error') %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 10px; border: none; background: #fdf0ef; color: #e74a3b; font-size: 13px;">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    {{ flash_error }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+
+            {{ form_errors(registrationForm) }}
+
+            {{ form_start(registrationForm, {'attr': {'class': 'auth-form needs-validation'}}) }}
+                <div class="form-row-double">
+                    <div class="form-group">
+                        {{ form_label(registrationForm.nom) }}
+                        <div class="input-icon-wrapper">
+                            {{ form_widget(registrationForm.nom, {'attr': {'class': 'form-control', 'placeholder': 'Votre nom'}}) }}
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {{ form_errors(registrationForm.nom) }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form_label(registrationForm.prenom) }}
+                        <div class="input-icon-wrapper">
+                            {{ form_widget(registrationForm.prenom, {'attr': {'class': 'form-control', 'placeholder': 'Votre prénom'}}) }}
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {{ form_errors(registrationForm.prenom) }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    {{ form_label(registrationForm.email) }}
+                    <div class="input-icon-wrapper">
+                        {{ form_widget(registrationForm.email, {'attr': {'class': 'form-control', 'placeholder': 'votre@email.com'}}) }}
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    {{ form_errors(registrationForm.email) }}
+                </div>
+
+                <div class="form-group">
+                    {{ form_label(registrationForm.plainPassword, 'Mot de passe') }}
+                    <div class="input-icon-wrapper">
+                        {{ form_widget(registrationForm.plainPassword, {'attr': {'class': 'form-control', 'placeholder': '••••••••'}}) }}
+                        <i class="fas fa-key"></i>
+                    </div>
+                    {{ form_errors(registrationForm.plainPassword) }}
+                </div>
+                
+                <div class="form-group">
+                    {{ form_label(registrationForm.dossier) }}
+                    <div class="input-icon-wrapper">
+                        {{ form_widget(registrationForm.dossier, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    {{ form_errors(registrationForm.dossier) }}
+                </div>
+
+                <div class="form-group">
+                    <div class="terms-checkbox">
+                        {{ form_widget(registrationForm.agreeTerms, {'attr': {'class': ''}}) }}
+                        {{ form_label(registrationForm.agreeTerms, "J'accepte les conditions générales d'utilisation") }}
+                    </div>
+                    {{ form_errors(registrationForm.agreeTerms) }}
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-register mt-3">
+                    <i class="fas fa-user-plus mr-2"></i>Créer mon compte
+                </button>
+            {{ form_end(registrationForm) }}
+
+            <div class="auth-divider"><span>ou</span></div>
+
+            <p class="auth-footer-link mb-0">
+                Déjà un compte ? <a href="{{ path('app_login') }}">Se connecter</a>
+            </p>
         </div>
     </div>
 </div>
