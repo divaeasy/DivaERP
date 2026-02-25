@@ -43,6 +43,7 @@ security:
          - { path: ^/login, roles: PUBLIC_ACCESS }
          - { path: ^/register, roles: PUBLIC_ACCESS }
          - { path: ^/verify/email, roles: PUBLIC_ACCESS }
+         - { path: ^/, roles: IS_AUTHENTICATED }
          - { path: ^/, roles: ROLE_ADMIN }
 
 when@test:

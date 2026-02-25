@@ -1,9 +1,14 @@
 {% extends 'template_oukatech.html.twig' %}
 
-{% block title %}Log in!{% endblock %}
 
 {% block body %}
-<div class="container mt-5">
+<div class="page-header mb-4">
+    <div class="d-flex align-items-center justify-content-center" style="min-height: 80px;">
+        <h1 class="h3 mb-0 text-gray-800">Login</h1>
+    </div>
+</div>
+
+<div class="container mt-3">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow">
@@ -32,8 +37,6 @@
                             <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger float-right">Logout</a>
                         </div>
                     {% else %}
-                        <h2 class="mb-4 text-center">Welcome Back</h2>
-
                         <form method="post">
                             <div class="form-group">
                                 <label for="inputEmail">Email Address</label>
