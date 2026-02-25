@@ -161,10 +161,12 @@
             background: #a1a1a1;
         }
         
-        /* Fix footer to not block scrolling */
+        /* Footer - flows naturally at bottom of content */
         .sticky-footer {
             flex-shrink: 0;
             padding: 1rem 0;
+            position: static !important;
+            margin-top: auto;
         }
         
         /* When sidebar is toggled */
@@ -1163,20 +1165,20 @@
                             Corps de la page
                             
                         {% endblock %}
-                    </div> 
+                    </div>
+
+                    <!-- Footer -->
+                    <footer class="sticky-footer bg-white border-top" style="padding: 1.5rem 0;">
+                        <div class="container my-auto">
+                            <div class="copyright text-center my-auto">
+                                <span class="text-muted" style="font-size: 13px;">Copyright &copy; DivaERP {{ "now"|date("Y") }}</span>
+                            </div>
+                        </div>
+                    </footer>
+                    <!-- End of Footer --> 
             </div>
             
             <!-- End of Main Content -->
-
-            <!-- Footer -->
-            <footer class="sticky-footer bg-white">
-                <div class="container my-auto">
-                    <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; Your Website 2025</span>
-                    </div>
-                </div>
-            </footer>
-            <!-- End of Footer -->
 
         </div>
         <!-- End of Content Wrapper -->
