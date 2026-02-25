@@ -146,7 +146,7 @@
 <div class="profile-header">
     <div class="d-flex align-items-center">
         <div class="profile-avatar">
-            <i class="fas fa-user"></i>
+            {{ user.prenom|slice(0, 1)|upper }}
         </div>
         <div class="ml-4">
             <div class="profile-name">{{ user.prenom }} {{ user.nom }}</div>
