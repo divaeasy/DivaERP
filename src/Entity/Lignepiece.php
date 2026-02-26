@@ -24,6 +24,9 @@ class Lignepiece
     #[ORM\JoinColumn(nullable: false)]
     private ?Article $article = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $designation = null;
+
     #[ORM\Column]
     private ?float $qte = null;
 
@@ -127,5 +130,28 @@ class Lignepiece
         $this->remise = $remise;
 
         return $this;
+    }
+
+    public function getDesignation(): ?string
+    {
+        return $this->designation ?? ($this->article?->getLibelle());
+    }
+
+    public function setDesignation(?string $designation): static
+    {
+        $this->designation = $designation;
+
+        return $this;
+    }
+
+    // Alias methods for compatibility
+    public function getQuantite(): ?float
+    {
+        return $this->qte;
+    }
+
+    public function getPu(): ?float
+    {
+        return $this->pub;
     }
 }
