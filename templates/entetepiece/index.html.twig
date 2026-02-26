@@ -56,6 +56,9 @@
                     <a href="{{ path('entetepiece.edit', {id: entetepiece.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
+                    <a href="{{ path('invoice_einvoicing_test', {id: entetepiece.id}) }}" class="btn btn-action btn-info" title="E-Invoicing">
+                        <i class="fas fa-file-pdf" style="color: white;"></i>
+                    </a>
                     <button type="button" class="btn btn-action btn-delete delete-btn"
                             data-delete-url="{{ path('entetepiece.delete', {id: entetepiece.id}) }}"
                             data-item-name="Pièce #{{ entetepiece.pieceno }}"

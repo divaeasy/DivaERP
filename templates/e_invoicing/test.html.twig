@@ -1,0 +1,181 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block body %}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('entetepiece.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Test E-Invoicing - {{ invoice.pieceref }}</h1>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Invoice Details -->
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Invoice Details</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Reference:</strong></td>
+                        <td>{{ invoice.pieceref }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Amount:</strong></td>
+                        <td>{{ invoice.montant|number_format(2, ',', ' ') }} {{ invoice.devise.code ?? 'EUR' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Client:</strong></td>
+                        <td>{{ invoice.client.nom }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Date:</strong></td>
+                        <td>{{ invoice.datep|date('d/m/Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            {% if invoice.isFactureX %}
+                                <span class="badge badge-success">✓ Facture-X Generated</span>
+                            {% else %}
+                                <span class="badge badge-warning">Not Generated</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">E-Invoicing Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="btn-group" role="group">
+                    <a href="{{ path('invoice_einvoicing_generate_facturex', {id: invoice.id}) }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-file-pdf mr-2"></i> Generate Facture-X
+                    </a>
+                    
+                    <a href="{{ path('invoice_einvoicing_history', {id: invoice.id}) }}" 
+                       class="btn btn-info">
+                        <i class="fas fa-history mr-2"></i> View History
+                    </a>
+                    
+                    <a href="{{ path('invoice_einvoicing_check_tiime_status', {id: invoice.id}) }}" 
+                       class="btn btn-secondary" {% if not invoice.tiimeInvoiceId %}disabled{% endif %}>
+                        <i class="fas fa-cloud-check-alt mr-2"></i> Check Tiime Status
+                    </a>
+                </div>
+
+                <!-- Download Files Section -->
+                {% if invoice.isFactureX %}
+                    <div class="card mt-3" style="border-left: 4px solid #28a745;">
+                        <div class="card-header py-2 bg-light">
+                            <h6 class="m-0 text-success"><i class="fas fa-check mr-2"></i>Download Generated Files</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <a href="{{ path('invoice_einvoicing_download_pdf', {id: invoice.id}) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download mr-1"></i> Download PDF
+                            </a>
+                            <a href="{{ path('invoice_einvoicing_download_xml', {id: invoice.id}) }}" 
+                               class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-download mr-1"></i> Download XML
+                            </a>
+                            <small class="d-block mt-2 text-muted">
+                                📁 Files stored in: <code>var/e-invoicing/</code>
+                            </small>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if not invoice.isSubmittedToTiime %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Tiime Integration:</strong><br>
+                        Submit to Tiime PDP (requires API credentials in .env)<br>
+                        <a href="{{ path('invoice_einvoicing_submit_tiime', {id: invoice.id}) }}" 
+                           class="btn btn-success btn-sm mt-2">
+                            <i class="fas fa-paper-plane mr-1"></i> Submit to Tiime
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success mt-3">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <strong>Already submitted to Tiime!</strong><br>
+                        Tiime Invoice ID: <code>{{ invoice.tiimeInvoiceId }}</code>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Panel -->
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-primary text-white">
+                <h6 class="m-0 font-weight-bold">Status Information</h6>
+            </div>
+            <div class="card-body">
+                <h6 class="font-weight-bold mb-3">E-Invoicing Status:</h6>
+                <div class="mb-3">
+                    <span class="badge badge-pill" 
+                          style="background: {% if invoice.isFactureX %}#28a745{% else %}#ffc107{% endif %}">
+                        {{ invoice.isFactureX ? '✓ Generated' : '⏳ Pending' }}
+                    </span>
+                </div>
+
+                <h6 class="font-weight-bold mb-3 mt-4">Tiime Integration:</h6>
+                <div>
+                    {% if invoice.tiimeInvoiceId %}
+                        <span class="badge badge-success">✓ Submitted</span><br>
+                        <small>ID: {{ invoice.tiimeInvoiceId|slice(0, 20) }}...</small>
+                    {% else %}
+                        <span class="badge badge-secondary">Not Submitted</span>
+                    {% endif %}
+                </div>
+
+                <h6 class="font-weight-bold mb-3 mt-4">Seller Info:</h6>
+                <small>
+                    SIREN: {{ invoice.sellerSiren ?? '—' }}<br>
+                    SIRET: {{ invoice.sellerSiret ?? '—' }}<br>
+                    VAT: {{ invoice.sellerVatNumber ?? '—' }}
+                </small>
+
+                <h6 class="font-weight-bold mb-3 mt-4">Buyer Info:</h6>
+                <small>
+                    SIREN: {{ invoice.buyerSiren ?? '—' }}<br>
+                    SIRET: {{ invoice.buyerSiret ?? '—' }}<br>
+                    VAT: {{ invoice.buyerVatNumber ?? '—' }}
+                </small>
+
+                <h6 class="font-weight-bold mb-3 mt-4">Tax Info:</h6>
+                <small>
+                    Rate: {{ invoice.taxRate ?? '—' }}%<br>
+                    Taxable: {{ invoice.taxableAmount ?? '—' }}<br>
+                    Tax: {{ invoice.taxAmount ?? '—' }}
+                </small>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card shadow">
+            <div class="card-header py-3 bg-info text-white">
+                <h6 class="m-0 font-weight-bold">Quick Guide</h6>
+            </div>
+            <div class="card-body">
+                <p class="small mb-2"><strong>Step 1:</strong> Click "Generate Facture-X" to create the PDF + XML</p>
+                <p class="small mb-2"><strong>Step 2:</strong> View "History" to see all status updates</p>
+                <p class="small mb-2"><strong>Step 3:</strong> Use "Submit to Tiime" (requires API credentials)</p>
+                <p class="small">All operations are logged and tracked in the database.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

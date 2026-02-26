@@ -232,6 +232,24 @@ class Clients
 
         return $this;
     }
+
+    // Alias method for compatibility
+    public function getRaisonSociale(): ?string
+    {
+        return $this->nom;
+    }
+
+    public function getAdresse(): ?string
+    {
+        $address = [];
+        if ($this->adr1) $address[] = $this->adr1;
+        if ($this->adr2) $address[] = $this->adr2;
+        if ($this->rue) $address[] = $this->rue;
+        if ($this->codepostal) $address[] = $this->codepostal;
+        if ($this->ville) $address[] = (string) $this->ville;
+        return implode(', ', $address) ?: null;
+    }
+
     public function __toString()
     {
         return $this->getNom();

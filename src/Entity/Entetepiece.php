@@ -6,6 +6,8 @@ use App\Repository\EntetepieceRepository;
 use App\Traits\TimeStampTrait;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: EntetepieceRepository::class)]
 #[ORM\HasLifecycleCallbacks()]
@@ -66,6 +68,67 @@ class Entetepiece
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $datep = null;
+
+    // E-Invoicing (Facture-X / Tiime) fields
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $tiimeInvoiceId = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $tiimeSubmissionId = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $sellerSiren = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $sellerSiret = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $sellerVatNumber = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $buyerSiren = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $buyerSiret = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $buyerVatNumber = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $invoiceType = null; // INVOICE, CREDIT_NOTE, DEBIT_NOTE, etc.
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?string $taxableAmount = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?string $taxAmount = null;
+
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $taxRate = null; // VAT rate (e.g., "20.00")
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $isFactureX = false;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $isSubmittedToTiime = false;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $factureXPdfFilename = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $factureXXmlFilename = null;
+
+    #[ORM\OneToMany(targetEntity: InvoiceStatus::class, mappedBy: 'invoice', cascade: ['persist', 'remove'])]
+    private Collection $invoiceStatuses;
+
+    #[ORM\OneToMany(targetEntity: Lignepiece::class, mappedBy: 'piece', cascade: ['persist', 'remove'])]
+    private Collection $lignepieces;
+
+    public function __construct()
+    {
+        $this->invoiceStatuses = new ArrayCollection();
+        $this->lignepieces = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -249,6 +312,238 @@ class Entetepiece
     {
         $this->datep = $datep;
 
+        return $this;
+    }
+
+    // E-Invoicing Getters & Setters
+
+    public function getTiimeInvoiceId(): ?string
+    {
+        return $this->tiimeInvoiceId;
+    }
+
+    public function setTiimeInvoiceId(?string $tiimeInvoiceId): static
+    {
+        $this->tiimeInvoiceId = $tiimeInvoiceId;
+        return $this;
+    }
+
+    public function getTiimeSubmissionId(): ?string
+    {
+        return $this->tiimeSubmissionId;
+    }
+
+    public function setTiimeSubmissionId(?string $tiimeSubmissionId): static
+    {
+        $this->tiimeSubmissionId = $tiimeSubmissionId;
+        return $this;
+    }
+
+    public function getSellerSiren(): ?string
+    {
+        return $this->sellerSiren;
+    }
+
+    public function setSellerSiren(?string $sellerSiren): static
+    {
+        $this->sellerSiren = $sellerSiren;
+        return $this;
+    }
+
+    public function getSellerSiret(): ?string
+    {
+        return $this->sellerSiret;
+    }
+
+    public function setSellerSiret(?string $sellerSiret): static
+    {
+        $this->sellerSiret = $sellerSiret;
+        return $this;
+    }
+
+    public function getSellerVatNumber(): ?string
+    {
+        return $this->sellerVatNumber;
+    }
+
+    public function setSellerVatNumber(?string $sellerVatNumber): static
+    {
+        $this->sellerVatNumber = $sellerVatNumber;
+        return $this;
+    }
+
+    public function getBuyerSiren(): ?string
+    {
+        return $this->buyerSiren;
+    }
+
+    public function setBuyerSiren(?string $buyerSiren): static
+    {
+        $this->buyerSiren = $buyerSiren;
+        return $this;
+    }
+
+    public function getBuyerSiret(): ?string
+    {
+        return $this->buyerSiret;
+    }
+
+    public function setBuyerSiret(?string $buyerSiret): static
+    {
+        $this->buyerSiret = $buyerSiret;
+        return $this;
+    }
+
+    public function getBuyerVatNumber(): ?string
+    {
+        return $this->buyerVatNumber;
+    }
+
+    public function setBuyerVatNumber(?string $buyerVatNumber): static
+    {
+        $this->buyerVatNumber = $buyerVatNumber;
+        return $this;
+    }
+
+    public function getInvoiceType(): ?string
+    {
+        return $this->invoiceType;
+    }
+
+    public function setInvoiceType(?string $invoiceType): static
+    {
+        $this->invoiceType = $invoiceType;
+        return $this;
+    }
+
+    public function getTaxableAmount(): ?string
+    {
+        return $this->taxableAmount;
+    }
+
+    public function setTaxableAmount(?string $taxableAmount): static
+    {
+        $this->taxableAmount = $taxableAmount;
+        return $this;
+    }
+
+    public function getTaxAmount(): ?string
+    {
+        return $this->taxAmount;
+    }
+
+    public function setTaxAmount(?string $taxAmount): static
+    {
+        $this->taxAmount = $taxAmount;
+        return $this;
+    }
+
+    public function getTaxRate(): ?string
+    {
+        return $this->taxRate;
+    }
+
+    public function setTaxRate(?string $taxRate): static
+    {
+        $this->taxRate = $taxRate;
+        return $this;
+    }
+
+    public function isFactureX(): ?bool
+    {
+        return $this->isFactureX;
+    }
+
+    public function setFactureX(?bool $isFactureX): static
+    {
+        $this->isFactureX = $isFactureX;
+        return $this;
+    }
+
+    public function isSubmittedToTiime(): ?bool
+    {
+        return $this->isSubmittedToTiime;
+    }
+
+    public function setSubmittedToTiime(?bool $isSubmittedToTiime): static
+    {
+        $this->isSubmittedToTiime = $isSubmittedToTiime;
+        return $this;
+    }
+
+    public function getFactureXPdfFilename(): ?string
+    {
+        return $this->factureXPdfFilename;
+    }
+
+    public function setFactureXPdfFilename(?string $factureXPdfFilename): static
+    {
+        $this->factureXPdfFilename = $factureXPdfFilename;
+        return $this;
+    }
+
+    public function getFactureXXmlFilename(): ?string
+    {
+        return $this->factureXXmlFilename;
+    }
+
+    public function setFactureXXmlFilename(?string $factureXXmlFilename): static
+    {
+        $this->factureXXmlFilename = $factureXXmlFilename;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, InvoiceStatus>
+     */
+    public function getInvoiceStatuses(): Collection
+    {
+        return $this->invoiceStatuses;
+    }
+
+    public function addInvoiceStatus(InvoiceStatus $invoiceStatus): static
+    {
+        if (!$this->invoiceStatuses->contains($invoiceStatus)) {
+            $this->invoiceStatuses->add($invoiceStatus);
+            $invoiceStatus->setInvoice($this);
+        }
+        return $this;
+    }
+
+    public function removeInvoiceStatus(InvoiceStatus $invoiceStatus): static
+    {
+        if ($this->invoiceStatuses->removeElement($invoiceStatus)) {
+            if ($invoiceStatus->getInvoice() === $this) {
+                $invoiceStatus->setInvoice(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Lignepiece>
+     */
+    public function getLignepieces(): Collection
+    {
+        return $this->lignepieces;
+    }
+
+    public function addLignepiece(Lignepiece $lignepiece): static
+    {
+        if (!$this->lignepieces->contains($lignepiece)) {
+            $this->lignepieces->add($lignepiece);
+            $lignepiece->setPiece($this);
+        }
+        return $this;
+    }
+
+    public function removeLignepiece(Lignepiece $lignepiece): static
+    {
+        if ($this->lignepieces->removeElement($lignepiece)) {
+            if ($lignepiece->getPiece() === $this) {
+                $lignepiece->setPiece(null);
+            }
+        }
         return $this;
     }
 }
