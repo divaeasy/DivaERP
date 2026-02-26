@@ -29,6 +29,7 @@
                 <th>Référence</th>
                 <th class="text-right">Remise</th>
                 <th>Statut</th>
+                <th>e-Facture</th>
                 <th>Devise</th>
                 <th class="text-center" style="width: 120px;">Actions</th>
             </tr>
@@ -51,13 +52,24 @@
                         <span class="badge badge-warning">{{ entetepiece.statut }}</span>
                     {% endif %}
                 </td>
+                <td>
+                    {% if entetepiece.isSubmittedToTiime %}
+                        <span class="badge badge-success"><i class="fas fa-check mr-1"></i>Transmise</span>
+                    {% elseif entetepiece.isFactureX %}
+                        <span class="badge badge-info"><i class="fas fa-file-alt mr-1"></i>Générée</span>
+                    {% else %}
+                        <span class="badge badge-light text-muted">—</span>
+                    {% endif %}
+                </td>
                 <td>{{ entetepiece.devise }}</td>
                 <td class="text-center">
                     <a href="{{ path('entetepiece.edit', {id: entetepiece.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
-                    <a href="{{ path('invoice_einvoicing_test', {id: entetepiece.id}) }}" class="btn btn-action btn-info" title="E-Invoicing">
-                        <i class="fas fa-file-pdf" style="color: white;"></i>
+                    <a href="{{ path('invoice_einvoicing_test', {id: entetepiece.id}) }}" 
+                       class="btn btn-action {% if entetepiece.isSubmittedToTiime %}btn-success{% elseif entetepiece.isFactureX %}btn-info{% else %}btn-secondary{% endif %}" 
+                       title="{% if entetepiece.isSubmittedToTiime %}E-Facture transmise{% elseif entetepiece.isFactureX %}Facture-X générée{% else %}E-Facturation{% endif %}">
+                        <i class="fas {% if entetepiece.isSubmittedToTiime %}fa-check-circle{% elseif entetepiece.isFactureX %}fa-file-pdf{% else %}fa-file-invoice{% endif %}" style="color: white;"></i>
                     </a>
                     <button type="button" class="btn btn-action btn-delete delete-btn"
                             data-delete-url="{{ path('entetepiece.delete', {id: entetepiece.id}) }}"

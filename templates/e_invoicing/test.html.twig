@@ -6,176 +6,728 @@
         <a href="{{ path('entetepiece.list') }}" class="btn-back mr-3">
             <i class="fas fa-arrow-left"></i>
         </a>
-        <h1 class="h3 mb-0 text-gray-800">Test E-Invoicing - {{ invoice.pieceref }}</h1>
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Facturation Électronique</h1>
+            <small class="text-muted">{{ invoice.pieceref }} — {{ invoice.client.nom ?? 'Client non défini' }}</small>
+        </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <!-- Invoice Details -->
-    <div class="col-lg-8">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Invoice Details</h6>
-            </div>
-            <div class="card-body">
-                <table class="table table-sm">
-                    <tr>
-                        <td><strong>Reference:</strong></td>
-                        <td>{{ invoice.pieceref }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Amount:</strong></td>
-                        <td>{{ invoice.montant|number_format(2, ',', ' ') }} {{ invoice.devise.code ?? 'EUR' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Client:</strong></td>
-                        <td>{{ invoice.client.nom }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Date:</strong></td>
-                        <td>{{ invoice.datep|date('d/m/Y') }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Status:</strong></td>
-                        <td>
-                            {% if invoice.isFactureX %}
-                                <span class="badge badge-success">✓ Facture-X Generated</span>
-                            {% else %}
-                                <span class="badge badge-warning">Not Generated</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        </div>
+<style>
+    /* ===== E-INVOICING PAGE ===== */
+    .einv-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+    .einv-stat {
+        background: #fff;
+        border-radius: 10px;
+        padding: 18px 20px;
+        box-shadow: 0 1px 8px rgba(58,59,69,0.08);
+        border-left: 4px solid #e3e6f0;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .einv-stat:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(58,59,69,0.12); }
+    .einv-stat.stat-ref { border-left-color: #4e73df; }
+    .einv-stat.stat-amount { border-left-color: #1cc88a; }
+    .einv-stat.stat-date { border-left-color: #f6c23e; }
+    .einv-stat.stat-status { border-left-color: #36b9cc; }
+    .einv-stat-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #858796;
+        margin-bottom: 4px;
+    }
+    .einv-stat-value {
+        font-size: 17px;
+        font-weight: 700;
+        color: #3a3b45;
+    }
 
-        <!-- Action Buttons -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">E-Invoicing Actions</h6>
-            </div>
-            <div class="card-body">
-                <div class="btn-group" role="group">
-                    <a href="{{ path('invoice_einvoicing_generate_facturex', {id: invoice.id}) }}" 
-                       class="btn btn-primary">
-                        <i class="fas fa-file-pdf mr-2"></i> Generate Facture-X
-                    </a>
-                    
-                    <a href="{{ path('invoice_einvoicing_history', {id: invoice.id}) }}" 
-                       class="btn btn-info">
-                        <i class="fas fa-history mr-2"></i> View History
-                    </a>
-                    
-                    <a href="{{ path('invoice_einvoicing_check_tiime_status', {id: invoice.id}) }}" 
-                       class="btn btn-secondary" {% if not invoice.tiimeInvoiceId %}disabled{% endif %}>
-                        <i class="fas fa-cloud-check-alt mr-2"></i> Check Tiime Status
-                    </a>
-                </div>
+    /* Workflow Steps */
+    .einv-workflow {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(58,59,69,0.08);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+    .einv-workflow-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid #e3e6f0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .einv-workflow-header i { color: #4e73df; font-size: 18px; }
+    .einv-workflow-header h6 { margin: 0; font-weight: 700; color: #3a3b45; font-size: 15px; }
+    .einv-workflow-body { padding: 24px; }
 
-                <!-- Download Files Section -->
-                {% if invoice.isFactureX %}
-                    <div class="card mt-3" style="border-left: 4px solid #28a745;">
-                        <div class="card-header py-2 bg-light">
-                            <h6 class="m-0 text-success"><i class="fas fa-check mr-2"></i>Download Generated Files</h6>
-                        </div>
-                        <div class="card-body py-2">
-                            <a href="{{ path('invoice_einvoicing_download_pdf', {id: invoice.id}) }}" 
-                               class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-download mr-1"></i> Download PDF
-                            </a>
-                            <a href="{{ path('invoice_einvoicing_download_xml', {id: invoice.id}) }}" 
-                               class="btn btn-sm btn-outline-info">
-                                <i class="fas fa-download mr-1"></i> Download XML
-                            </a>
-                            <small class="d-block mt-2 text-muted">
-                                📁 Files stored in: <code>var/e-invoicing/</code>
-                            </small>
-                        </div>
-                    </div>
-                {% endif %}
+    .einv-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+    .einv-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px 0;
+        border-bottom: 1px solid #f0f0f5;
+        position: relative;
+    }
+    .einv-step:last-child { border-bottom: none; }
 
-                {% if not invoice.isSubmittedToTiime %}
-                    <div class="alert alert-info mt-3">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        <strong>Tiime Integration:</strong><br>
-                        Submit to Tiime PDP (requires API credentials in .env)<br>
-                        <a href="{{ path('invoice_einvoicing_submit_tiime', {id: invoice.id}) }}" 
-                           class="btn btn-success btn-sm mt-2">
-                            <i class="fas fa-paper-plane mr-1"></i> Submit to Tiime
-                        </a>
-                    </div>
-                {% else %}
-                    <div class="alert alert-success mt-3">
-                        <i class="fas fa-check-circle mr-2"></i>
-                        <strong>Already submitted to Tiime!</strong><br>
-                        Tiime Invoice ID: <code>{{ invoice.tiimeInvoiceId }}</code>
-                    </div>
-                {% endif %}
-            </div>
+    .einv-step-indicator {
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 700;
+        transition: all 0.2s ease;
+    }
+    .einv-step.step-pending .einv-step-indicator {
+        background: #f8f9fc;
+        border: 2px solid #d1d3e2;
+        color: #858796;
+    }
+    .einv-step.step-active .einv-step-indicator {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border: 2px solid #4e73df;
+        color: #fff;
+        box-shadow: 0 3px 10px rgba(78,115,223,0.35);
+    }
+    .einv-step.step-done .einv-step-indicator {
+        background: linear-gradient(135deg, #1cc88a 0%, #17a673 100%);
+        border: 2px solid #1cc88a;
+        color: #fff;
+    }
+    .einv-step.step-error .einv-step-indicator {
+        background: linear-gradient(135deg, #e74a3b 0%, #c0392b 100%);
+        border: 2px solid #e74a3b;
+        color: #fff;
+    }
+
+    .einv-step-content { flex: 1; min-width: 0; }
+    .einv-step-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: #3a3b45;
+        margin-bottom: 4px;
+    }
+    .einv-step.step-pending .einv-step-title { color: #a0a3b1; }
+    .einv-step-desc {
+        font-size: 13px;
+        color: #858796;
+        margin-bottom: 10px;
+        line-height: 1.5;
+    }
+    .einv-step-action { display: inline-flex; align-items: center; }
+
+    .btn-einv {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .btn-einv:hover { text-decoration: none; transform: translateY(-1px); }
+    .btn-einv-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: #fff;
+        box-shadow: 0 3px 10px rgba(78,115,223,0.3);
+    }
+    .btn-einv-primary:hover { color: #fff; box-shadow: 0 5px 16px rgba(78,115,223,0.4); }
+    .btn-einv-success {
+        background: linear-gradient(135deg, #1cc88a 0%, #17a673 100%);
+        color: #fff;
+        box-shadow: 0 3px 10px rgba(28,200,138,0.3);
+    }
+    .btn-einv-success:hover { color: #fff; box-shadow: 0 5px 16px rgba(28,200,138,0.4); }
+    .btn-einv-outline {
+        background: #fff;
+        color: #4e73df;
+        border: 1.5px solid #d1d3e2;
+    }
+    .btn-einv-outline:hover { color: #4e73df; border-color: #4e73df; background: #f8f9fc; }
+    .btn-einv-sm { padding: 6px 14px; font-size: 12px; }
+    .btn-einv:disabled, .btn-einv.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Download area */
+    .einv-downloads {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+    .einv-download-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 10px 16px;
+        text-decoration: none;
+        color: #3a3b45;
+        transition: all 0.15s ease;
+        flex: 1;
+        min-width: 160px;
+    }
+    .einv-download-card:hover {
+        text-decoration: none;
+        color: #3a3b45;
+        border-color: #4e73df;
+        background: #eef1fb;
+        transform: translateY(-1px);
+    }
+    .einv-download-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+    .einv-download-icon.icon-pdf { background: #fce4ec; color: #e74a3b; }
+    .einv-download-icon.icon-xml { background: #e3f2fd; color: #2196f3; }
+    .einv-download-label { font-size: 13px; font-weight: 600; }
+    .einv-download-meta { font-size: 11px; color: #858796; }
+
+    /* Status badge */
+    .einv-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .einv-badge-success { background: #e8f8f0; color: #1cc88a; }
+    .einv-badge-warning { background: #fff8e1; color: #d4a100; }
+    .einv-badge-error { background: #fce4ec; color: #e74a3b; }
+    .einv-badge-info { background: #e3f2fd; color: #36b9cc; }
+    .einv-badge-muted { background: #f0f0f5; color: #858796; }
+
+    /* Side panel */
+    .einv-panel {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(58,59,69,0.08);
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    .einv-panel-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e3e6f0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .einv-panel-header i { font-size: 16px; }
+    .einv-panel-header h6 { margin: 0; font-weight: 700; font-size: 14px; color: #3a3b45; }
+    .einv-panel-body { padding: 20px; }
+
+    .einv-info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 8px 0;
+        border-bottom: 1px dashed #f0f0f5;
+        font-size: 13px;
+    }
+    .einv-info-row:last-child { border-bottom: none; }
+    .einv-info-label { color: #858796; font-weight: 500; }
+    .einv-info-value { color: #3a3b45; font-weight: 600; text-align: right; max-width: 60%; word-break: break-all; }
+
+    /* History timeline */
+    .einv-timeline { list-style: none; padding: 0; margin: 0; }
+    .einv-timeline-item {
+        display: flex;
+        gap: 14px;
+        padding: 12px 0;
+        position: relative;
+    }
+    .einv-timeline-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 40px;
+        bottom: 0;
+        width: 2px;
+        background: #e3e6f0;
+    }
+    .einv-timeline-dot {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        background: #f0f0f5;
+        color: #858796;
+        border: 2px solid #e3e6f0;
+        z-index: 1;
+    }
+    .einv-timeline-dot.dot-success { background: #e8f8f0; color: #1cc88a; border-color: #c3ecd9; }
+    .einv-timeline-dot.dot-error { background: #fce4ec; color: #e74a3b; border-color: #f5c6cb; }
+    .einv-timeline-dot.dot-info { background: #e3f2fd; color: #36b9cc; border-color: #bee5eb; }
+    .einv-timeline-content { flex: 1; }
+    .einv-timeline-title { font-size: 13px; font-weight: 600; color: #3a3b45; }
+    .einv-timeline-time { font-size: 11px; color: #a0a3b1; margin-top: 2px; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .einv-summary { grid-template-columns: repeat(2, 1fr); }
+        .einv-downloads { flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+        .einv-summary { grid-template-columns: 1fr; }
+    }
+</style>
+
+<!-- Summary Cards -->
+<div class="einv-summary mt-3">
+    <div class="einv-stat stat-ref">
+        <div class="einv-stat-label">Référence</div>
+        <div class="einv-stat-value">{{ invoice.pieceref }}</div>
+    </div>
+    <div class="einv-stat stat-amount">
+        <div class="einv-stat-label">Montant</div>
+        <div class="einv-stat-value">{{ invoice.montant|number_format(2, ',', ' ') }} {{ invoice.devise.code ?? 'EUR' }}</div>
+    </div>
+    <div class="einv-stat stat-date">
+        <div class="einv-stat-label">Date</div>
+        <div class="einv-stat-value">{{ invoice.datep ? invoice.datep|date('d/m/Y') : '—' }}</div>
+    </div>
+    <div class="einv-stat stat-status">
+        <div class="einv-stat-label">Statut e-Facture</div>
+        <div class="einv-stat-value">
+            {% if invoice.isSubmittedToTiime %}
+                <span class="einv-badge einv-badge-success"><i class="fas fa-check-circle"></i> Transmise</span>
+            {% elseif invoice.isFactureX %}
+                <span class="einv-badge einv-badge-info"><i class="fas fa-file-alt"></i> Générée</span>
+            {% else %}
+                <span class="einv-badge einv-badge-warning"><i class="fas fa-clock"></i> En attente</span>
+            {% endif %}
         </div>
     </div>
+</div>
 
-    <!-- Status Panel -->
-    <div class="col-lg-4">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 bg-primary text-white">
-                <h6 class="m-0 font-weight-bold">Status Information</h6>
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+
+        <!-- Workflow Steps -->
+        <div class="einv-workflow">
+            <div class="einv-workflow-header">
+                <i class="fas fa-route"></i>
+                <h6>Processus de Facturation Électronique</h6>
             </div>
-            <div class="card-body">
-                <h6 class="font-weight-bold mb-3">E-Invoicing Status:</h6>
-                <div class="mb-3">
-                    <span class="badge badge-pill" 
-                          style="background: {% if invoice.isFactureX %}#28a745{% else %}#ffc107{% endif %}">
-                        {{ invoice.isFactureX ? '✓ Generated' : '⏳ Pending' }}
+            <div class="einv-workflow-body">
+                <div class="einv-steps">
+
+                    {# === STEP 1: Generate Facture-X === #}
+                    {% set step1_done = invoice.isFactureX %}
+                    <div class="einv-step {{ step1_done ? 'step-done' : 'step-active' }}">
+                        <div class="einv-step-indicator">
+                            {% if step1_done %}
+                                <i class="fas fa-check"></i>
+                            {% else %}
+                                1
+                            {% endif %}
+                        </div>
+                        <div class="einv-step-content">
+                            <div class="einv-step-title">Générer la Facture-X</div>
+                            <div class="einv-step-desc">
+                                {% if step1_done %}
+                                    La facture PDF et le fichier XML (norme EN16931) ont été générés avec succès.
+                                {% else %}
+                                    Créer le PDF et le XML conformes à la norme Facture-X / EN16931 pour cette pièce.
+                                {% endif %}
+                            </div>
+
+                            {% if step1_done %}
+                                <div class="einv-downloads">
+                                    <a href="{{ path('invoice_einvoicing_download_pdf', {id: invoice.id}) }}" class="einv-download-card">
+                                        <div class="einv-download-icon icon-pdf"><i class="fas fa-file-pdf"></i></div>
+                                        <div>
+                                            <div class="einv-download-label">Télécharger PDF</div>
+                                            <div class="einv-download-meta">Facture-X (PDF/A-3)</div>
+                                        </div>
+                                    </a>
+                                    <a href="{{ path('invoice_einvoicing_download_xml', {id: invoice.id}) }}" class="einv-download-card">
+                                        <div class="einv-download-icon icon-xml"><i class="fas fa-file-code"></i></div>
+                                        <div>
+                                            <div class="einv-download-label">Télécharger XML</div>
+                                            <div class="einv-download-meta">EN16931 (CII)</div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="mt-3">
+                                    <a href="{{ path('invoice_einvoicing_generate_facturex', {id: invoice.id}) }}" class="btn-einv btn-einv-outline btn-einv-sm">
+                                        <i class="fas fa-redo-alt"></i> Régénérer
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="einv-step-action">
+                                    <a href="{{ path('invoice_einvoicing_generate_facturex', {id: invoice.id}) }}" class="btn-einv btn-einv-primary">
+                                        <i class="fas fa-cogs"></i> Générer Facture-X
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# === STEP 2: Submit to Tiime PDP === #}
+                    {% set step2_done = invoice.isSubmittedToTiime %}
+                    {% set step2_active = step1_done and not step2_done %}
+                    <div class="einv-step {{ step2_done ? 'step-done' : (step2_active ? 'step-active' : 'step-pending') }}">
+                        <div class="einv-step-indicator">
+                            {% if step2_done %}
+                                <i class="fas fa-check"></i>
+                            {% else %}
+                                2
+                            {% endif %}
+                        </div>
+                        <div class="einv-step-content">
+                            <div class="einv-step-title">Transmettre via Tiime PDP</div>
+                            <div class="einv-step-desc">
+                                {% if step2_done %}
+                                    La facture a été transmise avec succès à la plateforme Tiime.
+                                    {% if invoice.tiimeInvoiceId %}
+                                        <br><small class="text-muted">ID Tiime : {{ invoice.tiimeInvoiceId }}</small>
+                                    {% endif %}
+                                {% elseif step2_active %}
+                                    Envoyer la facture au PDP Tiime pour transmission à la plateforme publique de facturation (PPF).
+                                {% else %}
+                                    Vous devez d'abord générer la Facture-X avant de pouvoir la transmettre.
+                                {% endif %}
+                            </div>
+                            <div class="einv-step-action">
+                                {% if step2_done %}
+                                    <a href="{{ path('invoice_einvoicing_submit_tiime', {id: invoice.id}) }}" class="btn-einv btn-einv-outline btn-einv-sm">
+                                        <i class="fas fa-redo-alt"></i> Retransmettre
+                                    </a>
+                                {% elseif step2_active %}
+                                    <a href="{{ path('invoice_einvoicing_submit_tiime', {id: invoice.id}) }}" class="btn-einv btn-einv-success">
+                                        <i class="fas fa-paper-plane"></i> Transmettre à Tiime
+                                    </a>
+                                {% else %}
+                                    <span class="btn-einv btn-einv-outline disabled">
+                                        <i class="fas fa-lock"></i> Transmettre à Tiime
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {# === STEP 3: Verify Status === #}
+                    {% set step3_active = step2_done %}
+                    <div class="einv-step {{ step3_active ? 'step-active' : 'step-pending' }}">
+                        <div class="einv-step-indicator">3</div>
+                        <div class="einv-step-content">
+                            <div class="einv-step-title">Vérifier le statut</div>
+                            <div class="einv-step-desc">
+                                {% if step3_active %}
+                                    Consultez le statut de la facture sur la plateforme Tiime et l'historique des événements.
+                                {% else %}
+                                    Le suivi du statut sera disponible après la transmission de la facture.
+                                {% endif %}
+                            </div>
+                            <div class="einv-step-action" style="gap: 8px; display: flex; flex-wrap: wrap;">
+                                {% if step3_active %}
+                                    <button type="button" class="btn-einv btn-einv-primary btn-einv-sm" id="btnCheckStatus">
+                                        <i class="fas fa-sync-alt"></i> Vérifier le statut
+                                    </button>
+                                    <button type="button" class="btn-einv btn-einv-outline btn-einv-sm" id="btnViewHistory">
+                                        <i class="fas fa-history"></i> Historique
+                                    </button>
+                                {% else %}
+                                    <span class="btn-einv btn-einv-outline btn-einv-sm disabled">
+                                        <i class="fas fa-lock"></i> Vérifier le statut
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- History Panel (hidden by default, shown via AJAX) -->
+        <div class="einv-workflow" id="historyPanel" style="display: none;">
+            <div class="einv-workflow-header">
+                <i class="fas fa-history"></i>
+                <h6>Historique des Événements</h6>
+            </div>
+            <div class="einv-workflow-body" id="historyContent">
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> Chargement...
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Result Panel (hidden by default) -->
+        <div class="einv-workflow" id="statusPanel" style="display: none;">
+            <div class="einv-workflow-header">
+                <i class="fas fa-satellite-dish"></i>
+                <h6>Statut Tiime</h6>
+            </div>
+            <div class="einv-workflow-body" id="statusContent">
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> Vérification en cours...
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+
+        <!-- Invoice Info Panel -->
+        <div class="einv-panel">
+            <div class="einv-panel-header">
+                <i class="fas fa-file-invoice" style="color: #4e73df;"></i>
+                <h6>Détails de la Facture</h6>
+            </div>
+            <div class="einv-panel-body">
+                <div class="einv-info-row">
+                    <span class="einv-info-label">N° Pièce</span>
+                    <span class="einv-info-value">{{ invoice.pieceno }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">Type</span>
+                    <span class="einv-info-value">{{ invoice.type }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">Client</span>
+                    <span class="einv-info-value">{{ invoice.client.nom ?? '—' }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">Montant</span>
+                    <span class="einv-info-value">{{ invoice.montant|number_format(2, ',', ' ') }} {{ invoice.devise.code ?? 'EUR' }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">Remise</span>
+                    <span class="einv-info-value">{{ invoice.remise ?? 0 }}%</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">Statut Pièce</span>
+                    <span class="einv-info-value">
+                        {% if invoice.statut == 'validé' %}
+                            <span class="einv-badge einv-badge-success">{{ invoice.statut }}</span>
+                        {% elseif invoice.statut == 'brouillon' %}
+                            <span class="einv-badge einv-badge-muted">{{ invoice.statut }}</span>
+                        {% else %}
+                            <span class="einv-badge einv-badge-warning">{{ invoice.statut }}</span>
+                        {% endif %}
                     </span>
                 </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">Règlement</span>
+                    <span class="einv-info-value">{{ invoice.reglement ?? '—' }}</span>
+                </div>
+            </div>
+        </div>
 
-                <h6 class="font-weight-bold mb-3 mt-4">Tiime Integration:</h6>
-                <div>
-                    {% if invoice.tiimeInvoiceId %}
-                        <span class="badge badge-success">✓ Submitted</span><br>
-                        <small>ID: {{ invoice.tiimeInvoiceId|slice(0, 20) }}...</small>
-                    {% else %}
-                        <span class="badge badge-secondary">Not Submitted</span>
-                    {% endif %}
+        <!-- Seller/Buyer Panel -->
+        <div class="einv-panel">
+            <div class="einv-panel-header">
+                <i class="fas fa-building" style="color: #1cc88a;"></i>
+                <h6>Identification Fiscale</h6>
+            </div>
+            <div class="einv-panel-body">
+                <p class="einv-stat-label mb-2" style="font-size: 10px;">ÉMETTEUR (VENDEUR)</p>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">SIREN</span>
+                    <span class="einv-info-value">{{ invoice.sellerSiren ?? '—' }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">SIRET</span>
+                    <span class="einv-info-value">{{ invoice.sellerSiret ?? '—' }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">N° TVA</span>
+                    <span class="einv-info-value">{{ invoice.sellerVatNumber ?? '—' }}</span>
                 </div>
 
-                <h6 class="font-weight-bold mb-3 mt-4">Seller Info:</h6>
-                <small>
-                    SIREN: {{ invoice.sellerSiren ?? '—' }}<br>
-                    SIRET: {{ invoice.sellerSiret ?? '—' }}<br>
-                    VAT: {{ invoice.sellerVatNumber ?? '—' }}
-                </small>
+                <hr class="my-3" style="border-color: #f0f0f5;">
 
-                <h6 class="font-weight-bold mb-3 mt-4">Buyer Info:</h6>
-                <small>
-                    SIREN: {{ invoice.buyerSiren ?? '—' }}<br>
-                    SIRET: {{ invoice.buyerSiret ?? '—' }}<br>
-                    VAT: {{ invoice.buyerVatNumber ?? '—' }}
-                </small>
-
-                <h6 class="font-weight-bold mb-3 mt-4">Tax Info:</h6>
-                <small>
-                    Rate: {{ invoice.taxRate ?? '—' }}%<br>
-                    Taxable: {{ invoice.taxableAmount ?? '—' }}<br>
-                    Tax: {{ invoice.taxAmount ?? '—' }}
-                </small>
+                <p class="einv-stat-label mb-2" style="font-size: 10px;">DESTINATAIRE (ACHETEUR)</p>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">SIREN</span>
+                    <span class="einv-info-value">{{ invoice.buyerSiren ?? '—' }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">SIRET</span>
+                    <span class="einv-info-value">{{ invoice.buyerSiret ?? '—' }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">N° TVA</span>
+                    <span class="einv-info-value">{{ invoice.buyerVatNumber ?? '—' }}</span>
+                </div>
             </div>
         </div>
 
-        <!-- Help Card -->
-        <div class="card shadow">
-            <div class="card-header py-3 bg-info text-white">
-                <h6 class="m-0 font-weight-bold">Quick Guide</h6>
+        <!-- Tax Info Panel -->
+        <div class="einv-panel">
+            <div class="einv-panel-header">
+                <i class="fas fa-calculator" style="color: #f6c23e;"></i>
+                <h6>Informations Fiscales</h6>
             </div>
-            <div class="card-body">
-                <p class="small mb-2"><strong>Step 1:</strong> Click "Generate Facture-X" to create the PDF + XML</p>
-                <p class="small mb-2"><strong>Step 2:</strong> View "History" to see all status updates</p>
-                <p class="small mb-2"><strong>Step 3:</strong> Use "Submit to Tiime" (requires API credentials)</p>
-                <p class="small">All operations are logged and tracked in the database.</p>
+            <div class="einv-panel-body">
+                <div class="einv-info-row">
+                    <span class="einv-info-label">Type facture</span>
+                    <span class="einv-info-value">{{ invoice.invoiceType ?? '—' }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">Taux TVA</span>
+                    <span class="einv-info-value">{{ invoice.taxRate ? invoice.taxRate ~ '%' : '—' }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">Base HT</span>
+                    <span class="einv-info-value">{{ invoice.taxableAmount ? invoice.taxableAmount|number_format(2, ',', ' ') ~ ' €' : '—' }}</span>
+                </div>
+                <div class="einv-info-row">
+                    <span class="einv-info-label">Montant TVA</span>
+                    <span class="einv-info-value">{{ invoice.taxAmount ? invoice.taxAmount|number_format(2, ',', ' ') ~ ' €' : '—' }}</span>
+                </div>
             </div>
         </div>
+
+        <!-- Quick Guide -->
+        <div class="einv-panel">
+            <div class="einv-panel-header">
+                <i class="fas fa-lightbulb" style="color: #f6c23e;"></i>
+                <h6>Guide Rapide</h6>
+            </div>
+            <div class="einv-panel-body">
+                <div class="d-flex align-items-start mb-3" style="gap: 10px;">
+                    <span class="einv-badge einv-badge-info" style="min-width: 24px; justify-content: center;">1</span>
+                    <small class="text-muted"><strong>Générer</strong> — Crée le PDF et XML conformes à Facture-X</small>
+                </div>
+                <div class="d-flex align-items-start mb-3" style="gap: 10px;">
+                    <span class="einv-badge einv-badge-info" style="min-width: 24px; justify-content: center;">2</span>
+                    <small class="text-muted"><strong>Transmettre</strong> — Envoie la facture au PDP Tiime</small>
+                </div>
+                <div class="d-flex align-items-start" style="gap: 10px;">
+                    <span class="einv-badge einv-badge-info" style="min-width: 24px; justify-content: center;">3</span>
+                    <small class="text-muted"><strong>Vérifier</strong> — Suivez le statut PPF en temps réel</small>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
+<script>
+$(document).ready(function() {
+    // Check Tiime Status
+    $('#btnCheckStatus').on('click', function() {
+        var btn = $(this);
+        var panel = $('#statusPanel');
+        var content = $('#statusContent');
+
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Vérification...');
+        panel.slideDown(300);
+        content.html('<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i> Vérification en cours...</div>');
+
+        $.ajax({
+            url: '{{ path("invoice_einvoicing_check_tiime_status", {id: invoice.id}) }}',
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                var statusHtml = '<div class="einv-info-row"><span class="einv-info-label">ID Facture</span><span class="einv-info-value">' + data.invoice_id + '</span></div>';
+                if (data.tiime_status && typeof data.tiime_status === 'object') {
+                    for (var key in data.tiime_status) {
+                        statusHtml += '<div class="einv-info-row"><span class="einv-info-label">' + key + '</span><span class="einv-info-value">' + (data.tiime_status[key] || '—') + '</span></div>';
+                    }
+                } else {
+                    statusHtml += '<div class="einv-info-row"><span class="einv-info-label">Statut</span><span class="einv-info-value">' + (data.tiime_status || 'Aucune information') + '</span></div>';
+                }
+                content.html(statusHtml);
+            },
+            error: function() {
+                content.html('<div class="text-center py-4"><span class="einv-badge einv-badge-error"><i class="fas fa-exclamation-triangle mr-1"></i> Erreur de connexion au serveur Tiime</span><p class="text-muted small mt-2">Vérifiez vos paramètres API dans le fichier .env</p></div>');
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-sync-alt"></i> Vérifier le statut');
+            }
+        });
+    });
+
+    // View History
+    $('#btnViewHistory').on('click', function() {
+        var btn = $(this);
+        var panel = $('#historyPanel');
+        var content = $('#historyContent');
+
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Chargement...');
+        panel.slideDown(300);
+        content.html('<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i> Chargement...</div>');
+
+        $.ajax({
+            url: '{{ path("invoice_einvoicing_history", {id: invoice.id}) }}',
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                if (data.lifecycle && data.lifecycle.length > 0) {
+                    var html = '<ul class="einv-timeline">';
+                    data.lifecycle.forEach(function(item) {
+                        var dotClass = 'dot-info';
+                        var icon = 'fa-info-circle';
+                        var status = item.status || '';
+                        if (status.indexOf('SUCCESS') > -1 || status.indexOf('GENERATED') > -1 || status.indexOf('COMPLETED') > -1) {
+                            dotClass = 'dot-success'; icon = 'fa-check';
+                        } else if (status.indexOf('ERROR') > -1 || status.indexOf('FAIL') > -1) {
+                            dotClass = 'dot-error'; icon = 'fa-times';
+                        }
+                        html += '<li class="einv-timeline-item">';
+                        html += '<div class="einv-timeline-dot ' + dotClass + '"><i class="fas ' + icon + '"></i></div>';
+                        html += '<div class="einv-timeline-content">';
+                        html += '<div class="einv-timeline-title">' + status + '</div>';
+                        html += '<div class="einv-timeline-time">' + (item.created_at || '') + '</div>';
+                        html += '</div></li>';
+                    });
+                    html += '</ul>';
+                    content.html(html);
+                } else {
+                    content.html('<div class="text-center py-4"><i class="fas fa-inbox fa-2x text-muted mb-2 d-block"></i><p class="text-muted small">Aucun événement enregistré pour cette facture.</p></div>');
+                }
+            },
+            error: function() {
+                content.html('<div class="text-center py-4"><span class="einv-badge einv-badge-error"><i class="fas fa-exclamation-triangle mr-1"></i> Erreur de chargement</span></div>');
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-history"></i> Historique');
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

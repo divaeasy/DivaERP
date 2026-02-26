@@ -43,21 +43,23 @@ class EInvoicingController extends AbstractController
             $result = $this->invoiceService->generateFactureX($invoice);
 
             if ($result['success']) {
-                // Mark invoice as Facture-X generated
                 $invoice->setFactureX(true);
                 $this->entityManager->flush();
 
-                $this->addFlash('success', 'Facture-X generated successfully!');
+                $this->invoiceService->updateInvoiceStatus($invoice, 'FACTUREX_GENERATED', [
+                    'pdf_filename' => $result['pdf_filename'],
+                    'xml_filename' => $result['xml_filename'],
+                ]);
 
-                return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
+                $this->addFlash('success', 'Facture-X générée avec succès ! Le PDF et le XML sont prêts.');
             } else {
-                $this->addFlash('danger', 'Failed to generate Facture-X: ' . $result['error']);
-                return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
+                $this->addFlash('error', 'Échec de la génération : ' . $result['error']);
             }
         } catch (\Exception $e) {
-            $this->addFlash('danger', 'Error: ' . $e->getMessage());
-            return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
+            $this->addFlash('error', 'Erreur : ' . $e->getMessage());
         }
+
+        return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
     }
 
     /**
@@ -67,24 +69,44 @@ class EInvoicingController extends AbstractController
     public function submitToTiime(Entetepiece $invoice): Response
     {
         try {
-            $result = $this->invoiceService->processInvoice($invoice);
+            // If Facture-X already generated, use existing files instead of regenerating
+            if ($invoice->isFactureX() && $invoice->getFactureXPdfFilename() && $invoice->getFactureXXmlFilename()) {
+                $pdfContent = $this->fileStorage->getFileContent($invoice->getFactureXPdfFilename());
+                $xmlContent = $this->fileStorage->getFileContent($invoice->getFactureXXmlFilename());
+                $result = $this->invoiceService->submitToTiime($invoice, $xmlContent, $pdfContent);
 
-            if ($result['success']) {
-                $invoice->setSubmittedToTiime(true);
-                $this->entityManager->flush();
+                if (isset($result['status']) && $result['status'] === 'submitted') {
+                    $invoice->setSubmittedToTiime(true);
+                    $invoice->setTiimeInvoiceId($result['tiime_invoice_id'] ?? null);
+                    $invoice->setTiimeSubmissionId($result['submission_id'] ?? null);
+                    $this->entityManager->flush();
 
-                $this->addFlash('success', 'Invoice submitted to Tiime PDP successfully!');
-                $this->addFlash('info', 'Tiime Invoice ID: ' . $result['tiime_invoice_id']);
-                
-                return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
+                    $this->addFlash('success', 'Facture transmise au PDP Tiime avec succès !');
+                    if (!empty($result['tiime_invoice_id'])) {
+                        $this->addFlash('info', 'ID Tiime : ' . $result['tiime_invoice_id']);
+                    }
+                } else {
+                    $this->addFlash('error', 'Échec de la transmission : ' . ($result['error'] ?? 'Erreur inconnue'));
+                }
             } else {
-                $this->addFlash('danger', 'Failed to submit invoice: ' . $result['error']);
-                return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
+                // No Facture-X yet — run the full workflow
+                $result = $this->invoiceService->processInvoice($invoice);
+
+                if ($result['success']) {
+                    $invoice->setFactureX(true);
+                    $invoice->setSubmittedToTiime(true);
+                    $this->entityManager->flush();
+
+                    $this->addFlash('success', 'Facture générée et transmise au PDP Tiime avec succès !');
+                } else {
+                    $this->addFlash('error', 'Échec : ' . ($result['error'] ?? 'Erreur inconnue'));
+                }
             }
         } catch (\Exception $e) {
-            $this->addFlash('danger', 'Error: ' . $e->getMessage());
-            return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
+            $this->addFlash('error', 'Erreur : ' . $e->getMessage());
         }
+
+        return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
     }
 
     /**
