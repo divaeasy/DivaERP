@@ -50,10 +50,13 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <i class="fas fa-money-bill-wave"></i>
-        <p>Aucun règlement trouvé</p>
-        <a href="{{ path('reglement.edit') }}" class="btn btn-primary mt-3">
-            <i class="fas fa-plus mr-2"></i>Créer le premier règlement
+        <div class="empty-state-icon">
+            <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <h5>Aucun règlement trouvé</h5>
+        <p>Commencez par créer votre premier mode de règlement pour gérer vos paiements.</p>
+        <a href="{{ path('reglement.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouveau règlement
         </a>
     </div>
     {% endif %}

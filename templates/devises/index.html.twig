@@ -51,10 +51,13 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <i class="fas fa-euro-sign"></i>
-        <p>Aucune devise trouvée</p>
-        <a href="{{ path('devise.edit') }}" class="btn btn-primary mt-3">
-            <i class="fas fa-plus mr-2"></i>Créer la première devise
+        <div class="empty-state-icon">
+            <i class="fas fa-euro-sign"></i>
+        </div>
+        <h5>Aucune devise trouvée</h5>
+        <p>Configurez vos devises pour gérer les transactions multi-devises.</p>
+        <a href="{{ path('devise.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouvelle devise
         </a>
     </div>
     {% endif %}

@@ -66,10 +66,13 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <i class="fas fa-users"></i>
-        <p>Aucun client trouvé</p>
-        <a href="{{ path('client.edit') }}" class="btn btn-primary mt-3">
-            <i class="fas fa-plus mr-2"></i>Créer le premier client
+        <div class="empty-state-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <h5>Aucun client trouvé</h5>
+        <p>Ajoutez votre premier client pour commencer à gérer vos relations.</p>
+        <a href="{{ path('client.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouveau client
         </a>
     </div>
     {% endif %}

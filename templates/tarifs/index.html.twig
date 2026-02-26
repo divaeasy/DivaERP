@@ -48,10 +48,13 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <i class="fas fa-tags"></i>
-        <p>Aucun tarif trouvé</p>
-        <a href="{{ path('tarif.edit') }}" class="btn btn-primary mt-3">
-            <i class="fas fa-plus mr-2"></i>Créer le premier tarif
+        <div class="empty-state-icon">
+            <i class="fas fa-tags"></i>
+        </div>
+        <h5>Aucun tarif trouvé</h5>
+        <p>Définissez vos grilles tarifaires pour vos produits et services.</p>
+        <a href="{{ path('tarif.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouveau tarif
         </a>
     </div>
     {% endif %}

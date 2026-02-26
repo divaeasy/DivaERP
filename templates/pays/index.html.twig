@@ -49,10 +49,13 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <i class="fas fa-globe"></i>
-        <p>Aucun pays trouvé</p>
-        <a href="{{ path('pays.edit') }}" class="btn btn-primary mt-3">
-            <i class="fas fa-plus mr-2"></i>Créer le premier pays
+        <div class="empty-state-icon">
+            <i class="fas fa-globe"></i>
+        </div>
+        <h5>Aucun pays trouvé</h5>
+        <p>Ajoutez les pays nécessaires à votre gestion commerciale.</p>
+        <a href="{{ path('pays.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouveau pays
         </a>
     </div>
     {% endif %}

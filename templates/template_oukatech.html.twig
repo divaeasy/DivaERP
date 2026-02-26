@@ -301,31 +301,67 @@
             font-weight: 600;
         }
 
+        /* ===== FORM INPUT IMPROVEMENTS ===== */
+        .form-card .form-control,
+        .form-card .form-control:not(.select2-hidden-accessible) {
+            border: 1.5px solid #d1d3e2;
+            border-radius: 8px;
+            height: 42px;
+            padding: 9px 12px;
+            font-size: 14px;
+            color: #3a3b45;
+            background-color: #fff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .form-card .form-control:hover {
+            border-color: #b0bfe6;
+        }
+        .form-card .form-control:focus {
+            border-color: #4e73df;
+            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+            background-color: #fff;
+        }
+        .form-card .form-control::placeholder {
+            color: #a0a4b8;
+        }
+        .form-card textarea.form-control {
+            height: auto;
+            min-height: 80px;
+        }
+        .form-card .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #5a5c69;
+            margin-bottom: 6px;
+        }
+
         /* ===== DROPDOWN/SELECT2 IMPROVEMENTS ===== */
         .select2-container--bootstrap-5 .select2-selection {
-            border: 2px solid #d1d3e2 !important;
-            border-radius: 6px !important;
-            padding: 6px 12px !important;
-            height: auto !important;
+            border: 1.5px solid #d1d3e2 !important;
+            border-radius: 8px !important;
+            padding: 0 12px !important;
+            height: 42px !important;
             min-height: 42px !important;
-            background: linear-gradient(180deg, #fff 0%, #f8f9fc 100%) !important;
+            background: #fff !important;
             transition: all 0.2s ease !important;
             display: flex !important;
             align-items: center !important;
         }
         .select2-container--bootstrap-5 .select2-selection:hover {
-            border-color: #4e73df !important;
+            border-color: #b0bfe6 !important;
         }
-        .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+        .select2-container--bootstrap-5.select2-container--open .select2-selection {
             border-color: #4e73df !important;
-            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.15) !important;
+            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1) !important;
         }
         .select2-container--bootstrap-5 .select2-selection__rendered {
-            color: #5a5c69 !important;
-            line-height: 28px !important;
+            color: #3a3b45 !important;
+            font-size: 14px !important;
+            line-height: 40px !important;
             padding: 0 !important;
-            padding-right: 30px !important;
-            overflow: visible !important;
+            padding-right: 28px !important;
+            overflow: hidden !important;
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
             display: block !important;
@@ -333,62 +369,103 @@
         }
         .select2-container--bootstrap-5 .select2-selection--single {
             height: 42px !important;
-            padding: 6px 12px !important;
+            padding: 0 12px !important;
         }
         .select2-container--bootstrap-5 .select2-selection__placeholder {
-            color: #858796 !important;
-            line-height: 28px !important;
+            color: #a0a4b8 !important;
+            font-size: 14px !important;
         }
         .select2-container--bootstrap-5 .select2-selection__arrow {
             height: 100% !important;
-            right: 10px !important;
+            right: 12px !important;
             top: 0 !important;
             display: flex !important;
             align-items: center !important;
+            width: 20px !important;
         }
         .select2-container--bootstrap-5 .select2-selection__arrow b {
-            border-color: #4e73df transparent transparent transparent !important;
-            border-width: 6px 5px 0 5px !important;
-            margin-top: 2px !important;
+            border: none !important;
+            width: 10px !important;
+            height: 10px !important;
+            margin: 0 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236e7891' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-size: contain !important;
+            background-position: center !important;
+            transition: transform 0.2s ease !important;
         }
         .select2-container--bootstrap-5.select2-container--open .select2-selection__arrow b {
-            border-color: transparent transparent #4e73df transparent !important;
-            border-width: 0 5px 6px 5px !important;
+            transform: rotate(180deg) !important;
         }
         .select2-container--bootstrap-5 .select2-dropdown {
-            border: 2px solid #4e73df !important;
+            border: 1.5px solid #d1d3e2 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
+            margin-top: 4px !important;
+            overflow: hidden !important;
+        }
+        .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+            border: 1.5px solid #d1d3e2 !important;
             border-radius: 6px !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+            padding: 8px 12px !important;
+            font-size: 14px !important;
+        }
+        .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field:focus {
+            border-color: #4e73df !important;
+            outline: none !important;
+            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1) !important;
         }
         .select2-container--bootstrap-5 .select2-results__option {
-            padding: 10px 15px !important;
+            padding: 9px 14px !important;
+            font-size: 14px !important;
+            color: #3a3b45 !important;
+            transition: background-color 0.15s ease !important;
         }
         .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: #eef2ff !important;
+            color: #4e73df !important;
+        }
+        .select2-container--bootstrap-5 .select2-results__option--selected {
             background-color: #4e73df !important;
+            color: #fff !important;
         }
         .select2-container--bootstrap-5 .select2-selection__clear {
             margin-right: 5px !important;
+            color: #a0a4b8 !important;
+            font-size: 18px !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection__clear:hover {
+            color: #e74a3b !important;
+        }
+        .select2-container {
+            width: 100% !important;
         }
         /* Native select styling */
         select.form-control:not(.select2-hidden-accessible) {
+            -webkit-appearance: none;
+            -moz-appearance: none;
             appearance: none;
-            background: linear-gradient(180deg, #fff 0%, #f8f9fc 100%);
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%234e73df' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-color: #fff;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236e7891' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
             background-repeat: no-repeat;
             background-position: right 12px center;
-            background-size: 16px 12px;
-            border: 2px solid #d1d3e2;
-            border-radius: 6px;
-            padding: 10px 40px 10px 12px;
+            background-size: 14px 10px;
+            border: 1.5px solid #d1d3e2;
+            border-radius: 8px;
+            padding: 9px 36px 9px 12px;
+            font-size: 14px;
+            color: #3a3b45;
             cursor: pointer;
             transition: all 0.2s ease;
+            height: 42px;
         }
         select.form-control:not(.select2-hidden-accessible):hover {
-            border-color: #4e73df;
+            border-color: #b0bfe6;
         }
         select.form-control:not(.select2-hidden-accessible):focus {
             border-color: #4e73df;
-            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.15);
+            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+            outline: none;
         }
 
         /* ===== VALIDATION STYLES ===== */
@@ -595,17 +672,208 @@
         /* ===== EMPTY STATE ===== */
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
-            color: #858796;
+            padding: 80px 40px;
+            color: #6c757d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        .empty-state i {
-            font-size: 48px;
-            margin-bottom: 15px;
-            opacity: 0.5;
+        .empty-state .empty-state-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #eef2ff 0%, #e8eafd 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .empty-state .empty-state-icon i,
+        .empty-state > i {
+            font-size: 32px;
+            color: #4e73df;
+            opacity: 1;
+            margin-bottom: 0;
+        }
+        .empty-state > i {
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #eef2ff 0%, #e8eafd 100%);
+            margin-bottom: 20px;
+            font-size: 32px;
+            color: #4e73df;
+            opacity: 1;
+        }
+        .empty-state h5 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #344767;
+            margin-bottom: 8px;
         }
         .empty-state p {
-            margin: 0;
+            margin: 0 0 24px 0;
+            font-size: 15px;
+            color: #8898aa;
+            max-width: 320px;
+        }
+        .empty-state .btn {
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(78, 115, 223, 0.25);
+            transition: all 0.2s ease;
+        }
+        .empty-state .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(78, 115, 223, 0.35);
+        }
+
+        /* ===== TOAST NOTIFICATIONS ===== */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 1019;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 420px;
+            width: 100%;
+        }
+        .toast-notification {
+            display: flex;
+            align-items: flex-start;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            padding: 16px 18px;
+            position: relative;
+            overflow: hidden;
+            border-left: 4px solid transparent;
+            animation: toastSlideIn 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+        }
+        .toast-notification.toast-hiding {
+            animation: toastSlideOut 0.3s ease-in forwards;
+        }
+        .toast-icon {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 14px;
             font-size: 16px;
+        }
+        .toast-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .toast-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        .toast-message {
+            font-size: 13px;
+            color: #5a5c69;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            line-height: 1;
+            color: #b0b3c5;
+            cursor: pointer;
+            padding: 0 0 0 10px;
+            transition: color 0.2s;
+            flex-shrink: 0;
+        }
+        .toast-close:hover {
+            color: #5a5c69;
+        }
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .toast-progress-bar {
+            height: 100%;
+            width: 100%;
+            transform-origin: left;
+            animation: toastCountdown 5s linear forwards;
+        }
+        /* Success */
+        .toast-success {
+            border-left-color: #1cc88a;
+        }
+        .toast-success .toast-icon {
+            background: #e8f8f0;
+            color: #1cc88a;
+        }
+        .toast-success .toast-title {
+            color: #1cc88a;
+        }
+        .toast-success .toast-progress-bar {
+            background: #1cc88a;
+        }
+        /* Error */
+        .toast-error {
+            border-left-color: #e74a3b;
+        }
+        .toast-error .toast-icon {
+            background: #fdf0ef;
+            color: #e74a3b;
+        }
+        .toast-error .toast-title {
+            color: #e74a3b;
+        }
+        .toast-error .toast-progress-bar {
+            background: #e74a3b;
+        }
+        /* Info */
+        .toast-info {
+            border-left-color: #4e73df;
+        }
+        .toast-info .toast-icon {
+            background: #eef2ff;
+            color: #4e73df;
+        }
+        .toast-info .toast-title {
+            color: #4e73df;
+        }
+        .toast-info .toast-progress-bar {
+            background: #4e73df;
+        }
+        @keyframes toastSlideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes toastSlideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        @keyframes toastCountdown {
+            from { transform: scaleX(1); }
+            to { transform: scaleX(0); }
+        }
+        @media (max-width: 480px) {
+            .toast-container {
+                top: 74px;
+                right: 12px;
+                left: 12px;
+                max-width: none;
+            }
         }
 
         /* ===== DELETE MODAL STYLING ===== */
@@ -1153,21 +1421,42 @@
                 {# Hidden title block for backward compatibility - pages define their own H1 in page-header #}
                 {% block title %}{% endblock %}
                 <div class="container-fluid py-3">
-                        {%for message in app.session.flashBag.get('info') %}
-                            <div class="alert alert-info" role="alert">
-                                {{message}} 
-                            </div>
-                        {% endfor %}
-                        {%for message in app.session.flashBag.get('error') %}
-                            <div class="alert alert-danger" role="alert">
-                                {{message}}
-                            </div>
-                        {% endfor %}
-                        {%for message in app.session.flashBag.get('success') %}
-                            <div class="alert alert-success" role="alert">
-                                {{message}}
-                            </div>
-                        {% endfor %}
+                        <!-- Toast Notifications Container -->
+                        <div class="toast-container">
+                            {%for message in app.session.flashBag.get('info') %}
+                                <div class="toast-notification toast-info" role="alert">
+                                    <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+                                    <div class="toast-content">
+                                        <div class="toast-title">Information</div>
+                                        <div class="toast-message">{{message}}</div>
+                                    </div>
+                                    <button type="button" class="toast-close" aria-label="Fermer">&times;</button>
+                                    <div class="toast-progress"><div class="toast-progress-bar"></div></div>
+                                </div>
+                            {% endfor %}
+                            {%for message in app.session.flashBag.get('error') %}
+                                <div class="toast-notification toast-error" role="alert">
+                                    <div class="toast-icon"><i class="fas fa-exclamation-circle"></i></div>
+                                    <div class="toast-content">
+                                        <div class="toast-title">Erreur</div>
+                                        <div class="toast-message">{{message}}</div>
+                                    </div>
+                                    <button type="button" class="toast-close" aria-label="Fermer">&times;</button>
+                                    <div class="toast-progress"><div class="toast-progress-bar"></div></div>
+                                </div>
+                            {% endfor %}
+                            {%for message in app.session.flashBag.get('success') %}
+                                <div class="toast-notification toast-success" role="alert">
+                                    <div class="toast-icon"><i class="fas fa-check-circle"></i></div>
+                                    <div class="toast-content">
+                                        <div class="toast-title">Succès</div>
+                                        <div class="toast-message">{{message}}</div>
+                                    </div>
+                                    <button type="button" class="toast-close" aria-label="Fermer">&times;</button>
+                                    <div class="toast-progress"><div class="toast-progress-bar"></div></div>
+                                </div>
+                            {% endfor %}
+                        </div>
                         {% block body %}
                             Corps de la page
                             
@@ -1456,6 +1745,51 @@
                 $('#deleteModalItemName').text(itemName);
                 $('#confirmDeleteBtn').attr('href', deleteUrl);
                 $('#deleteConfirmModal').modal('show');
+            });
+
+            // ===== TOAST NOTIFICATIONS =====
+            $('.toast-notification').each(function() {
+                var toast = $(this);
+                // Auto-dismiss after 5 seconds
+                var timer = setTimeout(function() {
+                    dismissToast(toast);
+                }, 5000);
+                // Pause countdown on hover
+                toast.on('mouseenter', function() {
+                    clearTimeout(timer);
+                    toast.find('.toast-progress-bar').css('animation-play-state', 'paused');
+                });
+                toast.on('mouseleave', function() {
+                    var remaining = toast.find('.toast-progress-bar')[0];
+                    var computedStyle = window.getComputedStyle(remaining);
+                    var transform = computedStyle.getPropertyValue('transform');
+                    // Restart timer with remaining visual time
+                    toast.find('.toast-progress-bar').css('animation-play-state', 'running');
+                    timer = setTimeout(function() {
+                        dismissToast(toast);
+                    }, 2000);
+                });
+                // Close button
+                toast.find('.toast-close').on('click', function() {
+                    clearTimeout(timer);
+                    dismissToast(toast);
+                });
+            });
+
+            function dismissToast(toast) {
+                toast.addClass('toast-hiding');
+                setTimeout(function() {
+                    toast.remove();
+                    // Remove container if empty
+                    if ($('.toast-container').children().length === 0) {
+                        $('.toast-container').remove();
+                    }
+                }, 300);
+            }
+
+            // Auto-close toasts on page navigation
+            $(window).on('beforeunload', function() {
+                $('.toast-container').hide();
             });
 
             // ===== INITIALIZE SELECT2 WITH IMPROVED STYLING =====

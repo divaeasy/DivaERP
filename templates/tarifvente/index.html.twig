@@ -58,10 +58,13 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <i class="fas fa-tag"></i>
-        <p>Aucun tarif de vente trouvé</p>
-        <a href="{{ path('tarifvente.edit') }}" class="btn btn-primary mt-3">
-            <i class="fas fa-plus mr-2"></i>Créer le premier tarif de vente
+        <div class="empty-state-icon">
+            <i class="fas fa-tag"></i>
+        </div>
+        <h5>Aucun tarif de vente trouvé</h5>
+        <p>Configurez vos tarifs de vente pour personnaliser vos offres.</p>
+        <a href="{{ path('tarifvente.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouveau tarif de vente
         </a>
     </div>
     {% endif %}
