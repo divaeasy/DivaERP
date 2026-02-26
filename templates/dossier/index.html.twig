@@ -57,10 +57,13 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <i class="fas fa-folder-open"></i>
-        <p>Aucun dossier trouvé</p>
-        <a href="{{ path('dossier.edit') }}" class="btn btn-primary mt-3">
-            <i class="fas fa-plus mr-2"></i>Créer le premier dossier
+        <div class="empty-state-icon">
+            <i class="fas fa-folder-open"></i>
+        </div>
+        <h5>Aucun dossier trouvé</h5>
+        <p>Créez votre premier dossier pour organiser vos données.</p>
+        <a href="{{ path('dossier.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouveau dossier
         </a>
     </div>
     {% endif %}

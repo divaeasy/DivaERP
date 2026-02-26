@@ -50,10 +50,13 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <i class="fas fa-balance-scale"></i>
-        <p>Aucune unité trouvée</p>
-        <a href="{{ path('unite.edit') }}" class="btn btn-primary mt-3">
-            <i class="fas fa-plus mr-2"></i>Créer la première unité
+        <div class="empty-state-icon">
+            <i class="fas fa-balance-scale"></i>
+        </div>
+        <h5>Aucune unité trouvée</h5>
+        <p>Ajoutez vos unités de mesure pour vos articles et produits.</p>
+        <a href="{{ path('unite.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouvelle unité
         </a>
     </div>
     {% endif %}

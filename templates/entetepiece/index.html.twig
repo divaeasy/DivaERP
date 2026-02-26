@@ -69,10 +69,13 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <i class="fas fa-file-invoice"></i>
-        <p>Aucune pièce trouvée</p>
-        <a href="{{ path('entetepiece.edit') }}" class="btn btn-primary mt-3">
-            <i class="fas fa-plus mr-2"></i>Créer la première pièce
+        <div class="empty-state-icon">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <h5>Aucune pièce trouvée</h5>
+        <p>Créez votre première pièce comptable pour commencer la facturation.</p>
+        <a href="{{ path('entetepiece.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouvelle pièce
         </a>
     </div>
     {% endif %}
