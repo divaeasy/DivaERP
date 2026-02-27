@@ -214,7 +214,7 @@ class InvoiceService
         return array_map(function (InvoiceStatus $status) {
             return [
                 'status' => $status->getStatus(),
-                'timestamp' => $status->getCreatedAt()->format('Y-m-d H:i:s'),
+                'created_at' => $status->getCreatedAt()->format('d/m/Y H:i:s'),
                 'details' => $status->getDetails(),
             ];
         }, $statuses);
