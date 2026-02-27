@@ -24,24 +24,33 @@ class ArticleController extends AbstractController
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $sort = $request->query->get('sort', 'id');
+        $direction = $request->query->get('direction', 'ASC');
+        
         $searchData = new SearchDataArt();
         $searchForm = $this->createForm(SearchArtFormType::class, $searchData);
         $searchForm->handleRequest($request);
         if ($searchForm->isSubmitted() && $searchForm->isValid()) {
             $searchData->page = $request->query->getInt('page', 1);
+            $searchData->sort = $sort;
+            $searchData->direction = $direction;
             $articles = $artRepository->findBySearch($searchData);
             return $this->render('article/index.html.twig', [
                 'search' => $searchForm->createView(),
-                'articles' => $articles
+                'articles' => $articles,
+                'sort' => $sort,
+                'direction' => $direction
             ]);
         }
 
 
        $repository = $doctrine->getRepository(Article::class);
-       $articles = $repository->findBy([],['libelle' => 'ASC']);
+       $articles = $repository->findBy([], [$sort => $direction]);
         return $this->render('article/index.html.twig', [
             'search' => $searchForm->createView(),
             'articles' => $articles,
+            'sort' => $sort,
+            'direction' => $direction
         ]);
     }
    

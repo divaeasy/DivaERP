@@ -24,9 +24,11 @@ class ArticleRepository extends ServiceEntityRepository
      */
     public function findBySearch(SearchDataArt $searchData)
     {
+        $sortField = $searchData->sort ?? 'id';
+        $direction = $searchData->direction ?? 'ASC';
+        
         $data = $this->createQueryBuilder('a')
-
-            ->addOrderBy('a.libelle', 'DESC');
+            ->addOrderBy('a.' . $sortField, $direction);
 
         if (!empty($searchData->libelle)) {
             $data = $data

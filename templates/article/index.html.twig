@@ -1,8 +1,30 @@
 {% extends 'template_oukatech.html.twig' %}
 
 
-
 {% block body %}
+<style>
+.sortable-header {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.sortable-header:hover {
+    color: #c2c2c2;
+}
+
+.sort-icon {
+    margin-left: 8px;
+    font-size: 0.85em;
+}
+
+.sort-icon.inactive {
+    opacity: 0.3;
+}
+</style>
+
 <div class="page-header">
     <div class="d-flex align-items-center">
         <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
@@ -26,8 +48,18 @@
     <table class="table">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Désignation</th>
+                <th>
+                    <a href="{{ path('article.list', {sort: 'id', direction: sort == 'id' and direction == 'ASC' ? 'DESC' : 'ASC'}) }}" class="sortable-header">
+                        ID
+                        <i class="fas fa-arrow-up sort-icon {% if not (sort == 'id' and direction == 'ASC') %}inactive{% endif %}"></i>
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ path('article.list', {sort: 'libelle', direction: sort == 'libelle' and direction == 'ASC' ? 'DESC' : 'ASC'}) }}" class="sortable-header">
+                        Désignation
+                        <i class="fas fa-arrow-up sort-icon {% if not (sort == 'libelle' and direction == 'ASC') %}inactive{% endif %}"></i>
+                    </a>
+                </th>
                 <th>Unité</th>
                 <th>Tarif</th>
                 <th class="text-center" style="width: 150px;">Actions</th>
