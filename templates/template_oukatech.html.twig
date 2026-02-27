@@ -933,6 +933,45 @@
         .badge-active { background: #1cc88a; color: white; }
         .badge-draft { background: #f6c23e; color: white; }
         .badge-expired { background: #858796; color: white; }
+
+        /* ===== SORTABLE TABLE HEADERS ===== */
+        th[data-sort-key] {
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            transition: background 0.15s ease;
+            padding-right: 28px !important;
+        }
+        th[data-sort-key]:hover {
+            background: #3a5ec8 !important;
+        }
+        th[data-sort-key]::after {
+            content: '\f0dc';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            opacity: 0.35;
+            transition: opacity 0.15s ease;
+        }
+        th[data-sort-key]:hover::after {
+            opacity: 0.6;
+        }
+        th[data-sort-key].sort-asc::after {
+            content: '\f0de';
+            opacity: 1;
+        }
+        th[data-sort-key].sort-desc::after {
+            content: '\f0dd';
+            opacity: 1;
+        }
+        th[data-sort-key].sort-asc,
+        th[data-sort-key].sort-desc {
+            background: #3756a9 !important;
+        }
     </style>
     
     {% block stylesheets %}
@@ -1901,6 +1940,57 @@
                 }
             });
         });
+    </script>
+
+    <!-- Instant client-side table sorting -->
+    <script>
+    $(document).ready(function() {
+        $('th[data-sort-key]').on('click', function() {
+            var $th = $(this);
+            var colIndex = $th.index();
+            var $table = $th.closest('table');
+            var $tbody = $table.find('tbody');
+            var rows = $tbody.find('tr').get();
+            var sortType = $th.data('sort-type') || 'string';
+
+            // Determine direction
+            var asc = true;
+            if ($th.hasClass('sort-asc')) {
+                asc = false;
+            }
+
+            // Clear all sort classes in this table
+            $table.find('th[data-sort-key]').removeClass('sort-asc sort-desc');
+            $th.addClass(asc ? 'sort-asc' : 'sort-desc');
+
+            // Sort rows
+            rows.sort(function(a, b) {
+                var cellA = $(a).children('td').eq(colIndex).text().trim();
+                var cellB = $(b).children('td').eq(colIndex).text().trim();
+
+                if (sortType === 'number') {
+                    var numA = parseFloat(cellA.replace(/[^0-9,.\-]/g, '').replace(',', '.')) || 0;
+                    var numB = parseFloat(cellB.replace(/[^0-9,.\-]/g, '').replace(',', '.')) || 0;
+                    return asc ? numA - numB : numB - numA;
+                }
+                if (sortType === 'date') {
+                    // Parse dd/mm/yyyy
+                    var partsA = cellA.split('/');
+                    var partsB = cellB.split('/');
+                    var dateA = partsA.length === 3 ? new Date(partsA[2], partsA[1]-1, partsA[0]) : new Date(0);
+                    var dateB = partsB.length === 3 ? new Date(partsB[2], partsB[1]-1, partsB[0]) : new Date(0);
+                    return asc ? dateA - dateB : dateB - dateA;
+                }
+                // Default: string (locale-aware)
+                return asc ? cellA.localeCompare(cellB, 'fr') : cellB.localeCompare(cellA, 'fr');
+            });
+
+            // Re-append sorted rows (no page reload, instant)
+            $.each(rows, function(i, row) {
+                $tbody.append(row);
+            });
+        });
+    });
     </script>
     
     {% block javascripts %}
