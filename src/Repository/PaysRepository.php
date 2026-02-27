@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Pays;
+use App\Model\SearchGeneric;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,20 +17,18 @@ class PaysRepository extends ServiceEntityRepository
         parent::__construct($registry, Pays::class);
     }
 
-    //    /**
-    //     * @return Pays[] Returns an array of Pays objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchGeneric $searchData): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->orderBy('p.libelle', 'ASC');
+
+        if (!empty($searchData->q)) {
+            $qb->andWhere('p.libelle LIKE :q')
+               ->setParameter('q', "%{$searchData->q}%");
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 
     //    public function findOneBySomeField($value): ?Pays
     //    {

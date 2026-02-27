@@ -34,7 +34,7 @@ class DashBordController extends AbstractController
         $customerGrowth = $dashboardService->getCustomerGrowth($currentYear);
 
         // Prepare data for templates
-        $chartMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $chartMonths = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
         $currentYearValues = array_values($monthlySalesCurrentYear);
         $previousYearValues = array_values($monthlySalesPreviousYear);
 

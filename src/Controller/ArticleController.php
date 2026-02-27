@@ -4,8 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Article;
 use App\Form\ArticleFormType;
-use App\Form\SearchFormType;
-use App\Model\SearchData;
+use App\Form\SearchArtFormType;
+use App\Model\SearchDataArt;
 use App\Repository\ArticleRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,8 +24,8 @@ class ArticleController extends AbstractController
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        $searchData = new SearchData();
-        $searchForm = $this->createForm(SearchFormType::class, $searchData);
+        $searchData = new SearchDataArt();
+        $searchForm = $this->createForm(SearchArtFormType::class, $searchData);
         $searchForm->handleRequest($request);
         if ($searchForm->isSubmitted() && $searchForm->isValid()) {
             $searchData->page = $request->query->getInt('page', 1);

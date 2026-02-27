@@ -102,6 +102,16 @@
         </div>
     </div>
 
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.datep, 'Date pièce') }}
+                {{ form_widget(entetepiece.datep, {'attr': {'class': 'form-control'}}) }}
+                {{ form_errors(entetepiece.datep) }}
+            </div>
+        </div>
+    </div>
+
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">
             <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}

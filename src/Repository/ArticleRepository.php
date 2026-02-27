@@ -3,7 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Article;
-use App\Model\SearchData;
+use App\Model\SearchDataArt;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -18,20 +18,20 @@ class ArticleRepository extends ServiceEntityRepository
     }
 
     /**
-     * Get published posts thanks to Search Data value
+     * Search articles by libelle
      *
-     * @param SearchData $searchData
+     * @param SearchDataArt $searchData
      */
-    public function findBySearch(SearchData $searchData)
+    public function findBySearch(SearchDataArt $searchData)
     {
         $data = $this->createQueryBuilder('a')
 
             ->addOrderBy('a.libelle', 'DESC');
 
-        if (!empty($searchData->nom)) {
+        if (!empty($searchData->libelle)) {
             $data = $data
                 ->andWhere('a.libelle LIKE :libelle')
-                ->setParameter('libelle', "%{$searchData->nom}%");
+                ->setParameter('libelle', "%{$searchData->libelle}%");
         }
 
         

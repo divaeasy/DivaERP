@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Dossier;
 use App\Form\DossierFormType;
+use App\Form\SearchGenericFormType;
+use App\Model\SearchGeneric;
 use App\Repository\DossierRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,14 +18,27 @@ use Symfony\Component\Routing\Attribute\Route;
 class DossierController extends AbstractController
 {
     #[Route('/', name: 'dossier.list')]
-    public function index(ManagerRegistry $doctrine): Response
+    public function index(Request $request, DossierRepository $dossierRepository, ManagerRegistry $doctrine): Response
     {
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $searchData = new SearchGeneric();
+        $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par nom ou adresse...']);
+        $searchForm->handleRequest($request);
+        if ($searchForm->isSubmitted() && $searchForm->isValid()) {
+            $searchData->page = $request->query->getInt('page', 1);
+            $dossiers = $dossierRepository->findBySearch($searchData);
+            return $this->render('dossier/index.html.twig', [
+                'search' => $searchForm->createView(),
+                'dossiers' => $dossiers,
+            ]);
+        }
+
         $repository = $doctrine->getRepository(Dossier::class);
         $dossiers = $repository->findAll();
          return $this->render('dossier/index.html.twig', [
+             'search' => $searchForm->createView(),
              'dossiers' => $dossiers,
          ]);
     }

@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Tarifvente;
+use App\Model\SearchGeneric;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,20 +17,20 @@ class TarifventeRepository extends ServiceEntityRepository
         parent::__construct($registry, Tarifvente::class);
     }
 
-    //    /**
-    //     * @return Tarifvente[] Returns an array of Tarifvente objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('t')
-    //            ->andWhere('t.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('t.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchGeneric $searchData): array
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->orderBy('t.id', 'DESC');
+
+        if (!empty($searchData->q)) {
+            if (is_numeric($searchData->q)) {
+                $qb->andWhere('t.prix = :prix')
+                   ->setParameter('prix', (float)$searchData->q);
+            }
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 
     //    public function findOneBySomeField($value): ?Tarifvente
     //    {

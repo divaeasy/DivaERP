@@ -15,6 +15,9 @@
     <a class="btn-add" href="{{ path('pays.edit') }}">
         <i class="fas fa-plus"></i> Nouveau Pays
     </a>
+    <div class="search-box">
+        {% include "components/search_data.html.twig" with {search: search} only %}
+    </div>
 </div>
 
 <div class="table-container">

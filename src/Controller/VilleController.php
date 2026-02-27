@@ -4,6 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Ville;
 use App\Form\VilleFormType;
+use App\Form\SearchGenericFormType;
+use App\Model\SearchGeneric;
+use App\Repository\VilleRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -15,14 +18,27 @@ use Symfony\Component\Routing\Attribute\Route;
 class VilleController extends AbstractController
 {
     #[Route('/', name: 'ville.list')]
-    public function index(ManagerRegistry $doctrine): Response
+    public function index(Request $request, VilleRepository $villeRepository, ManagerRegistry $doctrine): Response
     {
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $searchData = new SearchGeneric();
+        $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par libellé...']);
+        $searchForm->handleRequest($request);
+        if ($searchForm->isSubmitted() && $searchForm->isValid()) {
+            $searchData->page = $request->query->getInt('page', 1);
+            $villes = $villeRepository->findBySearch($searchData);
+            return $this->render('ville/index.html.twig', [
+                'search' => $searchForm->createView(),
+                'villes' => $villes,
+            ]);
+        }
+
         $repository = $doctrine->getRepository(Ville::class);
         $villes = $repository->findAll();
          return $this->render('ville/index.html.twig', [
+             'search' => $searchForm->createView(),
              'villes' => $villes,
          ]);
     }

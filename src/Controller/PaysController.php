@@ -4,6 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Pays;
 use App\Form\PaysFormType;
+use App\Form\SearchGenericFormType;
+use App\Model\SearchGeneric;
+use App\Repository\PaysRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -15,14 +18,27 @@ use Symfony\Component\Routing\Attribute\Route;
 class PaysController extends AbstractController
 {
     #[Route('/', name: 'pays.list')]
-    public function index(ManagerRegistry $doctrine): Response
+    public function index(Request $request, PaysRepository $paysRepository, ManagerRegistry $doctrine): Response
     {
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $searchData = new SearchGeneric();
+        $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par libellé...']);
+        $searchForm->handleRequest($request);
+        if ($searchForm->isSubmitted() && $searchForm->isValid()) {
+            $searchData->page = $request->query->getInt('page', 1);
+            $pays = $paysRepository->findBySearch($searchData);
+            return $this->render('pays/index.html.twig', [
+                'search' => $searchForm->createView(),
+                'pays' => $pays,
+            ]);
+        }
+
         $repository = $doctrine->getRepository(Pays::class);
         $pays = $repository->findAll();
          return $this->render('pays/index.html.twig', [
+             'search' => $searchForm->createView(),
              'pays' => $pays,
          ]);
     }

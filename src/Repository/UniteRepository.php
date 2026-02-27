@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Unite;
+use App\Model\SearchGeneric;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,20 +17,18 @@ class UniteRepository extends ServiceEntityRepository
         parent::__construct($registry, Unite::class);
     }
 
-    //    /**
-    //     * @return Unite[] Returns an array of Unite objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('u.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchGeneric $searchData): array
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->orderBy('u.libelle', 'ASC');
+
+        if (!empty($searchData->q)) {
+            $qb->andWhere('u.code LIKE :q OR u.libelle LIKE :q')
+               ->setParameter('q', "%{$searchData->q}%");
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 
     //    public function findOneBySomeField($value): ?Unite
     //    {

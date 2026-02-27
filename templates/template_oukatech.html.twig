@@ -1617,6 +1617,9 @@
                     $link.attr('data-toggle') ||
                     $link.attr('target') === '_blank' ||
                     $link.hasClass('delete-btn') ||
+                    $link.attr('download') !== undefined ||
+                    $link.hasClass('einv-download-card') ||
+                    href.match(/download[-_]?(pdf|xml|file)/i) ||
                     $link.closest('.modal').length) {
                     return; // Let the default behavior happen
                 }

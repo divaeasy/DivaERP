@@ -7,6 +7,8 @@ use App\Entity\Entetepiece;
 use App\Entity\Lignepiece;
 use App\Entity\User;
 use App\Form\EntetePieceFormType;
+use App\Form\SearchPieceFormType;
+use App\Model\SearchPiece;
 use App\Repository\ClientsRepository;
 use App\Repository\EntetepieceRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -26,14 +28,27 @@ class EntetePController extends AbstractController
     }
 
     #[Route('/', name: 'entetepiece.list')]
-    public function index(ManagerRegistry $doctrine): Response
+    public function index(Request $request, EntetepieceRepository $entetepieceRepository, ManagerRegistry $doctrine): Response
     {
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $searchData = new SearchPiece();
+        $searchForm = $this->createForm(SearchPieceFormType::class, $searchData);
+        $searchForm->handleRequest($request);
+        if ($searchForm->isSubmitted() && $searchForm->isValid()) {
+            $searchData->page = $request->query->getInt('page', 1);
+            $entetepieces = $entetepieceRepository->findBySearch($searchData);
+            return $this->render('entetepiece/index.html.twig', [
+                'search' => $searchForm->createView(),
+                'entetepieces' => $entetepieces,
+            ]);
+        }
+
         $repository = $doctrine->getRepository(EntetePiece::class);
         $entetepieces = $repository->findAll();
          return $this->render('entetepiece/index.html.twig', [
+             'search' => $searchForm->createView(),
              'entetepieces' => $entetepieces,
          ]);
     }
