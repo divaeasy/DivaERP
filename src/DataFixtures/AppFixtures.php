@@ -40,9 +40,15 @@ class AppFixtures extends Fixture
         foreach ($clientNames as $name) {
             $client = new Clients();
             $client->setNom($name);
-            $client->setAdresse(rand(1, 500) . ' Avenue ' . $name);
-            $client->setTelephone('06' . rand(10000000, 99999999));
+            $client->setDossier($dossiers[array_rand($dossiers)]);
+            $client->setRue(rand(1, 500) . ' Avenue ' . $name);
+            $client->setAdr1('Address Line 1');
+            $client->setAdr2('Address Line 2');
+            $client->setCodepostal(75000 + rand(0, 999));
+            $client->setTel('06' . rand(10000000, 99999999));
             $client->setEmail(strtolower(str_replace(' ', '.', $name)) . '@example.com');
+            $client->setWeb('https://www.example.com');
+            $client->setLinkedin('https://linkedin.com');
             $manager->persist($client);
             $clients[] = $client;
         }
