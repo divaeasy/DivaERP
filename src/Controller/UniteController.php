@@ -4,6 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Unite;
 use App\Form\UniteFormType;
+use App\Form\SearchGenericFormType;
+use App\Model\SearchGeneric;
+use App\Repository\UniteRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
@@ -16,14 +19,27 @@ use Symfony\Component\Routing\Attribute\Route;
 class UniteController extends AbstractController
 {
     #[Route('/', name: 'unite.list')]
-    public function index(ManagerRegistry $doctrine): Response
+    public function index(Request $request, UniteRepository $uniteRepository, ManagerRegistry $doctrine): Response
     {
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $searchData = new SearchGeneric();
+        $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par code ou libellé...']);
+        $searchForm->handleRequest($request);
+        if ($searchForm->isSubmitted() && $searchForm->isValid()) {
+            $searchData->page = $request->query->getInt('page', 1);
+            $unites = $uniteRepository->findBySearch($searchData);
+            return $this->render('unite/index.html.twig', [
+                'search' => $searchForm->createView(),
+                'unites' => $unites,
+            ]);
+        }
+
         $repository = $doctrine->getRepository(Unite::class);
         $unites = $repository->findAll();
          return $this->render('unite/index.html.twig', [
+             'search' => $searchForm->createView(),
              'unites' => $unites,
          ]);
     }

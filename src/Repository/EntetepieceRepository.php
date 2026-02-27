@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Entetepiece;
+use App\Model\SearchPiece;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -44,20 +45,23 @@ class EntetepieceRepository extends ServiceEntityRepository
         return $result->fetchAllAssociative();
     }
 
-    //    /**
-    //     * @return Entetepiece[] Returns an array of Entetepiece objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('e')
-    //            ->andWhere('e.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('e.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchPiece $searchData): array
+    {
+        $qb = $this->createQueryBuilder('e')
+            ->orderBy('e.id', 'DESC');
+
+        if (!empty($searchData->pieceref)) {
+            $qb->andWhere('e.pieceref LIKE :ref')
+               ->setParameter('ref', "%{$searchData->pieceref}%");
+        }
+
+        if (!empty($searchData->statut)) {
+            $qb->andWhere('e.statut LIKE :statut')
+               ->setParameter('statut', "%{$searchData->statut}%");
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 
     //    public function findOneBySomeField($value): ?Entetepiece
     //    {

@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Dossier;
+use App\Model\SearchGeneric;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,20 +17,18 @@ class DossierRepository extends ServiceEntityRepository
         parent::__construct($registry, Dossier::class);
     }
 
-    //    /**
-    //     * @return Dossier[] Returns an array of Dossier objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('d')
-    //            ->andWhere('d.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('d.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchGeneric $searchData): array
+    {
+        $qb = $this->createQueryBuilder('d')
+            ->orderBy('d.nom', 'ASC');
+
+        if (!empty($searchData->q)) {
+            $qb->andWhere('d.nom LIKE :q OR d.adresse LIKE :q')
+               ->setParameter('q', "%{$searchData->q}%");
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 
     //    public function findOneBySomeField($value): ?Dossier
     //    {

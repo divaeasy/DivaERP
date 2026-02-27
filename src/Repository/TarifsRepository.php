@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Tarifs;
+use App\Model\SearchGeneric;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,20 +17,18 @@ class TarifsRepository extends ServiceEntityRepository
         parent::__construct($registry, Tarifs::class);
     }
 
-    //    /**
-    //     * @return Tarifs[] Returns an array of Tarifs objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('t')
-    //            ->andWhere('t.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('t.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchGeneric $searchData): array
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->orderBy('t.libelle', 'ASC');
+
+        if (!empty($searchData->q)) {
+            $qb->andWhere('t.libelle LIKE :q')
+               ->setParameter('q', "%{$searchData->q}%");
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 
     //    public function findOneBySomeField($value): ?Tarifs
     //    {

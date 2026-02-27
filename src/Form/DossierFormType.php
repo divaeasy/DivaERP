@@ -20,7 +20,7 @@ class DossierFormType extends AbstractType
             ->add('rc')
             ->add('devise', EntityType::class, [
                 'class' => Devises::class,
-                'choice_label' => 'id',
+                'choice_label' => 'code',
             ])
         ;
     }

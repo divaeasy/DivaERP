@@ -1,12 +1,13 @@
 {% if search %}
 	{{ form_start(search, {'attr': {'class': 'search-form'}}) }}
     <div class="search-form-row">
-        <div class="search-input-group">
-            {{ form_widget(search.nom, {'attr': {'class': 'form-control search-input', 'placeholder': 'Rechercher par nom...'}}) }}
-        </div>
-        <div class="search-input-group">
-            {{ form_widget(search.tel, {'attr': {'class': 'form-control search-input', 'placeholder': 'Rechercher par téléphone...'}}) }}
-        </div>
+        {% for field in search %}
+            {% if field.vars.name not in ['_token'] %}
+            <div class="search-input-group">
+                {{ form_widget(field, {'attr': {'class': 'form-control search-input'}}) }}
+            </div>
+            {% endif %}
+        {% endfor %}
         <button type="submit" class="btn-search">
             <i class="fas fa-search"></i> Rechercher
         </button>

@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Reglement;
+use App\Model\SearchGeneric;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,20 +17,18 @@ class ReglementRepository extends ServiceEntityRepository
         parent::__construct($registry, Reglement::class);
     }
 
-    //    /**
-    //     * @return Reglement[] Returns an array of Reglement objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('r.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchGeneric $searchData): array
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->orderBy('r.libelle', 'ASC');
+
+        if (!empty($searchData->q)) {
+            $qb->andWhere('r.libelle LIKE :q')
+               ->setParameter('q', "%{$searchData->q}%");
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 
     //    public function findOneBySomeField($value): ?Reglement
     //    {

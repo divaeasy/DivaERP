@@ -4,6 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Tarifs;
 use App\Form\TarifsFormType;
+use App\Form\SearchGenericFormType;
+use App\Model\SearchGeneric;
+use App\Repository\TarifsRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,14 +18,27 @@ use Symfony\Component\Routing\Attribute\Route;
 class TarifsController extends AbstractController
 {
     #[Route('/', name: 'tarif.list')]
-    public function index(ManagerRegistry $doctrine): Response
+    public function index(Request $request, TarifsRepository $tarifsRepository, ManagerRegistry $doctrine): Response
     {
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $searchData = new SearchGeneric();
+        $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par libellé...']);
+        $searchForm->handleRequest($request);
+        if ($searchForm->isSubmitted() && $searchForm->isValid()) {
+            $searchData->page = $request->query->getInt('page', 1);
+            $tarifs = $tarifsRepository->findBySearch($searchData);
+            return $this->render('tarifs/index.html.twig', [
+                'search' => $searchForm->createView(),
+                'tarifs' => $tarifs,
+            ]);
+        }
+
         $repository = $doctrine->getRepository(Tarifs::class);
         $tarifs = $repository->findAll();
          return $this->render('tarifs/index.html.twig', [
+             'search' => $searchForm->createView(),
              'tarifs' => $tarifs,
          ]);
     }
