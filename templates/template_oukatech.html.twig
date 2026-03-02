@@ -1017,7 +1017,8 @@
                 Interface
             </div>
 
-            <!-- Nav Item - Pages Collapse Menu -->
+            <!-- Nav Item - Pages Collapse Menu (Commercial+) -->
+            {% if is_granted('ROLE_COMMERCIAL') %}
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
@@ -1032,7 +1033,7 @@
                 </div>
             </li>
             
-            <!-- Nav Item - Prospects -->
+            <!-- Nav Item - Prospects (Commercial+) -->
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseProspects"
                     aria-expanded="true" aria-controls="collapseProspects">
@@ -1060,6 +1061,7 @@
                     </div>
                 </div>
             </li>
+            {% endif %}
             
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -1069,7 +1071,8 @@
                 Facturation
             </div>
             
-            <!-- Nav Item - Pièces -->
+            <!-- Nav Item - Pièces (Comptable+) -->
+            {% if is_granted('ROLE_COMPTABLE') %}
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePieces"
                     aria-expanded="true" aria-controls="collapsePieces">
@@ -1084,7 +1087,7 @@
                 </div>
             </li>
             
-            <!-- Nav Item - Règlements -->
+            <!-- Nav Item - Règlements (Comptable+) -->
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseReglements"
                     aria-expanded="true" aria-controls="collapseReglements">
@@ -1098,6 +1101,7 @@
                     </div>
                 </div>
             </li>
+            {% endif %}
 
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -1107,7 +1111,8 @@
                 Paramètres
             </div>
 
-            <!-- Nav Item - Dossiers -->
+            <!-- Nav Item - Dossiers (Admin only) -->
+            {% if is_granted('ROLE_ADMIN') %}
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDossiers"
                     aria-expanded="true" aria-controls="collapseDossiers">
@@ -1122,7 +1127,17 @@
                 </div>
             </li>
 
-            <!-- Nav Item - Devises -->
+            <!-- Nav Item - Utilisateurs (Admin only) -->
+            <li class="nav-item">
+                <a class="nav-link nav-loading" href="{{ path('users.list') }}">
+                    <i class="fas fa-fw fa-users-cog"></i>
+                    <span>Utilisateurs</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- Nav Item - Devises (Comptable+) -->
+            {% if is_granted('ROLE_COMPTABLE') %}
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDevises"
                     aria-expanded="true" aria-controls="collapseDevises">
@@ -1136,8 +1151,10 @@
                     </div>
                 </div>
             </li>
+            {% endif %}
 
-            <!-- Nav Item - Tarifs -->
+            <!-- Nav Item - Tarifs (Commercial+) -->
+            {% if is_granted('ROLE_COMMERCIAL') %}
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTarifs"
                     aria-expanded="true" aria-controls="collapseTarifs">
@@ -1153,8 +1170,10 @@
                     </div>
                 </div>
             </li>
+            {% endif %}
 
-            <!-- Nav Item - Unités -->
+            <!-- Nav Item - Unités (Comptable+) -->
+            {% if is_granted('ROLE_COMPTABLE') %}
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUnites"
                     aria-expanded="true" aria-controls="collapseUnites">
@@ -1168,6 +1187,7 @@
                     </div>
                 </div>
             </li>
+            {% endif %}
 
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -1177,7 +1197,8 @@
                 Localisation
             </div>
 
-            <!-- Nav Item - Pays -->
+            <!-- Nav Item - Pays (Admin only) -->
+            {% if is_granted('ROLE_ADMIN') %}
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePays"
                     aria-expanded="true" aria-controls="collapsePays">
@@ -1192,7 +1213,7 @@
                 </div>
             </li>
 
-            <!-- Nav Item - Villes -->
+            <!-- Nav Item - Villes (Admin only) -->
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseVilles"
                     aria-expanded="true" aria-controls="collapseVilles">
@@ -1206,6 +1227,7 @@
                     </div>
                 </div>
             </li>
+            {% endif %}
 
             </div>
             <!-- End Scrollable Sidebar Content -->
@@ -1641,7 +1663,7 @@
             };
 
             // ===== SHOW LOADING ON ALL NAVIGATION =====
-            // Intercept all link clicks (except those with data-toggle, hash links, and external links)
+            // Intercept all link clicks (except those with data-toggle, hash links, external links, and export links)
             $(document).on('click', 'a', function(e) {
                 var $link = $(this);
                 var href = $link.attr('href');
@@ -1658,7 +1680,10 @@
                     $link.hasClass('delete-btn') ||
                     $link.attr('download') !== undefined ||
                     $link.hasClass('einv-download-card') ||
+                    $link.hasClass('no-loading') ||
+                    $link.hasClass('convert-prospect-btn') ||
                     href.match(/download[-_]?(pdf|xml|file)/i) ||
+                    href.match(/\/export[\.\/]/i) ||
                     $link.closest('.modal').length) {
                     return; // Let the default behavior happen
                 }

@@ -33,24 +33,25 @@ class EntetePController extends AbstractController
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchPiece();
         $searchForm = $this->createForm(SearchPieceFormType::class, $searchData);
         $searchForm->handleRequest($request);
+
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) {
-            $searchData->page = $request->query->getInt('page', 1);
-            $entetepieces = $entetepieceRepository->findBySearch($searchData);
-            return $this->render('entetepiece/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'entetepieces' => $entetepieces,
-            ]);
+            $searchActive = $searchData;
         }
 
-        $repository = $doctrine->getRepository(EntetePiece::class);
-        $entetepieces = $repository->findAll();
-         return $this->render('entetepiece/index.html.twig', [
-             'search' => $searchForm->createView(),
-             'entetepieces' => $entetepieces,
-         ]);
+        $pagination = $entetepieceRepository->findPaginated($searchActive, $page);
+
+        return $this->render('entetepiece/index.html.twig', [
+            'search' => $searchForm->createView(),
+            'entetepieces' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
+        ]);
     }
     #[Route('/edit/{id?0}', name: 'entetepiece.edit')]
     public function addEntetePiece(ManagerRegistry $doctrine, Request $request, $id): Response

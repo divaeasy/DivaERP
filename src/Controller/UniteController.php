@@ -24,24 +24,25 @@ class UniteController extends AbstractController
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchGeneric();
         $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par code ou libellé...']);
         $searchForm->handleRequest($request);
+
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) {
-            $searchData->page = $request->query->getInt('page', 1);
-            $unites = $uniteRepository->findBySearch($searchData);
-            return $this->render('unite/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'unites' => $unites,
-            ]);
+            $searchActive = $searchData;
         }
 
-        $repository = $doctrine->getRepository(Unite::class);
-        $unites = $repository->findAll();
-         return $this->render('unite/index.html.twig', [
-             'search' => $searchForm->createView(),
-             'unites' => $unites,
-         ]);
+        $pagination = $uniteRepository->findPaginated($searchActive, $page);
+
+        return $this->render('unite/index.html.twig', [
+            'search' => $searchForm->createView(),
+            'unites' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
+        ]);
     }
     #[Route('/edit/{id?0}', name: 'unite.edit')]
     public function addUnite(ManagerRegistry $doctrine, Request $request, $id): Response

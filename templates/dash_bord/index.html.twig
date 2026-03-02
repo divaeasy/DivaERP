@@ -15,7 +15,7 @@
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                             💰 Chiffre d'affaires</div>
                         <div class="h6 mb-0 font-weight-bold text-gray-800">{{ totalRevenueCurrent|number_format(2, ',', ' ') }}</div>
-                        <small class="text-muted">{{ currentYear }}</small>
+                        <small class="text-muted">Jan — {{ "now"|date("M") }} {{ currentYear }}</small>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-wallet fa-2x text-primary"></i>
@@ -36,7 +36,7 @@
                         <div class="h6 mb-0 font-weight-bold text-gray-800">
                             {% if growthPercentage >= 0 %}+{% endif %}{{ growthPercentage }}%
                         </div>
-                        <small class="text-muted">vs {{ previousYear }}</small>
+                        <small class="text-muted">vs même période {{ previousYear }}</small>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-chart-line fa-2x {% if growthPercentage >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
@@ -97,6 +97,25 @@
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-boxes fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Factures en retard -->
+    <div class="col mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            ⚠️ Factures en retard</div>
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ overdueInvoices.count }}</div>
+                        <small class="text-muted">{{ overdueInvoices.amount|number_format(2, ',', ' ') }} €</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
                     </div>
                 </div>
             </div>

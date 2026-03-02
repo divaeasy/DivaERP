@@ -23,24 +23,25 @@ class TarifsController extends AbstractController
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchGeneric();
         $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par libellé...']);
         $searchForm->handleRequest($request);
+
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) {
-            $searchData->page = $request->query->getInt('page', 1);
-            $tarifs = $tarifsRepository->findBySearch($searchData);
-            return $this->render('tarifs/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'tarifs' => $tarifs,
-            ]);
+            $searchActive = $searchData;
         }
 
-        $repository = $doctrine->getRepository(Tarifs::class);
-        $tarifs = $repository->findAll();
-         return $this->render('tarifs/index.html.twig', [
-             'search' => $searchForm->createView(),
-             'tarifs' => $tarifs,
-         ]);
+        $pagination = $tarifsRepository->findPaginated($searchActive, $page);
+
+        return $this->render('tarifs/index.html.twig', [
+            'search' => $searchForm->createView(),
+            'tarifs' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
+        ]);
     }
     #[Route('/edit/{id?0}', name: 'tarif.edit')]
     public function addTarif(ManagerRegistry $doctrine, Request $request, $id): Response

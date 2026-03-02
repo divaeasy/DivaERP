@@ -1,0 +1,121 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block PageTitle %}{{ isNew ? 'Nouvel utilisateur' : 'Modifier l\'utilisateur' }}{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('users.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ isNew ? 'Nouvel utilisateur' : 'Modifier l\'utilisateur' }}</h1>
+    </div>
+</div>
+
+{{ form_start(userForm, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+
+<div class="row">
+    <!-- Left column: Personal info -->
+    <div class="col-lg-8">
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-user mr-2"></i>Informations personnelles</h5>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="required">Nom</label>
+                        {{ form_widget(userForm.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom de l\'utilisateur', 'required': 'required'}}) }}
+                        {{ form_errors(userForm.nom) }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="required">Prénom</label>
+                        {{ form_widget(userForm.prenom, {'attr': {'class': 'form-control', 'placeholder': 'Prénom de l\'utilisateur', 'required': 'required'}}) }}
+                        {{ form_errors(userForm.prenom) }}
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="required">Adresse email</label>
+                {{ form_widget(userForm.email, {'attr': {'class': 'form-control', 'placeholder': 'email@exemple.com', 'required': 'required'}}) }}
+                {{ form_errors(userForm.email) }}
+            </div>
+            <div class="form-group">
+                <label>{{ isNew ? 'Mot de passe' : 'Nouveau mot de passe' }}</label>
+                {{ form_widget(userForm.plainPassword, {'attr': {'class': 'form-control', 'placeholder': isNew ? 'Choisir un mot de passe' : 'Laisser vide pour ne pas changer'}}) }}
+                <small class="form-text text-muted">
+                    {% if not isNew %}
+                        Laissez vide pour conserver le mot de passe actuel.
+                    {% else %}
+                        Minimum 6 caractères.
+                    {% endif %}
+                </small>
+                {{ form_errors(userForm.plainPassword) }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column: Role & Settings -->
+    <div class="col-lg-4">
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-shield-alt mr-2"></i>Rôle & Accès</h5>
+            </div>
+            <div class="form-group">
+                <label>Rôles</label>
+                {{ form_widget(userForm.roles, {'attr': {'class': 'form-control select2'}}) }}
+                <small class="form-text text-muted">Un utilisateur peut avoir plusieurs rôles.</small>
+                {{ form_errors(userForm.roles) }}
+            </div>
+            <div class="form-group">
+                <label class="required">Dossier</label>
+                {{ form_widget(userForm.dossier, {'attr': {'class': 'form-control js-example-basic-single', 'required': 'required'}}) }}
+                {{ form_errors(userForm.dossier) }}
+            </div>
+            <div class="form-group">
+                <div class="custom-control custom-switch">
+                    {{ form_widget(userForm.isVerified, {'attr': {'class': 'custom-control-input', 'id': 'isVerifiedSwitch'}}) }}
+                    <label class="custom-control-label" for="isVerifiedSwitch" style="font-size: 14px; font-weight: 500; color: #5a5c69;">
+                        Email vérifié
+                    </label>
+                </div>
+                <small class="form-text text-muted mt-1">Cochez si l'email de l'utilisateur est confirmé.</small>
+                {{ form_errors(userForm.isVerified) }}
+            </div>
+        </div>
+
+        {% if not isNew %}
+        <div class="form-card" style="background: #f8f9fc; border: 1px solid #e3e6f0;">
+            <div class="card-header-custom" style="border-bottom-color: #d1d3e2;">
+                <h5><i class="fas fa-info-circle mr-2" style="color: #858796;"></i>Informations</h5>
+            </div>
+            <div class="mb-2">
+                <small class="text-muted d-block">ID utilisateur</small>
+                <strong class="text-gray-800">#{{ user.id }}</strong>
+            </div>
+            <div class="mb-2">
+                <small class="text-muted d-block">Statut email</small>
+                {% if user.isVerified %}
+                    <span class="badge badge-success"><i class="fas fa-check mr-1"></i>Vérifié</span>
+                {% else %}
+                    <span class="badge badge-danger"><i class="fas fa-times mr-1"></i>Non vérifié</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="form-actions">
+    <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save mr-2"></i>{{ isNew ? 'Créer l\'utilisateur' : 'Enregistrer les modifications' }}
+    </button>
+    <a href="{{ path('users.list') }}" class="btn btn-secondary">
+        <i class="fas fa-times mr-2"></i>Annuler
+    </a>
+</div>
+
+{{ form_end(userForm) }}
+{% endblock %}

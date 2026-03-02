@@ -10,12 +10,17 @@ class DashboardService
     public function __construct(private Connection $connection) {}
 
     /**
-     * Get total revenue for a specific year
+     * Get total revenue for a specific year (optionally up to a specific month for same-period comparison)
      */
-    public function getTotalRevenue(int $year): float
+    public function getTotalRevenue(int $year, ?int $upToMonth = null): float
     {
         $startDate = "{$year}-01-01";
-        $endDate = "{$year}-12-31";
+        if ($upToMonth !== null) {
+            $lastDay = (int)(new \DateTime("{$year}-{$upToMonth}-01"))->format('t');
+            $endDate = sprintf('%04d-%02d-%02d', $year, $upToMonth, $lastDay);
+        } else {
+            $endDate = "{$year}-12-31";
+        }
         
         $sql = "
             SELECT SUM(ep.montant) as total
@@ -75,15 +80,16 @@ class DashboardService
     }
 
     /**
-     * Get growth percentage year-over-year
+     * Get growth percentage comparing same period (Jan to current month) year-over-year
      */
     public function getYearGrowth(int $currentYear, int $previousYear): float
     {
-        $currentRevenue = $this->getTotalRevenue($currentYear);
-        $previousRevenue = $this->getTotalRevenue($previousYear);
+        $currentMonth = (int)date('m');
+        $currentRevenue = $this->getTotalRevenue($currentYear, $currentMonth);
+        $previousRevenue = $this->getTotalRevenue($previousYear, $currentMonth);
         
         if ($previousRevenue == 0) {
-            return 0;
+            return $currentRevenue > 0 ? 100 : 0;
         }
         
         return (($currentRevenue - $previousRevenue) / $previousRevenue) * 100;
@@ -257,6 +263,40 @@ class DashboardService
         ]);
         
         return $result->fetchAllAssociative();
+    }
+
+    /**
+     * Get overdue invoices (where deadline has passed)
+     */
+    public function getOverdueInvoices(int $year): array
+    {
+        $startDate = "{$year}-01-01";
+        $endDate = "{$year}-12-31";
+        $today = date('Y-m-d');
+        
+        $sql = "
+            SELECT 
+                COUNT(*) as count,
+                COALESCE(SUM(ep.montant), 0) as amount
+            FROM entetepiece ep
+            WHERE ep.datep >= :startDate 
+                AND ep.datep <= :endDate
+                AND ep.delai IS NOT NULL
+                AND ep.delai < :today
+        ";
+        
+        $statement = $this->connection->prepare($sql);
+        $result = $statement->executeQuery([
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'today' => $today,
+        ]);
+        
+        $row = $result->fetchAssociative();
+        return [
+            'count' => (int)($row['count'] ?? 0),
+            'amount' => (float)($row['amount'] ?? 0),
+        ];
     }
 
     /**

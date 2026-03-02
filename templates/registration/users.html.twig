@@ -10,31 +10,61 @@
             <h1 class="h3 mb-0 text-gray-800">Gestion des utilisateurs</h1>
         </div>
     </div>
-    <div class="row">
+    <div class="table-container">
 
-    <table class="table table-striped">
-    <thead class="thead-light">
+    <table class="table">
+    <thead>
         <tr>
-        <th scope="col">Nom</th>
-        <th scope="col">Prénom</th>
-        <th scope="col">Email</th>
-        <th scope="col">Dossier</th>
-        <th scope="col">Modifier</th>
-        <th scope="col">Supprimer</th>
-        
+        <th data-sort-key="nom">Nom</th>
+        <th data-sort-key="prenom">Prénom</th>
+        <th data-sort-key="email">Email</th>
+        <th data-sort-key="dossier">Dossier</th>
+        <th>Rôles</th>
+        <th>Vérifié</th>
+        {%if is_granted('ROLE_ADMIN')%}
+        <th class="text-center" style="width: 120px;">Actions</th>
+        {% endif %}
         </tr>
     </thead>
     <tbody>
         {% for utilisateur in utilisateurs %}
         <tr>
-        <th scope="row">{{utilisateur.nom}}</th>
-        <th scope="row">{{utilisateur.prenom}}</th>
-        <td>{{utilisateur.email}}</td>
-        <td>{{utilisateur.dossier}}</td>
-        <!--<td><a href="{{ path('users.list',{id: utilisateur.id}) }}" ><i class="fa-solid fa-circle-info"></i></a></td> -->
+        <td>{{ utilisateur.nom }}</td>
+        <td>{{ utilisateur.prenom }}</td>
+        <td>{{ utilisateur.email }}</td>
+        <td>{{ utilisateur.dossier }}</td>
+        <td>
+            {% for role in utilisateur.roles %}
+                {% if role == 'ROLE_ADMIN' %}
+                    <span class="badge badge-danger">Admin</span>
+                {% elseif role == 'ROLE_COMPTABLE' %}
+                    <span class="badge badge-warning">Comptable</span>
+                {% elseif role == 'ROLE_COMMERCIAL' %}
+                    <span class="badge badge-info">Commercial</span>
+                {% elseif role == 'ROLE_USER' %}
+                    <span class="badge badge-secondary">Utilisateur</span>
+                {% endif %}
+            {% endfor %}
+        </td>
+        <td>
+            {% if utilisateur.isVerified %}
+                <span class="badge badge-success"><i class="fas fa-check"></i> Oui</span>
+            {% else %}
+                <span class="badge badge-danger"><i class="fas fa-times"></i> Non</span>
+            {% endif %}
+        </td>
         {%if is_granted('ROLE_ADMIN')%}
-        <td><a href="{{ path('users.edit',{id: utilisateur.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
-        <td><a href="{{ path('users.delete',{id: utilisateur.id}) }}" ><i class="fa-solid fa-user-xmark"></i></a></td>
+        <td class="text-center">
+            <a href="{{ path('users.edit',{id: utilisateur.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" class="btn btn-action btn-delete delete-btn"
+                    data-delete-url="{{ path('users.delete',{id: utilisateur.id}) }}"
+                    data-item-name="{{ utilisateur.nom }} {{ utilisateur.prenom }}"
+                    title="Supprimer">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
         {% endif %}
         </tr>
         {% endfor %}
@@ -42,7 +72,4 @@
     </table>
 
     </div>
-    {% if isPagination is defined and isPagination %}
-
-    {% endif %}
 {% endblock %}

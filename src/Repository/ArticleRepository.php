@@ -4,7 +4,9 @@ namespace App\Repository;
 
 use App\Entity\Article;
 use App\Model\SearchDataArt;
+use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -17,57 +19,27 @@ class ArticleRepository extends ServiceEntityRepository
         parent::__construct($registry, Article::class);
     }
 
-    /**
-     * Search articles by libelle
-     *
-     * @param SearchDataArt $searchData
-     */
-    public function findBySearch(SearchDataArt $searchData)
+    public function getSearchQueryBuilder(?SearchDataArt $searchData = null): QueryBuilder
     {
-        $sortField = $searchData->sort ?? 'id';
-        $direction = $searchData->direction ?? 'ASC';
-        
-        $data = $this->createQueryBuilder('a')
-            ->addOrderBy('a.' . $sortField, $direction);
+        $qb = $this->createQueryBuilder('a')
+            ->addOrderBy('a.libelle', 'ASC');
 
-        if (!empty($searchData->libelle)) {
-            $data = $data
-                ->andWhere('a.libelle LIKE :libelle')
-                ->setParameter('libelle', "%{$searchData->libelle}%");
+        if ($searchData && !empty($searchData->libelle)) {
+            $qb->andWhere('a.libelle LIKE :libelle')
+               ->setParameter('libelle', "%{$searchData->libelle}%");
         }
 
-        
-        $data = $data
-            ->getQuery()
-            ->getResult();
-
-        //$posts = $this->paginatorInterface->paginate($data, $searchData->page, 9);
-
-        return $data;
+        return $qb;
     }
 
-    //    /**
-    //     * @return Article[] Returns an array of Article objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('a.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchDataArt $searchData)
+    {
+        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+    }
 
-    //    public function findOneBySomeField($value): ?Article
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function findPaginated(?SearchDataArt $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        return PaginationHelper::paginate($qb, $page);
+    }
 }

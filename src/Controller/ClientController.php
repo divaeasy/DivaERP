@@ -22,27 +22,24 @@ class ClientController extends AbstractController
     #[Route('/', name: 'client.list')]
     public function index(Request $request, ClientsRepository $cliRepository ,ManagerRegistry $doctrine): Response
     {
-
-        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
-
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchData();
         $searchForm = $this->createForm(SearchFormType::class, $searchData);
         $searchForm->handleRequest($request); 
+        
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) { 
-            $searchData->page = $request->query->getInt('page', 1);
-            $clients = $cliRepository->findBySearch($searchData);
-            return $this->render('client/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'clients' => $clients
-            ]);
+            $searchActive = $searchData;
         }
 
+        $pagination = $cliRepository->findPaginated($searchActive, $page);
 
-       $repository = $doctrine->getRepository(Clients::class);
-       $clients = $repository->findBy([],['nom' => 'ASC']);
         return $this->render('client/index.html.twig', [
             'search' => $searchForm->createView(),
-            'clients' => $clients,
+            'clients' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
         ]);
     }
    

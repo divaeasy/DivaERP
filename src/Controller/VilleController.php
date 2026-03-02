@@ -23,24 +23,25 @@ class VilleController extends AbstractController
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchGeneric();
         $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par libellé...']);
         $searchForm->handleRequest($request);
+
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) {
-            $searchData->page = $request->query->getInt('page', 1);
-            $villes = $villeRepository->findBySearch($searchData);
-            return $this->render('ville/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'villes' => $villes,
-            ]);
+            $searchActive = $searchData;
         }
 
-        $repository = $doctrine->getRepository(Ville::class);
-        $villes = $repository->findAll();
-         return $this->render('ville/index.html.twig', [
-             'search' => $searchForm->createView(),
-             'villes' => $villes,
-         ]);
+        $pagination = $villeRepository->findPaginated($searchActive, $page);
+
+        return $this->render('ville/index.html.twig', [
+            'search' => $searchForm->createView(),
+            'villes' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
+        ]);
     }
     #[Route('/edit/{id?0}', name: 'ville.edit')]
     public function addVille(ManagerRegistry $doctrine, Request $request, $id): Response
