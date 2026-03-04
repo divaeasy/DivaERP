@@ -28,11 +28,11 @@ class UserEditFormType extends AbstractType
                     'Comptable' => 'ROLE_COMPTABLE',
                     'Administrateur' => 'ROLE_ADMIN',
                 ],
-                'expanded' => false,
+                'expanded' => true,
                 'multiple' => true,
                 'required' => false,
                 'label' => 'Rôles',
-                'attr' => ['class' => 'form-control select2'],
+                'attr' => ['class' => 'form-check-group'],
             ])
             ->add('dossier', EntityType::class, [
                 'class' => Dossier::class,

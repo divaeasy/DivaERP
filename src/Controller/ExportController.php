@@ -14,8 +14,10 @@ use App\Repository\TarifsRepository;
 use App\Repository\TarifventeRepository;
 use App\Repository\UniteRepository;
 use App\Repository\VilleRepository;
+use App\Service\DashboardService;
 use App\Service\ExportService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -187,5 +189,58 @@ class ExportController extends AbstractController
             $items,
             fn($d) => [$d->getId(), $d->getNom(), $d->getAdresse()]
         );
+    }
+
+    #[Route('/dashboard-excel', name: 'export.dashboard.excel')]
+    public function exportDashboardExcel(DashboardService $dashboardService): BinaryFileResponse
+    {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
+        // Prepare KPI data from dashboard service
+        $currentYear = (int)date('Y');
+        $currentMonth = (int)date('m');
+        $previousYear = $currentYear - 1;
+
+        $kpiData = [
+            'Chiffre d\'affaires' => [
+                'value' => '€ ' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
+                'period' => 'Jan - ' . date('M Y'),
+                'comparison' => ($dashboardService->getTotalRevenue($currentYear, $currentMonth) > $dashboardService->getTotalRevenue($previousYear, $currentMonth) ? '+' : '') . round((($dashboardService->getTotalRevenue($currentYear, $currentMonth) - $dashboardService->getTotalRevenue($previousYear, $currentMonth)) / $dashboardService->getTotalRevenue($previousYear, $currentMonth) * 100), 1) . '%'
+            ],
+            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
+            'Nouveaux clients' => ['value' => (string)$dashboardService->getNewCustomersThisMonth(), 'period' => date('F Y'), 'comparison' => '+0'],
+            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
+            'Factures en retard' => ['value' => (string)$dashboardService->getOverdueInvoices($currentYear), 'period' => 'Actuel', 'comparison' => '+0'],
+        ];
+
+        return $this->exportService->exportDashboardToExcel($kpiData, 'tableau_de_bord_' . date('Y-m-d') . '.xlsx');
+    }
+
+    #[Route('/dashboard-pdf', name: 'export.dashboard.pdf')]
+    public function exportDashboardPdf(DashboardService $dashboardService): BinaryFileResponse
+    {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
+
+        // Prepare KPI data from dashboard service
+        $currentYear = (int)date('Y');
+        $currentMonth = (int)date('m');
+        $previousYear = $currentYear - 1;
+
+        $kpiData = [
+            'Chiffre d\'affaires' => [
+                'value' => '€ ' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
+                'period' => 'Jan - ' . date('M Y'),
+                'comparison' => ($dashboardService->getTotalRevenue($currentYear, $currentMonth) > $dashboardService->getTotalRevenue($previousYear, $currentMonth) ? '+' : '') . round((($dashboardService->getTotalRevenue($currentYear, $currentMonth) - $dashboardService->getTotalRevenue($previousYear, $currentMonth)) / $dashboardService->getTotalRevenue($previousYear, $currentMonth) * 100), 1) . '%'
+            ],
+            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
+            'Nouveaux clients' => ['value' => (string)$dashboardService->getNewCustomersThisMonth(), 'period' => date('F Y'), 'comparison' => '+0'],
+            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
+            'Factures en retard' => ['value' => (string)$dashboardService->getOverdueInvoices($currentYear), 'period' => 'Actuel', 'comparison' => '+0'],
+        ];
+
+        // Get top products for PDF - ensure it's an array
+        $top5Products = $dashboardService->getTop5Products($currentYear) ?? [];
+
+        return $this->exportService->exportDashboardToPdf($kpiData, is_array($top5Products) ? $top5Products : [], 'tableau_de_bord_' . date('Y-m-d') . '.pdf');
     }
 }

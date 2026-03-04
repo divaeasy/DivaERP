@@ -4,6 +4,21 @@
 {% endblock %}
 {% block body %}
 
+<!-- Dashboard Export Buttons -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <h4 class="mb-0" style="flex: 1;">📊 Tableau de Bord</h4>
+            <a href="{{ path('export.dashboard.excel') }}" class="btn btn-sm btn-success no-loading" title="Exporter en Excel">
+                <i class="fas fa-file-excel mr-1"></i> Excel
+            </a>
+            <a href="{{ path('export.dashboard.pdf') }}" class="btn btn-sm btn-danger no-loading" title="Exporter en PDF">
+                <i class="fas fa-file-pdf mr-1"></i> PDF
+            </a>
+        </div>
+    </div>
+</div>
+
 <!-- Cartes KPI -->
 <div class="row mb-4">
     <!-- Chiffre d'affaires total -->
@@ -104,7 +119,7 @@
     </div>
 
     <!-- Factures en retard -->
-    <div class="col mb-4">
+    {# <div class="col mb-4">
         <div class="card border-left-danger shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
@@ -120,7 +135,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> #}
 </div>
 
 <!-- Graphiques Ligne 1 : Comparaison des ventes -->

@@ -907,7 +907,7 @@
             margin-top: 25px;
             padding-top: 20px;
             border-top: 1px solid #e3e6f0;
-        }
+        } 
         .form-actions .btn {
             padding: 12px 30px;
             font-weight: 600;
@@ -934,7 +934,34 @@
         .badge-draft { background: #f6c23e; color: white; }
         .badge-expired { background: #858796; color: white; }
 
-        /* ===== SORTABLE TABLE HEADERS ===== */
+        /* ===== DISABLED NAV LINKS ===== */
+        .nav-link.nav-disabled,
+        .collapse-item.nav-disabled {
+            opacity: 0.5 !important;
+            color: inherit !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            background: transparent !important;
+            border-left: none !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .nav-link.nav-disabled:hover,
+        .collapse-item.nav-disabled:hover {
+            background: transparent !important;
+            opacity: 0.5 !important;
+        }
+        
+        .nav-link.nav-disabled::before,
+        .collapse-item.nav-disabled::before {
+            content: '\f023';
+            display: inline-block;
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-right: 8px;
+            font-size: 11px;
+            opacity: 0.7;
+        }
         th[data-sort-key] {
             cursor: pointer;
             position: relative;
@@ -1018,9 +1045,11 @@
             </div>
 
             <!-- Nav Item - Pages Collapse Menu (Commercial+) -->
-            {% if is_granted('ROLE_COMMERCIAL') %}
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+            <li class="nav-item {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_COMMERCIAL') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_COMMERCIAL') %}collapse{% endif %}" 
+                   data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-users"></i>
                     <span>Clients</span>
@@ -1034,8 +1063,11 @@
             </li>
             
             <!-- Nav Item - Prospects (Commercial+) -->
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseProspects"
+            <li class="nav-item {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_COMMERCIAL') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_COMMERCIAL') %}collapse{% endif %}" 
+                   data-target="#collapseProspects"
                     aria-expanded="true" aria-controls="collapseProspects">
                     <i class="fas fa-fw fa-user-plus"></i>
                     <span>Prospects</span>
@@ -1048,8 +1080,11 @@
                 </div>
             </li>
             
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTree"
+            <li class="nav-item {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_COMMERCIAL') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_COMMERCIAL') %}collapse{% endif %}" 
+                   data-target="#collapseTree"
                     aria-expanded="true" aria-controls="collapseTree">
                     <i class="fas fa-fw fa-boxes"></i>
                     <span>Articles</span>
@@ -1061,7 +1096,6 @@
                     </div>
                 </div>
             </li>
-            {% endif %}
             
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -1072,9 +1106,11 @@
             </div>
             
             <!-- Nav Item - Pièces (Comptable+) -->
-            {% if is_granted('ROLE_COMPTABLE') %}
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePieces"
+            <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_COMPTABLE') %}collapse{% endif %}" 
+                   data-target="#collapsePieces"
                     aria-expanded="true" aria-controls="collapsePieces">
                     <i class="fas fa-fw fa-file-invoice"></i>
                     <span>Pièces</span>
@@ -1088,8 +1124,11 @@
             </li>
             
             <!-- Nav Item - Règlements (Comptable+) -->
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseReglements"
+            <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_COMPTABLE') %}collapse{% endif %}" 
+                   data-target="#collapseReglements"
                     aria-expanded="true" aria-controls="collapseReglements">
                     <i class="fas fa-fw fa-money-bill-wave"></i>
                     <span>Règlements</span>
@@ -1101,7 +1140,6 @@
                     </div>
                 </div>
             </li>
-            {% endif %}
 
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -1112,9 +1150,11 @@
             </div>
 
             <!-- Nav Item - Dossiers (Admin only) -->
-            {% if is_granted('ROLE_ADMIN') %}
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDossiers"
+            <li class="nav-item {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_ADMIN') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_ADMIN') %}collapse{% endif %}" 
+                   data-target="#collapseDossiers"
                     aria-expanded="true" aria-controls="collapseDossiers">
                     <i class="fas fa-fw fa-folder-open"></i>
                     <span>Dossiers</span>
@@ -1128,18 +1168,20 @@
             </li>
 
             <!-- Nav Item - Utilisateurs (Admin only) -->
-            <li class="nav-item">
-                <a class="nav-link nav-loading" href="{{ path('users.list') }}">
+            <li class="nav-item {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}">
+                <a class="nav-link nav-loading {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_ADMIN') %}{{ path('users.list') }}{% else %}javascript:void(0){% endif %}">
                     <i class="fas fa-fw fa-users-cog"></i>
                     <span>Utilisateurs</span>
                 </a>
             </li>
-            {% endif %}
 
             <!-- Nav Item - Devises (Comptable+) -->
-            {% if is_granted('ROLE_COMPTABLE') %}
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDevises"
+            <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_COMPTABLE') %}collapse{% endif %}" 
+                   data-target="#collapseDevises"
                     aria-expanded="true" aria-controls="collapseDevises">
                     <i class="fas fa-fw fa-euro-sign"></i>
                     <span>Devises</span>
@@ -1151,12 +1193,13 @@
                     </div>
                 </div>
             </li>
-            {% endif %}
 
             <!-- Nav Item - Tarifs (Commercial+) -->
-            {% if is_granted('ROLE_COMMERCIAL') %}
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTarifs"
+            <li class="nav-item {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_COMMERCIAL') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_COMMERCIAL') %}collapse{% endif %}" 
+                   data-target="#collapseTarifs"
                     aria-expanded="true" aria-controls="collapseTarifs">
                     <i class="fas fa-fw fa-tags"></i>
                     <span>Tarifs</span>
@@ -1170,12 +1213,13 @@
                     </div>
                 </div>
             </li>
-            {% endif %}
 
             <!-- Nav Item - Unités (Comptable+) -->
-            {% if is_granted('ROLE_COMPTABLE') %}
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUnites"
+            <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_COMPTABLE') %}collapse{% endif %}" 
+                   data-target="#collapseUnites"
                     aria-expanded="true" aria-controls="collapseUnites">
                     <i class="fas fa-fw fa-balance-scale"></i>
                     <span>Unités</span>
@@ -1187,7 +1231,6 @@
                     </div>
                 </div>
             </li>
-            {% endif %}
 
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -1198,9 +1241,11 @@
             </div>
 
             <!-- Nav Item - Pays (Admin only) -->
-            {% if is_granted('ROLE_ADMIN') %}
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePays"
+            <li class="nav-item {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_ADMIN') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_ADMIN') %}collapse{% endif %}" 
+                   data-target="#collapsePays"
                     aria-expanded="true" aria-controls="collapsePays">
                     <i class="fas fa-fw fa-globe"></i>
                     <span>Pays</span>
@@ -1214,8 +1259,11 @@
             </li>
 
             <!-- Nav Item - Villes (Admin only) -->
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseVilles"
+            <li class="nav-item {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}">
+                <a class="nav-link collapsed {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}" 
+                   href="{% if is_granted('ROLE_ADMIN') %}#{% else %}javascript:void(0){% endif %}" 
+                   data-toggle="{% if is_granted('ROLE_ADMIN') %}collapse{% endif %}" 
+                   data-target="#collapseVilles"
                     aria-expanded="true" aria-controls="collapseVilles">
                     <i class="fas fa-fw fa-city"></i>
                     <span>Villes</span>
@@ -1227,7 +1275,6 @@
                     </div>
                 </div>
             </li>
-            {% endif %}
 
             </div>
             <!-- End Scrollable Sidebar Content -->
@@ -1547,24 +1594,64 @@
     </a>
 
     <!-- Logout Modal-->
-    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Déconnexion</h5>
-                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 8px;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px 8px 0 0; border: none; padding: 24px;">
+                    <h5 class="modal-title" id="logoutModalLabel" style="font-weight: 600; font-size: 18px; margin: 0;">
+                        <i class="fas fa-sign-out-alt mr-3" style="margin-right: 12px;"></i>Déconnexion
+                    </h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
                         <span aria-hidden="true">×</span>
                     </button>
                 </div>
-                <div class="modal-body">Êtes-vous sûr de vouloir vous déconnecter ?</div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Annuler</button>
-                    <a class="btn btn-primary" href="{{ path('app_logout') }}">Déconnexion</a>
+                <div class="modal-body" style="padding: 28px; font-size: 15px; color: #5a5c69; line-height: 1.6;">
+                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <i class="fas fa-question-circle" style="color: #f06a9a; font-size: 20px; margin-top: 2px; flex-shrink: 0;"></i>
+                        <div>
+                            <p style="margin: 0; font-weight: 500;">Voulez-vous vraiment vous déconnecter ?</p>
+                            <p style="margin: 8px 0 0 0; font-size: 13px; color: #999;">Vous serez déconnecté de votre compte et devrez vous réauthentifier pour accéder à vos données.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid #e3e6f0; gap: 10px;">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal" style="background-color: #e9ecef; border: none; color: #5a5c69; font-weight: 500; padding: 10px 20px; border-radius: 6px; transition: all 0.2s ease;">
+                        <i class="fas fa-times mr-2"></i>Annuler
+                    </button>
+                    <a class="btn" href="{{ path('app_logout') }}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; font-weight: 500; padding: 10px 24px; border-radius: 6px; transition: all 0.2s ease; text-decoration: none;">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                    </a>
                 </div>
             </div>
         </div>
     </div>
+    <script>
+        // Add hover effects for logout modal buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.querySelector('#logoutModal .btn[href*="logout"]');
+            const cancelBtn = document.querySelector('#logoutModal .btn-secondary');
+            
+            if (logoutBtn) {
+                logoutBtn.addEventListener('mouseover', function() {
+                    this.style.boxShadow = '0 4px 12px rgba(240, 106, 154, 0.3)';
+                    this.style.transform = 'translateY(-2px)';
+                });
+                logoutBtn.addEventListener('mouseout', function() {
+                    this.style.boxShadow = 'none';
+                    this.style.transform = 'translateY(0)';
+                });
+            }
+            
+            if (cancelBtn) {
+                cancelBtn.addEventListener('mouseover', function() {
+                    this.style.backgroundColor = '#dee2e6';
+                });
+                cancelBtn.addEventListener('mouseout', function() {
+                    this.style.backgroundColor = '#e9ecef';
+                });
+            }
+        });
+    </script>
 
     <!-- Global Delete Confirmation Modal -->
     <div class="modal fade modal-delete" id="deleteConfirmModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">

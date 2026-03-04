@@ -14,6 +14,7 @@
         "mpdf/mpdf": "8.2",
         "oro/doctrine-extensions": "^2.0",
         "phpdocumentor/reflection-docblock": "^5.5",
+        "phpoffice/phpspreadsheet": "^5.5",
         "phpstan/phpdoc-parser": "^1.33",
         "symfony/asset": "7.1.*",
         "symfony/asset-mapper": "7.1.*",
