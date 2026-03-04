@@ -102,7 +102,11 @@
             $('#lignepiece_montant').val(montant.toFixed(2));
         }
 
-        $('#lignepiece_qte, #lignepiece_pub, #lignepiece_remise').on('input', calculateMontant);
+        // Trigger calculation on input change
+        $('#lignepiece_qte, #lignepiece_pub, #lignepiece_remise').on('change input', calculateMontant);
+        
+        // Calculate on page load to initialize value
+        calculateMontant();
     });
 </script>
 {% endblock %}
