@@ -20,7 +20,9 @@ class LignepieceFormType extends AbstractType
             ->add('qte')
             ->add('pub')
             ->add('montant')
-            ->add('remise')
+            ->add('remise', null, [
+                'required' => false
+            ])
            
             
             ->add('article', EntityType::class, [
