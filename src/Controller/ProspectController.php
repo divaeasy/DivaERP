@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Clients;
 use App\Entity\Prospects;
 use App\Form\ProspectFormType;
 use App\Form\SearchFormType;
@@ -19,27 +20,24 @@ class ProspectController extends AbstractController
     #[Route('/', name: 'prospect.list')]
     public function index(Request $request, ProspectsRepository $cliRepository ,ManagerRegistry $doctrine): Response
     {
-
-        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
-
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchData();
         $searchForm = $this->createForm(SearchFormType::class, $searchData);
         $searchForm->handleRequest($request); 
+        
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) { 
-            $searchData->page = $request->query->getInt('page', 1);
-            $prospects = $cliRepository->findBySearch($searchData);
-            return $this->render('prospect/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'prospects' => $prospects
-            ]);
+            $searchActive = $searchData;
         }
 
+        $pagination = $cliRepository->findPaginated($searchActive, $page);
 
-       $repository = $doctrine->getRepository(Prospects::class);
-       $prospects = $repository->findBy([],['nom' => 'ASC']);
         return $this->render('prospect/index.html.twig', [
             'search' => $searchForm->createView(),
-            'prospects' => $prospects,
+            'prospects' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
         ]);
     }
    
@@ -137,5 +135,46 @@ class ProspectController extends AbstractController
              );
         }
         return $this->redirectToRoute('prospect.list');
+    }
+
+    #[Route('/convert/{id}', name: 'prospect.convert')]
+    public function convertToClient(ManagerRegistry $doctrine, int $id): Response
+    {
+        $repository = $doctrine->getRepository(Prospects::class);
+        $prospect = $repository->find($id);
+
+        if (!$prospect) {
+            $this->addFlash('error', "Le prospect n'existe pas");
+            return $this->redirectToRoute('prospect.list');
+        }
+
+        // Create a new Client from the prospect data
+        $client = new Clients();
+        $client->setNom($prospect->getNom());
+        $client->setAdr1($prospect->getAdr1());
+        $client->setAdr2($prospect->getAdr2() ?? '');
+        $client->setRue($prospect->getRue() ?? '');
+        $client->setCodepostal($prospect->getCodepostal());
+        $client->setVille($prospect->getVille());
+        $client->setPays($prospect->getPays());
+        $client->setTel($prospect->getTel() ?? '');
+        $client->setEmail($prospect->getEmail() ?? '');
+        $client->setWeb($prospect->getWeb() ?? '');
+        $client->setLinkedin($prospect->getLinkedin() ?? '');
+        $client->setDossier($prospect->getDossier());
+
+        $entityManager = $doctrine->getManager();
+        $entityManager->persist($client);
+        
+        // Remove the prospect
+        $entityManager->remove($prospect);
+        $entityManager->flush();
+
+        $this->addFlash(
+            'success',
+            sprintf('Le prospect "%s" a été converti en client avec succès.', $prospect->getNom())
+        );
+
+        return $this->redirectToRoute('client.edit', ['id' => $client->getId()]);
     }
 }

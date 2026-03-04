@@ -1,0 +1,54 @@
+{# Pagination component — include with: items, currentPage, totalPages, route, routeParams #}
+{% if totalPages is defined and totalPages > 1 %}
+<nav aria-label="Pagination" class="mt-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted">
+            Page {{ currentPage }} sur {{ totalPages }}
+            {% if totalItems is defined %} — {{ totalItems }} résultat{{ totalItems > 1 ? 's' : '' }}{% endif %}
+        </small>
+        <ul class="pagination pagination-sm mb-0">
+            {# Previous #}
+            <li class="page-item {% if currentPage <= 1 %}disabled{% endif %}">
+                <a class="page-link" href="{{ path(route, routeParams|default({})|merge({page: currentPage - 1})) }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+
+            {# Page numbers #}
+            {% set startPage = max(1, currentPage - 2) %}
+            {% set endPage = min(totalPages, currentPage + 2) %}
+
+            {% if startPage > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ path(route, routeParams|default({})|merge({page: 1})) }}">1</a>
+                </li>
+                {% if startPage > 2 %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+            {% endif %}
+
+            {% for p in startPage..endPage %}
+                <li class="page-item {% if p == currentPage %}active{% endif %}">
+                    <a class="page-link" href="{{ path(route, routeParams|default({})|merge({page: p})) }}">{{ p }}</a>
+                </li>
+            {% endfor %}
+
+            {% if endPage < totalPages %}
+                {% if endPage < totalPages - 1 %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ path(route, routeParams|default({})|merge({page: totalPages})) }}">{{ totalPages }}</a>
+                </li>
+            {% endif %}
+
+            {# Next #}
+            <li class="page-item {% if currentPage >= totalPages %}disabled{% endif %}">
+                <a class="page-link" href="{{ path(route, routeParams|default({})|merge({page: currentPage + 1})) }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+{% endif %}

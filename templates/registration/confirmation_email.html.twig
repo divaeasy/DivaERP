@@ -1,11 +1,72 @@
-<h1>Hi! Please confirm your email!</h1>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); padding: 35px 40px; text-align: center;">
+                            <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.15); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+                                <span style="font-size: 28px;">✉️</span>
+                            </div>
+                            <h1 style="color: #ffffff; font-size: 22px; margin: 0; font-weight: 600;">Confirmez votre adresse email</h1>
+                        </td>
+                    </tr>
 
-<p>
-    Please confirm your email address by clicking the following link: <br><br>
-    <a href="{{ signedUrl|raw }}">Confirm my Email</a>.
-    This link will expire in {{ expiresAtMessageKey|trans(expiresAtMessageData, 'VerifyEmailBundle') }}.
-</p>
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Bonjour,
+                            </p>
+                            <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
+                                Merci de vous être inscrit sur <strong>DivaERP</strong>. Pour activer votre compte et accéder à toutes les fonctionnalités, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :
+                            </p>
 
-<p>
-    Cheers!
-</p>
+                            <!-- CTA Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding: 10px 0 30px;">
+                                        <a href="{{ signedUrl|raw }}" style="display: inline-block; background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 16px; font-weight: 600; letter-spacing: 0.3px;">
+                                            ✅ Confirmer mon email
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="color: #888; font-size: 13px; line-height: 1.5; margin: 0 0 15px;">
+                                Ce lien expirera dans {{ expiresAtMessageKey|trans(expiresAtMessageData, 'VerifyEmailBundle') }}.
+                            </p>
+
+                            <p style="color: #888; font-size: 13px; line-height: 1.5; margin: 0 0 10px;">
+                                Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :
+                            </p>
+                            <p style="word-break: break-all; color: #4e73df; font-size: 12px; background: #f8f9fc; padding: 10px; border-radius: 6px;">
+                                {{ signedUrl }}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background: #f8f9fc; padding: 25px 40px; text-align: center; border-top: 1px solid #e3e6f0;">
+                            <p style="color: #999; font-size: 12px; margin: 0;">
+                                Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.
+                            </p>
+                            <p style="color: #bbb; font-size: 11px; margin: 10px 0 0;">
+                                © {{ "now"|date("Y") }} DivaERP — Tous droits réservés
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -18,6 +18,9 @@
     <a class="btn-add" href="{{ path('prospect.edit') }}">
         <i class="fas fa-plus"></i> Nouveau Prospect
     </a>
+    <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.prospects') }}" title="Exporter CSV">
+        <i class="fas fa-file-csv mr-1"></i> Exporter
+    </a>
     <div class="search-box">
         {% include "components/search_data.html.twig" with {search: search} only %}
     </div>
@@ -35,7 +38,7 @@
                 <th data-sort-key="pays">Pays</th>
                 <th data-sort-key="tel">Téléphone</th>
                 <th data-sort-key="email">Email</th>
-                <th class="text-center" style="width: 120px;">Actions</th>
+                <th class="text-center" style="width: 160px;">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -49,6 +52,13 @@
                 <td>{{ prospect.tel }}</td>
                 <td>{{ prospect.email }}</td>
                 <td class="text-center">
+                    <button type="button" class="btn btn-action btn-sm convert-prospect-btn" 
+                            style="background: #1cc88a; color: #fff;" 
+                            title="Convertir en client"
+                            data-convert-url="{{ path('prospect.convert', {id: prospect.id}) }}"
+                            data-prospect-name="{{ prospect.nom }}">
+                        <i class="fas fa-user-check"></i>
+                    </button>
                     <a href="{{ path('prospect.edit', {id: prospect.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
@@ -63,6 +73,7 @@
             {% endfor %}
         </tbody>
     </table>
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'prospect.list', routeParams: {}} %}
     {% else %}
     <div class="empty-state">
         <div class="empty-state-icon">
@@ -76,4 +87,61 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Prospect to Client Conversion Modal -->
+<div class="modal fade" id="convertProspectModal" tabindex="-1" role="dialog" aria-labelledby="convertModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border: none; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%); border: none; padding: 28px 30px 24px;">
+                <div class="d-flex align-items-center">
+                    <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                        <i class="fas fa-user-check" style="font-size: 20px; color: white;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title" id="convertModalLabel" style="color: white; font-weight: 700; font-size: 18px; margin: 0;">Conversion en client</h5>
+                        <small style="color: rgba(255,255,255,0.8); font-size: 13px;">Cette action est irréversible</small>
+                    </div>
+                </div>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8; text-shadow: none;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 32px 30px; text-align: center;">
+                <div style="width: 72px; height: 72px; background: linear-gradient(135deg, #e8f8f0 0%, #d4f1e4 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="fas fa-exchange-alt" style="font-size: 28px; color: #1cc88a;"></i>
+                </div>
+                <p style="font-size: 16px; color: #344767; font-weight: 600; margin-bottom: 8px;">
+                    Convertir le prospect en client ?
+                </p>
+                <p style="font-size: 14px; color: #8898aa; margin-bottom: 0;">
+                    Le prospect <strong id="convertProspectName" style="color: #1cc88a;"></strong> sera converti en client. Toutes ses informations seront transférées.
+                </p>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #f0f0f0; padding: 16px 30px 20px; justify-content: center; gap: 12px;">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal" style="padding: 10px 28px; border-radius: 8px; font-weight: 600; font-size: 14px; border: none;">
+                    <i class="fas fa-times mr-2"></i>Annuler
+                </button>
+                <a class="btn" id="confirmConvertBtn" href="#" style="padding: 10px 28px; border-radius: 8px; font-weight: 600; font-size: 14px; background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%); color: white; border: none; box-shadow: 0 4px 12px rgba(28, 200, 138, 0.35);">
+                    <i class="fas fa-user-check mr-2"></i>Confirmer la conversion
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+$(document).ready(function() {
+    $('.convert-prospect-btn').on('click', function(e) {
+        e.preventDefault();
+        var url = $(this).data('convert-url');
+        var name = $(this).data('prospect-name');
+        $('#convertProspectName').text(name);
+        $('#confirmConvertBtn').attr('href', url);
+        $('#convertProspectModal').modal('show');
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

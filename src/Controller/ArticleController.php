@@ -21,27 +21,24 @@ class ArticleController extends AbstractController
     #[Route('/', name: 'article.list')]
     public function index(Request $request, ArticleRepository $artRepository ,ManagerRegistry $doctrine): Response
     {
-
-        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
-
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchDataArt();
         $searchForm = $this->createForm(SearchArtFormType::class, $searchData);
         $searchForm->handleRequest($request);
+        
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) {
-            $searchData->page = $request->query->getInt('page', 1);
-            $articles = $artRepository->findBySearch($searchData);
-            return $this->render('article/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'articles' => $articles,
-            ]);
+            $searchActive = $searchData;
         }
 
+        $pagination = $artRepository->findPaginated($searchActive, $page);
 
-       $repository = $doctrine->getRepository(Article::class);
-       $articles = $repository->findBy([], ['libelle' => 'ASC']);
         return $this->render('article/index.html.twig', [
             'search' => $searchForm->createView(),
-            'articles' => $articles,
+            'articles' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
         ]);
     }
    

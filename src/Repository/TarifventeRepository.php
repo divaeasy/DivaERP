@@ -4,7 +4,9 @@ namespace App\Repository;
 
 use App\Entity\Tarifvente;
 use App\Model\SearchGeneric;
+use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -17,28 +19,29 @@ class TarifventeRepository extends ServiceEntityRepository
         parent::__construct($registry, Tarifvente::class);
     }
 
-    public function findBySearch(SearchGeneric $searchData): array
+    public function getSearchQueryBuilder(?SearchGeneric $searchData = null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('t')
             ->orderBy('t.id', 'DESC');
 
-        if (!empty($searchData->q)) {
+        if ($searchData && !empty($searchData->q)) {
             if (is_numeric($searchData->q)) {
                 $qb->andWhere('t.prix = :prix')
                    ->setParameter('prix', (float)$searchData->q);
             }
         }
 
-        return $qb->getQuery()->getResult();
+        return $qb;
     }
 
-    //    public function findOneBySomeField($value): ?Tarifvente
-    //    {
-    //        return $this->createQueryBuilder('t')
-    //            ->andWhere('t.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchGeneric $searchData): array
+    {
+        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+    }
+
+    public function findPaginated(?SearchGeneric $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        return PaginationHelper::paginate($qb, $page);
+    }
 }

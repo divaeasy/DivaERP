@@ -23,24 +23,25 @@ class DossierController extends AbstractController
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchGeneric();
         $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par nom ou adresse...']);
         $searchForm->handleRequest($request);
+
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) {
-            $searchData->page = $request->query->getInt('page', 1);
-            $dossiers = $dossierRepository->findBySearch($searchData);
-            return $this->render('dossier/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'dossiers' => $dossiers,
-            ]);
+            $searchActive = $searchData;
         }
 
-        $repository = $doctrine->getRepository(Dossier::class);
-        $dossiers = $repository->findAll();
-         return $this->render('dossier/index.html.twig', [
-             'search' => $searchForm->createView(),
-             'dossiers' => $dossiers,
-         ]);
+        $pagination = $dossierRepository->findPaginated($searchActive, $page);
+
+        return $this->render('dossier/index.html.twig', [
+            'search' => $searchForm->createView(),
+            'dossiers' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
+        ]);
     }
     #[Route('/edit/{id?0}', name: 'dossier.edit')]
     public function addDossier(ManagerRegistry $doctrine, Request $request, $id): Response

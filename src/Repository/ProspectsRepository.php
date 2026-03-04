@@ -4,7 +4,9 @@ namespace App\Repository;
 
 use App\Entity\Prospects;
 use App\Model\SearchData;
+use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -17,57 +19,33 @@ class ProspectsRepository extends ServiceEntityRepository
         parent::__construct($registry, Prospects::class);
     }
 
-    /**
-     * Search prospects by name and phone
-     *
-     * @param SearchData $searchData
-     */
-    public function findBySearch(SearchData $searchData)
+    public function getSearchQueryBuilder(?SearchData $searchData = null): QueryBuilder
     {
-        $data = $this->createQueryBuilder('p')
-            ->addOrderBy('p.nom', 'DESC');
+        $qb = $this->createQueryBuilder('p')
+            ->addOrderBy('p.nom', 'ASC');
 
-        if (!empty($searchData->nom)) {
-            $data = $data
-                ->andWhere('p.nom LIKE :nom')
-                ->setParameter('nom', "%{$searchData->nom}%");
+        if ($searchData) {
+            if (!empty($searchData->nom)) {
+                $qb->andWhere('p.nom LIKE :nom')
+                   ->setParameter('nom', "%{$searchData->nom}%");
+            }
+            if (!empty($searchData->tel)) {
+                $qb->andWhere('p.tel LIKE :tel')
+                   ->setParameter('tel', "%{$searchData->tel}%");
+            }
         }
 
-        if (!empty($searchData->tel)) {
-            $data = $data
-                ->andWhere('p.tel LIKE :tel')
-                ->setParameter('tel', "%{$searchData->tel}%");
-        }
-
-        $data = $data
-            ->getQuery()
-            ->getResult();
-
-        return $data;
+        return $qb;
     }
 
-    //    /**
-    //     * @return Prospects[] Returns an array of Prospects objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchData $searchData)
+    {
+        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+    }
 
-    //    public function findOneBySomeField($value): ?Prospects
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function findPaginated(?SearchData $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        return PaginationHelper::paginate($qb, $page);
+    }
 }

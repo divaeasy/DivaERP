@@ -4,7 +4,9 @@ namespace App\Repository;
 
 use App\Entity\Entetepiece;
 use App\Model\SearchPiece;
+use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -45,31 +47,32 @@ class EntetepieceRepository extends ServiceEntityRepository
         return $result->fetchAllAssociative();
     }
 
-    public function findBySearch(SearchPiece $searchData): array
+    public function getSearchQueryBuilder(?SearchPiece $searchData = null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('e')
             ->orderBy('e.id', 'DESC');
 
-        if (!empty($searchData->pieceref)) {
+        if ($searchData && !empty($searchData->pieceref)) {
             $qb->andWhere('e.pieceref LIKE :ref')
                ->setParameter('ref', "%{$searchData->pieceref}%");
         }
 
-        if (!empty($searchData->statut)) {
+        if ($searchData && !empty($searchData->statut)) {
             $qb->andWhere('e.statut LIKE :statut')
                ->setParameter('statut', "%{$searchData->statut}%");
         }
 
-        return $qb->getQuery()->getResult();
+        return $qb;
     }
 
-    //    public function findOneBySomeField($value): ?Entetepiece
-    //    {
-    //        return $this->createQueryBuilder('e')
-    //            ->andWhere('e.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchPiece $searchData): array
+    {
+        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+    }
+
+    public function findPaginated(?SearchPiece $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        return PaginationHelper::paginate($qb, $page);
+    }
 }

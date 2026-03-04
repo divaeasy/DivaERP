@@ -18,6 +18,9 @@
     <a class="btn-add" href="{{ path('reglement.edit') }}">
         <i class="fas fa-plus"></i> Nouveau Règlement
     </a>
+    <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.reglements') }}" title="Exporter CSV">
+        <i class="fas fa-file-csv mr-1"></i> Exporter
+    </a>
     <div class="search-box">
         {% include "components/search_data.html.twig" with {search: search} only %}
     </div>
@@ -55,6 +58,7 @@
             {% endfor %}
         </tbody>
     </table>
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'reglement.list', routeParams: {}} %}
     {% else %}
     <div class="empty-state">
         <div class="empty-state-icon">

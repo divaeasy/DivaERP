@@ -59,6 +59,7 @@
             {% endfor %}
         </tbody>
     </table>
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'tarifvente.list', routeParams: {}} %}
     {% else %}
     <div class="empty-state">
         <div class="empty-state-icon">

@@ -4,6 +4,21 @@
 {% endblock %}
 {% block body %}
 
+<!-- Dashboard Export Buttons -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <h4 class="mb-0" style="flex: 1;">📊 Tableau de Bord</h4>
+            <a href="{{ path('export.dashboard.excel') }}" class="btn btn-sm btn-success no-loading" title="Exporter en Excel">
+                <i class="fas fa-file-excel mr-1"></i> Excel
+            </a>
+            <a href="{{ path('export.dashboard.pdf') }}" class="btn btn-sm btn-danger no-loading" title="Exporter en PDF">
+                <i class="fas fa-file-pdf mr-1"></i> PDF
+            </a>
+        </div>
+    </div>
+</div>
+
 <!-- Cartes KPI -->
 <div class="row mb-4">
     <!-- Chiffre d'affaires total -->
@@ -15,7 +30,7 @@
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                             💰 Chiffre d'affaires</div>
                         <div class="h6 mb-0 font-weight-bold text-gray-800">{{ totalRevenueCurrent|number_format(2, ',', ' ') }}</div>
-                        <small class="text-muted">{{ currentYear }}</small>
+                        <small class="text-muted">Jan — {{ "now"|date("M") }} {{ currentYear }}</small>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-wallet fa-2x text-primary"></i>
@@ -36,7 +51,7 @@
                         <div class="h6 mb-0 font-weight-bold text-gray-800">
                             {% if growthPercentage >= 0 %}+{% endif %}{{ growthPercentage }}%
                         </div>
-                        <small class="text-muted">vs {{ previousYear }}</small>
+                        <small class="text-muted">vs même période {{ previousYear }}</small>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-chart-line fa-2x {% if growthPercentage >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
@@ -102,6 +117,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Factures en retard -->
+    {# <div class="col mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            ⚠️ Factures en retard</div>
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ overdueInvoices.count }}</div>
+                        <small class="text-muted">{{ overdueInvoices.amount|number_format(2, ',', ' ') }} €</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> #}
 </div>
 
 <!-- Graphiques Ligne 1 : Comparaison des ventes -->

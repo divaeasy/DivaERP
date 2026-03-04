@@ -14,18 +14,22 @@ class DashBordController extends AbstractController
     {
         $currentYear = (int)date('Y');
         $previousYear = $currentYear - 1;
+        $currentMonth = (int)date('m');
 
         // Monthly sales data
         $monthlySalesCurrentYear = $dashboardService->getMonthlySales($currentYear);
         $monthlySalesPreviousYear = $dashboardService->getMonthlySales($previousYear);
 
-        // KPI Data
-        $totalRevenueCurrent = $dashboardService->getTotalRevenue($currentYear);
-        $totalRevenuePerv = $dashboardService->getTotalRevenue($previousYear);
+        // KPI Data — same-period comparison (Jan to current month)
+        $totalRevenueCurrent = $dashboardService->getTotalRevenue($currentYear, $currentMonth);
+        $totalRevenuePerv = $dashboardService->getTotalRevenue($previousYear, $currentMonth);
         $growthPercentage = $dashboardService->getYearGrowth($currentYear, $previousYear);
         $invoiceCount = $dashboardService->getTotalInvoiceCount($currentYear);
         $newCustomersThisMonth = $dashboardService->getNewCustomersThisMonth();
         $totalProductsSold = $dashboardService->getTotalProductsSold($currentYear);
+
+        // Dashboard KPI: Overdue invoices
+        $overdueInvoices = $dashboardService->getOverdueInvoices($currentYear);
 
         // Charts data
         $top5Products = $dashboardService->getTop5Products($currentYear);
@@ -65,6 +69,8 @@ class DashBordController extends AbstractController
             'invoiceCount' => $invoiceCount,
             'newCustomersThisMonth' => $newCustomersThisMonth,
             'totalProductsSold' => $totalProductsSold,
+            'overdueInvoices' => $overdueInvoices,
+            'currentMonth' => $currentMonth,
             // Charts
             'chartMonths' => json_encode($chartMonths),
             'currentYearValues' => json_encode($currentYearValues),

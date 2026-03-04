@@ -23,24 +23,25 @@ class DevisesController extends AbstractController
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchGeneric();
         $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par code ou libellé...']);
         $searchForm->handleRequest($request);
+
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) {
-            $searchData->page = $request->query->getInt('page', 1);
-            $devises = $devisesRepository->findBySearch($searchData);
-            return $this->render('devises/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'devises' => $devises,
-            ]);
+            $searchActive = $searchData;
         }
 
-        $repository = $doctrine->getRepository(Devises::class);
-        $devises = $repository->findAll();
-         return $this->render('devises/index.html.twig', [
-             'search' => $searchForm->createView(),
-             'devises' => $devises,
-         ]);
+        $pagination = $devisesRepository->findPaginated($searchActive, $page);
+
+        return $this->render('devises/index.html.twig', [
+            'search' => $searchForm->createView(),
+            'devises' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
+        ]);
     }
     #[Route('/edit/{id?0}', name: 'devise.edit')]
     public function addDevise(ManagerRegistry $doctrine, Request $request, $id): Response

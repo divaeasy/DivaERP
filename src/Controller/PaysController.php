@@ -23,24 +23,25 @@ class PaysController extends AbstractController
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchGeneric();
         $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par libellé...']);
         $searchForm->handleRequest($request);
+
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) {
-            $searchData->page = $request->query->getInt('page', 1);
-            $pays = $paysRepository->findBySearch($searchData);
-            return $this->render('pays/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'pays' => $pays,
-            ]);
+            $searchActive = $searchData;
         }
 
-        $repository = $doctrine->getRepository(Pays::class);
-        $pays = $repository->findAll();
-         return $this->render('pays/index.html.twig', [
-             'search' => $searchForm->createView(),
-             'pays' => $pays,
-         ]);
+        $pagination = $paysRepository->findPaginated($searchActive, $page);
+
+        return $this->render('pays/index.html.twig', [
+            'search' => $searchForm->createView(),
+            'pays' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
+        ]);
     }
     #[Route('/edit/{id?0}', name: 'pays.edit')]
     public function addPays(ManagerRegistry $doctrine, Request $request, $id): Response
