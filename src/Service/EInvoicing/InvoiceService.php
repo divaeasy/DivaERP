@@ -6,6 +6,7 @@ use App\Entity\Entetepiece;
 use App\Entity\InvoiceStatus;
 use App\Service\EInvoicing\EN16931\EN16931Builder;
 use App\Service\EInvoicing\FactureX\FactureXGenerator;
+use App\Service\EInvoicing\FactureX\FactureXEmbedder;
 use App\Service\EInvoicing\Tiime\TimeeApiClient;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -13,13 +14,14 @@ use DateTime;
 
 /**
  * Orchestrates the e-invoicing workflow
- * Handles: XML generation → PDF creation → Tiime submission → Status tracking
+ * Handles: XML generation → PDF creation → XML embedding → Tiime submission → Status tracking
  */
 class InvoiceService
 {
     public function __construct(
         private EN16931Builder $xmlBuilder,
         private FactureXGenerator $pdfGenerator,
+        private FactureXEmbedder $embedder,
         private TimeeApiClient $tiimeClient,
         private FileStorageService $fileStorage,
         private EntityManagerInterface $entityManager,
@@ -27,9 +29,9 @@ class InvoiceService
     ) {}
 
     /**
-     * Generate complete Facture-X invoice
+     * Generate complete Facture-X invoice with embedded XML
      *
-     * @return array PDF content and XML content
+     * @return array PDF content (with embedded XML)
      */
     public function generateFactureX(Entetepiece $invoice): array
     {
@@ -37,28 +39,29 @@ class InvoiceService
             $xmlContent = $this->xmlBuilder->buildInvoiceXml($invoice);
             $pdfContent = $this->pdfGenerator->generateFactureX($invoice);
 
-            // Save files to disk
-            $pdfFilename = $this->fileStorage->savePdf($invoice, $pdfContent);
-            $xmlFilename = $this->fileStorage->saveXml($invoice, $xmlContent);
+            // Embed XML into PDF to create true Factur-X document
+            $pdfWithEmbeddedXml = $this->embedXmlInPdf($pdfContent, $xmlContent, $invoice->getPieceref() ?? 'invoice');
 
-            // Store filenames in entity
+            // Save only the PDF with embedded XML (no separate XML file)
+            $pdfFilename = $this->fileStorage->savePdf($invoice, $pdfWithEmbeddedXml);
+
+            // Store filename in entity (only PDF, XML is embedded)
             $invoice->setFactureXPdfFilename($pdfFilename);
-            $invoice->setFactureXXmlFilename($xmlFilename);
+            $invoice->setFactureXXmlFilename(null); // No separate XML file
             $this->entityManager->flush();
 
-            $this->logger->info('Facture-X generated successfully', [
+            $this->logger->info('Facture-X generated successfully with embedded XML', [
                 'invoice_id' => $invoice->getId(),
                 'invoice_ref' => $invoice->getPieceref(),
                 'pdf_filename' => $pdfFilename,
-                'xml_filename' => $xmlFilename,
             ]);
 
             return [
                 'success' => true,
-                'xml' => $xmlContent,
-                'pdf' => $pdfContent,
+                'xml' => $xmlContent, // For reference only
+                'pdf' => $pdfWithEmbeddedXml,
                 'pdf_filename' => $pdfFilename,
-                'xml_filename' => $xmlFilename,
+                'xml_filename' => null, // No separate XML file
             ];
         } catch (\Exception $e) {
             $this->logger->error('Failed to generate Facture-X', [
@@ -72,6 +75,20 @@ class InvoiceService
             ];
         }
     }
+
+    /**
+     * Embed XML into PDF using available method
+     * Tries raw PDF manipulation first, then fallback to separate files
+     */
+    /**
+     * Embed XML into PDF - delegates to embedder which handles all strategies
+     */
+    private function embedXmlInPdf(string $pdfContent, string $xmlContent, string $invoiceRef): string
+    {
+        // The embedder now handles all embedding logic internally with fallback strategies
+        return $this->embedder->embedXmlInPdf($pdfContent, $xmlContent, $invoiceRef);
+    }
+
 
     /**
      * Submit invoice to Tiime PDP

@@ -37,11 +37,15 @@ services:
         arguments:
             - '%kernel.project_dir%'
 
+    App\Service\EInvoicing\FactureX\FactureXEmbedder:
+        public: true
+
     App\Service\EInvoicing\InvoiceService:
         public: true
         arguments:
             - '@App\Service\EInvoicing\EN16931\EN16931Builder'
             - '@App\Service\EInvoicing\FactureX\FactureXGenerator'
+            - '@App\Service\EInvoicing\FactureX\FactureXEmbedder'
             - '@App\Service\EInvoicing\Tiime\TimeeApiClient'
             - '@App\Service\EInvoicing\FileStorageService'
             - '@doctrine.orm.entity_manager'
