@@ -363,9 +363,9 @@
                             <div class="einv-step-title">Générer la Facture-X</div>
                             <div class="einv-step-desc">
                                 {% if step1_done %}
-                                    La facture PDF et le fichier XML (norme EN16931) ont été générés avec succès.
+                                    La facture PDF conforme Facture-X avec le fichier XML (norme EN16931) intégré a été générée avec succès.
                                 {% else %}
-                                    Créer le PDF et le XML conformes à la norme Facture-X / EN16931 pour cette pièce.
+                                    Créer le PDF Facture-X avec données XML intégrées conformes à la norme EN16931 pour cette pièce.
                                 {% endif %}
                             </div>
 
@@ -375,14 +375,7 @@
                                         <div class="einv-download-icon icon-pdf"><i class="fas fa-file-pdf"></i></div>
                                         <div>
                                             <div class="einv-download-label">Télécharger PDF</div>
-                                            <div class="einv-download-meta">Facture-X (PDF/A-3)</div>
-                                        </div>
-                                    </a>
-                                    <a href="{{ path('invoice_einvoicing_download_xml', {id: invoice.id}) }}" class="einv-download-card">
-                                        <div class="einv-download-icon icon-xml"><i class="fas fa-file-code"></i></div>
-                                        <div>
-                                            <div class="einv-download-label">Télécharger XML</div>
-                                            <div class="einv-download-meta">EN16931 (CII)</div>
+                                            <div class="einv-download-meta">Facture-X avec XML intégré</div>
                                         </div>
                                     </a>
                                 </div>
