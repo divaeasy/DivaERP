@@ -3,7 +3,6 @@
 namespace App\Service\EInvoicing\FactureX;
 
 use App\Entity\Entetepiece;
-use App\Service\EInvoicing\EN16931\EN16931Builder;
 use Mpdf\Mpdf;
 use DateTime;
 
@@ -36,10 +35,6 @@ use DateTime;
  */
 class FactureXGenerator
 {
-    public function __construct(
-        private EN16931Builder $xmlBuilder,
-    ) {}
-
     /**
      * Generate complete Facture-X invoice (PDF/A-3 + embedded XML)
      * 
@@ -101,8 +96,8 @@ class FactureXGenerator
         $client = $invoice->getClient();
         $clientName = $client?->getRaisonSociale() ?? $client?->getNom() ?? 'Client';
         $clientAddress = $client?->getAdresse() ?? '';
-        $clientVille = $client?->getVille()?->getNom() ?? '';
-        $clientPays = $client?->getPays()?->getNom() ?? '';
+        $clientVille = $client?->getVille()?->getLibelle() ?? '';
+        $clientPays = $client?->getPays()?->getLibelle() ?? '';
 
         $html = '<!DOCTYPE html>
 <html>
@@ -422,15 +417,10 @@ class FactureXGenerator
             ' . ($invoice->getReglement() ? htmlspecialchars($invoice->getReglement()->getLibelle()) . ' à ' . $invoice->getReglement()->getEcheance() . ' jours' : 'Modalités de paiement à convenir') . '
         </div>
         
-        <!-- Facture-X Notice -->
-        <div class="facturex-notice">
-            ✓ Facture émise en format Facture-X conforme à la norme EN 16931 avec données structurées XML
-        </div>
-        
         <!-- Footer -->
         <div class="footer-section">
             Facture générée le ' . date('d/m/Y à H:i:s') . '<br/>
-            Document certifié conforme Facture-X / EN16931
+            Document généré électroniquement – Format Factur-X conforme à la norme EN16931.
         </div>
     </div>
 </body>

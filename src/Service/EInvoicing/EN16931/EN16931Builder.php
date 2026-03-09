@@ -245,7 +245,9 @@ class EN16931Builder
                 $buyerAddress = $doc->createElement('ram:PostalTradeAddress');
                 
                 $country = $doc->createElement('ram:CountryID');
-                $country->nodeValue = $invoice->getClient()->getPays()?->getCode() ?? 'FR';
+                $country->nodeValue = $this->resolveCountryCodeFromLibelle(
+                    $invoice->getClient()->getPays()?->getLibelle()
+                );
                 $buyerAddress->appendChild($country);
                 
                 $line = $doc->createElement('ram:LineOne');
@@ -253,7 +255,7 @@ class EN16931Builder
                 $buyerAddress->appendChild($line);
                 
                 $city = $doc->createElement('ram:CityName');
-                $city->nodeValue = $invoice->getClient()->getVille()?->getNom() ?? '';
+                $city->nodeValue = $invoice->getClient()->getVille()?->getLibelle() ?? '';
                 $buyerAddress->appendChild($city);
                 
                 $buyer->appendChild($buyerAddress);
@@ -370,5 +372,35 @@ class EN16931Builder
         $dueAmount = $doc->createElement('ram:DuePayableAmount');
         $dueAmount->nodeValue = number_format($taxableAmount + $taxAmount, 2, '.', '');
         $summary->appendChild($dueAmount);
+    }
+
+    /**
+     * Convert country label/name to ISO-3166-1 alpha-2 code.
+     */
+    private function resolveCountryCodeFromLibelle(?string $countryLibelle): string
+    {
+        if ($countryLibelle === null || trim($countryLibelle) === '') {
+            return 'FR';
+        }
+
+        $normalized = strtoupper(trim($countryLibelle));
+
+        if (\in_array($normalized, ['FR', 'FRA', 'FRANCE'], true)) {
+            return 'FR';
+        }
+
+        if (\in_array($normalized, ['MA', 'MAR', 'MOROCCO', 'MAROC'], true)) {
+            return 'MA';
+        }
+
+        if (\in_array($normalized, ['DE', 'DEU', 'GERMANY', 'ALLEMAGNE'], true)) {
+            return 'DE';
+        }
+
+        if (preg_match('/^[A-Z]{2}$/', $normalized)) {
+            return $normalized;
+        }
+
+        return 'FR';
     }
 }
