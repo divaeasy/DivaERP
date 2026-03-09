@@ -1,0 +1,15 @@
+# Minimal .htaccess - mod_rewrite not needed since index.php handles routing
+# Just block access to .env files
+
+<FilesMatch "\.env">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "\.env\.local">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+
+
