@@ -1,12 +1,10 @@
 services:
     # E-Invoicing Services
-    App\Service\EInvoicing\EN16931\EN16931Builder:
+    App\Service\EInvoicing\EN16931\FactureXBuilder:
         public: true
 
     App\Service\EInvoicing\FactureX\FactureXGenerator:
         public: true
-        arguments:
-            - '@App\Service\EInvoicing\EN16931\EN16931Builder'
 
     App\Service\EInvoicing\FactureX\FactureXEmbedder:
         public: true
@@ -25,7 +23,7 @@ services:
     App\Service\EInvoicing\InvoiceService:
         public: true
         arguments:
-            - '@App\Service\EInvoicing\EN16931\EN16931Builder'
+            - '@App\Service\EInvoicing\EN16931\FactureXBuilder'
             - '@App\Service\EInvoicing\FactureX\FactureXGenerator'
             - '@App\Service\EInvoicing\FactureX\FactureXEmbedder'
             - '@App\Service\EInvoicing\Tiime\TimeeApiClient'

@@ -4,7 +4,7 @@ namespace App\Service\EInvoicing;
 
 use App\Entity\Entetepiece;
 use App\Entity\InvoiceStatus;
-use App\Service\EInvoicing\EN16931\EN16931Builder;
+use App\Service\EInvoicing\EN16931\FactureXBuilder;
 use App\Service\EInvoicing\FactureX\FactureXGenerator;
 use App\Service\EInvoicing\FactureX\FactureXEmbedder;
 use App\Service\EInvoicing\Tiime\TimeeApiClient;
@@ -19,7 +19,7 @@ use DateTime;
 class InvoiceService
 {
     public function __construct(
-        private EN16931Builder $xmlBuilder,
+        private FactureXBuilder $xmlBuilder,
         private FactureXGenerator $pdfGenerator,
         private FactureXEmbedder $embedder,
         private TimeeApiClient $tiimeClient,
