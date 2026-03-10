@@ -15,7 +15,7 @@
 {{ form_start(userForm, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
 
 <div class="row">
-    <!-- Left column: Personal info -->
+    <!-- Left column: Personal info & Settings -->
     <div class="col-lg-8">
         <div class="form-card">
             <div class="card-header-custom">
@@ -54,96 +54,410 @@
                 </small>
                 {{ form_errors(userForm.plainPassword) }}
             </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="required">Dossier</label>
+                        {{ form_widget(userForm.dossier, {'attr': {'class': 'form-control js-example-basic-single', 'required': 'required'}}) }}
+                        {{ form_errors(userForm.dossier) }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 0.75rem; font-weight: 500; color: #2d3748; font-size: 14px;">Email vérifié</label>
+                        <div class="email-verify-toggle">
+                            {{ form_widget(userForm.isVerified, {'attr': {'class': 'email-verify-checkbox', 'id': 'isVerifiedSwitch'}}) }}
+                            <label for="isVerifiedSwitch" class="email-verify-label">
+                                <span class="email-verify-status">
+                                    <i class="fas fa-envelope-circle-check"></i>
+                                    <span class="email-verify-text">Non vérifié</span>
+                                </span>
+                            </label>
+                        </div>
+                        {{ form_errors(userForm.isVerified) }}
+                    </div>
+                </div>
+            </div>
+
+            {% if not isNew %}
+            <div class="user-info-row">
+                <div class="user-info-item">
+                    <span class="user-info-label">ID utilisateur</span>
+                    <span class="user-info-value">#{{ user.id }}</span>
+                </div>
+                <div class="user-info-item">
+                    <span class="user-info-label">Statut email</span>
+                    {% if user.isVerified %}
+                        <span class="user-info-badge badge-verified"><i class="fas fa-check mr-1"></i>Vérifié</span>
+                    {% else %}
+                        <span class="user-info-badge badge-unverified"><i class="fas fa-times mr-1"></i>Non vérifié</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <style>
+                .user-info-row {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 16px;
+                    margin-top: 16px;
+                    padding-top: 16px;
+                    border-top: 1px solid #e2e8f0;
+                }
+
+                .user-info-item {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                }
+
+                .user-info-label {
+                    font-size: 12px;
+                    color: #718096;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+
+                .user-info-value {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #2d3748;
+                }
+
+                .user-info-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    font-size: 13px;
+                    padding: 4px 10px;
+                    border-radius: 4px;
+                    font-weight: 500;
+                    width: fit-content;
+                }
+
+                .badge-verified {
+                    background-color: #c6f6d5;
+                    color: #22543d;
+                }
+
+                .badge-unverified {
+                    background-color: #fed7d7;
+                    color: #742a2a;
+                }
+
+                .email-verify-toggle {
+                    position: relative;
+                    display: inline-block;
+                    width: 100%;
+                }
+
+                .email-verify-checkbox {
+                    display: none !important;
+                }
+
+                .email-verify-label {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    width: 100%;
+                    padding: 12px 16px;
+                    border-radius: 6px;
+                    border: 2px solid #e2e8f0;
+                    background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    user-select: none;
+                    font-weight: 500;
+                    font-size: 14px;
+                    color: #4a5568;
+                    margin: 0;
+                }
+
+                .email-verify-label:hover {
+                    border-color: #cbd5e1;
+                    background: linear-gradient(135deg, #fafbfc 0%, #f0f4f8 100%);
+                }
+
+                .email-verify-checkbox:checked + .email-verify-label {
+                    border-color: #48bb78;
+                    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+                    color: #22543d;
+                    box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.1);
+                }
+
+                .email-verify-status {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-weight: 500;
+                }
+
+                .email-verify-status i {
+                    font-size: 16px;
+                }
+
+                .email-verify-checkbox:checked + .email-verify-label .email-verify-status i {
+                    color: #48bb78;
+                }
+
+                .email-verify-checkbox:checked + .email-verify-label .email-verify-text::before {
+                    content: 'Vérifié';
+                }
+
+                .email-verify-checkbox:checked + .email-verify-label .email-verify-text {
+                    display: none;
+                }
+
+                .email-verify-checkbox:checked + .email-verify-label .email-verify-status::after {
+                    content: 'Vérifié';
+                    color: #48bb78;
+                    font-weight: 600;
+                }
+            </style>
         </div>
     </div>
 
-    <!-- Right column: Role & Settings -->
+    <!-- Right column: Role & Access -->
     <div class="col-lg-4">
         <div class="form-card">
             <div class="card-header-custom">
                 <h5><i class="fas fa-shield-alt mr-2"></i>Rôle & Accès</h5>
             </div>
             <div class="form-group">
-                <label class="d-block mb-3">Rôles</label>
-                <div class="role-checkboxes-container">
+                <label class="d-block mb-4 font-weight-600" style="font-size: 14px; color: #2d3748;">Sélectionner les rôles</label>
+                <div class="roles-grid-container">
+                    {% set roleConfig = {
+                        'ROLE_ADMIN': {
+                            'label': 'Administrateur',
+                            'displayLabel': 'Administrateur',
+                            'description': 'Accès complet au système',
+                            'icon': 'fas fa-crown',
+                            'color': '#667eea'
+                        },
+                        'ROLE_COMPTABLE': {
+                            'label': 'Comptable',
+                            'displayLabel': 'Comptable',
+                            'description': 'Gestion comptable et financière',
+                            'icon': 'fas fa-calculator',
+                            'color': '#f093fb'
+                        },
+                        'ROLE_COMMERCIAL': {
+                            'label': 'Commercial',
+                            'displayLabel': 'Commercial',
+                            'description': 'Gestion des ventes et clients',
+                            'icon': 'fas fa-handshake',
+                            'color': '#4facfe'
+                        },
+                        'ROLE_USER': {
+                            'label': 'Utilisateur',
+                            'displayLabel': 'Utilisateur Standard',
+                            'description': 'Accès de base (obligatoire)',
+                            'icon': 'fas fa-user-check',
+                            'color': '#fa709a'
+                        }
+                    } %}
+                    
                     {% for key, value in userForm.roles %}
-                    {% set isUserRole = value.vars.label == 'ROLE_UTILISATEUR' or value.vars.label == 'ROLE_USER' %}
-                    <div class="role-checkbox-item">
+                    {% set roleValue = value.vars.value %}
+                    {% set isUserRole = roleValue == 'ROLE_USER' %}
+                    {% set currentRoleConfig = roleConfig[roleValue] ?? {
+                        'label': roleValue|replace({'ROLE_': ''})|replace({'_': ' '}),
+                        'displayLabel': roleValue|replace({'ROLE_': ''})|replace({'_': ' '}),
+                        'description': 'Rôle personnalisé',
+                        'icon': 'fas fa-user',
+                        'color': '#a0aec0'
+                    } %}
+                    
+                    <div class="role-card-wrapper">
                         {% if isUserRole %}
-                            <input type="checkbox" id="role_{{ key }}" name="{{ userForm.roles.vars.name }}[]" value="{{ value.vars.value }}" class="role-checkbox-input" {% if value.vars.checked %}checked{% endif %} disabled />
+                            <input type="checkbox" id="role_{{ key }}" name="{{ userForm.roles.vars.name }}[]" value="{{ roleValue }}" class="role-checkbox-input" {% if value.vars.checked %}checked{% endif %} disabled />
                         {% else %}
-                            <input type="checkbox" id="role_{{ key }}" name="{{ userForm.roles.vars.name }}[]" value="{{ value.vars.value }}" class="role-checkbox-input" {% if value.vars.checked %}checked{% endif %} />
+                            <input type="checkbox" id="role_{{ key }}" name="{{ userForm.roles.vars.name }}[]" value="{{ roleValue }}" class="role-checkbox-input" {% if value.vars.checked %}checked{% endif %} />
                         {% endif %}
-                        <label for="role_{{ key }}" class="role-badge-label {% if isUserRole %}role-badge-disabled{% endif %}" title="{% if isUserRole %}(Obligatoire){% endif %}">
-                            {% if value.vars.label == 'ROLE_ADMIN' %}
-                                <i class="fas fa-crown"></i>
-                            {% elseif value.vars.label == 'ROLE_COMPTABLE' %}
-                                <i class="fas fa-calculator"></i>
-                            {% elseif value.vars.label == 'ROLE_RESPONSABLE_VENTE' %}
-                                <i class="fas fa-chart-line"></i>
-                            {% elseif value.vars.label == 'ROLE_MAGASIN' %}
-                                <i class="fas fa-warehouse"></i>
-                            {% elseif value.vars.label == 'ROLE_UTILISATEUR' or value.vars.label == 'ROLE_USER' %}
-                                <i class="fas fa-user-check"></i>
-                            {% else %}
-                                <i class="fas fa-user"></i>
-                            {% endif %}
+                        <label for="role_{{ key }}" class="role-card {% if isUserRole %}role-card-disabled{% endif %}" style="--role-color: {{ currentRoleConfig.color }}" data-role-id="{{ roleValue }}">
+                            <div class="role-card-icon">
+                                <i class="{{ currentRoleConfig.icon }}"></i>
+                            </div>
+                            <div class="role-card-content">
+                                <div class="role-card-title">{{ currentRoleConfig.displayLabel }}</div>
+                                <div class="role-card-description">
+                                    {{ currentRoleConfig.description }}
+                                    {% if isUserRole %}<span class="badge-required">(Obligatoire)</span>{% endif %}
+                                </div>
+                            </div>
+                            <div class="role-card-checkmark">
+                                <i class="fas fa-check"></i>
+                            </div>
                         </label>
                     </div>
                     {% endfor %}
                 </div>
-                <small class="form-text text-muted d-block mt-3" style="font-size: 12px;">Un utilisateur peut avoir plusieurs rôles. Le rôle "Utilisateur" est obligatoire et ne peut pas être retiré.</small>
+                <small class="form-text text-muted d-block mt-4" style="font-size: 12px; line-height: 1.5;">
+                    <i class="fas fa-info-circle mr-1"></i>Un utilisateur peut avoir plusieurs rôles. Le rôle "Utilisateur Standard" est obligatoire et ne peut pas être retiré.
+                </small>
                 {{ form_errors(userForm.roles) }}
                 <style>
-                    .role-checkboxes-container { display: flex; flex-direction: row; gap: 12px; flex-wrap: wrap; }
-                    .role-checkbox-item { display: flex; align-items: center; width: calc(50% - 6px); }
-                    .role-checkbox-input { display: none !important; }
-                    .role-badge-label { display: inline-flex; align-items: center; justify-content: center; gap: 0; padding: 10px 14px; border-radius: 6px; font-size: 16px; cursor: pointer; transition: all 0.2s ease; border: 2px solid #cbd5e1; background-color: transparent; color: #64748b; margin: 0; user-select: none; flex-grow: 1; }
-                    .role-badge-label i { font-size: 18px; }
-                    .role-checkbox-input:checked + .role-badge-label { background-color: #4e73df; color: white; border-color: #4e73df; box-shadow: 0 2px 8px rgba(78, 115, 223, 0.2); }
-                    .role-checkbox-input:focus + .role-badge-label { outline: 2px solid #4e73df; outline-offset: 2px; }
-                    .role-badge-label:hover { border-color: #4e73df; background-color: rgba(78, 115, 223, 0.08); }
-                    .role-badge-label.role-badge-disabled { opacity: 0.5; cursor: not-allowed; background-color: transparent; border-color: #cbd5e1; }
-                    .role-badge-label.role-badge-disabled:hover { border-color: #cbd5e1; background-color: transparent; }
-                    .role-checkbox-input:disabled + .role-badge-label { opacity: 0.5; cursor: not-allowed; }
+                    .roles-grid-container {
+                        display: grid;
+                        grid-template-columns: 1fr;
+                        gap: 12px;
+                        margin-bottom: 0;
+                    }
+                    
+                    .role-card-wrapper {
+                        position: relative;
+                    }
+                    
+                    .role-checkbox-input {
+                        display: none !important;
+                    }
+                    
+                    .role-card {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        padding: 14px 16px;
+                        border-radius: 8px;
+                        border: 2px solid #e2e8f0;
+                        background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+                        cursor: pointer;
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        margin: 0;
+                        user-select: none;
+                        flex: 1;
+                    }
+                    
+                    .role-card:hover {
+                        border-color: var(--role-color);
+                        background: linear-gradient(135deg, #ffffff 0%, rgba(0, 0, 0, 0.02) 100%);
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                        transform: translateY(-1px);
+                    }
+                    
+                    .role-card-icon {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 6px;
+                        background: linear-gradient(135deg, var(--role-color) 0%, rgba(0, 0, 0, 0.1) 100%);
+                        color: white;
+                        font-size: 18px;
+                        flex-shrink: 0;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .role-card-content {
+                        flex: 1;
+                        min-width: 0;
+                    }
+                    
+                    .role-card-title {
+                        font-weight: 600;
+                        font-size: 14px;
+                        color: #2d3748;
+                        margin: 0;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    
+                    .role-card-description {
+                        font-size: 12px;
+                        color: #718096;
+                        margin: 2px 0 0 0;
+                        line-height: 1.3;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                    }
+                    
+                    .badge-required {
+                        display: inline-block;
+                        background-color: #fed7d7;
+                        color: #c53030;
+                        padding: 1px 6px;
+                        border-radius: 3px;
+                        font-size: 11px;
+                        font-weight: 600;
+                        white-space: nowrap;
+                    }
+                    
+                    .role-card-checkmark {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 24px;
+                        height: 24px;
+                        border-radius: 4px;
+                        background-color: transparent;
+                        color: transparent;
+                        font-size: 14px;
+                        flex-shrink: 0;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .role-checkbox-input:checked + .role-card {
+                        border-color: var(--role-color);
+                        background: linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, #ffffff 100%);
+                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);
+                    }
+                    
+                    .role-checkbox-input:checked + .role-card .role-card-icon {
+                        transform: scale(1.1);
+                        filter: brightness(1.2);
+                    }
+                    
+                    .role-checkbox-input:checked + .role-card .role-card-checkmark {
+                        background-color: var(--role-color);
+                        color: white;
+                        animation: checkEntrance 0.3s ease;
+                    }
+                    
+                    @keyframes checkEntrance {
+                        0% {
+                            transform: scale(0.5);
+                            opacity: 0;
+                        }
+                        100% {
+                            transform: scale(1);
+                            opacity: 1;
+                        }
+                    }
+                    
+                    .role-checkbox-input:focus + .role-card {
+                        outline: 2px solid var(--role-color);
+                        outline-offset: 0;
+                    }
+                    
+                    .role-card-disabled {
+                        opacity: 0.65;
+                    }
+                    
+                    .role-card-disabled:hover {
+                        border-color: #e2e8f0;
+                        background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+                        box-shadow: none;
+                        cursor: not-allowed;
+                        transform: none;
+                    }
+                    
+                    .role-checkbox-input:disabled + .role-card {
+                        opacity: 0.65;
+                        cursor: not-allowed;
+                    }
+                    
+                    .role-checkbox-input:disabled + .role-card:hover {
+                        border-color: #e2e8f0;
+                        background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+                        box-shadow: none;
+                    }
                 </style>
             </div>
-            <div class="form-group">
-                <label class="required">Dossier</label>
-                {{ form_widget(userForm.dossier, {'attr': {'class': 'form-control js-example-basic-single', 'required': 'required'}}) }}
-                {{ form_errors(userForm.dossier) }}
-            </div>
-            <div class="form-group">
-                <div class="custom-control custom-switch">
-                    {{ form_widget(userForm.isVerified, {'attr': {'class': 'custom-control-input', 'id': 'isVerifiedSwitch'}}) }}
-                    <label class="custom-control-label" for="isVerifiedSwitch" style="font-size: 14px; font-weight: 500; color: #5a5c69;">
-                        Email vérifié
-                    </label>
-                </div>
-                <small class="form-text text-muted mt-1">Cochez si l'email de l'utilisateur est confirmé.</small>
-                {{ form_errors(userForm.isVerified) }}
-            </div>
         </div>
-
-        {% if not isNew %}
-        <div class="form-card" style="background: #f8f9fc; border: 1px solid #e3e6f0;">
-            <div class="card-header-custom" style="border-bottom-color: #d1d3e2;">
-                <h5><i class="fas fa-info-circle mr-2" style="color: #858796;"></i>Informations</h5>
-            </div>
-            <div class="mb-2">
-                <small class="text-muted d-block">ID utilisateur</small>
-                <strong class="text-gray-800">#{{ user.id }}</strong>
-            </div>
-            <div class="mb-2">
-                <small class="text-muted d-block">Statut email</small>
-                {% if user.isVerified %}
-                    <span class="badge badge-success"><i class="fas fa-check mr-1"></i>Vérifié</span>
-                {% else %}
-                    <span class="badge badge-danger"><i class="fas fa-times mr-1"></i>Non vérifié</span>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
 
@@ -156,5 +470,59 @@
     </a>
 </div>
 
-{{ form_end(userForm) }}
+{{ form_end(userForm, {'render_rest': false}) }}
+
+<style>
+    /* Hide any standard form rendering of roles field that might appear */
+    .form-check-group,
+    div[id*="roles"],
+    fieldset[id*="roles"] {
+        display: none !important;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle role card clicks - using the label's for attribute to find checkbox
+    const roleCards = document.querySelectorAll('.role-card');
+    
+    roleCards.forEach(card => {
+        // Get the corresponding checkbox using the label's for attribute
+        const checkboxId = card.getAttribute('for');
+        const checkbox = document.getElementById(checkboxId);
+        
+        if (checkbox && !checkbox.disabled) {
+            // Make the label itself clickable
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                checkbox.checked = !checkbox.checked;
+                // Trigger change event
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            
+            // Keyboard accessibility
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+        
+        // Sync checkbox state with label appearance
+        if (checkbox) {
+            checkbox.addEventListener('change', function() {
+                // Force CSS update by triggering a reflow
+                card.offsetHeight;
+            });
+        }
+    });
+});
+</script>
 {% endblock %}
