@@ -1,4 +1,4 @@
-{% extends "template_oukatech.html.twig" %}
+﻿{% extends "template_oukatech.html.twig" %}
 {% block PageTitle %}Ligne de pièce{% endblock %}
 
 {% block body %}
@@ -22,25 +22,31 @@
         <div class="col-md-4">
             <div class="form-group">
                 {{ form_label(lignepiece.article, 'Article', {'label_attr': {'class': 'required'}}) }}
-                {{ form_widget(lignepiece.article, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                <div class="invalid-feedback">L'article est obligatoire</div>
-                {{ form_errors(lignepiece.article) }}
+                {% set articleErrors = lignepiece.article.vars.errors|length > 0 %}
+                {{ form_widget(lignepiece.article, {'attr': {'class': 'form-control js-example-basic-single' ~ (articleErrors ? ' is-invalid' : '')}}) }}
+                {% if articleErrors %}
+                    <div class="invalid-feedback d-block">{{ form_errors(lignepiece.article) }}</div>
+                {% endif %}
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 {{ form_label(lignepiece.qte, 'Quantité', {'label_attr': {'class': 'required'}}) }}
-                {{ form_widget(lignepiece.qte, {'attr': {'class': 'form-control', 'placeholder': '1'}}) }}
-                <div class="invalid-feedback">La quantité est obligatoire</div>
-                {{ form_errors(lignepiece.qte) }}
+                {% set qteErrors = lignepiece.qte.vars.errors|length > 0 %}
+                {{ form_widget(lignepiece.qte, {'attr': {'class': 'form-control' ~ (qteErrors ? ' is-invalid' : ''), 'placeholder': '1'}}) }}
+                {% if qteErrors %}
+                    <div class="invalid-feedback d-block">{{ form_errors(lignepiece.qte) }}</div>
+                {% endif %}
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 {{ form_label(lignepiece.pub, 'Prix unitaire', {'label_attr': {'class': 'required'}}) }}
-                {{ form_widget(lignepiece.pub, {'attr': {'class': 'form-control', 'placeholder': '0.00'}}) }}
-                <div class="invalid-feedback">Le prix unitaire est obligatoire</div>
-                {{ form_errors(lignepiece.pub) }}
+                {% set pubErrors = lignepiece.pub.vars.errors|length > 0 %}
+                {{ form_widget(lignepiece.pub, {'attr': {'class': 'form-control' ~ (pubErrors ? ' is-invalid' : ''), 'placeholder': '0.00'}}) }}
+                {% if pubErrors %}
+                    <div class="invalid-feedback d-block">{{ form_errors(lignepiece.pub) }}</div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -53,15 +59,21 @@
         <div class="col-md-6">
             <div class="form-group">
                 {{ form_label(lignepiece.remise, 'Remise (%)') }}
-                {{ form_widget(lignepiece.remise, {'attr': {'class': 'form-control', 'placeholder': '0'}}) }}
-                {{ form_errors(lignepiece.remise) }}
+                {% set remiseErrors = lignepiece.remise.vars.errors|length > 0 %}
+                {{ form_widget(lignepiece.remise, {'attr': {'class': 'form-control' ~ (remiseErrors ? ' is-invalid' : ''), 'placeholder': '0'}}) }}
+                {% if remiseErrors %}
+                    <div class="invalid-feedback d-block">{{ form_errors(lignepiece.remise) }}</div>
+                {% endif %}
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 {{ form_label(lignepiece.montant, 'Montant total') }}
-                {{ form_widget(lignepiece.montant, {'attr': {'class': 'form-control', 'placeholder': '0.00', 'readonly': 'readonly'}}) }}
-                {{ form_errors(lignepiece.montant) }}
+                {% set montantErrors = lignepiece.montant.vars.errors|length > 0 %}
+                {{ form_widget(lignepiece.montant, {'attr': {'class': 'form-control' ~ (montantErrors ? ' is-invalid' : ''), 'placeholder': '0.00', 'readonly': 'readonly'}}) }}
+                {% if montantErrors %}
+                    <div class="invalid-feedback d-block">{{ form_errors(lignepiece.montant) }}</div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -88,25 +100,211 @@
 {% block javascripts %}
 <script>
     $(document).ready(function() {
-        $('.js-example-basic-single').select2({
-            theme: 'bootstrap-5',
-            allowClear: true
-        });
-
         // Auto-calculate montant
-        function calculateMontant() {
-            var qte = parseFloat($('#lignepiece_qte').val()) || 0;
-            var pub = parseFloat($('#lignepiece_pub').val()) || 0;
-            var remise = parseFloat($('#lignepiece_remise').val()) || 0;
-            var montant = qte * pub * (1 - remise / 100);
-            $('#lignepiece_montant').val(montant.toFixed(2));
+        function parseNumber(rawValue) {
+            if (rawValue === undefined || rawValue === null) {
+                return 0;
+            }
+            var cleaned = String(rawValue).replace(/\s+/g, '').replace(',', '.');
+            var value = parseFloat(cleaned);
+            return Number.isFinite(value) ? value : 0;
         }
 
-        // Trigger calculation on input change
-        $('#lignepiece_qte, #lignepiece_pub, #lignepiece_remise').on('change input', calculateMontant);
+        function calculateMontant() {
+            var $qte = $('[id$="_qte"]');
+            var $pub = $('[id$="_pub"]');
+            var $remise = $('[id$="_remise"]');
+            var $montant = $('[id$="_montant"]');
+
+            var qte = parseNumber($qte.val());
+            var pub = parseNumber($pub.val());
+            var remise = parseNumber($remise.val());
+
+            var montant = qte * pub * (1 - remise / 100);
+            if (!Number.isFinite(montant)) {
+                montant = 0;
+            }
+
+            $montant.val(montant.toFixed(2));
+        }
+
+        function shouldShowError($field, force) {
+            return force === true || $field.data('touched') === true;
+        }
+
+        function markTouched($field) {
+            $field.data('touched', true);
+        }
+
+        function setClientError($field, message) {
+            var $group = $field.closest('.form-group');
+            var $serverErrors = $group.find('.invalid-feedback:not(.js-client-error)');
+            if ($serverErrors.length > 0) {
+                $serverErrors.addClass('d-none js-server-hidden');
+            }
+            var $existing = $group.find('.invalid-feedback.js-client-error');
+            if ($existing.length === 0) {
+                $existing = $('<div class="invalid-feedback d-block js-client-error"></div>');
+                $group.append($existing);
+            }
+            $existing.text(message);
+            $field.addClass('is-invalid');
+        }
+
+        function hideServerErrors($field) {
+            var $group = $field.closest('.form-group');
+            var $serverErrors = $group.find('.invalid-feedback:not(.js-client-error)');
+            if ($serverErrors.length > 0) {
+                $serverErrors.addClass('d-none js-server-hidden');
+            }
+        }
+
+        function clearClientError($field) {
+            var $group = $field.closest('.form-group');
+            $group.find('.invalid-feedback.js-client-error').remove();
+            if ($group.find('.invalid-feedback:not(.js-client-error):visible').length === 0) {
+                $field.removeClass('is-invalid');
+            }
+        }
+
+        function validateRequiredPositive($field, label, force) {
+            var show = shouldShowError($field, force);
+            var raw = String($field.val() || '').trim();
+            if (raw === '') {
+                if (show) {
+                    setClientError($field, label + ' est obligatoire.');
+                }
+                return false;
+            }
+            var value = parseNumber(raw);
+            if (value <= 0) {
+                if (show) {
+                    setClientError($field, label + ' doit être supérieur à 0.');
+                }
+                return false;
+            }
+            if (show) {
+                hideServerErrors($field);
+                clearClientError($field);
+            }
+            return true;
+        }
+
+        function validateRemise($field, force) {
+            var show = shouldShowError($field, force);
+            var raw = String($field.val() || '').trim();
+            if (raw === '') {
+                if (show) {
+                    clearClientError($field);
+                }
+                return true;
+            }
+            var value = parseNumber(raw);
+            if (value < 0 || value > 100) {
+                if (show) {
+                    setClientError($field, 'La remise doit être comprise entre 0 et 100.');
+                }
+                return false;
+            }
+            if (show) {
+                hideServerErrors($field);
+                clearClientError($field);
+            }
+            return true;
+        }
+
+        function validateRequiredSelect($field, label, force) {
+            var show = shouldShowError($field, force);
+            var raw = String($field.val() || '').trim();
+            if (raw === '') {
+                if (show) {
+                    setClientError($field, label + ' est obligatoire.');
+                }
+                return false;
+            }
+            if (show) {
+                hideServerErrors($field);
+                clearClientError($field);
+            }
+            return true;
+        }
+
+        function setSubmitState(isValid) {
+            var $submit = $('button[type="submit"]');
+            $submit.prop('disabled', !isValid);
+        }
+
+        function hasVisibleErrors() {
+            return $('.invalid-feedback.js-client-error:visible, .invalid-feedback:not(.js-client-error):visible').length > 0;
+        }
+
+        function runClientValidation(options) {
+            var focusOnError = options && options.focusOnError === true;
+            var showErrors = options && options.showErrors === true;
+            var $article = $('[id$="_article"]');
+            var $qte = $('[id$="_qte"]');
+            var $pub = $('[id$="_pub"]');
+            var $remise = $('[id$="_remise"]');
+
+            var ok = true;
+            ok = validateRequiredSelect($article, "L'article", showErrors) && ok;
+            ok = validateRequiredPositive($qte, 'La quantité', showErrors) && ok;
+            ok = validateRequiredPositive($pub, 'Le prix unitaire', showErrors) && ok;
+            ok = validateRemise($remise, showErrors) && ok;
+
+            // Disable submit only when errors are visible
+            setSubmitState(!hasVisibleErrors());
+
+            if (!ok && focusOnError) {
+                var $firstInvalid = $('.is-invalid').first();
+                if ($firstInvalid.length) {
+                    $firstInvalid.trigger('focus');
+                }
+            }
+
+            return ok;
+        }
+
+        // Trigger calculation and validation state on input change
+        $(document).on('change input', '[id$="_qte"], [id$="_pub"], [id$="_remise"]', function() {
+            calculateMontant();
+            runClientValidation();
+        });
+
+        $(document).on('blur', '[id$="_qte"]', function() {
+            var $field = $(this);
+            markTouched($field);
+            validateRequiredPositive($field, 'La quantité', true);
+            runClientValidation();
+        });
+        $(document).on('blur', '[id$="_pub"]', function() {
+            var $field = $(this);
+            markTouched($field);
+            validateRequiredPositive($field, 'Le prix unitaire', true);
+            runClientValidation();
+        });
+        $(document).on('blur', '[id$="_remise"]', function() {
+            var $field = $(this);
+            markTouched($field);
+            validateRemise($field, true);
+            runClientValidation();
+        });
+        $(document).on('change', '[id$="_article"]', function() {
+            var $field = $(this);
+            markTouched($field);
+            validateRequiredSelect($field, "L'article", true);
+            runClientValidation();
+        });
+
+        $('form').on('submit', function(e) {
+            if (!runClientValidation({ focusOnError: true, showErrors: true })) {
+                e.preventDefault();
+            }
+        });
         
         // Calculate on page load to initialize value
         calculateMontant();
+        setSubmitState(true);
     });
 </script>
 {% endblock %}

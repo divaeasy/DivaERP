@@ -44,6 +44,8 @@ class EntetePController extends AbstractController
         }
 
         $pagination = $entetepieceRepository->findPaginated($searchActive, $page);
+        $invoiceIds = array_map(static fn (Entetepiece $piece): int => $piece->getId(), $pagination['items']);
+        $remiseByInvoice = $entetepieceRepository->getWeightedRemiseByInvoiceIds($invoiceIds);
 
         return $this->render('entetepiece/index.html.twig', [
             'search' => $searchForm->createView(),
@@ -51,6 +53,7 @@ class EntetePController extends AbstractController
             'currentPage' => $pagination['currentPage'],
             'totalPages' => $pagination['totalPages'],
             'totalItems' => $pagination['totalItems'],
+            'remiseByInvoice' => $remiseByInvoice,
         ]);
     }
     #[Route('/edit/{id?0}', name: 'entetepiece.edit')]

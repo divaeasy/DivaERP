@@ -145,6 +145,10 @@ class FactureXBuilder
             'AAB'
         );
 
+        $vatCategory = $taxRate > 0
+            ? ZugferdVatCategoryCodes::STAN_RATE
+            : ZugferdVatCategoryCodes::ZERO_RATE_GOOD;
+
         $lineNo = 1;
         foreach ($lines as $line) {
             $quantity = (float) ($line->getQuantite() ?? 1.0);
@@ -159,7 +163,7 @@ class FactureXBuilder
                 ZugferdUnitCodes::REC20_PIECE,
                 0.0,
                 '',
-                ZugferdVatCategoryCodes::STAN_RATE,
+                $vatCategory,
                 ZugferdVatTypeCodes::VALUE_ADDED_TAX,
                 $taxRate
             );
@@ -187,9 +191,13 @@ class FactureXBuilder
 
     private function resolveTaxRate(Entetepiece $invoice): float
     {
-        $rate = (float) ($invoice->getTaxRate() ?? 20.0);
+        $rate = $invoice->getTaxRate();
+        if ($rate === null || trim((string) $rate) === '') {
+            $rate = $invoice->getRemise();
+        }
+        $rate = (float) ($rate ?? 0.0);
         if ($rate <= 0) {
-            return 20.0;
+            return 0.0;
         }
 
         return $rate;

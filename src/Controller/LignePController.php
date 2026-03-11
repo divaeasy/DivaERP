@@ -15,6 +15,19 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('lignepiece')]
 class LignePController extends AbstractController
 {
+    private function computeMontant(Lignepiece $lignepiece): float
+    {
+        $qte = (float) ($lignepiece->getQte() ?? 0.0);
+        $pub = (float) ($lignepiece->getPub() ?? 0.0);
+        $remise = (float) ($lignepiece->getRemise() ?? 0.0);
+
+        $montant = $qte * $pub * (1 - $remise / 100);
+        if (!is_finite($montant)) {
+            $montant = 0.0;
+        }
+
+        return round($montant, 2);
+    }
     #[Route('/', name: 'lignepiece.list')]
     public function index(ManagerRegistry $doctrine): Response
     {
@@ -54,6 +67,7 @@ class LignePController extends AbstractController
             $message = "La lignepiece a été mise à jour avec succès";
            
         }
+        $lignepiece->setMontant($this->computeMontant($lignepiece));
         $entityManager = $doctrine->getManager();
         $entityManager->persist($lignepiece);
         $entityManager->flush();
@@ -92,6 +106,7 @@ class LignePController extends AbstractController
 
         $message = "La lignepiece est ajoutée avec succès";
        
+        $lignepiece->setMontant($this->computeMontant($lignepiece));
         $entityManager = $doctrine->getManager();
         $entityManager->persist($lignepiece);
         $entityManager->flush();

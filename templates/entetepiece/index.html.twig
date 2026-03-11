@@ -51,7 +51,8 @@
                 <td>{{ entetepiece.client }}</td>
                 <td><strong>{{ entetepiece.pieceno }}</strong></td>
                 <td>{{ entetepiece.pieceref }}</td>
-                <td class="text-right">{{ entetepiece.remise }}%</td>
+                {% set display_remise = remiseByInvoice[entetepiece.id]|default(entetepiece.remise ?? 0) %}
+                <td class="text-right">{{ display_remise|number_format(2, ',', ' ') }}%</td>
                 <td>
                     {% if entetepiece.statut == 'validé' %}
                         <span class="badge badge-success">{{ entetepiece.statut }}</span>
