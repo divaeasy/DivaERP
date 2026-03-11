@@ -33,17 +33,17 @@ class InvoiceService
      *
      * @return array PDF content (with embedded XML)
      */
-    public function generateFactureX(Entetepiece $invoice): array
+    public function generateFactureX(Entetepiece $invoice, string $pdfModel = FactureXGenerator::DEFAULT_MODEL): array
     {
         try {
             $xmlContent = $this->xmlBuilder->buildInvoiceXml($invoice);
-            $pdfContent = $this->pdfGenerator->generateFactureX($invoice);
+            $pdfContent = $this->pdfGenerator->generateFactureX($invoice, $pdfModel);
 
             // Embed XML into PDF to create true Factur-X document
             $pdfWithEmbeddedXml = $this->embedXmlInPdf($pdfContent, $xmlContent, $invoice->getPieceref() ?? 'invoice');
 
             // Save only the PDF with embedded XML (no separate XML file)
-            $pdfFilename = $this->fileStorage->savePdf($invoice, $pdfWithEmbeddedXml);
+            $pdfFilename = $this->fileStorage->savePdf($invoice, $pdfWithEmbeddedXml, $pdfModel);
 
             // Store filename in entity (only PDF, XML is embedded)
             $invoice->setFactureXPdfFilename($pdfFilename);
@@ -54,6 +54,7 @@ class InvoiceService
                 'invoice_id' => $invoice->getId(),
                 'invoice_ref' => $invoice->getPieceref(),
                 'pdf_filename' => $pdfFilename,
+                'pdf_model' => $pdfModel,
             ]);
 
             return [
@@ -62,6 +63,7 @@ class InvoiceService
                 'pdf' => $pdfWithEmbeddedXml,
                 'pdf_filename' => $pdfFilename,
                 'xml_filename' => null, // No separate XML file
+                'pdf_model' => $pdfModel,
             ];
         } catch (\Exception $e) {
             $this->logger->error('Failed to generate Facture-X', [

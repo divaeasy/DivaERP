@@ -3,14 +3,13 @@
 namespace App\Controller;
 
 use App\Entity\Entetepiece;
-use App\Service\EInvoicing\InvoiceService;
+use App\Service\EInvoicing\FactureX\FactureXGenerator;
 use App\Service\EInvoicing\FileStorageService;
+use App\Service\EInvoicing\InvoiceService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/invoice/e-invoicing', name: 'invoice_einvoicing_')]
@@ -22,25 +21,28 @@ class EInvoicingController extends AbstractController
         private EntityManagerInterface $entityManager,
     ) {}
 
-    /**
-     * Test page for e-invoicing
-     */
     #[Route('/{id}/test', name: 'test', methods: ['GET'])]
     public function testPage(Entetepiece $invoice): Response
     {
+        $classicFilename = $this->fileStorage->getPdfFilenameForModel($invoice, FactureXGenerator::MODEL_CLASSIC);
+        $modernFilename = $this->fileStorage->getPdfFilenameForModel($invoice, FactureXGenerator::MODEL_MODERN);
+        $classicGenerated = $this->fileStorage->fileExists($classicFilename);
+        $modernGenerated = $this->fileStorage->fileExists($modernFilename);
+
         return $this->render('e_invoicing/test.html.twig', [
             'invoice' => $invoice,
+            'classic_generated' => $classicGenerated,
+            'modern_generated' => $modernGenerated,
         ]);
     }
 
-    /**
-     * Generate Facture-X for an invoice
-     */
     #[Route('/{id}/generate-facturex', name: 'generate_facturex', methods: ['GET', 'POST'])]
-    public function generateFactureX(Entetepiece $invoice): Response
+    public function generateFactureX(Request $request, Entetepiece $invoice): Response
     {
+        $model = (string) ($request->query->get('model') ?? $request->request->get('model') ?? FactureXGenerator::DEFAULT_MODEL);
+
         try {
-            $result = $this->invoiceService->generateFactureX($invoice);
+            $result = $this->invoiceService->generateFactureX($invoice, $model);
 
             if ($result['success']) {
                 $invoice->setFactureX(true);
@@ -49,27 +51,28 @@ class EInvoicingController extends AbstractController
                 $this->invoiceService->updateInvoiceStatus($invoice, 'FACTUREX_GENERATED', [
                     'pdf_filename' => $result['pdf_filename'],
                     'xml_filename' => $result['xml_filename'],
+                    'pdf_model' => $result['pdf_model'] ?? FactureXGenerator::DEFAULT_MODEL,
                 ]);
 
-                $this->addFlash('success', 'Facture-X générée avec succès ! Le PDF et le XML sont prêts.');
+                $this->addFlash(
+                    'success',
+                    'Facture-X generee avec succes (modele: ' . ($result['pdf_model'] ?? FactureXGenerator::DEFAULT_MODEL) . ').'
+                );
             } else {
-                $this->addFlash('error', 'Échec de la génération : ' . $result['error']);
+                $this->addFlash('error', 'Echec de la generation: ' . ($result['error'] ?? 'erreur inconnue'));
             }
         } catch (\Exception $e) {
-            $this->addFlash('error', 'Erreur : ' . $e->getMessage());
+            $this->addFlash('error', 'Erreur: ' . $e->getMessage());
         }
 
         return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
     }
 
-    /**
-     * Submit invoice to Tiime PDP
-     */
     #[Route('/{id}/submit-tiime', name: 'submit_tiime', methods: ['GET', 'POST'])]
     public function submitToTiime(Entetepiece $invoice): Response
     {
         try {
-            // If Facture-X already generated, use existing files instead of regenerating
+            // If Facture-X already generated, use existing files instead of regenerating.
             if ($invoice->isFactureX() && $invoice->getFactureXPdfFilename() && $invoice->getFactureXXmlFilename()) {
                 $pdfContent = $this->fileStorage->getFileContent($invoice->getFactureXPdfFilename());
                 $xmlContent = $this->fileStorage->getFileContent($invoice->getFactureXXmlFilename());
@@ -81,15 +84,15 @@ class EInvoicingController extends AbstractController
                     $invoice->setTiimeSubmissionId($result['submission_id'] ?? null);
                     $this->entityManager->flush();
 
-                    $this->addFlash('success', 'Facture transmise au PDP Tiime avec succès !');
+                    $this->addFlash('success', 'Facture transmise au PDP Tiime.');
                     if (!empty($result['tiime_invoice_id'])) {
-                        $this->addFlash('info', 'ID Tiime : ' . $result['tiime_invoice_id']);
+                        $this->addFlash('info', 'ID Tiime: ' . $result['tiime_invoice_id']);
                     }
                 } else {
-                    $this->addFlash('error', 'Échec de la transmission : ' . ($result['error'] ?? 'Erreur inconnue'));
+                    $this->addFlash('error', 'Echec de la transmission: ' . ($result['error'] ?? 'erreur inconnue'));
                 }
             } else {
-                // No Facture-X yet — run the full workflow
+                // No Facture-X yet: run full workflow.
                 $result = $this->invoiceService->processInvoice($invoice);
 
                 if ($result['success']) {
@@ -97,21 +100,18 @@ class EInvoicingController extends AbstractController
                     $invoice->setSubmittedToTiime(true);
                     $this->entityManager->flush();
 
-                    $this->addFlash('success', 'Facture générée et transmise au PDP Tiime avec succès !');
+                    $this->addFlash('success', 'Facture generee et transmise a Tiime.');
                 } else {
-                    $this->addFlash('error', 'Échec : ' . ($result['error'] ?? 'Erreur inconnue'));
+                    $this->addFlash('error', 'Echec: ' . ($result['error'] ?? 'erreur inconnue'));
                 }
             }
         } catch (\Exception $e) {
-            $this->addFlash('error', 'Erreur : ' . $e->getMessage());
+            $this->addFlash('error', 'Erreur: ' . $e->getMessage());
         }
 
         return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
     }
 
-    /**
-     * Check invoice status from Tiime
-     */
     #[Route('/{id}/check-tiime-status', name: 'check_tiime_status', methods: ['GET'])]
     public function checkTiimeStatus(Entetepiece $invoice): Response
     {
@@ -123,9 +123,6 @@ class EInvoicingController extends AbstractController
         ]);
     }
 
-    /**
-     * View invoice lifecycle history
-     */
     #[Route('/{id}/history', name: 'history', methods: ['GET'])]
     public function viewHistory(Entetepiece $invoice): Response
     {
@@ -137,12 +134,29 @@ class EInvoicingController extends AbstractController
         ]);
     }
 
-    /**
-     * Download Facture-X PDF
-     */
     #[Route('/{id}/download-pdf', name: 'download_pdf', methods: ['GET'])]
-    public function downloadPdf(Entetepiece $invoice): Response
+    public function downloadPdf(Request $request, Entetepiece $invoice): Response
     {
+        $model = strtolower(trim((string) $request->query->get('model', '')));
+
+        if ($model !== '') {
+            $filename = $this->fileStorage->getPdfFilenameForModel($invoice, $model);
+            if (!$this->fileStorage->fileExists($filename)) {
+                throw $this->createNotFoundException(
+                    'Ce modele PDF n est pas encore genere. Cliquez d abord sur Generer modele ' . ($model === 'modern' ? '2' : '1') . '.'
+                );
+            }
+
+            $response = new Response($this->fileStorage->getFileContent($filename));
+            $response->headers->set('Content-Type', 'application/pdf');
+            $response->headers->set(
+                'Content-Disposition',
+                'attachment; filename="' . ($invoice->getPieceref() ?? ('invoice_' . $invoice->getId())) . '_' . $model . '.pdf"'
+            );
+
+            return $response;
+        }
+
         if (!$invoice->getFactureXPdfFilename()) {
             throw $this->createNotFoundException('PDF file not found. Generate Facture-X first.');
         }
@@ -155,17 +169,17 @@ class EInvoicingController extends AbstractController
 
             $response = new Response(file_get_contents($filepath));
             $response->headers->set('Content-Type', 'application/pdf');
-            $response->headers->set('Content-Disposition', 'attachment; filename="' . $invoice->getPieceref() . '.pdf"');
-            
+            $response->headers->set(
+                'Content-Disposition',
+                'attachment; filename="' . ($invoice->getPieceref() ?? ('invoice_' . $invoice->getId())) . '.pdf"'
+            );
+
             return $response;
         } catch (\Exception $e) {
             throw $this->createNotFoundException('Error downloading file: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Download Facture-X XML
-     */
     #[Route('/{id}/download-xml', name: 'download_xml', methods: ['GET'])]
     public function downloadXml(Entetepiece $invoice): Response
     {
@@ -181,17 +195,17 @@ class EInvoicingController extends AbstractController
 
             $response = new Response(file_get_contents($filepath));
             $response->headers->set('Content-Type', 'application/xml');
-            $response->headers->set('Content-Disposition', 'attachment; filename="' . $invoice->getPieceref() . '.xml"');
-            
+            $response->headers->set(
+                'Content-Disposition',
+                'attachment; filename="' . ($invoice->getPieceref() ?? ('invoice_' . $invoice->getId())) . '.xml"'
+            );
+
             return $response;
         } catch (\Exception $e) {
             throw $this->createNotFoundException('Error downloading file: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Tiime Webhook endpoint (receives status updates)
-     */
     #[Route('/webhook/tiime', name: 'tiime_webhook', methods: ['POST'])]
     public function tiimeWebhook(Request $request): Response
     {
@@ -199,7 +213,7 @@ class EInvoicingController extends AbstractController
 
         if (isset($payload['invoice_id'])) {
             $invoice = $this->entityManager->getRepository(Entetepiece::class)->find($payload['invoice_id']);
-            
+
             if ($invoice) {
                 $this->invoiceService->updateInvoiceStatus(
                     $invoice,

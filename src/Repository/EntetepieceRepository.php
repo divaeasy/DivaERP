@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Entetepiece;
+use App\Entity\Lignepiece;
 use App\Model\SearchPiece;
 use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -74,5 +75,39 @@ class EntetepieceRepository extends ServiceEntityRepository
     {
         $qb = $this->getSearchQueryBuilder($searchData);
         return PaginationHelper::paginate($qb, $page);
+    }
+
+    /**
+     * Compute weighted average remise per invoice based on line items.
+     *
+     * @param array<int> $invoiceIds
+     * @return array<int, float> Map of invoiceId => remise percentage
+     */
+    public function getWeightedRemiseByInvoiceIds(array $invoiceIds): array
+    {
+        $invoiceIds = array_values(array_filter(array_map('intval', $invoiceIds)));
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('IDENTITY(lp.piece) AS invoice_id')
+            ->addSelect('SUM(COALESCE(lp.qte, 0) * COALESCE(lp.pub, 0)) AS base_total')
+            ->addSelect('SUM(COALESCE(lp.qte, 0) * COALESCE(lp.pub, 0) * COALESCE(lp.remise, 0)) AS remise_weighted')
+            ->from(Lignepiece::class, 'lp')
+            ->where($qb->expr()->in('lp.piece', ':ids'))
+            ->setParameter('ids', $invoiceIds)
+            ->groupBy('lp.piece');
+
+        $rows = $qb->getQuery()->getArrayResult();
+        $result = [];
+        foreach ($rows as $row) {
+            $invoiceId = (int) ($row['invoice_id'] ?? 0);
+            $baseTotal = (float) ($row['base_total'] ?? 0);
+            $weighted = (float) ($row['remise_weighted'] ?? 0);
+            $result[$invoiceId] = $baseTotal > 0 ? ($weighted / $baseTotal) : 0.0;
+        }
+
+        return $result;
     }
 }

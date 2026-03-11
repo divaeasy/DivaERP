@@ -11,17 +11,37 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints as Assert;
 
 class LignepieceFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('qte')
-            ->add('pub')
-            ->add('montant')
+            ->add('qte', null, [
+                'constraints' => [
+                    new Assert\NotBlank(['message' => 'La quantité est obligatoire.']),
+                    new Assert\GreaterThan(['value' => 0, 'message' => 'La quantité doit être supérieure à 0.']),
+                ],
+            ])
+            ->add('pub', null, [
+                'constraints' => [
+                    new Assert\NotBlank(['message' => 'Le prix unitaire est obligatoire.']),
+                    new Assert\GreaterThan(['value' => 0, 'message' => 'Le prix unitaire doit être supérieur à 0.']),
+                ],
+            ])
+            ->add('montant', null, [
+                'required' => false,
+            ])
             ->add('remise', null, [
-                'required' => false
+                'required' => false,
+                'constraints' => [
+                    new Assert\Range([
+                        'min' => 0,
+                        'max' => 100,
+                        'notInRangeMessage' => 'La remise doit être comprise entre 0 et 100.',
+                    ]),
+                ],
             ])
            
             

@@ -199,6 +199,12 @@
         background: #eef1fb;
         transform: translateY(-1px);
     }
+    .einv-download-card.disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        pointer-events: none;
+        background: #f6f7fb;
+    }
     .einv-download-icon {
         width: 36px;
         height: 36px;
@@ -308,6 +314,24 @@
     }
 </style>
 
+{% set computed_total = 0 %}
+{% set computed_remise_weighted = 0 %}
+{% set computed_remise_base = 0 %}
+{% for line in invoice.lignepieces %}
+    {% set line_qte = line.qte ?? 0 %}
+    {% set line_pub = line.pub ?? 0 %}
+    {% set line_remise = line.remise ?? 0 %}
+    {% set line_total = line_qte * line_pub %}
+    {% set computed_total = computed_total + (line_total * (1 - line_remise / 100)) %}
+    {% set computed_remise_weighted = computed_remise_weighted + (line_total * line_remise) %}
+    {% set computed_remise_base = computed_remise_base + line_total %}
+{% endfor %}
+{% set invoice_total = (invoice.montant is not null and invoice.montant > 0) ? invoice.montant : computed_total %}
+{% set invoice_remise = computed_remise_base > 0 ? (computed_remise_weighted / computed_remise_base) : (invoice.remise ?? 0) %}
+{% set invoice_tax_rate = invoice.taxRate is not null ? invoice.taxRate : (invoice.remise ?? 0) %}
+{% set invoice_taxable = invoice.taxableAmount is not null ? invoice.taxableAmount : invoice_total %}
+{% set invoice_tax_amount = invoice.taxAmount is not null ? invoice.taxAmount : (invoice_taxable * (invoice_tax_rate / 100)) %}
+
 <!-- Summary Cards -->
 <div class="einv-summary mt-3">
     <div class="einv-stat stat-ref">
@@ -316,7 +340,7 @@
     </div>
     <div class="einv-stat stat-amount">
         <div class="einv-stat-label">Montant</div>
-        <div class="einv-stat-value">{{ invoice.montant|number_format(2, ',', ' ') }} {{ invoice.devise.code ?? 'EUR' }}</div>
+        <div class="einv-stat-value">{{ invoice_total|number_format(2, ',', ' ') }} {{ invoice.devise.code ?? 'EUR' }}</div>
     </div>
     <div class="einv-stat stat-date">
         <div class="einv-stat-label">Date</div>
@@ -350,7 +374,7 @@
                 <div class="einv-steps">
 
                     {# === STEP 1: Generate Facture-X === #}
-                    {% set step1_done = invoice.isFactureX %}
+                    {% set step1_done = classic_generated or modern_generated %}
                     <div class="einv-step {{ step1_done ? 'step-done' : 'step-active' }}">
                         <div class="einv-step-indicator">
                             {% if step1_done %}
@@ -360,34 +384,72 @@
                             {% endif %}
                         </div>
                         <div class="einv-step-content">
-                            <div class="einv-step-title">Générer la Facture-X</div>
+                            <div class="einv-step-title">Generer la Facture-X</div>
                             <div class="einv-step-desc">
-                                {% if step1_done %}
-                                    La facture PDF conforme Facture-X avec le fichier XML (norme EN16931) intégré a été générée avec succès.
+                                {% if classic_generated and modern_generated %}
+                                    Les 2 modeles sont generes. Vous pouvez telecharger chacun separement.
+                                {% elseif classic_generated %}
+                                    Le modele 1 est genere. Le modele 2 ne sera genere que si vous cliquez sur "Generer modele 2".
+                                {% elseif modern_generated %}
+                                    Le modele 2 est genere. Le modele 1 ne sera genere que si vous cliquez sur "Generer modele 1".
                                 {% else %}
-                                    Créer le PDF Facture-X avec données XML intégrées conformes à la norme EN16931 pour cette pièce.
+                                    Generez le PDF Facture-X (avec XML integre) puis choisissez le modele visuel a telecharger.
                                 {% endif %}
                             </div>
 
                             {% if step1_done %}
                                 <div class="einv-downloads">
-                                    <a href="{{ path('invoice_einvoicing_download_pdf', {id: invoice.id}) }}" class="einv-download-card">
-                                        <div class="einv-download-icon icon-pdf"><i class="fas fa-file-pdf"></i></div>
-                                        <div>
-                                            <div class="einv-download-label">Télécharger PDF</div>
-                                            <div class="einv-download-meta">Facture-X avec XML intégré</div>
+                                    {% if classic_generated %}
+                                        <a href="{{ path('invoice_einvoicing_download_pdf', {id: invoice.id, model: 'classic'}) }}" class="einv-download-card">
+                                            <div class="einv-download-icon icon-pdf"><i class="fas fa-file-pdf"></i></div>
+                                            <div>
+                                                <div class="einv-download-label">Modele 1 PDF</div>
+                                                <div class="einv-download-meta">Style classique, donnees dynamiques</div>
+                                            </div>
+                                        </a>
+                                    {% else %}
+                                        <div class="einv-download-card disabled">
+                                            <div class="einv-download-icon icon-pdf"><i class="fas fa-lock"></i></div>
+                                            <div>
+                                                <div class="einv-download-label">Modele 1 PDF</div>
+                                                <div class="einv-download-meta">Generez d abord le modele 1</div>
+                                            </div>
                                         </div>
-                                    </a>
+                                    {% endif %}
+
+                                    {% if modern_generated %}
+                                        <a href="{{ path('invoice_einvoicing_download_pdf', {id: invoice.id, model: 'modern'}) }}" class="einv-download-card">
+                                            <div class="einv-download-icon icon-pdf"><i class="fas fa-file-pdf"></i></div>
+                                            <div>
+                                                <div class="einv-download-label">Modele 2 PDF</div>
+                                                <div class="einv-download-meta">Style moderne, donnees dynamiques</div>
+                                            </div>
+                                        </a>
+                                    {% else %}
+                                        <div class="einv-download-card disabled">
+                                            <div class="einv-download-icon icon-pdf"><i class="fas fa-lock"></i></div>
+                                            <div>
+                                                <div class="einv-download-label">Modele 2 PDF</div>
+                                                <div class="einv-download-meta">Generez d abord le modele 2</div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
                                 </div>
                                 <div class="mt-3">
-                                    <a href="{{ path('invoice_einvoicing_generate_facturex', {id: invoice.id}) }}" class="btn-einv btn-einv-outline btn-einv-sm">
-                                        <i class="fas fa-redo-alt"></i> Régénérer
+                                    <a href="{{ path('invoice_einvoicing_generate_facturex', {id: invoice.id, model: 'classic'}) }}" class="btn-einv btn-einv-outline btn-einv-sm">
+                                        <i class="fas fa-redo-alt"></i> {{ classic_generated ? 'Regenerer modele 1' : 'Generer modele 1' }}
+                                    </a>
+                                    <a href="{{ path('invoice_einvoicing_generate_facturex', {id: invoice.id, model: 'modern'}) }}" class="btn-einv btn-einv-outline btn-einv-sm ml-2">
+                                        <i class="fas fa-redo-alt"></i> {{ modern_generated ? 'Regenerer modele 2' : 'Generer modele 2' }}
                                     </a>
                                 </div>
                             {% else %}
                                 <div class="einv-step-action">
-                                    <a href="{{ path('invoice_einvoicing_generate_facturex', {id: invoice.id}) }}" class="btn-einv btn-einv-primary">
-                                        <i class="fas fa-cogs"></i> Générer Facture-X
+                                    <a href="{{ path('invoice_einvoicing_generate_facturex', {id: invoice.id, model: 'classic'}) }}" class="btn-einv btn-einv-primary">
+                                        <i class="fas fa-cogs"></i> Generer modele 1
+                                    </a>
+                                    <a href="{{ path('invoice_einvoicing_generate_facturex', {id: invoice.id, model: 'modern'}) }}" class="btn-einv btn-einv-outline ml-2">
+                                        <i class="fas fa-cogs"></i> Generer modele 2
                                     </a>
                                 </div>
                             {% endif %}
@@ -523,11 +585,11 @@
                 </div>
                 <div class="einv-info-row">
                     <span class="einv-info-label">Montant</span>
-                    <span class="einv-info-value">{{ invoice.montant|number_format(2, ',', ' ') }} {{ invoice.devise.code ?? 'EUR' }}</span>
+                    <span class="einv-info-value">{{ invoice_total|number_format(2, ',', ' ') }} {{ invoice.devise.code ?? 'EUR' }}</span>
                 </div>
                 <div class="einv-info-row">
                     <span class="einv-info-label">Remise</span>
-                    <span class="einv-info-value">{{ invoice.remise ?? 0 }}%</span>
+                    <span class="einv-info-value">{{ invoice_remise|number_format(2, ',', ' ') }}%</span>
                 </div>
                 <div class="einv-info-row">
                     <span class="einv-info-label">Statut Pièce</span>
@@ -600,15 +662,15 @@
                 </div>
                 <div class="einv-info-row">
                     <span class="einv-info-label">Taux TVA</span>
-                    <span class="einv-info-value">{{ invoice.taxRate ? invoice.taxRate ~ '%' : '—' }}</span>
+                    <span class="einv-info-value">{{ invoice_tax_rate|number_format(2, ',', ' ') }}%</span>
                 </div>
                 <div class="einv-info-row">
                     <span class="einv-info-label">Base HT</span>
-                    <span class="einv-info-value">{{ invoice.taxableAmount ? invoice.taxableAmount|number_format(2, ',', ' ') ~ ' €' : '—' }}</span>
+                    <span class="einv-info-value">{{ invoice_taxable|number_format(2, ',', ' ') }} €</span>
                 </div>
                 <div class="einv-info-row">
                     <span class="einv-info-label">Montant TVA</span>
-                    <span class="einv-info-value">{{ invoice.taxAmount ? invoice.taxAmount|number_format(2, ',', ' ') ~ ' €' : '—' }}</span>
+                    <span class="einv-info-value">{{ invoice_tax_amount|number_format(2, ',', ' ') }} €</span>
                 </div>
             </div>
         </div>
