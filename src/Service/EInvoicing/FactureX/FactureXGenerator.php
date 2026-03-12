@@ -21,10 +21,10 @@ class FactureXGenerator
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4',
-            'margin_left' => 8,
-            'margin_right' => 8,
-            'margin_top' => 8,
-            'margin_bottom' => 20,
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 30,
             'PDFVersion' => '1.7',
         ]);
 
@@ -108,14 +108,33 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         }
 
         // Classic model footer
-        return '<div style="width: 100%; border-collapse: collapse;">
-<table style="width: 100%; border-collapse: collapse; background: #e7f0fa; border-radius: 7px; overflow: hidden;">
-<tr>
-<td style="width: 33.33%; text-align: center; font-size: 8.7px; color: #2d4b67; padding: 8px 7px; border-right: 1px solid #d1deec;">' . $this->e($data['seller_name']) . '</td>
-<td style="width: 33.33%; text-align: center; font-size: 8.7px; color: #2d4b67; padding: 8px 7px; border-right: 1px solid #d1deec;">' . ($data['seller_id'] !== '' ? ('ID: ' . $this->e($data['seller_id'])) : 'ID: -') . '</td>
-<td style="width: 33.33%; text-align: center; font-size: 8.7px; color: #2d4b67; padding: 8px 7px;">' . $this->e($buyerCityLine !== '' ? $buyerCityLine : $data['seller_country']) . '</td>
+        return '
+<div class="footer">
+<div class="footer-box">
+
+<table class="footer-table">
+
+<tr class="footer-head">
+<td>Siret '.$this->e($data['seller_ice']).'</td>
+<td>'.$this->e($data['seller_name']).' : Informatique de gestion</td>
+<td>Code NAF : '.$this->e($data['seller_sc']).'</td>
 </tr>
+
+<tr>
+<td>TVA Intra : '.$this->e($data['seller_vat_number']).'</td>
+<td>'.$this->e($data['seller_rc']).'</td>
+<td>Email : '.$this->e($data['seller_email']).'</td>
+</tr>
+
+<tr>
+<td></td>
+<td>Tel : '.$this->e($data['seller_phone'] ?? '').'</td>
+<td></td>
+</tr>
+
 </table>
+
+</div>
 </div>';
     }
 
@@ -223,6 +242,7 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
             (string) ($invoice->getSellerSiren() ?? ''),
             (string) ($invoice->getSellerSiret() ?? '')
         );
+        $sellerVatNumber = trim((string) ($invoice->getSellerVatNumber() ?? ''));
         if ($sellerIce === '') {
             $sellerIce = '-';
         }
@@ -254,6 +274,7 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
             'seller_id' => (string) ($invoice->getSellerSiren() ?? $invoice->getSellerSiret() ?? $dossier?->getRc() ?? ''),
             'seller_rc' => $sellerRc,
             'seller_ice' => $sellerIce,
+            'seller_vat_number' => $sellerVatNumber,
             'seller_sc' => $sellerSc,
             'seller_email' => '',
             'seller_address_lines' => $sellerAddressLines,
@@ -280,11 +301,11 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         $rows = '';
         foreach ($data['line_items'] as $item) {
             $rows .= '<tr>'
-                . '<td>' . $this->e($item['reference']) . '</td>'
-                . '<td>' . $this->e($item['designation']) . '</td>'
-                . '<td class="r">' . number_format((float) $item['quantity'], 2, ',', ' ') . '</td>'
-                . '<td class="r">' . number_format((float) $item['unit_price'], 2, ',', ' ') . '</td>'
-                . '<td class="r">' . number_format((float) $item['total'], 2, ',', ' ') . '</td>'
+                . '<td width="12%">' . $this->e($item['reference']) . '</td>'
+                . '<td width="48%">' . $this->e($item['designation']) . '</td>'
+                . '<td width="10%" class="r">' . number_format((float) $item['quantity'], 2, ',', ' ') . '</td>'
+                . '<td width="15%" class="r">' . number_format((float) $item['unit_price'], 2, ',', ' ') . '</td>'
+                . '<td width="15%" class="r">' . number_format((float) $item['total'], 2, ',', ' ') . '</td>'
                 . '</tr>';
         }
 
@@ -292,95 +313,302 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         $buyerLinesHtml = $this->linesToHtml($data['buyer_address_lines']);
         $buyerCityLine = trim($data['buyer_postcode'] . ' ' . $data['buyer_city']);
         
-        // Payment and bank info section (in main content)
-        $contentFooterHtml = '';
-        if ($includeFooter) {
-            $contentFooterHtml = '<div class="text"><strong>Conditions de paiement:</strong> ' . $this->e($data['payment_text'] !== '' ? $data['payment_text'] : 'paiement à réception de facture') . '</div>'
-        . '<div class="text"><strong>Coordonnées bancaires:</strong><br>'
-        . 'IBAN: ' . ($data['bank_iban'] !== '' ? $this->e($data['bank_iban']) : '') . '<br>'
-        . 'Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . '</div>';
-        }
-        
         return '<!DOCTYPE html>
-<html><head><meta charset="utf-8">
+<html>
+<head>
+<meta charset="utf-8">
+
 <style>
-html, body { height: 100%; margin: 0; padding: 0; }
-body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #1f2d3d; }
-.container { position: relative; width: 100%; min-height: 297mm; padding-bottom: 60mm; box-sizing: border-box; }
-.content { padding: 8px; }
-.top { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-.brand { font-size: 18px; font-weight: 700; color: #1d4a80; }
-.ref { text-align: right; font-size: 30px; font-weight: 700; color: #1c3550; letter-spacing: 1px; }
-.party { width: 100%; border-collapse: separate; border-spacing: 12px 0; margin-bottom: 16px; }
-.box { border: 1px solid #d7e0ea; border-radius: 6px; padding: 10px; min-height: 95px; }
-.box h4 { margin: 0 0 6px 0; font-size: 11px; color: #2c4f75; text-transform: uppercase; }
-.invoice-label { margin: 16px 0 12px; font-size: 31px; font-style: italic; color: #24384d; }
-.meta { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-.meta th { background: #e7e9ed; color: #5a6877; font-size: 9px; text-align: left; padding: 5px 7px; }
-.meta td { background: #f9fafb; border-bottom: 1px solid #eceff3; padding: 6px 7px; font-size: 10px; }
-.lines { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-.lines th { background: #e7e9ed; color: #5a6877; font-size: 9px; text-align: left; padding: 6px 7px; border-bottom: 1px solid #d8dee6; }
-.lines td { border-bottom: 1px solid #e9edf2; padding: 7px; font-size: 10px; vertical-align: top; }
-.r { text-align: right; }
-.totals { width: 40%; margin-left: auto; border-collapse: collapse; margin-top: 30px; margin-bottom: 16px; }
-.totals td { padding: 5px 7px; font-size: 10px; }
-.totals td:first-child { text-align: right; color: #445567; font-weight: 600; }
-.totals td:last-child { text-align: right; font-weight: 700; color: #1f2d3d; }
-.totals tr.ttc td { border-top: 1px solid #b5c2cf; border-bottom: 1px solid #b5c2cf; font-size: 11px; }
-.text { font-size: 10px; line-height: 1.5; margin-bottom: 20px; padding: 10px; color: #2f4050; background: #f9fafb; border: 1px solid #e0e5ed; border-radius: 4px; }
-.small { font-size: 8.4px; color: #5a6877; line-height: 1.4; margin-top: 12px; margin-bottom: 30px; padding: 6px; }
-.footer-wrap { position: absolute; left: 8px; right: 8px; bottom: 10mm; width: auto; margin-top: 20px; }
-.footer-grid { margin: 0; width: 100%; border-collapse: collapse; background: #e7f0fa; border-radius: 7px; overflow: hidden; }
-.footer-grid td { width: 33.33%; text-align: center; font-size: 8.7px; color: #2d4b67; padding: 8px 7px; border-right: 1px solid #d1deec; }
-.footer-grid td:last-child { border-right: none; }
-</style></head>
-<body><div class="container">
-<div class="content">
 
-<table class="top"><tr>
-<td class="brand">' . $this->e($data['seller_name']) . '</td>
-<td class="ref">' . $this->e($data['invoice_ref']) . '</td>
-</tr></table>
+html, body{
+margin:0;
+padding:0;
+}
 
-<table class="party"><tr>
-<td width="50%"><div class="box">
-<strong>' . $this->e($data['seller_name']) . '</strong><br>'
-    . $sellerLinesHtml . '<br>'
-    . $this->e($data['seller_country']) . '<br>'
-    . ($data['seller_id'] !== '' ? ('ID: ' . $this->e($data['seller_id'])) : '')
-    . '</div></td>
-<td width="50%"><div class="box">
-<strong>' . $this->e($data['buyer_name']) . '</strong><br>'
-    . $buyerLinesHtml . '<br>'
-    . $this->e($buyerCityLine) . '<br>'
-    . $this->e($data['buyer_country'])
-    . '</div></td>
-</tr></table>
+body{
+font-family: DejaVu Sans, sans-serif;
+font-size:11px;
+color:#333;
+}
 
-<div class="invoice-label">Facture</div>
+.page{
+position:relative;
+min-height:270mm;
+padding:15mm 15mm 45mm 15mm;
+box-sizing:border-box;
+}
 
-<table class="meta">
-<tr><th>Date</th><th>N piece</th><th>Client</th><th>Reference</th></tr>
-<tr><td>' . $this->e($data['invoice_date']) . '</td><td>' . $this->e($data['invoice_number']) . '</td><td>' . $this->e($data['buyer_code']) . '</td><td>' . $this->e($data['invoice_ref']) . '</td></tr>
+/* HEADER */
+
+.header-table{
+width:100%;
+border-collapse:collapse;
+margin-bottom:25px;
+}
+
+.header-table td{
+width:50%;
+vertical-align:top;
+}
+
+.company-name{
+font-size:16px;
+font-weight:bold;
+margin-bottom:6px;
+}
+
+.company-details{
+font-size:11px;
+line-height:1.6;
+}
+
+/* TITLE */
+
+.title{
+font-size:28px;
+font-style:italic;
+color:#555;
+margin:20px 0 12px 0;
+}
+
+/* META TABLE */
+
+.meta-table{
+width:100%;
+border-collapse:collapse;
+margin-bottom:20px;
+}
+
+.meta-table th{
+background:#e6e6e6;
+padding:6px;
+font-size:8px;
+text-align:left;
+}
+
+.meta-table td{
+padding:6px;
+border-bottom:1px solid #ddd;
+}
+
+/* PRODUCT TABLE */
+
+.lines{
+width:100%;
+border-collapse:collapse;
+margin-bottom:20px;
+}
+
+.lines thead{
+display:table-header-group;
+}
+
+.lines th{
+background:#dcdcdc;
+font-size:11px;
+padding:7px 6px;
+text-align:left;
+}
+
+.lines td{
+padding:7px 6px;
+border-bottom:1px solid #ddd;
+}
+
+.r{
+text-align:right;
+}
+
+.c{
+text-align:center;
+}
+
+/* TOTALS */
+
+.totals{
+width:260px;
+margin-left:auto;
+border-collapse:collapse;
+margin-bottom:20px;
+}
+
+.totals td{
+padding:5px 8px;
+}
+
+.totals td:last-child{
+text-align:right;
+font-weight:bold;
+}
+
+.totals .ttc td{
+font-weight:bold;
+font-size:12px;
+border-top:2px solid #333;
+border-bottom:2px solid #333;
+}
+
+/* PAYMENT */
+
+.payment{
+font-size:10px;
+line-height:1.6;
+margin-bottom:25px;
+}
+
+.payment strong{
+display:block;
+margin-top:6px;
+}
+
+/* LEGAL */
+
+.legal{
+font-size:8px;
+color:#666;
+margin-top:12px;
+}
+
+.footer{
+width:100%;
+padding:0 10mm;
+box-sizing:border-box;
+}
+
+.footer-box{
+background:#dce9f7;
+border-radius:10px;
+padding:8px 12px;
+}
+
+.footer-table{
+width:100%;
+border-collapse:collapse;
+text-align:center;
+font-size:9px;
+color:#2f3e4e;
+line-height:1.4;
+}
+
+.footer-table td{
+padding:2px 10px;
+vertical-align:middle;
+}
+
+.footer-head td{
+font-weight:bold;
+font-size:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="page">
+
+<table class="header-table">
+<tr>
+
+<td>
+<div class="company-name">'.$this->e($data['seller_name']).'</div>
+<div class="company-details">
+'.$sellerLinesHtml.'<br>
+'.$this->e($data['seller_country']).'
+</div>
+</td>
+
+<td>
+<div class="company-name">'.$this->e($data['buyer_name']).'</div>
+<div class="company-details">
+'.$buyerLinesHtml.'<br>
+'.$this->e($buyerCityLine).'<br>
+'.$this->e($data['buyer_country']).'
+</div>
+</td>
+
+</tr>
+</table>
+
+<div class="title">Facture</div>
+
+<table class="meta-table">
+
+<tr>
+<th>Date</th>
+<th>N° pièce</th>
+<th>Client</th>
+<th>Référence</th>
+</tr>
+
+<tr>
+<td>'.$this->e($data['invoice_date']).'</td>
+<td>'.$this->e($data['invoice_number']).'</td>
+<td>'.$this->e($data['buyer_code']).'</td>
+<td>'.$this->e($data['invoice_ref']).'</td>
+</tr>
+
 </table>
 
 <table class="lines">
-<thead><tr><th width="15%">Reference</th><th width="45%">Designation</th><th width="12%" class="r">Quantite</th><th width="14%" class="r">Prix unitaire</th><th width="14%" class="r">Montant</th></tr></thead>
-<tbody>' . $rows . '</tbody>
+
+<thead>
+<tr>
+<th width="12%">Reference</th>
+<th width="48%">Designation</th>
+<th width="10%" class="c">Quantite</th>
+<th width="15%" class="r">Prix unitaire</th>
+<th width="15%" class="r">Montant</th>
+</tr>
+</thead>
+
+<tbody>
+'.$rows.'
+</tbody>
+
 </table>
 
 <table class="totals">
-<tr><td>Total HT</td><td>' . number_format((float) $data['total_ht'], 2, ',', ' ') . '</td></tr>
-<tr><td>TVA (' . number_format((float) $data['tax_rate'], 2, ',', ' ') . '%)</td><td>' . number_format((float) $data['total_tva'], 2, ',', ' ') . '</td></tr>
-<tr class="ttc"><td>Total TTC</td><td>' . number_format((float) $data['total_ttc'], 2, ',', ' ') . ' ' . $this->e($data['currency']) . '</td></tr>
+
+<tr>
+<td>Total HT</td>
+<td>'.number_format((float)$data['total_ht'],2,',',' ').'</td>
+</tr>
+
+<tr>
+<td>TVA ('.number_format((float)$data['tax_rate'],2,',',' ').'%)</td>
+<td>'.number_format((float)$data['total_tva'],2,',',' ').'</td>
+</tr>
+
+<tr class="ttc">
+<td>Total TTC</td>
+<td>'.number_format((float)$data['total_ttc'],2,',',' ').' '.$this->e($data['currency']).'</td>
+</tr>
+
 </table>
 
-<div class="text"><strong>Echeance:</strong> ' . $this->e($data['due_date']) . '</div>
+<div class="payment">
 
-' . $contentFooterHtml . '
+<strong>Mode de règlement :</strong>
+'.$this->e($data['payment_text'] !== "" ? $data["payment_text"] : "paiement à réception de facture").'
+
+<strong>Coordonnées bancaires :</strong>
+
+IBAN : '.($data["bank_iban"] !== "" ? $this->e($data["bank_iban"]) : "").'<br>
+BIC : '.($data["bank_bic"] !== "" ? $this->e($data["bank_bic"]) : "").'
 
 </div>
-</div></body></html>';
+
+<div class="legal">
+Pénalités de retard applicables conformément à la loi 2008-776 du 4 août 2008.
+Indemnité forfaitaire pour frais de recouvrement : 40 €.
+</div>
+
+</div>
+
+</body>
+</html>';
     }
 
     /**
