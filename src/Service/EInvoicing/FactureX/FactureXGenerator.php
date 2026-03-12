@@ -454,6 +454,7 @@ border-bottom:2px solid #333;
 font-size:10px;
 line-height:1.6;
 margin-bottom:25px;
+margin-top:30px;
 }
 
 .payment strong{
@@ -591,9 +592,9 @@ font-size:10px;
 <div class="payment">
 
 <strong>Mode de règlement :</strong>
-'.$this->e($data['payment_text'] !== "" ? $data["payment_text"] : "paiement à réception de facture").'
+'.$this->e($data['payment_text'] !== "" ? $data["payment_text"] : "paiement à réception de facture").' .<br>
 
-<strong>Coordonnées bancaires :</strong>
+<strong>Coordonnées bancaires :</strong> . <br>
 
 IBAN : '.($data["bank_iban"] !== "" ? $this->e($data["bank_iban"]) : "").'<br>
 BIC : '.($data["bank_bic"] !== "" ? $this->e($data["bank_bic"]) : "").'
