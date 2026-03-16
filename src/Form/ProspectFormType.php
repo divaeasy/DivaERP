@@ -2,7 +2,6 @@
 
 namespace App\Form;
 
-use App\Entity\Dossier;
 use App\Entity\Pays;
 use App\Entity\Prospects;
 use App\Entity\Reglement;
@@ -27,10 +26,6 @@ class ProspectFormType extends AbstractType
         ->add('email', null, ['required' => false])
         ->add('web', null, ['required' => false])
         ->add('linkedin', null, ['required' => false])
-        ->add('dossier', EntityType::class, [
-            'class' => Dossier::class,
-            'choice_label' => 'nom',
-        ])
         ->add('ville', EntityType::class, [
             'class' => Ville::class,
             'choice_label' => 'libelle',

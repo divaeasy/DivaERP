@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Tarifs;
+use App\Entity\User;
 use App\Form\TarifsFormType;
 use App\Form\SearchGenericFormType;
 use App\Model\SearchGeneric;
@@ -48,7 +49,9 @@ class TarifsController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Tarifs::class);
-        $tarif = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $tarif = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         $new = false;
         if(!$tarif){
             $tarif = new Tarifs();
@@ -93,7 +96,9 @@ class TarifsController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Tarifs::class);
-        $tarif = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $tarif = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         if($tarif){
             $manager = $doctrine->getManager();
             $manager->remove($tarif);

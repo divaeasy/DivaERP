@@ -4,18 +4,20 @@ namespace App\Repository;
 
 use App\Entity\Entetepiece;
 use App\Entity\Lignepiece;
+use App\Entity\User;
 use App\Model\SearchPiece;
 use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * @extends ServiceEntityRepository<Entetepiece>
  */
 class EntetepieceRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, private Security $security)
     {
         parent::__construct($registry, Entetepiece::class);
     }
@@ -26,7 +28,12 @@ class EntetepieceRepository extends ServiceEntityRepository
         $targetYear = $currentYear - $annee;
         $startDate = "{$targetYear}-01-01";
         $endDate = "{$targetYear}-12-31";
-        
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+
         $sql = "
             SELECT 
                 MONTH(ep.datep) as mois,
@@ -37,13 +44,12 @@ class EntetepieceRepository extends ServiceEntityRepository
             GROUP BY MONTH(ep.datep)
             ORDER BY MONTH(ep.datep) ASC
         ";
+
+        $sql = $this->applyDossierFilterSql($sql, 'ep', $params);
         
         $connection = $this->getEntityManager()->getConnection();
         $statement = $connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-        ]);
+        $result = $statement->executeQuery($params);
         
         return $result->fetchAllAssociative();
     }
@@ -52,6 +58,8 @@ class EntetepieceRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('e')
             ->orderBy('e.id', 'DESC');
+
+        $this->applyDossierFilter($qb, 'e');
 
         if ($searchData && !empty($searchData->pieceref)) {
             $qb->andWhere('e.pieceref LIKE :ref')
@@ -109,5 +117,43 @@ class EntetepieceRepository extends ServiceEntityRepository
         }
 
         return $result;
+    }
+
+    private function applyDossierFilter(QueryBuilder $qb, string $alias): void
+    {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            return;
+        }
+
+        $currentDossier = $user->getCurrentDossier();
+        if ($currentDossier !== null) {
+            $qb->andWhere(sprintf('%s.dossier = :dossier', $alias))
+               ->setParameter('dossier', $currentDossier);
+        } else {
+            $qb->andWhere('1 = 0');
+        }
+    }
+
+    private function applyDossierFilterSql(string $sql, string $alias, array &$params): string
+    {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            return $sql;
+        }
+
+        $filter = ' AND 1 = 0';
+        $currentDossier = $user->getCurrentDossier();
+        if ($currentDossier !== null) {
+            $params['dossierId'] = $currentDossier->getId();
+            $filter = sprintf(' AND %s.dossier_id = :dossierId', $alias);
+        }
+
+        if (preg_match('/\b(GROUP BY|ORDER BY|LIMIT)\b/i', $sql, $match, PREG_OFFSET_CAPTURE)) {
+            $pos = $match[0][1];
+            return substr($sql, 0, $pos) . $filter . ' ' . substr($sql, $pos);
+        }
+
+        return $sql . $filter;
     }
 }

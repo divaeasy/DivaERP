@@ -3,526 +3,471 @@
 {% block PageTitle %}{{ isNew ? 'Nouvel utilisateur' : 'Modifier l\'utilisateur' }}{% endblock %}
 
 {% block body %}
-<div class="page-header">
+{{ form_start(userForm, {'attr': {'class': 'needs-validation user-edit-form', 'novalidate': 'novalidate'}}) }}
+
+<div class="page-header mb-4">
     <div class="d-flex align-items-center">
-        <a href="{{ path('users.list') }}" class="btn-back mr-3">
-            <i class="fas fa-arrow-left"></i>
-        </a>
-        <h1 class="h3 mb-0 text-gray-800">{{ isNew ? 'Nouvel utilisateur' : 'Modifier l\'utilisateur' }}</h1>
+        <a href="{{ path('users.list') }}" class="btn-back mr-3"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h1 class="h4 mb-1">{{ isNew ? 'Nouvel utilisateur' : 'Modifier l\'utilisateur' }}</h1>
+            <div class="text-muted small">Gérer l’identité, les rôles et les dossiers autorisés.</div>
+        </div>
     </div>
 </div>
 
-{{ form_start(userForm, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
-
 <div class="row">
-    <!-- Left column: Personal info & Settings -->
     <div class="col-lg-8">
-        <div class="form-card">
-            <div class="card-header-custom">
-                <h5><i class="fas fa-user mr-2"></i>Informations personnelles</h5>
+        <div class="card-soft mb-4">
+            <div class="card-soft__header">
+                <div>
+                    <div class="label-eyebrow">Profil</div>
+                    <h5 class="mb-0">Informations générales</h5>
+                </div>
+                {% if not isNew %}
+                    <span class="badge badge-soft">{{ user.email }}</span>
+                {% endif %}
             </div>
+
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="required">Nom</label>
-                        {{ form_widget(userForm.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom de l\'utilisateur', 'required': 'required'}}) }}
+                        {{ form_widget(userForm.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom'}}) }}
                         {{ form_errors(userForm.nom) }}
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="required">Prénom</label>
-                        {{ form_widget(userForm.prenom, {'attr': {'class': 'form-control', 'placeholder': 'Prénom de l\'utilisateur', 'required': 'required'}}) }}
+                        {{ form_widget(userForm.prenom, {'attr': {'class': 'form-control', 'placeholder': 'Prénom'}}) }}
                         {{ form_errors(userForm.prenom) }}
                     </div>
                 </div>
             </div>
+
             <div class="form-group">
                 <label class="required">Adresse email</label>
-                {{ form_widget(userForm.email, {'attr': {'class': 'form-control', 'placeholder': 'email@exemple.com', 'required': 'required'}}) }}
+                {{ form_widget(userForm.email, {'attr': {'class': 'form-control', 'placeholder': 'email@exemple.com'}}) }}
                 {{ form_errors(userForm.email) }}
             </div>
+
             <div class="form-group">
                 <label>{{ isNew ? 'Mot de passe' : 'Nouveau mot de passe' }}</label>
                 {{ form_widget(userForm.plainPassword, {'attr': {'class': 'form-control', 'placeholder': isNew ? 'Choisir un mot de passe' : 'Laisser vide pour ne pas changer'}}) }}
                 <small class="form-text text-muted">
-                    {% if not isNew %}
-                        Laissez vide pour conserver le mot de passe actuel.
-                    {% else %}
-                        Minimum 6 caractères.
-                    {% endif %}
+                    {% if isNew %}Minimum 6 caractères.{% else %}Laissez vide pour conserver le mot de passe actuel.{% endif %}
                 </small>
                 {{ form_errors(userForm.plainPassword) }}
             </div>
+        </div>
+
+        <div class="card-soft mb-4">
+            <div class="card-soft__header">
+                <div>
+                    <div class="label-eyebrow">Dossiers</div>
+                    <h5 class="mb-0">Autorisation & dossier actif</h5>
+                </div>
+            </div>
             <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="required">Dossier</label>
-                        {{ form_widget(userForm.dossier, {'attr': {'class': 'form-control js-example-basic-single', 'required': 'required'}}) }}
-                        {{ form_errors(userForm.dossier) }}
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label style="display: block; margin-bottom: 0.75rem; font-weight: 500; color: #2d3748; font-size: 14px;">Email vérifié</label>
-                        <div class="email-verify-toggle">
-                            {{ form_widget(userForm.isVerified, {'attr': {'class': 'email-verify-checkbox', 'id': 'isVerifiedSwitch'}}) }}
-                            <label for="isVerifiedSwitch" class="email-verify-label">
-                                <span class="email-verify-status">
-                                    <i class="fas fa-envelope-circle-check"></i>
-                                    <span class="email-verify-text">Non vérifié</span>
-                                </span>
-                            </label>
+                <div class="col-md-7">
+                    <div class="form-group mb-3">
+                        <label>Dossiers autorisés</label>
+                        {% set selectedDossiers = userForm.dossiers.vars.value is iterable ? userForm.dossiers.vars.value : [] %}
+                        <div class="dossier-chip-list">
+                            {% for choice in userForm.dossiers.vars.choices %}
+                                {% set isSelected = choice.value in selectedDossiers %}
+                                <button type="button"
+                                        class="dossier-chip {% if isSelected %}dossier-chip--active{% endif %}"
+                                        data-value="{{ choice.value }}">
+                                    <span class="dossier-chip__label">{{ choice.label }}</span>
+                                    <span class="dossier-chip__check"><i class="fas fa-check"></i></span>
+                                </button>
+                            {% endfor %}
                         </div>
-                        {{ form_errors(userForm.isVerified) }}
+                        <div class="d-none" id="native-dossiers-select">
+                            {{ form_widget(userForm.dossiers) }}
+                        </div>
+                        <small class="form-text text-muted">Ces dossiers apparaîtront dans le switcher du menu.</small>
+                        {{ form_errors(userForm.dossiers) }}
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="form-group mb-3">
+                        <label>Dossier actif</label>
+                        {{ form_widget(userForm.currentDossier, {'attr': {'class': 'form-control js-current-dossier', 'data-placeholder': 'Choisir un dossier actif'}}) }}
+                        <small class="form-text text-muted">Doit faire partie des dossiers autorisés.</small>
+                        {{ form_errors(userForm.currentDossier) }}
                     </div>
                 </div>
             </div>
-
-            {% if not isNew %}
-            <div class="user-info-row">
-                <div class="user-info-item">
-                    <span class="user-info-label">ID utilisateur</span>
-                    <span class="user-info-value">#{{ user.id }}</span>
-                </div>
-                <div class="user-info-item">
-                    <span class="user-info-label">Statut email</span>
-                    {% if user.isVerified %}
-                        <span class="user-info-badge badge-verified"><i class="fas fa-check mr-1"></i>Vérifié</span>
-                    {% else %}
-                        <span class="user-info-badge badge-unverified"><i class="fas fa-times mr-1"></i>Non vérifié</span>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-            <style>
-                .user-info-row {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 16px;
-                    margin-top: 16px;
-                    padding-top: 16px;
-                    border-top: 1px solid #e2e8f0;
-                }
-
-                .user-info-item {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 4px;
-                }
-
-                .user-info-label {
-                    font-size: 12px;
-                    color: #718096;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-
-                .user-info-value {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #2d3748;
-                }
-
-                .user-info-badge {
-                    display: inline-flex;
-                    align-items: center;
-                    font-size: 13px;
-                    padding: 4px 10px;
-                    border-radius: 4px;
-                    font-weight: 500;
-                    width: fit-content;
-                }
-
-                .badge-verified {
-                    background-color: #c6f6d5;
-                    color: #22543d;
-                }
-
-                .badge-unverified {
-                    background-color: #fed7d7;
-                    color: #742a2a;
-                }
-
-                .email-verify-toggle {
-                    position: relative;
-                    display: inline-block;
-                    width: 100%;
-                }
-
-                .email-verify-checkbox {
-                    display: none !important;
-                }
-
-                .email-verify-label {
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 10px;
-                    width: 100%;
-                    padding: 12px 16px;
-                    border-radius: 6px;
-                    border: 2px solid #e2e8f0;
-                    background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    user-select: none;
-                    font-weight: 500;
-                    font-size: 14px;
-                    color: #4a5568;
-                    margin: 0;
-                }
-
-                .email-verify-label:hover {
-                    border-color: #cbd5e1;
-                    background: linear-gradient(135deg, #fafbfc 0%, #f0f4f8 100%);
-                }
-
-                .email-verify-checkbox:checked + .email-verify-label {
-                    border-color: #48bb78;
-                    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-                    color: #22543d;
-                    box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.1);
-                }
-
-                .email-verify-status {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-weight: 500;
-                }
-
-                .email-verify-status i {
-                    font-size: 16px;
-                }
-
-                .email-verify-checkbox:checked + .email-verify-label .email-verify-status i {
-                    color: #48bb78;
-                }
-
-                .email-verify-checkbox:checked + .email-verify-label .email-verify-text::before {
-                    content: 'Vérifié';
-                }
-
-                .email-verify-checkbox:checked + .email-verify-label .email-verify-text {
-                    display: none;
-                }
-
-                .email-verify-checkbox:checked + .email-verify-label .email-verify-status::after {
-                    content: 'Vérifié';
-                    color: #48bb78;
-                    font-weight: 600;
-                }
-            </style>
         </div>
     </div>
 
-    <!-- Right column: Role & Access -->
     <div class="col-lg-4">
-        <div class="form-card">
-            <div class="card-header-custom">
-                <h5><i class="fas fa-shield-alt mr-2"></i>Rôle & Accès</h5>
+        <div class="card-soft mb-4">
+            <div class="card-soft__header">
+                <div>
+                    <div class="label-eyebrow">Accès</div>
+                    <h5 class="mb-0">Rôles & sécurité</h5>
+                </div>
             </div>
-            <div class="form-group">
-                <label class="d-block mb-4 font-weight-600" style="font-size: 14px; color: #2d3748;">Sélectionner les rôles</label>
-                <div class="roles-grid-container">
-                    {% set roleConfig = {
-                        'ROLE_ADMIN': {
-                            'label': 'Administrateur',
-                            'displayLabel': 'Administrateur',
-                            'description': 'Accès complet au système',
-                            'icon': 'fas fa-crown',
-                            'color': '#667eea'
-                        },
-                        'ROLE_COMPTABLE': {
-                            'label': 'Comptable',
-                            'displayLabel': 'Comptable',
-                            'description': 'Gestion comptable et financière',
-                            'icon': 'fas fa-calculator',
-                            'color': '#f093fb'
-                        },
-                        'ROLE_COMMERCIAL': {
-                            'label': 'Commercial',
-                            'displayLabel': 'Commercial',
-                            'description': 'Gestion des ventes et clients',
-                            'icon': 'fas fa-handshake',
-                            'color': '#4facfe'
-                        },
-                        'ROLE_USER': {
-                            'label': 'Utilisateur',
-                            'displayLabel': 'Utilisateur Standard',
-                            'description': 'Accès de base (obligatoire)',
-                            'icon': 'fas fa-user-check',
-                            'color': '#fa709a'
-                        }
-                    } %}
-                    
-                    {% for key, value in userForm.roles %}
+
+            <div class="roles-grid-container">
+                {% set roleConfig = {
+                    'ROLE_ADMIN': { 'display': 'Administrateur', 'desc': 'Accès complet au système', 'icon': 'fas fa-crown', 'color': '#6b21a8' },
+                    'ROLE_COMPTABLE': { 'display': 'Comptable', 'desc': 'Gestion comptable et financière', 'icon': 'fas fa-calculator', 'color': '#0f766e' },
+                    'ROLE_COMMERCIAL': { 'display': 'Commercial', 'desc': 'Gestion des ventes et clients', 'icon': 'fas fa-handshake', 'color': '#2563eb' },
+                    'ROLE_USER': { 'display': 'Utilisateur standard', 'desc': 'Accès de base (obligatoire)', 'icon': 'fas fa-user-check', 'color': '#f97316' }
+                } %}
+
+                {% for value in userForm.roles %}
                     {% set roleValue = value.vars.value %}
                     {% set isUserRole = roleValue == 'ROLE_USER' %}
-                    {% set currentRoleConfig = roleConfig[roleValue] ?? {
-                        'label': roleValue|replace({'ROLE_': ''})|replace({'_': ' '}),
-                        'displayLabel': roleValue|replace({'ROLE_': ''})|replace({'_': ' '}),
-                        'description': 'Rôle personnalisé',
-                        'icon': 'fas fa-user',
-                        'color': '#a0aec0'
-                    } %}
-                    
-                    <div class="role-card-wrapper">
-                        {% if isUserRole %}
-                            <input type="checkbox" id="role_{{ key }}" name="{{ userForm.roles.vars.name }}[]" value="{{ roleValue }}" class="role-checkbox-input" {% if value.vars.checked %}checked{% endif %} disabled />
-                        {% else %}
-                            <input type="checkbox" id="role_{{ key }}" name="{{ userForm.roles.vars.name }}[]" value="{{ roleValue }}" class="role-checkbox-input" {% if value.vars.checked %}checked{% endif %} />
-                        {% endif %}
-                        <label for="role_{{ key }}" class="role-card {% if isUserRole %}role-card-disabled{% endif %}" style="--role-color: {{ currentRoleConfig.color }}" data-role-id="{{ roleValue }}">
-                            <div class="role-card-icon">
-                                <i class="{{ currentRoleConfig.icon }}"></i>
+                    {% set cfg = roleConfig[roleValue] ?? { 'display': roleValue|replace({'ROLE_':'','_':' '}), 'desc': 'Rôle personnalisé', 'icon': 'fas fa-user', 'color': '#475569' } %}
+
+                    <div class="role-card-wrapper" data-role="{{ roleValue }}">
+                        <input
+                            type="checkbox"
+                            id="ui_{{ value.vars.id }}"
+                            value="{{ roleValue }}"
+                            class="role-checkbox-input"
+                            {% if value.vars.checked %}checked{% endif %}
+                            {% if isUserRole %}disabled{% endif %}
+                        >
+                        <label class="role-card {% if isUserRole %}role-card--locked{% endif %}" for="ui_{{ value.vars.id }}" style="--role-color: {{ cfg.color }}">
+                            <div class="role-card__icon"><i class="{{ cfg.icon }}"></i></div>
+                            <div class="role-card__body">
+                                <div class="role-card__title">{{ cfg.display }}</div>
+                                <div class="role-card__desc">{{ cfg.desc }}{% if isUserRole %} • requis{% endif %}</div>
                             </div>
-                            <div class="role-card-content">
-                                <div class="role-card-title">{{ currentRoleConfig.displayLabel }}</div>
-                                <div class="role-card-description">
-                                    {{ currentRoleConfig.description }}
-                                    {% if isUserRole %}<span class="badge-required">(Obligatoire)</span>{% endif %}
-                                </div>
-                            </div>
-                            <div class="role-card-checkmark">
-                                <i class="fas fa-check"></i>
-                            </div>
+                            <div class="role-card__check"><i class="fas fa-check"></i></div>
                         </label>
                     </div>
-                    {% endfor %}
+                {% endfor %}
+            </div>
+            <small class="text-muted d-block mt-3"><i class="fas fa-info-circle mr-1"></i>Utilisez les badges pour attribuer ou retirer des rôles. «Utilisateur standard» est toujours actif.</small>
+
+            <hr class="soft-divider">
+
+            <div class="form-group mb-0">
+                {# <label style="display: block; margin-bottom: 0.5rem;">Email vérifié</label> #}
+                <div class="email-verify-toggle">
+                    {{ form_widget(userForm.isVerified, {'attr': {'class': 'email-verify-checkbox', 'id': 'isVerifiedSwitch'}}) }}
+                    <label for="isVerifiedSwitch" class="email-verify-label">
+                        <span class="email-verify-status"><i class="fas fa-envelope-circle-check"></i><span class="email-verify-text">Non vérifié</span></span>
+                    </label>
                 </div>
-                <small class="form-text text-muted d-block mt-4" style="font-size: 12px; line-height: 1.5;">
-                    <i class="fas fa-info-circle mr-1"></i>Un utilisateur peut avoir plusieurs rôles. Le rôle "Utilisateur Standard" est obligatoire et ne peut pas être retiré.
-                </small>
-                {{ form_errors(userForm.roles) }}
-                <style>
-                    .roles-grid-container {
-                        display: grid;
-                        grid-template-columns: 1fr;
-                        gap: 12px;
-                        margin-bottom: 0;
-                    }
-                    
-                    .role-card-wrapper {
-                        position: relative;
-                    }
-                    
-                    .role-checkbox-input {
-                        display: none !important;
-                    }
-                    
-                    .role-card {
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        padding: 14px 16px;
-                        border-radius: 8px;
-                        border: 2px solid #e2e8f0;
-                        background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
-                        cursor: pointer;
-                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        margin: 0;
-                        user-select: none;
-                        flex: 1;
-                    }
-                    
-                    .role-card:hover {
-                        border-color: var(--role-color);
-                        background: linear-gradient(135deg, #ffffff 0%, rgba(0, 0, 0, 0.02) 100%);
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-                        transform: translateY(-1px);
-                    }
-                    
-                    .role-card-icon {
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        width: 40px;
-                        height: 40px;
-                        border-radius: 6px;
-                        background: linear-gradient(135deg, var(--role-color) 0%, rgba(0, 0, 0, 0.1) 100%);
-                        color: white;
-                        font-size: 18px;
-                        flex-shrink: 0;
-                        transition: all 0.3s ease;
-                    }
-                    
-                    .role-card-content {
-                        flex: 1;
-                        min-width: 0;
-                    }
-                    
-                    .role-card-title {
-                        font-weight: 600;
-                        font-size: 14px;
-                        color: #2d3748;
-                        margin: 0;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                    }
-                    
-                    .role-card-description {
-                        font-size: 12px;
-                        color: #718096;
-                        margin: 2px 0 0 0;
-                        line-height: 1.3;
-                        display: flex;
-                        align-items: center;
-                        gap: 4px;
-                    }
-                    
-                    .badge-required {
-                        display: inline-block;
-                        background-color: #fed7d7;
-                        color: #c53030;
-                        padding: 1px 6px;
-                        border-radius: 3px;
-                        font-size: 11px;
-                        font-weight: 600;
-                        white-space: nowrap;
-                    }
-                    
-                    .role-card-checkmark {
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        width: 24px;
-                        height: 24px;
-                        border-radius: 4px;
-                        background-color: transparent;
-                        color: transparent;
-                        font-size: 14px;
-                        flex-shrink: 0;
-                        transition: all 0.3s ease;
-                    }
-                    
-                    .role-checkbox-input:checked + .role-card {
-                        border-color: var(--role-color);
-                        background: linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, #ffffff 100%);
-                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);
-                    }
-                    
-                    .role-checkbox-input:checked + .role-card .role-card-icon {
-                        transform: scale(1.1);
-                        filter: brightness(1.2);
-                    }
-                    
-                    .role-checkbox-input:checked + .role-card .role-card-checkmark {
-                        background-color: var(--role-color);
-                        color: white;
-                        animation: checkEntrance 0.3s ease;
-                    }
-                    
-                    @keyframes checkEntrance {
-                        0% {
-                            transform: scale(0.5);
-                            opacity: 0;
-                        }
-                        100% {
-                            transform: scale(1);
-                            opacity: 1;
-                        }
-                    }
-                    
-                    .role-checkbox-input:focus + .role-card {
-                        outline: 2px solid var(--role-color);
-                        outline-offset: 0;
-                    }
-                    
-                    .role-card-disabled {
-                        opacity: 0.65;
-                    }
-                    
-                    .role-card-disabled:hover {
-                        border-color: #e2e8f0;
-                        background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
-                        box-shadow: none;
-                        cursor: not-allowed;
-                        transform: none;
-                    }
-                    
-                    .role-checkbox-input:disabled + .role-card {
-                        opacity: 0.65;
-                        cursor: not-allowed;
-                    }
-                    
-                    .role-checkbox-input:disabled + .role-card:hover {
-                        border-color: #e2e8f0;
-                        background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
-                        box-shadow: none;
-                    }
-                </style>
+                {{ form_errors(userForm.isVerified) }}
             </div>
         </div>
+
+        {% if not isNew %}
+        <div class="card-soft">
+            <div class="card-soft__header">
+                <div class="label-eyebrow">Meta</div>
+                <h6 class="mb-0">Résumé</h6>
+            </div>
+            <div class="meta-list">
+                <div><span>ID</span><strong>#{{ user.id }}</strong></div>
+                <div><span>Email</span><strong>{{ user.email }}</strong></div>
+                <div><span>Statut email</span>{% if user.isVerified %}<span class="badge badge-success-soft">Vérifié</span>{% else %}<span class="badge badge-muted-soft">Non vérifié</span>{% endif %}</div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
 <div class="form-actions">
-    <button type="submit" class="btn btn-primary">
-        <i class="fas fa-save mr-2"></i>{{ isNew ? 'Créer l\'utilisateur' : 'Enregistrer les modifications' }}
-    </button>
-    <a href="{{ path('users.list') }}" class="btn btn-secondary">
-        <i class="fas fa-times mr-2"></i>Annuler
-    </a>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-2"></i>{{ isNew ? 'Créer l\'utilisateur' : 'Enregistrer' }}</button>
+    <a href="{{ path('users.list') }}" class="btn btn-secondary">Annuler</a>
 </div>
 
+<div class="d-none" id="native-roles">
+    {{ form_widget(userForm.roles) }}
+</div>
+<div class="d-none">
+    {{ form_widget(userForm._token) }}
+</div>
 {{ form_end(userForm, {'render_rest': false}) }}
 
 <style>
-    /* Hide any standard form rendering of roles field that might appear */
-    .form-check-group,
-    div[id*="roles"],
-    fieldset[id*="roles"] {
-        display: none !important;
+    .user-edit-form .card-soft {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 18px 18px 12px;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
     }
+    .card-soft__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    .label-eyebrow {
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        font-size: 11px;
+        color: #9ca3af;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+    .badge-soft {
+        background: #eef2ff;
+        color: #4f46e5;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+    .soft-divider {
+        border: 0;
+        border-top: 1px dashed #e5e7eb;
+        margin: 18px 0;
+    }
+    .form-group label { font-weight: 600; color: #111827; }
+    .form-control { border-radius: 10px; border: 1px solid #e5e7eb; }
+    .form-control:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,0.25); }
+
+    /* Roles */
+    .roles-grid-container { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .role-card-wrapper { position: relative; }
+    .role-checkbox-input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+    .role-card {
+        display: flex; gap: 12px; align-items: center;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 12px 14px;
+        background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+        cursor: pointer;
+        transition: all .2s ease;
+    }
+    .role-card__icon {
+        width: 42px; height: 42px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff;
+        background: var(--role-color, #6b7280);
+        box-shadow: 0 5px 14px rgba(0,0,0,.08);
+    }
+    .role-card__body { flex: 1; }
+    .role-card__title { font-weight: 700; color: #0f172a; font-size: 14px; margin: 0; }
+    .role-card__desc { color: #6b7280; font-size: 12px; margin: 2px 0 0; }
+    .role-card__check {
+        width: 24px; height: 24px;
+        border-radius: 8px;
+        background: #e5e7eb;
+        color: transparent;
+        display: grid; place-items: center;
+        transition: all .2s ease;
+    }
+    .role-checkbox-input:checked + .role-card,
+    .role-card--active {
+        border-color: var(--role-color, #2563eb);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+    }
+    .role-checkbox-input:checked + .role-card .role-card__check,
+    .role-card--active .role-card__check {
+        background: var(--role-color, #2563eb);
+        color: #fff;
+    }
+    .role-card--locked { cursor: not-allowed; opacity: .75; }
+
+    /* Dossier chips */
+    .dossier-chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: flex-start;
+    }
+    .dossier-chip {
+        border: 1px solid #e5e7eb;
+        background: #f8fafc;
+        color: #0f172a;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all .2s ease;
+    }
+    .dossier-chip__check { display: none; color: #fff; }
+    .dossier-chip--active {
+        border-color: #2563eb;
+        background: #e0ecff;
+        color: #1d4ed8;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+    .dossier-chip--active .dossier-chip__check { display: inline-flex; }
+    .dossier-chip:hover { border-color: #cbd5e1; background: #eef2ff; }
+
+    /* Dossier select (Select2 pills) */
+    .select2-container--bootstrap-5 .select2-selection--multiple {
+        min-height: 44px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        padding: 6px 6px 2px 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+        display: inline-flex;
+        align-items: center;
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        border-radius: 999px;
+        color: #3730a3;
+        padding: 4px 10px;
+        font-weight: 600;
+        margin: 2px 2px 2px 0;
+        box-shadow: inset 0 0 0 1px rgba(79,70,229,0.08);
+    }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+        color: #4338ca;
+        margin-right: 6px;
+        order: 2;
+    }
+    .select2-container--bootstrap-5 .select2-selection--single {
+        min-height: 44px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        padding: 6px 10px;
+    }
+
+    /* Email verify toggle */
+    .email-verify-toggle { position: relative; display: block; }
+    .email-verify-checkbox { display: none; }
+    .email-verify-label {
+        display: flex; align-items: center; justify-content: center;
+        border: 2px solid #e5e7eb; border-radius: 10px;
+        padding: 10px 12px; gap: 10px;
+        background: linear-gradient(135deg,#fff 0%,#f8fafc 100%);
+        cursor: pointer; transition: all .2s ease;
+    }
+    .email-verify-checkbox:checked + .email-verify-label {
+        border-color: #22c55e;
+        box-shadow: 0 0 0 3px rgba(34,197,94,.12);
+    }
+    .email-verify-checkbox:checked + .email-verify-label i { color: #22c55e; }
+    .email-verify-text { font-weight: 600; color: #111827; }
+
+    .meta-list { display: grid; gap: 8px; font-size: 13px; }
+    .meta-list div { display: flex; justify-content: space-between; align-items: center; }
+    .meta-list span { color: #6b7280; }
+    .badge-success-soft { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 999px; font-weight: 700; }
+    .badge-muted-soft { background: #e5e7eb; color: #374151; padding: 4px 10px; border-radius: 999px; font-weight: 700; }
+
+    .form-actions { margin-top: 18px; display: flex; gap: 10px; }
+    .btn { border-radius: 10px; padding: 10px 14px; }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle role card clicks - using the label's for attribute to find checkbox
-    const roleCards = document.querySelectorAll('.role-card');
-    
-    roleCards.forEach(card => {
-        // Get the corresponding checkbox using the label's for attribute
-        const checkboxId = card.getAttribute('for');
-        const checkbox = document.getElementById(checkboxId);
-        
-        if (checkbox && !checkbox.disabled) {
-            // Make the label itself clickable
-            card.style.cursor = 'pointer';
-            card.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                checkbox.checked = !checkbox.checked;
-                // Trigger change event
-                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+(function() {
+    function initSelects() {
+        if (window.jQuery && $.fn.select2) {
+            $('.js-dossier-multi').each(function () {
+                if ($(this).data('select2')) return;
+                $(this).select2({
+                    theme: 'bootstrap-5',
+                    closeOnSelect: false,
+                    allowClear: true,
+                    placeholder: $(this).data('placeholder') || 'Sélectionner des dossiers',
+                    width: '100%'
+                });
             });
-            
-            // Keyboard accessibility
-            card.setAttribute('role', 'button');
-            card.setAttribute('tabindex', '0');
-            card.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    checkbox.checked = !checkbox.checked;
-                    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-                }
+            $('.js-current-dossier').each(function () {
+                if ($(this).data('select2')) return;
+                $(this).select2({
+                    theme: 'bootstrap-5',
+                    placeholder: $(this).data('placeholder') || 'Choisir un dossier actif',
+                    width: '100%'
+                });
             });
         }
-        
-        // Sync checkbox state with label appearance
-        if (checkbox) {
-            checkbox.addEventListener('change', function() {
-                // Force CSS update by triggering a reflow
-                card.offsetHeight;
+    }
+
+    function initRoles() {
+        const nativeRoleInputs = {};
+        document.querySelectorAll('#native-roles input[type="checkbox"]').forEach(input => {
+            nativeRoleInputs[input.value] = input;
+        });
+
+        document.querySelectorAll('.role-card-wrapper').forEach(wrapper => {
+            if (wrapper.dataset.bound === '1') return;
+            const checkbox = wrapper.querySelector('.role-checkbox-input');
+            const label = wrapper.querySelector('.role-card');
+            if (!checkbox || !label) return;
+
+            const native = nativeRoleInputs[checkbox.value];
+            const syncVisual = () => {
+                label.classList.toggle('role-card--active', checkbox.checked);
+                label.setAttribute('aria-checked', checkbox.checked ? 'true' : 'false');
+            };
+
+            if (native) checkbox.checked = native.checked;
+            syncVisual();
+
+            checkbox.addEventListener('change', () => {
+                if (native) native.checked = checkbox.checked;
+                syncVisual();
             });
-        }
-    });
-});
+
+            if (!checkbox.disabled) {
+                label.setAttribute('tabindex', '0');
+                label.setAttribute('role', 'checkbox');
+            }
+
+            wrapper.dataset.bound = '1';
+        });
+    }
+
+    function initDossiers() {
+        const nativeSelect = document.querySelector('#native-dossiers-select select');
+        if (!nativeSelect) return;
+
+        const selectedSet = new Set(Array.from(nativeSelect.options).filter(o => o.selected).map(o => o.value));
+        const chips = document.querySelectorAll('.dossier-chip');
+
+        const syncNative = (value, checked) => {
+            Array.from(nativeSelect.options).forEach(opt => {
+                if (opt.value === value) opt.selected = checked;
+            });
+            nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+
+        chips.forEach(chip => {
+            if (chip.dataset.bound === '1') return;
+            const value = chip.dataset.value;
+            if (selectedSet.has(value)) {
+                chip.classList.add('dossier-chip--active');
+            }
+
+            chip.addEventListener('click', () => {
+                const nowActive = !chip.classList.contains('dossier-chip--active');
+                chip.classList.toggle('dossier-chip--active', nowActive);
+                syncNative(value, nowActive);
+            });
+
+            chip.dataset.bound = '1';
+        });
+    }
+
+    function initUserFormUI() {
+        initSelects();
+        initRoles();
+        initDossiers();
+    }
+
+    document.addEventListener('DOMContentLoaded', initUserFormUI);
+    document.addEventListener('turbo:load', initUserFormUI);
+    document.addEventListener('turbo:render', initUserFormUI);
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        initUserFormUI();
+    }
+})();
 </script>
 {% endblock %}

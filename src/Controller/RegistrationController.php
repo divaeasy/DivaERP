@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Dossier;
 use App\Entity\User;
 use App\Form\RegistrationFormType;
 use App\Form\UserEditFormType;
@@ -50,9 +51,9 @@ class RegistrationController extends AbstractController
             $user->setRoles(['ROLE_USER']);
 
             // Assign default dossier (first available)
-            $defaultDossier = $entityManager->getRepository(\App\Entity\Dossier::class)->findOneBy([]);
+            $defaultDossier = $entityManager->getRepository(Dossier::class)->findOneBy([]);
             if ($defaultDossier) {
-                $user->setDossier($defaultDossier);
+                $user->setCurrentDossier($defaultDossier);
             }
 
             $entityManager->persist($user);

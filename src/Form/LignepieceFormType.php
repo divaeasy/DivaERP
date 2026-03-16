@@ -3,10 +3,10 @@
 namespace App\Form;
 
 use App\Entity\Article;
-use App\Entity\Dossier;
-use App\Entity\Entetepiece;
 use App\Entity\Lignepiece;
 use App\Entity\User;
+use App\Repository\ArticleRepository;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -15,8 +15,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class LignepieceFormType extends AbstractType
 {
+    public function __construct(private Security $security)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $currentDossier = $this->getCurrentDossier();
+
         $builder
             ->add('qte', null, [
                 'constraints' => [
@@ -51,7 +57,18 @@ class LignepieceFormType extends AbstractType
                 'placeholder' => ' ',
                 'required' => true,
                 'expanded' => false,
-                'multiple' => false
+                'multiple' => false,
+                'query_builder' => function (ArticleRepository $repository) use ($currentDossier) {
+                    $qb = $repository->createQueryBuilder('a')
+                        ->orderBy('a.libelle', 'ASC');
+                    if ($currentDossier !== null) {
+                        $qb->andWhere('a.dossier = :dossier')
+                           ->setParameter('dossier', $currentDossier);
+                    } else {
+                        $qb->andWhere('1 = 0');
+                    }
+                    return $qb;
+                },
             ])
             
             
@@ -63,5 +80,11 @@ class LignepieceFormType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Lignepiece::class,
         ]);
+    }
+
+    private function getCurrentDossier(): ?\App\Entity\Dossier
+    {
+        $user = $this->security->getUser();
+        return $user instanceof User ? $user->getCurrentDossier() : null;
     }
 }

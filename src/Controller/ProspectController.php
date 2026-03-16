@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Clients;
 use App\Entity\Prospects;
+use App\Entity\User;
 use App\Form\ProspectFormType;
 use App\Form\SearchFormType;
 use App\Model\SearchData;
@@ -46,7 +47,9 @@ class ProspectController extends AbstractController
     public function detail(ManagerRegistry $doctrine,$id): Response
     {
         $repository = $doctrine->getRepository(Prospects::class);
-        $prospect = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $prospect = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
        if(!$prospect){
             $this->addFlash(
             'error',
@@ -65,7 +68,9 @@ class ProspectController extends AbstractController
     {
        // $this->denyAccessUnlessGranted('ROLE_ADMIN');
         $repository = $doctrine->getRepository(Prospects::class);
-        $prospect = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $prospect = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         
         
 
@@ -119,7 +124,9 @@ class ProspectController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
         $repository = $doctrine->getRepository(Prospects::class);
-        $prospect = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $prospect = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         if($prospect){
             $manager = $doctrine->getManager();
             $manager->remove($prospect);
@@ -141,7 +148,9 @@ class ProspectController extends AbstractController
     public function convertToClient(ManagerRegistry $doctrine, int $id): Response
     {
         $repository = $doctrine->getRepository(Prospects::class);
-        $prospect = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $prospect = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
 
         if (!$prospect) {
             $this->addFlash('error', "Le prospect n'existe pas");

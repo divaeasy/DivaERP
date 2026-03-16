@@ -34,10 +34,20 @@ class UserEditFormType extends AbstractType
                 'label' => 'Rôles',
                 'attr' => ['class' => 'form-check-group'],
             ])
-            ->add('dossier', EntityType::class, [
+            ->add('dossiers', EntityType::class, [
                 'class' => Dossier::class,
                 'choice_label' => 'nom',
-                'label' => 'Dossier',
+                'label' => 'Dossiers autorisés',
+                'multiple' => true,
+                'required' => false,
+                'by_reference' => false,
+                'attr' => ['class' => 'form-control js-example-basic-single'],
+            ])
+            ->add('currentDossier', EntityType::class, [
+                'class' => Dossier::class,
+                'choice_label' => 'nom',
+                'label' => 'Dossier actif',
+                'required' => false,
                 'attr' => ['class' => 'form-control js-example-basic-single'],
             ])
             ->add('isVerified', CheckboxType::class, [

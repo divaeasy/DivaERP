@@ -4,9 +4,11 @@ namespace App\Form;
 
 use App\Entity\Clients;
 use App\Entity\Devises;
-use App\Entity\Dossier;
 use App\Entity\Entetepiece;
 use App\Entity\Reglement;
+use App\Entity\User;
+use App\Repository\ClientsRepository;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -15,8 +17,14 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class EntetePieceFormType extends AbstractType
 {
+    public function __construct(private Security $security)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $currentDossier = $this->getCurrentDossier();
+
         $builder
             ->add('type', ChoiceType::class, [
                 'choices'  => [
@@ -63,14 +71,21 @@ class EntetePieceFormType extends AbstractType
                 ])
             ->add('edition')
             ->add('rapport')
-            ->add('dossier', EntityType::class, [
-                'class' => Dossier::class,
-                'choice_label' => 'nom',
-            ])
             ->add('client', EntityType::class, [
                 'class' => Clients::class,
                 'choice_label' => 'nom',
                 'placeholder' => 'Sélectionner un client',
+                'query_builder' => function (ClientsRepository $repository) use ($currentDossier) {
+                    $qb = $repository->createQueryBuilder('c')
+                        ->orderBy('c.nom', 'ASC');
+                    if ($currentDossier !== null) {
+                        $qb->andWhere('c.dossier = :dossier')
+                           ->setParameter('dossier', $currentDossier);
+                    } else {
+                        $qb->andWhere('1 = 0');
+                    }
+                    return $qb;
+                },
             ])
             ->add('devise', EntityType::class, [
                 'class' => Devises::class,
@@ -97,5 +112,11 @@ class EntetePieceFormType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Entetepiece::class,
         ]);
+    }
+
+    private function getCurrentDossier(): ?\App\Entity\Dossier
+    {
+        $user = $this->security->getUser();
+        return $user instanceof User ? $user->getCurrentDossier() : null;
     }
 }

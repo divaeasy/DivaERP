@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Tarifvente;
+use App\Entity\User;
 use App\Form\TarifVenteFormType;
 use App\Form\SearchGenericFormType;
 use App\Model\SearchGeneric;
@@ -48,7 +49,9 @@ class TarifsVenteController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(TarifVente::class);
-        $tarifvente = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $tarifvente = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         $new = false;
         if(!$tarifvente){
             $tarifvente = new TarifVente();
@@ -93,7 +96,9 @@ class TarifsVenteController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(TarifVente::class);
-        $tarifvente = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $tarifvente = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         if($tarifvente){
             $manager = $doctrine->getManager();
             $manager->remove($tarifvente);

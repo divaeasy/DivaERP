@@ -2,12 +2,14 @@
 
 namespace App\Service;
 
+use App\Entity\User;
 use Doctrine\DBAL\Connection;
 use DateTime;
+use Symfony\Bundle\SecurityBundle\Security;
 
 class DashboardService
 {
-    public function __construct(private Connection $connection) {}
+    public function __construct(private Connection $connection, private Security $security) {}
 
     /**
      * Get total revenue for a specific year (optionally up to a specific month for same-period comparison)
@@ -22,18 +24,22 @@ class DashboardService
             $endDate = "{$year}-12-31";
         }
         
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+
         $sql = "
             SELECT SUM(ep.montant) as total
             FROM entetepiece ep
             WHERE ep.datep >= :startDate 
                 AND ep.datep <= :endDate
         ";
+
+        $sql = $this->applyDossierFilter($sql, 'ep', $params);
         
         $statement = $this->connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-        ]);
+        $result = $statement->executeQuery($params);
         
         return (float)($result->fetchOne() ?? 0);
     }
@@ -45,7 +51,12 @@ class DashboardService
     {
         $startDate = "{$year}-01-01";
         $endDate = "{$year}-12-31";
-        
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+
         $sql = "
             SELECT 
                 MONTH(ep.datep) as month,
@@ -56,12 +67,11 @@ class DashboardService
             GROUP BY MONTH(ep.datep)
             ORDER BY MONTH(ep.datep) ASC
         ";
+
+        $sql = $this->applyDossierFilter($sql, 'ep', $params);
         
         $statement = $this->connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-        ]);
+        $result = $statement->executeQuery($params);
         
         $sales = [];
         foreach ($result->fetchAllAssociative() as $row) {
@@ -102,19 +112,23 @@ class DashboardService
     {
         $startDate = "{$year}-01-01";
         $endDate = "{$year}-12-31";
-        
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+
         $sql = "
             SELECT COUNT(*) as total
             FROM entetepiece ep
             WHERE ep.datep >= :startDate 
                 AND ep.datep <= :endDate
         ";
+
+        $sql = $this->applyDossierFilter($sql, 'ep', $params);
         
         $statement = $this->connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-        ]);
+        $result = $statement->executeQuery($params);
         
         return (int)($result->fetchOne() ?? 0);
     }
@@ -128,19 +142,23 @@ class DashboardService
         $currentMonth = (int)date('m');
         $startDate = sprintf('%04d-%02d-01', $currentYear, $currentMonth);
         $endDate = sprintf('%04d-%02d-31', $currentYear, $currentMonth);
-        
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+
         $sql = "
             SELECT COUNT(DISTINCT ep.client_id) as total
             FROM entetepiece ep
             WHERE ep.datep >= :startDate 
                 AND ep.datep <= :endDate
         ";
+
+        $sql = $this->applyDossierFilter($sql, 'ep', $params);
         
         $statement = $this->connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-        ]);
+        $result = $statement->executeQuery($params);
         
         return (int)($result->fetchOne() ?? 0);
     }
@@ -152,7 +170,12 @@ class DashboardService
     {
         $startDate = "{$year}-01-01";
         $endDate = "{$year}-12-31";
-        
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+
         $sql = "
             SELECT SUM(lp.qte) as total
             FROM lignepiece lp
@@ -160,12 +183,11 @@ class DashboardService
             WHERE ep.datep >= :startDate 
                 AND ep.datep <= :endDate
         ";
+
+        $sql = $this->applyDossierFilter($sql, 'ep', $params);
         
         $statement = $this->connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-        ]);
+        $result = $statement->executeQuery($params);
         
         return (int)($result->fetchOne() ?? 0);
     }
@@ -177,7 +199,12 @@ class DashboardService
     {
         $startDate = "{$year}-01-01";
         $endDate = "{$year}-12-31";
-        
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+
         $sql = "
             SELECT 
                 a.libelle as product_name,
@@ -191,12 +218,11 @@ class DashboardService
             ORDER BY total_qty DESC
             LIMIT 5
         ";
+
+        $sql = $this->applyDossierFilter($sql, 'ep', $params);
         
         $statement = $this->connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-        ]);
+        $result = $statement->executeQuery($params);
         
         return $result->fetchAllAssociative();
     }
@@ -209,7 +235,12 @@ class DashboardService
     {
         $startDate = "{$year}-01-01";
         $endDate = "{$year}-12-31";
-        
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+
         $sql = "
             SELECT 
                 d.nom as category,
@@ -221,12 +252,11 @@ class DashboardService
             GROUP BY d.id, d.nom
             ORDER BY amount DESC
         ";
+
+        $sql = $this->applyDossierFilter($sql, 'ep', $params);
         
         $statement = $this->connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-        ]);
+        $result = $statement->executeQuery($params);
         
         return $result->fetchAllAssociative();
     }
@@ -239,7 +269,13 @@ class DashboardService
         $startDate = "{$year}-01-01";
         $endDate = "{$year}-12-31";
         $today = date('Y-m-d');
-        
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'today' => $today,
+        ];
+
         $sql = "
             SELECT 
                 CASE 
@@ -254,13 +290,11 @@ class DashboardService
                 AND ep.datep <= :endDate
             GROUP BY status
         ";
+
+        $sql = $this->applyDossierFilter($sql, 'ep', $params);
         
         $statement = $this->connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'today' => $today,
-        ]);
+        $result = $statement->executeQuery($params);
         
         return $result->fetchAllAssociative();
     }
@@ -273,7 +307,13 @@ class DashboardService
         $startDate = "{$year}-01-01";
         $endDate = "{$year}-12-31";
         $today = date('Y-m-d');
-        
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'today' => $today,
+        ];
+
         $sql = "
             SELECT 
                 COUNT(*) as count,
@@ -284,13 +324,11 @@ class DashboardService
                 AND ep.delai IS NOT NULL
                 AND ep.delai < :today
         ";
+
+        $sql = $this->applyDossierFilter($sql, 'ep', $params);
         
         $statement = $this->connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'today' => $today,
-        ]);
+        $result = $statement->executeQuery($params);
         
         $row = $result->fetchAssociative();
         return [
@@ -306,7 +344,12 @@ class DashboardService
     {
         $startDate = "{$year}-01-01";
         $endDate = "{$year}-12-31";
-        
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+
         $sql = "
             SELECT 
                 MONTH(ep.datep) as month,
@@ -318,12 +361,11 @@ class DashboardService
             GROUP BY MONTH(ep.datep)
             ORDER BY MONTH(ep.datep) ASC
         ";
+
+        $sql = $this->applyDossierFilter($sql, 'ep', $params);
         
         $statement = $this->connection->prepare($sql);
-        $result = $statement->executeQuery([
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-        ]);
+        $result = $statement->executeQuery($params);
         
         $growth = [];
         foreach ($result->fetchAllAssociative() as $row) {
@@ -342,5 +384,33 @@ class DashboardService
         
         ksort($growth);
         return $growth;
+    }
+
+    private function applyDossierFilter(string $sql, string $alias, array &$params): string
+    {
+        $dossierId = $this->getCurrentDossierId();
+        $filter = ' AND 1 = 0';
+        if ($dossierId !== null) {
+            $params['dossierId'] = $dossierId;
+            $filter = sprintf(' AND %s.dossier_id = :dossierId', $alias);
+        }
+
+        if (preg_match('/\b(GROUP BY|ORDER BY|LIMIT)\b/i', $sql, $match, PREG_OFFSET_CAPTURE)) {
+            $pos = $match[0][1];
+            return substr($sql, 0, $pos) . $filter . ' ' . substr($sql, $pos);
+        }
+
+        return $sql . $filter;
+    }
+
+    private function getCurrentDossierId(): ?int
+    {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            return null;
+        }
+
+        $dossier = $user->getCurrentDossier();
+        return $dossier?->getId();
     }
 }

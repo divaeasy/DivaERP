@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\Dossier;
 use App\Entity\Entetepiece;
 use App\Entity\Lignepiece;
 use App\Entity\User;
@@ -61,12 +60,12 @@ class EntetePController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(EntetePiece::class);
-        $entetepiece = $repository->find($id);
-        $repositoryUser = $doctrine->getRepository(User::class);
-        $user = $repositoryUser->findBy(['id' => $this->getUser()]);
-        $userId = $user[0]->getId();
-        $repository2 = $doctrine->getRepository(Dossier::class);
-        $dossier = $repository2->findBy(['id' => $user[0]->getDossier()]);
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException();
+        }
+        $currentDossier = $user->getCurrentDossier();
+        $entetepiece = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
 
         $repositoryLignes = $doctrine->getRepository(Lignepiece::class);
         $lignepieces = $repositoryLignes->findBy(['piece' => $id]);
@@ -84,24 +83,22 @@ class EntetePController extends AbstractController
        $form->remove('edition');
        $form->remove('rapport');
        $form->remove('pieceno');
-       $form->remove('dossier');
-
        $form->handleRequest($request);
        $newFilename = '';
        if($form->isSubmitted() && $form->isValid()){
-        if (isset($dossier[0])){
-            $NumFact = $dossier[0]->getFactureno() + 1;
-            
+        if ($currentDossier !== null){
+            $NumFact = ($currentDossier->getFactureno() ?? 0) + 1;
         }else{
             $NumFact = 1;
-           
         }
         
         If ($new){
             $message = "l'entête de pièce est ajouté avec succès";
             
             $entetepiece->setPieceno($NumFact);
-            $entetepiece->setDossier($dossier[0]);
+            if ($currentDossier !== null) {
+                $entetepiece->setDossier($currentDossier);
+            }
         }else{
             $message = "l'entête de pièce a été mis à jour avec succès";
            
@@ -132,7 +129,9 @@ class EntetePController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Entetepiece::class);
-        $entetepiece = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $entetepiece = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         if($entetepiece){
             $manager = $doctrine->getManager();
             $manager->remove($entetepiece);

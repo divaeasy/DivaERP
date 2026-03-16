@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -44,8 +46,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\JoinColumn(nullable: false)]
     private ?Dossier $dossier = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'current_dossier_id', nullable: true)]
+    private ?Dossier $currentDossier = null;
+
+    #[ORM\ManyToMany(targetEntity: Dossier::class)]
+    #[ORM\JoinTable(name: 'user_dossier')]
+    private Collection $dossiers;
+
     #[ORM\Column]
     private bool $isVerified = false;
+
+    public function __construct()
+    {
+        $this->dossiers = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -154,8 +169,78 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setDossier(?Dossier $dossier): static
     {
         $this->dossier = $dossier;
+        if ($dossier !== null && $this->currentDossier === null) {
+            $this->currentDossier = $dossier;
+        }
+        if ($dossier !== null && !$this->dossiers->contains($dossier)) {
+            $this->dossiers->add($dossier);
+        }
 
         return $this;
+    }
+
+    public function getCurrentDossier(): ?Dossier
+    {
+        if ($this->currentDossier !== null) {
+            return $this->currentDossier;
+        }
+
+        if ($this->dossier !== null) {
+            return $this->dossier;
+        }
+
+        $first = $this->dossiers->first();
+        return $first instanceof Dossier ? $first : null;
+    }
+
+    public function setCurrentDossier(?Dossier $currentDossier): static
+    {
+        $this->currentDossier = $currentDossier;
+        if ($currentDossier !== null) {
+            $this->dossier = $currentDossier;
+        }
+        if ($currentDossier !== null && !$this->dossiers->contains($currentDossier)) {
+            $this->dossiers->add($currentDossier);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Dossier>
+     */
+    public function getDossiers(): Collection
+    {
+        return $this->dossiers;
+    }
+
+    public function addDossier(Dossier $dossier): static
+    {
+        if (!$this->dossiers->contains($dossier)) {
+            $this->dossiers->add($dossier);
+        }
+        if ($this->currentDossier === null) {
+            $this->currentDossier = $dossier;
+            $this->dossier = $dossier;
+        }
+
+        return $this;
+    }
+
+    public function removeDossier(Dossier $dossier): static
+    {
+        if ($this->dossiers->removeElement($dossier)) {
+            if ($this->currentDossier === $dossier) {
+                $this->currentDossier = null;
+            }
+        }
+
+        return $this;
+    }
+
+    public function hasDossier(Dossier $dossier): bool
+    {
+        return $this->dossiers->contains($dossier);
     }
 
     public function isVerified(): bool

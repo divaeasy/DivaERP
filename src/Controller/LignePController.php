@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Entetepiece;
 use App\Entity\Lignepiece;
+use App\Entity\User;
 use App\Form\LignepieceFormType;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -35,7 +36,12 @@ class LignePController extends AbstractController
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         $repository = $doctrine->getRepository(Lignepiece::class);
-        $lignepieces = $repository->findAll();
+        $user = $this->getUser();
+        if ($user instanceof User && $user->getCurrentDossier() !== null) {
+            $lignepieces = $repository->findBy(['dossier' => $user->getCurrentDossier()]);
+        } else {
+            $lignepieces = [];
+        }
          return $this->render('lignepiece/index.html.twig', [
              'lignepieces' => $lignepieces,
          ]);
@@ -45,7 +51,9 @@ class LignePController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Lignepiece::class);
-        $lignepiece = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $lignepiece = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         $new = false;
         if(!$lignepiece){
             $lignepiece = new Lignepiece();
@@ -66,6 +74,9 @@ class LignePController extends AbstractController
         }else{
             $message = "La lignepiece a été mise à jour avec succès";
            
+        }
+        if ($lignepiece->getDossier() === null && $lignepiece->getPiece() !== null) {
+            $lignepiece->setDossier($lignepiece->getPiece()->getDossier());
         }
         $lignepiece->setMontant($this->computeMontant($lignepiece));
         $entityManager = $doctrine->getManager();
@@ -91,14 +102,23 @@ class LignePController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Entetepiece::class);
-        $entetePiece = $repository->find($pceId);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $entetePiece = $repository->findOneBy(['id' => $pceId, 'dossier' => $currentDossier]);
+        if ($entetePiece === null) {
+            $this->addFlash('error', "La pièce demandée n'existe pas");
+            return $this->redirectToRoute('entetepiece.list');
+        }
         
         $new = false;
         $lignepiece = new Lignepiece();
         
         $lignepiece->doctrine=$doctrine; 
         $lignepiece->user=$this->getUser();
-        $lignepiece->setPiece($entetePiece) ;
+        $lignepiece->setPiece($entetePiece);
+        if ($entetePiece !== null) {
+            $lignepiece->setDossier($entetePiece->getDossier());
+        }
        $form = $this->createForm(LignepieceFormType::class, $lignepiece);
        $form->handleRequest($request);
        
@@ -133,7 +153,9 @@ class LignePController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Lignepiece::class);
-        $lignepiece = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $lignepiece = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         if($lignepiece){
             $manager = $doctrine->getManager();
             $manager->remove($lignepiece);

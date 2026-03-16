@@ -8,7 +8,6 @@ use App\Form\ClientFormType;
 use App\Form\SearchFormType;
 use App\Model\SearchData;
 use App\Repository\ClientsRepository;
-use App\Service\DossierEncours;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -48,7 +47,9 @@ class ClientController extends AbstractController
     public function detail(ManagerRegistry $doctrine,$id): Response
     {
         $repository = $doctrine->getRepository(Clients::class);
-        $client = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $client = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
        if(!$client){
             $this->addFlash(
             'error',
@@ -68,7 +69,9 @@ class ClientController extends AbstractController
        // $this->denyAccessUnlessGranted('ROLE_ADMIN');
        
         $repository = $doctrine->getRepository(Clients::class);
-        $client = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $client = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
        
         
         $new = false;
@@ -81,7 +84,6 @@ class ClientController extends AbstractController
         
        
        $form = $this->createForm(ClientFormType::class, $client);
-       $form->remove('dossier');
        $form->handleRequest($request);
        $newFilename = '';
        if($form->isSubmitted() && $form->isValid()){
@@ -123,7 +125,9 @@ class ClientController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
         $repository = $doctrine->getRepository(Clients::class);
-        $client = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $client = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         if($client){
             $manager = $doctrine->getManager();
             $manager->remove($client);

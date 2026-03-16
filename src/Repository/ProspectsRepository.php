@@ -3,18 +3,20 @@
 namespace App\Repository;
 
 use App\Entity\Prospects;
+use App\Entity\User;
 use App\Model\SearchData;
 use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * @extends ServiceEntityRepository<Prospects>
  */
 class ProspectsRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, private Security $security)
     {
         parent::__construct($registry, Prospects::class);
     }
@@ -23,6 +25,8 @@ class ProspectsRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('p')
             ->addOrderBy('p.nom', 'ASC');
+
+        $this->applyDossierFilter($qb, 'p');
 
         if ($searchData) {
             if (!empty($searchData->nom)) {
@@ -47,5 +51,21 @@ class ProspectsRepository extends ServiceEntityRepository
     {
         $qb = $this->getSearchQueryBuilder($searchData);
         return PaginationHelper::paginate($qb, $page);
+    }
+
+    private function applyDossierFilter(QueryBuilder $qb, string $alias): void
+    {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            return;
+        }
+
+        $currentDossier = $user->getCurrentDossier();
+        if ($currentDossier !== null) {
+            $qb->andWhere(sprintf('%s.dossier = :dossier', $alias))
+               ->setParameter('dossier', $currentDossier);
+        } else {
+            $qb->andWhere('1 = 0');
+        }
     }
 }

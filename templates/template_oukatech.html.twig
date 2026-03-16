@@ -1349,6 +1349,30 @@
                             </div>
                         </li>
 
+                        {% if app.user %}
+                        <!-- Nav Item - Dossier Switcher -->
+                        <li class="nav-item dropdown mx-1">
+                            <a class="nav-link dropdown-toggle" href="#" id="dossierDropdown" role="button"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-folder-open fa-fw text-gray-400"></i>
+                                <span class="d-none d-lg-inline text-gray-600 small ml-1">
+                                    {{ app.user.currentDossier ? app.user.currentDossier.nom : 'Dossier' }}
+                                </span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                                aria-labelledby="dossierDropdown">
+                                {% for dossier in app.user.dossiers %}
+                                    <a class="dropdown-item {% if app.user.currentDossier and dossier.id == app.user.currentDossier.id %}active{% endif %}"
+                                       href="{{ path('dossier.switch', {'id': dossier.id}) }}">
+                                        {{ dossier.nom }}
+                                    </a>
+                                {% else %}
+                                    <span class="dropdown-item text-muted">Aucun dossier disponible</span>
+                                {% endfor %}
+                            </div>
+                        </li>
+                        {% endif %}
+
                         <!-- Nav Item - Alerts -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"

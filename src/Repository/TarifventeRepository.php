@@ -3,18 +3,20 @@
 namespace App\Repository;
 
 use App\Entity\Tarifvente;
+use App\Entity\User;
 use App\Model\SearchGeneric;
 use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * @extends ServiceEntityRepository<Tarifvente>
  */
 class TarifventeRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, private Security $security)
     {
         parent::__construct($registry, Tarifvente::class);
     }
@@ -23,6 +25,8 @@ class TarifventeRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('t')
             ->orderBy('t.id', 'DESC');
+
+        $this->applyDossierFilter($qb, 't');
 
         if ($searchData && !empty($searchData->q)) {
             if (is_numeric($searchData->q)) {
@@ -43,5 +47,21 @@ class TarifventeRepository extends ServiceEntityRepository
     {
         $qb = $this->getSearchQueryBuilder($searchData);
         return PaginationHelper::paginate($qb, $page);
+    }
+
+    private function applyDossierFilter(QueryBuilder $qb, string $alias): void
+    {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            return;
+        }
+
+        $currentDossier = $user->getCurrentDossier();
+        if ($currentDossier !== null) {
+            $qb->andWhere(sprintf('%s.dossier = :dossier', $alias))
+               ->setParameter('dossier', $currentDossier);
+        } else {
+            $qb->andWhere('1 = 0');
+        }
     }
 }

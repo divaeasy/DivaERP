@@ -3,9 +3,11 @@
 namespace App\Form;
 
 use App\Entity\Article;
-use App\Entity\Dossier;
 use App\Entity\Tarifs;
 use App\Entity\Unite;
+use App\Entity\User;
+use App\Repository\TarifsRepository;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -13,14 +15,16 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class ArticleFormType extends AbstractType
 {
+    public function __construct(private Security $security)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $currentDossier = $this->getCurrentDossier();
+
         $builder
             ->add('libelle')
-            ->add('dossier', EntityType::class, [
-                'class' => Dossier::class,
-                'choice_label' => 'nom'
-            ])
             ->add('unite', EntityType::class, [
                 'class' => Unite::class,
                 'choice_label' => 'libelle',
@@ -32,6 +36,17 @@ class ArticleFormType extends AbstractType
                 'choice_label' => 'libelle',
                 'required' => false,
                 'placeholder' => 'Sélectionner un tarif',
+                'query_builder' => function (TarifsRepository $repository) use ($currentDossier) {
+                    $qb = $repository->createQueryBuilder('t')
+                        ->orderBy('t.libelle', 'ASC');
+                    if ($currentDossier !== null) {
+                        $qb->andWhere('t.dossier = :dossier')
+                           ->setParameter('dossier', $currentDossier);
+                    } else {
+                        $qb->andWhere('1 = 0');
+                    }
+                    return $qb;
+                },
             ])
         ;
     }
@@ -41,5 +56,11 @@ class ArticleFormType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Article::class,
         ]);
+    }
+
+    private function getCurrentDossier(): ?\App\Entity\Dossier
+    {
+        $user = $this->security->getUser();
+        return $user instanceof User ? $user->getCurrentDossier() : null;
     }
 }

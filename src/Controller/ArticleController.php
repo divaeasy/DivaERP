@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Article;
+use App\Entity\User;
 use App\Form\ArticleFormType;
 use App\Form\SearchArtFormType;
 use App\Model\SearchDataArt;
@@ -47,7 +48,9 @@ class ArticleController extends AbstractController
     public function detail(ManagerRegistry $doctrine,$id): Response
     {
         $repository = $doctrine->getRepository(Article::class);
-        $article = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $article = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         
        if(!$article){
             $this->addFlash(
@@ -67,7 +70,9 @@ class ArticleController extends AbstractController
     {
        // $this->denyAccessUnlessGranted('ROLE_ADMIN');
         $repository = $doctrine->getRepository(Article::class);
-        $article = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $article = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         $new = false;
         if(!$article){
             $article = new Article();
@@ -77,7 +82,6 @@ class ArticleController extends AbstractController
         $article->user=$this->getUser();
 
        $form = $this->createForm(ArticleFormType::class, $article);
-       $form->remove('dossier');
        $form->handleRequest($request);
        $newFilename = '';
        if($form->isSubmitted() && $form->isValid()){
@@ -119,7 +123,9 @@ class ArticleController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
         $repository = $doctrine->getRepository(Article::class);
-        $article = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $article = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         if($article){
             $manager = $doctrine->getManager();
             $manager->remove($article);
