@@ -1170,13 +1170,13 @@
             </li>
 
             <!-- Nav Item - Utilisateurs (Admin only) -->
-            <li class="nav-item {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}">
+            {# <li class="nav-item {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}">
                 <a class="nav-link nav-loading {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}" 
                    href="{% if is_granted('ROLE_ADMIN') %}{{ path('users.list') }}{% else %}javascript:void(0){% endif %}">
                     <i class="fas fa-fw fa-users-cog"></i>
                     <span>Utilisateurs</span>
                 </a>
-            </li>
+            </li> #}
 
             <!-- Nav Item - Devises (Comptable+) -->
             <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
