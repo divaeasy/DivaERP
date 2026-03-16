@@ -149,9 +149,7 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
             $taxRateRaw = $invoice->getRemise();
         }
         $taxRate = (float) ($taxRateRaw ?? 0.0);
-        if ($taxRate < 0) {
-            $taxRate = 0.0;
-        }
+        $taxRate = $this->normalizeVatRate($taxRate);
 
         $dossier = $invoice->getDossier();
         $client = $invoice->getClient();
@@ -291,6 +289,39 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
             'bank_iban' => '',
             'bank_bic' => '',
         ];
+    }
+
+    /**
+     * Normalize VAT rate to the closest allowed French rate to satisfy EN16931/Factur-X validations.
+     */
+    private function normalizeVatRate(float $rate): float
+    {
+        if ($rate < 0) {
+            return 0.0;
+        }
+
+        // Allowed FR VAT rates (Flux2 CII/EN16931): 0, 2.1, 5.5, 10, 20
+        $allowed = [0.0, 2.1, 5.5, 10.0, 20.0];
+
+        // If already within ±0.01 of an allowed value, snap to it.
+        foreach ($allowed as $allowedRate) {
+            if (abs($rate - $allowedRate) < 0.01) {
+                return $allowedRate;
+            }
+        }
+
+        // Otherwise pick the closest allowed rate.
+        $closest = $allowed[0];
+        $minDiff = PHP_FLOAT_MAX;
+        foreach ($allowed as $allowedRate) {
+            $diff = abs($rate - $allowedRate);
+            if ($diff < $minDiff) {
+                $minDiff = $diff;
+                $closest = $allowedRate;
+            }
+        }
+
+        return $closest;
     }
 
     /**

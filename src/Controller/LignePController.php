@@ -4,11 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Entetepiece;
 use App\Entity\Lignepiece;
+use App\Entity\Tarifvente;
 use App\Entity\User;
 use App\Form\LignepieceFormType;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -172,5 +174,43 @@ class LignePController extends AbstractController
         }
         return $this->redirectToRoute('lignepiece.list');
         
+    }
+
+    /**
+     * Retourne le prix de vente d'un article en fonction du client de la pièce en cours.
+     */
+    #[Route('/price', name: 'lignepiece.price', methods: ['GET'])]
+    public function getTarifventePrice(Request $request, ManagerRegistry $doctrine): JsonResponse
+    {
+        $articleId = $request->query->getInt('articleId', 0);
+        $pieceId   = $request->query->getInt('pieceId', 0);
+
+        if ($articleId <= 0 || $pieceId <= 0) {
+            return $this->json(['error' => 'Paramètres manquants'], 400);
+        }
+
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if ($currentDossier === null) {
+            return $this->json(['error' => 'Dossier introuvable'], 403);
+        }
+
+        $piece = $doctrine->getRepository(Entetepiece::class)->find($pieceId);
+        if ($piece === null || $piece->getDossier()?->getId() !== $currentDossier->getId()) {
+            return $this->json(['error' => 'Pièce introuvable'], 404);
+        }
+
+        $client = $piece->getClient();
+        $tarifvente = $doctrine->getRepository(Tarifvente::class)->findOneBy([
+            'article' => $articleId,
+            'client'  => $client,
+            'dossier' => $currentDossier,
+        ]);
+
+        if (!$tarifvente) {
+            return $this->json(['price' => null], 200);
+        }
+
+        return $this->json(['price' => $tarifvente->getPrix()], 200);
     }
 }

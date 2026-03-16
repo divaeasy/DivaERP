@@ -100,6 +100,9 @@
 {% block javascripts %}
 <script>
     $(document).ready(function() {
+        const priceUrl = '{{ path("lignepiece.price") }}';
+        const currentPieceId = '{{ pceId }}';
+
         // Auto-calculate montant
         function parseNumber(rawValue) {
             if (rawValue === undefined || rawValue === null) {
@@ -289,11 +292,49 @@
             validateRemise($field, true);
             runClientValidation();
         });
+        let lastPriceRequest = 0;
+
         $(document).on('change', '[id$="_article"]', function() {
             var $field = $(this);
             markTouched($field);
             validateRequiredSelect($field, "L'article", true);
             runClientValidation();
+
+            const articleId = $field.val();
+            const $pub = $('[id$="_pub"]');
+
+            // reset while loading
+            $pub.val('');
+            calculateMontant();
+
+            if (articleId) {
+                const requestId = ++lastPriceRequest;
+                fetch(`${priceUrl}?articleId=${articleId}&pieceId=${currentPieceId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    cache: 'no-store',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (requestId !== lastPriceRequest) {
+                        return; // a newer selection occurred
+                    }
+                    if (data && data.price !== undefined && data.price !== null) {
+                        $pub.val(parseFloat(data.price).toFixed(2));
+                    } else {
+                        $pub.val('0.00');
+                    }
+                    calculateMontant();
+                })
+                .catch(() => {
+                    if (requestId === lastPriceRequest) {
+                        $pub.val('0.00');
+                        calculateMontant();
+                    }
+                });
+            } else {
+                $pub.val('0.00');
+                calculateMontant();
+            }
         });
 
         $('form').on('submit', function(e) {
