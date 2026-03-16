@@ -56,6 +56,9 @@ class TarifsVenteController extends AbstractController
         if(!$tarifvente){
             $tarifvente = new TarifVente();
             $new = true;
+            if ($currentDossier !== null) {
+                $tarifvente->setDossier($currentDossier); // ensure required relation is preset
+            }
         }
         $tarifvente->doctrine=$doctrine;
         $tarifvente->user=$this->getUser();

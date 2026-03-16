@@ -196,11 +196,34 @@ class FactureXBuilder
             $rate = $invoice->getRemise();
         }
         $rate = (float) ($rate ?? 0.0);
-        if ($rate <= 0) {
+        return $this->normalizeVatRate($rate);
+    }
+
+    private function normalizeVatRate(float $rate): float
+    {
+        if ($rate < 0) {
             return 0.0;
         }
 
-        return $rate;
+        $allowed = [0.0, 2.1, 5.5, 10.0, 20.0];
+
+        foreach ($allowed as $allowedRate) {
+            if (abs($rate - $allowedRate) < 0.01) {
+                return $allowedRate;
+            }
+        }
+
+        $closest = $allowed[0];
+        $minDiff = PHP_FLOAT_MAX;
+        foreach ($allowed as $allowedRate) {
+            $diff = abs($rate - $allowedRate);
+            if ($diff < $minDiff) {
+                $minDiff = $diff;
+                $closest = $allowedRate;
+            }
+        }
+
+        return $closest;
     }
 
     private function resolveCountryCode(?string $country): string

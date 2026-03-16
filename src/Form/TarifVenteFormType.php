@@ -5,11 +5,13 @@ namespace App\Form;
 use App\Entity\Article;
 use App\Entity\Clients;
 use App\Entity\Devises;
+use App\Entity\Dossier;
 use App\Entity\Tarifs;
 use App\Entity\Tarifvente;
 use App\Entity\User;
 use App\Repository\ArticleRepository;
 use App\Repository\ClientsRepository;
+use App\Repository\DossierRepository;
 use App\Repository\TarifsRepository;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -85,6 +87,18 @@ class TarifVenteFormType extends AbstractType
             ->add('devise', EntityType::class, [
                 'class' => Devises::class,
                 'choice_label' => 'libelle',
+            ])
+            ->add('dossier', EntityType::class, [
+                'class' => Dossier::class,
+                'choice_label' => 'nom',
+                'data' => $currentDossier,
+                'query_builder' => function (DossierRepository $repository) use ($currentDossier) {
+                    $qb = $repository->createQueryBuilder('d')->orderBy('d.nom', 'ASC');
+                    if ($currentDossier !== null) {
+                        $qb->where('d.id = :id')->setParameter('id', $currentDossier->getId());
+                    }
+                    return $qb;
+                },
             ])
         ;
     }

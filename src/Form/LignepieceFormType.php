@@ -26,14 +26,17 @@ class LignepieceFormType extends AbstractType
         $builder
             ->add('qte', null, [
                 'constraints' => [
-                    new Assert\NotBlank(['message' => 'La quantitÃ© est obligatoire.']),
-                    new Assert\GreaterThan(['value' => 0, 'message' => 'La quantitÃ© doit Ãªtre supÃ©rieure Ã  0.']),
+                    new Assert\NotBlank(['message' => 'La quantité est obligatoire.']),
+                    new Assert\GreaterThan(['value' => 0, 'message' => 'La quantité doit être supérieure à 0.']),
                 ],
             ])
             ->add('pub', null, [
                 'constraints' => [
                     new Assert\NotBlank(['message' => 'Le prix unitaire est obligatoire.']),
-                    new Assert\GreaterThan(['value' => 0, 'message' => 'Le prix unitaire doit Ãªtre supÃ©rieur Ã  0.']),
+                    new Assert\GreaterThan(['value' => 0, 'message' => 'Le prix unitaire doit être supérieur à 0.']),
+                ],
+                'attr' => [
+                    'readonly' => true,
                 ],
             ])
             ->add('montant', null, [
@@ -45,12 +48,10 @@ class LignepieceFormType extends AbstractType
                     new Assert\Range([
                         'min' => 0,
                         'max' => 100,
-                        'notInRangeMessage' => 'La remise doit Ãªtre comprise entre 0 et 100.',
+                        'notInRangeMessage' => 'La remise doit être comprise entre 0 et 100.',
                     ]),
                 ],
             ])
-           
-            
             ->add('article', EntityType::class, [
                 'class' => Article::class,
                 'choice_label' => 'libelle',
@@ -70,8 +71,6 @@ class LignepieceFormType extends AbstractType
                     return $qb;
                 },
             ])
-            
-            
         ;
     }
 
