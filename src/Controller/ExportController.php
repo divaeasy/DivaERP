@@ -32,7 +32,7 @@ class ExportController extends AbstractController
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
         return $this->exportService->exportCsv(
             'clients_' . date('Y-m-d') . '.csv',
-            ['ID', 'Nom', 'Adresse', 'Ville', 'Pays', 'TÃ©lÃ©phone', 'Email', 'Tarif', 'RÃ¨glement'],
+            ['ID', 'Nom', 'Adresse', 'Ville', 'Pays', 'Téléphone', 'Email', 'Tarif', 'Règlement'],
             $items,
             fn($c) => [
                 $c->getId(),
@@ -54,7 +54,7 @@ class ExportController extends AbstractController
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
         return $this->exportService->exportCsv(
             'prospects_' . date('Y-m-d') . '.csv',
-            ['ID', 'Nom', 'Adresse', 'Ville', 'Pays', 'TÃ©lÃ©phone', 'Email', 'Web', 'LinkedIn'],
+            ['ID', 'Nom', 'Adresse', 'Ville', 'Pays', 'Téléphone', 'Email', 'Web', 'LinkedIn'],
             $items,
             fn($p) => [
                 $p->getId(),
@@ -76,7 +76,7 @@ class ExportController extends AbstractController
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
         return $this->exportService->exportCsv(
             'articles_' . date('Y-m-d') . '.csv',
-            ['ID', 'DÃ©signation', 'UnitÃ©', 'Tarif'],
+            ['ID', 'Désignation', 'Unité', 'Tarif'],
             $items,
             fn($a) => [
                 $a->getId(),
@@ -93,7 +93,7 @@ class ExportController extends AbstractController
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
         return $this->exportService->exportCsv(
             'factures_' . date('Y-m-d') . '.csv',
-            ['ID', 'RÃ©fÃ©rence', 'Client', 'Date', 'Montant', 'Statut', 'Ã‰chÃ©ance'],
+            ['ID', 'Référence', 'Client', 'Date', 'Montant', 'Statut', 'Échéance'],
             $items,
             fn($e) => [
                 $e->getId(),
@@ -113,7 +113,7 @@ class ExportController extends AbstractController
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
         return $this->exportService->exportCsv(
             'devises_' . date('Y-m-d') . '.csv',
-            ['ID', 'Code', 'LibellÃ©'],
+            ['ID', 'Code', 'Libellé'],
             $items,
             fn($d) => [$d->getId(), $d->getCode(), $d->getLibelle()]
         );
@@ -125,7 +125,7 @@ class ExportController extends AbstractController
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
         return $this->exportService->exportCsv(
             'pays_' . date('Y-m-d') . '.csv',
-            ['ID', 'LibellÃ©'],
+            ['ID', 'Libellé'],
             $items,
             fn($p) => [$p->getId(), $p->getLibelle()]
         );
@@ -137,7 +137,7 @@ class ExportController extends AbstractController
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
         return $this->exportService->exportCsv(
             'villes_' . date('Y-m-d') . '.csv',
-            ['ID', 'LibellÃ©'],
+            ['ID', 'Libellé'],
             $items,
             fn($v) => [$v->getId(), $v->getLibelle()]
         );
@@ -149,7 +149,7 @@ class ExportController extends AbstractController
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
         return $this->exportService->exportCsv(
             'unites_' . date('Y-m-d') . '.csv',
-            ['ID', 'Code', 'LibellÃ©'],
+            ['ID', 'Code', 'Libellé'],
             $items,
             fn($u) => [$u->getId(), $u->getCode(), $u->getLibelle()]
         );
@@ -161,7 +161,7 @@ class ExportController extends AbstractController
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
         return $this->exportService->exportCsv(
             'tarifs_' . date('Y-m-d') . '.csv',
-            ['ID', 'LibellÃ©'],
+            ['ID', 'Libellé'],
             $items,
             fn($t) => [$t->getId(), $t->getLibelle()]
         );
@@ -173,7 +173,7 @@ class ExportController extends AbstractController
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
         return $this->exportService->exportCsv(
             'reglements_' . date('Y-m-d') . '.csv',
-            ['ID', 'LibellÃ©'],
+            ['ID', 'Libellé'],
             $items,
             fn($r) => [$r->getId(), $r->getLibelle()]
         );
@@ -196,21 +196,25 @@ class ExportController extends AbstractController
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
 
-        // Prepare KPI data from dashboard service
         $currentYear = (int)date('Y');
         $currentMonth = (int)date('m');
         $previousYear = $currentYear - 1;
+        $overdue = $dashboardService->getOverdueInvoices($currentYear);
 
         $kpiData = [
             'Chiffre d\'affaires' => [
-                'value' => 'â‚¬ ' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
+                'value' => '€ ' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
                 'period' => 'Jan - ' . date('M Y'),
-                'comparison' => ($dashboardService->getTotalRevenue($currentYear, $currentMonth) > $dashboardService->getTotalRevenue($previousYear, $currentMonth) ? '+' : '') . round((($dashboardService->getTotalRevenue($currentYear, $currentMonth) - $dashboardService->getTotalRevenue($previousYear, $currentMonth)) / $dashboardService->getTotalRevenue($previousYear, $currentMonth) * 100), 1) . '%'
+                'comparison' => ($dashboardService->getTotalRevenue($currentYear, $currentMonth) > $dashboardService->getTotalRevenue($previousYear, $currentMonth) ? '+' : '') . round((($dashboardService->getTotalRevenue($currentYear, $currentMonth) - $dashboardService->getTotalRevenue($previousYear, $currentMonth)) / (($dashboardService->getTotalRevenue($previousYear, $currentMonth) ?: 1)) * 100), 1) . '%'
             ],
-            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'AnnÃ©e ' . $currentYear, 'comparison' => '+0'],
+            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
             'Nouveaux clients' => ['value' => (string)$dashboardService->getNewCustomersThisMonth(), 'period' => date('F Y'), 'comparison' => '+0'],
-            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'AnnÃ©e ' . $currentYear, 'comparison' => '+0'],
-            'Factures en retard' => ['value' => (string)$dashboardService->getOverdueInvoices($currentYear), 'period' => 'Actuel', 'comparison' => '+0'],
+            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
+            'Factures en retard' => [
+                'value' => sprintf('%d factures | %s EUR', $overdue['count'] ?? 0, number_format((float)($overdue['amount'] ?? 0), 2, '.', ',')),
+                'period' => 'Actuel',
+                'comparison' => '+0'
+            ],
         ];
 
         return $this->exportService->exportDashboardToExcel($kpiData, 'tableau_de_bord_' . date('Y-m-d') . '.xlsx');
@@ -221,24 +225,27 @@ class ExportController extends AbstractController
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
 
-        // Prepare KPI data from dashboard service
         $currentYear = (int)date('Y');
         $currentMonth = (int)date('m');
         $previousYear = $currentYear - 1;
+        $overdue = $dashboardService->getOverdueInvoices($currentYear);
 
         $kpiData = [
             'Chiffre d\'affaires' => [
-                'value' => 'â‚¬ ' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
+                'value' => '€ ' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
                 'period' => 'Jan - ' . date('M Y'),
-                'comparison' => ($dashboardService->getTotalRevenue($currentYear, $currentMonth) > $dashboardService->getTotalRevenue($previousYear, $currentMonth) ? '+' : '') . round((($dashboardService->getTotalRevenue($currentYear, $currentMonth) - $dashboardService->getTotalRevenue($previousYear, $currentMonth)) / $dashboardService->getTotalRevenue($previousYear, $currentMonth) * 100), 1) . '%'
+                'comparison' => ($dashboardService->getTotalRevenue($currentYear, $currentMonth) > $dashboardService->getTotalRevenue($previousYear, $currentMonth) ? '+' : '') . round((($dashboardService->getTotalRevenue($currentYear, $currentMonth) - $dashboardService->getTotalRevenue($previousYear, $currentMonth)) / (($dashboardService->getTotalRevenue($previousYear, $currentMonth) ?: 1)) * 100), 1) . '%'
             ],
-            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'AnnÃ©e ' . $currentYear, 'comparison' => '+0'],
+            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
             'Nouveaux clients' => ['value' => (string)$dashboardService->getNewCustomersThisMonth(), 'period' => date('F Y'), 'comparison' => '+0'],
-            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'AnnÃ©e ' . $currentYear, 'comparison' => '+0'],
-            'Factures en retard' => ['value' => (string)$dashboardService->getOverdueInvoices($currentYear), 'period' => 'Actuel', 'comparison' => '+0'],
+            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
+            'Factures en retard' => [
+                'value' => sprintf('%d factures | %s EUR', $overdue['count'] ?? 0, number_format((float)($overdue['amount'] ?? 0), 2, '.', ',')),
+                'period' => 'Actuel',
+                'comparison' => '+0'
+            ],
         ];
 
-        // Get top products for PDF - ensure it's an array
         $top5Products = $dashboardService->getTop5Products($currentYear) ?? [];
 
         return $this->exportService->exportDashboardToPdf($kpiData, is_array($top5Products) ? $top5Products : [], 'tableau_de_bord_' . date('Y-m-d') . '.pdf');
