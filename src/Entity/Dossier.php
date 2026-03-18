@@ -26,6 +26,9 @@ class Dossier
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $logo = null;
 
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $theme = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $rc = null;
 
@@ -72,6 +75,18 @@ class Dossier
     public function setLogo(?string $logo): static
     {
         $this->logo = $logo;
+
+        return $this;
+    }
+
+    public function getTheme(): ?string
+    {
+        return $this->theme;
+    }
+
+    public function setTheme(?string $theme): static
+    {
+        $this->theme = $theme;
 
         return $this;
     }

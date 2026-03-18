@@ -1,6 +1,6 @@
 {% extends 'template_oukatech.html.twig' %}
 
-{% block PageTitle%}
+{% block PageTitle %}
     Gestion des Dossiers
 {% endblock %}
 
@@ -26,6 +26,14 @@
     </div>
 </div>
 
+{% set themes = {
+    'ocean': {'label': 'Ocean', 'color': '#2563eb'},
+    'forest': {'label': 'Forest', 'color': '#15803d'},
+    'sand': {'label': 'Sand', 'color': '#f59e0b'},
+    'night': {'label': 'Night', 'color': '#334155'},
+    'neutral': {'label': 'Neutral', 'color': '#4b5563'}
+} %}
+
 <div class="table-container">
     {% if dossiers|length > 0 %}
     <table class="table">
@@ -36,18 +44,32 @@
                 <th data-sort-key="adresse">Adresse</th>
                 <th data-sort-key="rc">RC</th>
                 <th>Logo</th>
+                <th>Theme</th>
                 <th data-sort-key="devise">Devise</th>
                 <th class="text-center" style="width: 120px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for dossier in dossiers %}
+            {% set rawTheme = dossier.theme|default('') %}
+            {% set resolvedTheme = rawTheme in themes|keys ? rawTheme : (rawTheme in ['#4e73df', '#224abe'] ? 'ocean' : 'neutral') %}
+            {% set themeMeta = themes[resolvedTheme] %}
             <tr>
                 <td><strong>#{{ dossier.id }}</strong></td>
                 <td>{{ dossier.nom }}</td>
                 <td>{{ dossier.adresse }}</td>
                 <td>{{ dossier.rc }}</td>
-                <td>{{ dossier.logo }}</td>
+                <td>
+                    {% if dossier.logo %}
+                        <img src="{{ dossier.logo }}" alt="Logo" style="height:32px; width:32px; object-fit:cover; border-radius:6px;">
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:{{ themeMeta.color }};border:1px solid #e2e8f0; margin-right:6px;vertical-align:middle;"></span>
+                    <small class="text-muted">{{ themeMeta.label }}</small>
+                </td>
                 <td>{{ dossier.devise }}</td>
                 <td class="text-center">
                     <a href="{{ path('dossier.edit', {id: dossier.id}) }}" class="btn btn-action btn-edit" title="Modifier">
@@ -70,8 +92,8 @@
         <div class="empty-state-icon">
             <i class="fas fa-folder-open"></i>
         </div>
-        <h5>Aucun dossier trouvé</h5>
-        <p>Créez votre premier dossier pour organiser vos données.</p>
+        <h5>Aucun dossier trouve</h5>
+        <p>Creez votre premier dossier pour organiser vos donnees.</p>
         <a href="{{ path('dossier.edit') }}" class="btn btn-primary">
             <i class="fas fa-plus mr-2"></i>Nouveau dossier
         </a>

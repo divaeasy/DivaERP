@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 
 <head>
@@ -246,7 +246,7 @@
             width: 60px;
             height: 60px;
             border: 5px solid #e9ecef;
-            border-top: 5px solid #4e73df;
+            border-top: 5px solid var(--theme-primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin: 0 auto 20px;
@@ -269,7 +269,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
             color: white;
             font-weight: bold;
             font-size: 18px;
@@ -293,13 +293,13 @@
             margin-bottom: 20px;
         }
         .form-card .card-header-custom {
-            border-bottom: 1px solid #e3e6f0;
+            border-bottom: 1px solid var(--theme-border);
             padding-bottom: 15px;
             margin-bottom: 20px;
         }
         .form-card .card-header-custom h5 {
             margin: 0;
-            color: #4e73df;
+            color: var(--theme-primary);
             font-weight: 600;
         }
 
@@ -319,8 +319,8 @@
             border-color: #b0bfe6;
         }
         .form-card .form-control:focus {
-            border-color: #4e73df;
-            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+            border-color: var(--theme-primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
             background-color: #fff;
         }
         .form-card .form-control::placeholder {
@@ -354,8 +354,8 @@
         }
         .select2-container--bootstrap-5.select2-container--focus .select2-selection,
         .select2-container--bootstrap-5.select2-container--open .select2-selection {
-            border-color: #4e73df !important;
-            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1) !important;
+            border-color: var(--theme-primary) !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
         }
         .select2-container--bootstrap-5 .select2-selection__rendered {
             color: #3a3b45 !important;
@@ -413,9 +413,9 @@
             font-size: 14px !important;
         }
         .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field:focus {
-            border-color: #4e73df !important;
+            border-color: var(--theme-primary) !important;
             outline: none !important;
-            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1) !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
         }
         .select2-container--bootstrap-5 .select2-results__option {
             padding: 9px 14px !important;
@@ -425,10 +425,10 @@
         }
         .select2-container--bootstrap-5 .select2-results__option--highlighted {
             background-color: #eef2ff !important;
-            color: #4e73df !important;
+            color: var(--theme-primary) !important;
         }
         .select2-container--bootstrap-5 .select2-results__option--selected {
-            background-color: #4e73df !important;
+            background-color: var(--theme-primary) !important;
             color: #fff !important;
         }
         .select2-container--bootstrap-5 .select2-selection__clear {
@@ -465,8 +465,8 @@
             border-color: #b0bfe6;
         }
         select.form-control:not(.select2-hidden-accessible):focus {
-            border-color: #4e73df;
-            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+            border-color: var(--theme-primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
             outline: none;
         }
 
@@ -501,7 +501,7 @@
             margin-bottom: 0;
         }
         .table thead th {
-            background: #4e73df;
+            background: var(--theme-primary);
             color: white;
             border: none;
             font-weight: 600;
@@ -517,7 +517,7 @@
             border-color: #e3e6f0;
         }
         .table tbody tr:hover {
-            background-color: #f8f9fc;
+            background-color: rgba(0, 0, 0, 0.02);
         }
 
         /* ===== ACTION BUTTONS (NO WRAP) ===== */
@@ -537,15 +537,15 @@
             transition: all 0.2s ease;
         }
         .btn-edit {
-            background-color: #4e73df;
+            background-color: var(--theme-primary);
             color: white;
             border: none;
         }
         .btn-edit:hover {
-            background-color: #2e59d9;
+            background-color: var(--theme-secondary);
             color: white;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(78, 115, 223, 0.4);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
         .btn-delete {
             background-color: #e74a3b;
@@ -559,15 +559,15 @@
             box-shadow: 0 4px 8px rgba(231, 74, 59, 0.4);
         }
         .btn-view {
-            background-color: #36b9cc;
+            background-color: var(--theme-primary);
             color: white;
             border: none;
         }
         .btn-view:hover {
-            background-color: #2c9faf;
+            background-color: var(--theme-secondary);
             color: white;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(54, 185, 204, 0.4);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         /* ===== PAGE HEADER ===== */
@@ -577,14 +577,14 @@
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 1px solid #e3e6f0;
+            border-bottom: 1px solid var(--theme-border);
         }
         .page-header h1 {
             margin: 0;
             font-size: 1.5rem;
         }
         .page-header .btn-back {
-            background: #858796;
+            background: var(--theme-secondary);
             color: white;
             padding: 8px 16px;
             border-radius: 4px;
@@ -596,7 +596,7 @@
             transition: all 0.2s ease;
         }
         .page-header .btn-back:hover {
-            background: #5a5c69;
+            background: var(--theme-primary);
             color: white;
             text-decoration: none;
         }
@@ -615,7 +615,7 @@
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
         }
         .action-bar .btn-add {
-            background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+            background: linear-gradient(180deg, var(--theme-primary) 10%, var(--theme-secondary) 100%);
             color: white;
             padding: 12px 24px;
             border-radius: 6px;
@@ -629,10 +629,10 @@
             white-space: nowrap;
         }
         .action-bar .btn-add:hover {
-            background: linear-gradient(180deg, #224abe 10%, #1a3a8c 100%);
+            background: linear-gradient(180deg, var(--theme-secondary) 10%, var(--theme-primary) 100%);
             color: white;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(78, 115, 223, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
             text-decoration: none;
         }
         .action-bar .search-box {
@@ -665,7 +665,7 @@
         }
         #navSearchResults .dropdown-item:hover {
             background: #f8f9fc;
-            color: #4e73df;
+            color: var(--theme-primary);
         }
         #navSearchResults .dropdown-item i {
             width: 20px;
@@ -694,7 +694,7 @@
         .empty-state .empty-state-icon i,
         .empty-state > i {
             font-size: 32px;
-            color: #4e73df;
+            color: var(--theme-primary);
             opacity: 1;
             margin-bottom: 0;
         }
@@ -706,7 +706,7 @@
             background: linear-gradient(135deg, #eef2ff 0%, #e8eafd 100%);
             margin-bottom: 20px;
             font-size: 32px;
-            color: #4e73df;
+            color: var(--theme-primary);
             opacity: 1;
         }
         .empty-state h5 {
@@ -845,17 +845,17 @@
         }
         /* Info */
         .toast-info {
-            border-left-color: #4e73df;
+            border-left-color: var(--theme-primary);
         }
         .toast-info .toast-icon {
             background: #eef2ff;
-            color: #4e73df;
+            color: var(--theme-primary);
         }
         .toast-info .toast-title {
-            color: #4e73df;
+            color: var(--theme-primary);
         }
         .toast-info .toast-progress-bar {
-            background: #4e73df;
+            background: var(--theme-primary);
         }
         @keyframes toastSlideIn {
             from { transform: translateX(100%); opacity: 0; }
@@ -916,7 +916,7 @@
             border-radius: 6px;
         }
         .form-actions .btn-primary {
-            background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+            background: linear-gradient(180deg, var(--theme-primary) 10%, var(--theme-secondary) 100%);
             border: none;
         }
         .form-actions .btn-secondary {
@@ -1010,6 +1010,112 @@
 </head>
 
 <body id="page-top" class="js-loading">
+    {% set themePalettes = {
+        'ocean': {'primary':'#2563eb','secondary':'#1d4ed8','accent':'#22d3ee','text':'#0f172a','bg':'#f8fafc'},
+        'forest': {'primary':'#15803d','secondary':'#166534','accent':'#10b981','text':'#0f172a','bg':'#f8fafc'},
+        'sand': {'primary':'#f59e0b','secondary':'#d97706','accent':'#fbbf24','text':'#1f2937','bg':'#fffaf0'},
+        'night': {'primary':'#334155','secondary':'#1e293b','accent':'#22d3ee','text':'#0f172a','bg':'#f8fafc'},
+        'neutral': {'primary':'#4b5563','secondary':'#6b7280','accent':'#9ca3af','text':'#0f172a','bg':'#f8fafc'}
+    } %}
+    {% set rawSelectedThemeKey = app.user and app.user.currentDossier and app.user.currentDossier.theme ? app.user.currentDossier.theme : 'neutral' %}
+    {% set selectedThemeKey = rawSelectedThemeKey in themePalettes|keys
+        ? rawSelectedThemeKey
+        : (rawSelectedThemeKey in ['#4e73df', '#224abe'] ? 'ocean' : 'neutral') %}
+    {% set palette = themePalettes[selectedThemeKey] ?? themePalettes['neutral'] %}
+    <style>
+        :root {
+            --theme-primary: {{ palette.primary }};
+            --theme-secondary: {{ palette.secondary }};
+            --theme-accent: {{ palette.accent }};
+            --theme-text: {{ palette.text }};
+            --theme-bg: {{ palette.bg }};
+            --theme-surface: #ffffff;
+            --theme-border: rgba(0,0,0,0.06);
+        }
+        body { background: var(--theme-bg); color: var(--theme-text); }
+        #content-wrapper { background: var(--theme-bg); }
+        .bg-gradient-primary { background: var(--theme-primary) !important; }
+        .sidebar { background: linear-gradient(180deg, var(--theme-primary), var(--theme-secondary)) !important; }
+        .sidebar .sidebar-brand-text, .sidebar .nav-link { color: #eef2ff; }
+        .sidebar .nav-link:hover { background: rgba(255,255,255,0.08); }
+        /* Buttons */
+        .btn-primary,
+        .btn-info,
+        .btn-success,
+        .btn-primary:not(:disabled):not(.disabled),
+        .btn-info:not(:disabled):not(.disabled),
+        .btn-success:not(:disabled):not(.disabled) {
+            background-color: var(--theme-primary) !important;
+            border-color: var(--theme-primary) !important;
+            color: #fff !important;
+        }
+        .btn-primary:hover,
+        .btn-info:hover,
+        .btn-success:hover { background-color: var(--theme-secondary) !important; border-color: var(--theme-secondary) !important; }
+        .btn-outline-primary,
+        .btn-outline-info,
+        .btn-outline-success { color: var(--theme-primary) !important; border-color: var(--theme-primary) !important; }
+        .btn-outline-primary:hover,
+        .btn-outline-info:hover,
+        .btn-outline-success:hover { background: var(--theme-primary) !important; color: #fff !important; }
+        /* Links / text */
+        .page-link { color: var(--theme-primary); }
+        .page-link:hover, .page-link:focus { color: var(--theme-secondary); }
+        .badge-primary { background: var(--theme-primary); }
+        .text-theme { color: var(--theme-primary) !important; }
+        a { color: var(--theme-primary); }
+        /* Surfaces */
+        .card, .form-card, .dropdown-menu, .modal-content { background: var(--theme-surface); border-color: var(--theme-border); }
+        .card-header { background: var(--theme-surface); border-bottom-color: var(--theme-border); }
+        .table thead th, .dataTable thead th { background: var(--theme-primary); color: #fff; border-color: var(--theme-primary); }
+        .table tbody tr:hover { background: rgba(0,0,0,0.015); }
+        .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(0,0,0,0.01); }
+        .container-fluid, #content-wrapper, .main-content, #content { background: var(--theme-bg); }
+        .form-control:focus { border-color: var(--theme-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+        .custom-control-input:checked ~ .custom-control-label::before,
+        .form-check-input:checked { background-color: var(--theme-primary); border-color: var(--theme-primary); }
+        .topbar { background: var(--theme-surface) !important; }
+        .dropdown-item.active,
+        .dropdown-item:active { background: var(--theme-primary); color: #fff; }
+        .btn-link { color: var(--theme-primary) !important; }
+        .btn-link:hover { color: var(--theme-secondary) !important; }
+        h1,h2,h3,h4,h5 { color: var(--theme-text); }
+        .card-header h6, .card-header .m-0 { color: var(--theme-text); }
+        .chart-title, .chartjs-title, .chartjs-render-monitor + h6 { color: var(--theme-text); }
+        /* Dossier switcher spacing */
+        .dossier-switcher__toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .dossier-switcher__toggle img,
+        .dossier-switcher__item img {
+            flex-shrink: 0;
+            object-fit: cover;
+        }
+        .dossier-switcher__toggle img {
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+        }
+        .dossier-switcher__item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .dossier-switcher__item img {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        /* Bootstrap utility overrides */
+        .text-primary { color: var(--theme-primary) !important; }
+        .bg-primary { background-color: var(--theme-primary) !important; }
+        .border-left-primary { border-left: .25rem solid var(--theme-primary) !important; }
+        .border-bottom-primary { border-bottom: .25rem solid var(--theme-primary) !important; }
+        .form-check-input:checked { background-color: var(--theme-primary); border-color: var(--theme-primary); }
+        .custom-select:focus, .custom-file-input:focus { border-color: var(--theme-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+    </style>
 
     <!-- Page Wrapper -->
     <div id="wrapper">
@@ -1354,9 +1460,15 @@
                         <li class="nav-item dropdown mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="dossierDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-folder-open fa-fw text-gray-400"></i>
-                                <span class="d-none d-lg-inline text-gray-600 small ml-1">
-                                    {{ app.user.currentDossier ? app.user.currentDossier.nom : 'Dossier' }}
+                                <span class="dossier-switcher__toggle">
+                                    {% if app.user.currentDossier and app.user.currentDossier.logo %}
+                                        <img src="{{ app.user.currentDossier.logo }}" alt="logo">
+                                    {% else %}
+                                        <i class="fas fa-folder-open fa-fw text-gray-400"></i>
+                                    {% endif %}
+                                    <span class="d-none d-lg-inline text-gray-600 small">
+                                        {{ app.user.currentDossier ? app.user.currentDossier.nom : 'Dossier' }}
+                                    </span>
                                 </span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
@@ -1364,7 +1476,14 @@
                                 {% for dossier in app.user.dossiers %}
                                     <a class="dropdown-item {% if app.user.currentDossier and dossier.id == app.user.currentDossier.id %}active{% endif %}"
                                        href="{{ path('dossier.switch', {'id': dossier.id}) }}">
-                                        {{ dossier.nom }}
+                                        <span class="dossier-switcher__item">
+                                            {% if dossier.logo %}
+                                                <img src="{{ dossier.logo }}" alt="logo">
+                                            {% else %}
+                                                <i class="fas fa-folder text-theme"></i>
+                                            {% endif %}
+                                            <span>{{ dossier.nom }}</span>
+                                        </span>
                                     </a>
                                 {% else %}
                                     <span class="dropdown-item text-muted">Aucun dossier disponible</span>
@@ -1447,7 +1566,7 @@
                                     <div class="font-weight-bold">
                                         <div class="text-truncate">Hi there! I am wondering if you can help me with a
                                             problem I've been having.</div>
-                                        <div class="small text-gray-500">Emily Fowler · 58m</div>
+                                        <div class="small text-gray-500">Emily Fowler Â· 58m</div>
                                     </div>
                                 </a>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
@@ -1459,7 +1578,7 @@
                                     <div>
                                         <div class="text-truncate">I have the photos that you ordered last month, how
                                             would you like them sent to you?</div>
-                                        <div class="small text-gray-500">Jae Chun · 1d</div>
+                                        <div class="small text-gray-500">Jae Chun Â· 1d</div>
                                     </div>
                                 </a>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
@@ -1471,7 +1590,7 @@
                                     <div>
                                         <div class="text-truncate">Last month's report looks great, I am very happy with
                                             the progress so far, keep up the good work!</div>
-                                        <div class="small text-gray-500">Morgan Alvarez · 2d</div>
+                                        <div class="small text-gray-500">Morgan Alvarez Â· 2d</div>
                                     </div>
                                 </a>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
@@ -1483,7 +1602,7 @@
                                     <div>
                                         <div class="text-truncate">Am I a good boy? The reason I ask is because someone
                                             told me that people say this to all dogs, even if they aren't good...</div>
-                                        <div class="small text-gray-500">Chicken the Dog · 2w</div>
+                                        <div class="small text-gray-500">Chicken the Dog Â· 2w</div>
                                     </div>
                                 </a>
                                 <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
@@ -1628,7 +1747,7 @@
                         <i class="fas fa-sign-out-alt mr-3" style="margin-right: 12px;"></i>Déconnexion
                     </h5>
                     <button class="close" type="button" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
-                        <span aria-hidden="true">×</span>
+                        <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body" style="padding: 28px; font-size: 15px; color: #5a5c69; line-height: 1.6;">
@@ -1686,7 +1805,7 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="deleteModalLabel"><i class="fas fa-exclamation-triangle mr-2"></i>Confirmation de suppression</h5>
                     <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
+                        <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
@@ -2139,3 +2258,4 @@
 </body>
 
 </html>
+

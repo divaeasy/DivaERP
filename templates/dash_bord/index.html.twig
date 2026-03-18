@@ -236,13 +236,47 @@
 {% block javascripts %}
     <script>
     $(document).ready(function() {
-        // Color palette
-        const primaryColor = 'rgba(78, 115, 223, 1)';
-        const secondaryColor = 'rgba(224, 116, 16, 1)';
-        const successColor = 'rgba(28, 200, 138, 1)';
+        const primaryHex = '#4e73df';
+        const secondaryHex = '#e07410';
+        const accentHex = '#1cc88a';
+
+        function hexToRgba(hex, alpha) {
+            const raw = hex.replace('#', '');
+            const normalized = raw.length === 3
+                ? raw.split('').map(function (char) { return char + char; }).join('')
+                : raw;
+            const color = parseInt(normalized, 16);
+
+            return 'rgba('
+                + ((color >> 16) & 255) + ', '
+                + ((color >> 8) & 255) + ', '
+                + (color & 255) + ', '
+                + alpha + ')';
+        }
+
+        function buildGradient(context, startColor, endColor) {
+            const gradient = context.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, startColor);
+            gradient.addColorStop(1, endColor);
+
+            return gradient;
+        }
+
+        const primaryColor = hexToRgba(primaryHex, 1);
+        const secondaryColor = hexToRgba(secondaryHex, 1);
+        const accentColor = hexToRgba(accentHex, 1);
+        const successColor = accentColor;
         const dangerColor = 'rgba(231, 74, 59, 1)';
-        const infoColor = 'rgba(54, 185, 204, 1)';
-        const warningColor = 'rgba(246, 194, 62, 1)';
+        const infoColor = hexToRgba(primaryHex, 0.72);
+        const warningColor = hexToRgba(accentHex, 0.6);
+        const themeSeries = [
+            hexToRgba(primaryHex, 0.88),
+            hexToRgba(secondaryHex, 0.88),
+            hexToRgba(accentHex, 0.88),
+            'rgba(15, 23, 42, 0.78)',
+            'rgba(148, 163, 184, 0.84)',
+            'rgba(231, 74, 59, 0.82)',
+        ];
 
         // Utility function for formatting currency
         function formatCurrency(value) {
@@ -260,7 +294,7 @@
                         label: 'Année {{ currentYear }}',
                         data: {{ currentYearValues|raw }},
                         borderColor: primaryColor,
-                        backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                        backgroundColor: hexToRgba(primaryHex, 0.12),
                         borderWidth: 2,
                         tension: 0.4,
                         fill: true,
@@ -273,7 +307,7 @@
                         label: 'Année {{ previousYear }}',
                         data: {{ previousYearValues|raw }},
                         borderColor: secondaryColor,
-                        backgroundColor: 'rgba(224, 116, 16, 0.1)',
+                        backgroundColor: hexToRgba(secondaryHex, 0.12),
                         borderWidth: 2,
                         tension: 0.4,
                         fill: true,
@@ -366,17 +400,11 @@
                 datasets: [{
                     label: 'Quantité vendue',
                     data: {{ productQty|raw }},
-                    backgroundColor: [
-                        'rgba(78, 115, 223, 0.8)',
-                        'rgba(224, 116, 16, 0.8)',
-                        'rgba(28, 200, 138, 0.8)',
-                        'rgba(54, 185, 204, 0.8)',
-                        'rgba(246, 194, 62, 0.8)',
-                    ],
+                    backgroundColor: themeSeries.slice(0, {{ productNames|raw }}.length),
                     borderColor: [
                         primaryColor,
                         secondaryColor,
-                        successColor,
+                        accentColor,
                         infoColor,
                         warningColor,
                     ],
@@ -410,12 +438,12 @@
         // 4. Sales by Category (Donut Chart — modern)
         const categoryCtx = document.getElementById('categoryChart').getContext('2d');
         const categoryGradients = [
-            (() => { const g = categoryCtx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(78, 115, 223, 0.9)'); g.addColorStop(1, 'rgba(78, 115, 223, 0.5)'); return g; })(),
-            (() => { const g = categoryCtx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(224, 116, 16, 0.9)'); g.addColorStop(1, 'rgba(224, 116, 16, 0.5)'); return g; })(),
-            (() => { const g = categoryCtx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(28, 200, 138, 0.9)'); g.addColorStop(1, 'rgba(28, 200, 138, 0.5)'); return g; })(),
-            (() => { const g = categoryCtx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(54, 185, 204, 0.9)'); g.addColorStop(1, 'rgba(54, 185, 204, 0.5)'); return g; })(),
-            (() => { const g = categoryCtx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(246, 194, 62, 0.9)'); g.addColorStop(1, 'rgba(246, 194, 62, 0.5)'); return g; })(),
-            (() => { const g = categoryCtx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(231, 74, 59, 0.9)'); g.addColorStop(1, 'rgba(231, 74, 59, 0.5)'); return g; })(),
+            buildGradient(categoryCtx, hexToRgba(primaryHex, 0.95), hexToRgba(primaryHex, 0.55)),
+            buildGradient(categoryCtx, hexToRgba(secondaryHex, 0.95), hexToRgba(secondaryHex, 0.55)),
+            buildGradient(categoryCtx, hexToRgba(accentHex, 0.95), hexToRgba(accentHex, 0.55)),
+            buildGradient(categoryCtx, 'rgba(15, 23, 42, 0.85)', 'rgba(15, 23, 42, 0.45)'),
+            buildGradient(categoryCtx, 'rgba(148, 163, 184, 0.9)', 'rgba(148, 163, 184, 0.48)'),
+            buildGradient(categoryCtx, 'rgba(231, 74, 59, 0.9)', 'rgba(231, 74, 59, 0.5)'),
         ];
         new Chart(categoryCtx, {
             type: 'doughnut',
@@ -472,7 +500,7 @@
                     label: 'Clients actifs',
                     data: {{ customerCounts|raw }},
                     borderColor: successColor,
-                    backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                    backgroundColor: hexToRgba(accentHex, 0.12),
                     borderWidth: 2,
                     tension: 0.4,
                     fill: true,
@@ -509,10 +537,10 @@
         // 6. État des paiements (Doughnut Chart — modern)
         const paymentStatusCtx = document.getElementById('paymentStatusChart').getContext('2d');
         const paymentGradients = [
-            (() => { const g = paymentStatusCtx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(28, 200, 138, 0.9)'); g.addColorStop(1, 'rgba(28, 200, 138, 0.5)'); return g; })(),
-            (() => { const g = paymentStatusCtx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(54, 185, 204, 0.9)'); g.addColorStop(1, 'rgba(54, 185, 204, 0.5)'); return g; })(),
-            (() => { const g = paymentStatusCtx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(246, 194, 62, 0.9)'); g.addColorStop(1, 'rgba(246, 194, 62, 0.5)'); return g; })(),
-            (() => { const g = paymentStatusCtx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(231, 74, 59, 0.9)'); g.addColorStop(1, 'rgba(231, 74, 59, 0.5)'); return g; })(),
+            buildGradient(paymentStatusCtx, hexToRgba(accentHex, 0.95), hexToRgba(accentHex, 0.55)),
+            buildGradient(paymentStatusCtx, hexToRgba(primaryHex, 0.95), hexToRgba(primaryHex, 0.55)),
+            buildGradient(paymentStatusCtx, hexToRgba(secondaryHex, 0.95), hexToRgba(secondaryHex, 0.55)),
+            buildGradient(paymentStatusCtx, 'rgba(231, 74, 59, 0.9)', 'rgba(231, 74, 59, 0.5)'),
         ];
         new Chart(paymentStatusCtx, {
             type: 'doughnut',
