@@ -53,15 +53,15 @@
         </div>
         <div class="col-md-4">
             <div class="form-group">
-                <label class="d-block">Th�me</label>
+                <label class="d-block">Théme</label>
                 {% set dossierEntity = dossier.vars.data %}
                 {% set currentTheme = dossierEntity ? dossierEntity.theme : dossier.theme.vars.data %}
                 {% set themes = {
-                    'ocean': {'name':'Oc�an','colors':['#2563eb','#1d4ed8','#22d3ee']},
-                    'forest': {'name':'For�t','colors':['#15803d','#166534','#10b981']},
-                    'sand': {'name':'Sable','colors':['#f59e0b','#d97706','#fbbf24']},
-                    'night': {'name':'Nuit','colors':['#111827','#0f172a','#6366f1']},
-                    'neutral': {'name':'Neutre','colors':['#4b5563','#6b7280','#9ca3af']}
+                    'indigo': {'name':'Indigo','colors':['#4f46e5','#4338ca','#818cf8']},
+                    'ardoise': {'name':'Ardoise','colors':['#475569','#334155','#94a3b8']},
+                    'bleu-corporate': {'name':'Bleu corporate','colors':['#1e40af','#1e3a8a','#60a5fa']},
+                    'emeraude': {'name':'Émeraude','colors':['#059669','#047857','#34d399']},
+                    'minimal-clair': {'name':'Minimal clair','colors':['#111827','#374151','#6b7280']}
                 } %}
                 <div class="theme-chip-list mb-2">
                     {% for key, t in themes %}
@@ -113,7 +113,7 @@
 
 <p class="text-muted small mt-3">
     <i class="fas fa-info-circle mr-1"></i>
-    Les champs marqu�s d'un <span class="text-danger">*</span> sont obligatoires.
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
 </p>
 {% endblock %}
 

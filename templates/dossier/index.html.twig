@@ -27,11 +27,11 @@
 </div>
 
 {% set themes = {
-    'ocean': {'label': 'Ocean', 'color': '#2563eb'},
-    'forest': {'label': 'Forest', 'color': '#15803d'},
-    'sand': {'label': 'Sand', 'color': '#f59e0b'},
-    'night': {'label': 'Night', 'color': '#334155'},
-    'neutral': {'label': 'Neutral', 'color': '#4b5563'}
+    'indigo': {'label': 'Indigo', 'color': '#4f46e5'},
+    'ardoise': {'label': 'Ardoise', 'color': '#475569'},
+    'bleu-corporate': {'label': 'Bleu corporate', 'color': '#1e40af'},
+    'emeraude': {'label': 'Émeraude', 'color': '#059669'},
+    'minimal-clair': {'label': 'Minimal clair', 'color': '#111827'}
 } %}
 
 <div class="table-container">
@@ -51,8 +51,8 @@
         </thead>
         <tbody>
             {% for dossier in dossiers %}
-            {% set rawTheme = dossier.theme|default('') %}
-            {% set resolvedTheme = rawTheme in themes|keys ? rawTheme : (rawTheme in ['#4e73df', '#224abe'] ? 'ocean' : 'neutral') %}
+            {% set rawTheme = dossier.theme|default('indigo') %}
+            {% set resolvedTheme = rawTheme in themes|keys ? rawTheme : 'indigo' %}
             {% set themeMeta = themes[resolvedTheme] %}
             <tr>
                 <td><strong>#{{ dossier.id }}</strong></td>
