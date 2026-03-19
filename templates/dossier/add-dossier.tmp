@@ -1,0 +1,164 @@
+{% extends "template_oukatech.html.twig" %}
+{% block PageTitle %}Dossier{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('dossier.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier le dossier' : 'Nouveau dossier' }}</h1>
+    </div>
+</div>
+
+<div class="form-card">
+    {{ form_start(dossier, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    
+    <div class="card-header-custom">
+        <h5><i class="fas fa-folder mr-2"></i>Informations du dossier</h5>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(dossier.nom, 'Nom', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(dossier.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom du dossier'}}) }}
+                <div class="invalid-feedback">Le nom est obligatoire</div>
+                {{ form_errors(dossier.nom) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(dossier.adresse, 'Adresse') }}
+                {{ form_widget(dossier.adresse, {'attr': {'class': 'form-control', 'placeholder': 'Adresse du dossier'}}) }}
+                {{ form_errors(dossier.adresse) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(dossier.rc, 'RC') }}
+                {{ form_widget(dossier.rc, {'attr': {'class': 'form-control', 'placeholder': 'Registre du commerce'}}) }}
+                {{ form_errors(dossier.rc) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(dossier.devise, 'Devise') }}
+                {{ form_widget(dossier.devise, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(dossier.devise) }}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="d-block">Thème</label>
+                {% set dossierEntity = dossier.vars.data %}
+                {% set currentTheme = dossierEntity ? dossierEntity.theme : dossier.theme.vars.data %}
+                {% set themes = {
+                    'ocean': {'name':'Océan','colors':['#2563eb','#1d4ed8','#22d3ee']},
+                    'forest': {'name':'Forêt','colors':['#15803d','#166534','#10b981']},
+                    'sand': {'name':'Sable','colors':['#f59e0b','#d97706','#fbbf24']},
+                    'night': {'name':'Nuit','colors':['#111827','#0f172a','#6366f1']},
+                    'neutral': {'name':'Neutre','colors':['#4b5563','#6b7280','#9ca3af']}
+                } %}
+                <div class="theme-chip-list mb-2">
+                    {% for key, t in themes %}
+                        <button type="button"
+                                class="theme-chip {% if currentTheme == key %}theme-chip--active{% endif %}"
+                                data-value="{{ key }}">
+                            <span class="theme-chip__swatch" style="background: linear-gradient(135deg, {{ t.colors[0] }}, {{ t.colors[1] }});"></span>
+                            <span class="theme-chip__label">{{ t.name }}</span>
+                        </button>
+                    {% endfor %}
+                </div>
+                {{ form_widget(dossier.theme, {'attr': {'class': 'd-none', 'id': 'themeHidden'}}) }}
+                {{ form_errors(dossier.theme) }}
+                <small class="text-muted">Choisissez un thème pour harmoniser les couleurs principales, secondaires et textes.</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(dossier.logoFile, 'Logo') }}
+                <div class="custom-file">
+                    {{ form_widget(dossier.logoFile, {'attr': {'class': 'custom-file-input', 'id': 'logoUpload'}}) }}
+                    <label class="custom-file-label" for="logoUpload">Choisir une image</label>
+                </div>
+                <div class="mt-2 logo-preview" id="logoPreview">
+                    {% if dossierEntity and dossierEntity.logo %}
+                        <img src="{{ dossierEntity.logo }}" alt="Logo actuel" style="max-height:70px; border:1px solid #e2e8f0; border-radius:6px; padding:6px; background:#fff;">
+                    {% endif %}
+                </div>
+                {{ form_errors(dossier.logoFile) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('dossier.list') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(dossier) }}
+    {{ form_end(dossier) }}
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="fas fa-info-circle mr-1"></i>
+    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+</p>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    $(document).ready(function() {
+        $('.js-example-basic-single').select2({
+            theme: 'bootstrap-5',
+            allowClear: true
+        });
+
+        $('.theme-chip').on('click', function() {
+            $('.theme-chip').removeClass('theme-chip--active');
+            $(this).addClass('theme-chip--active');
+            const val = $(this).data('value');
+            $('#themeHidden').val(val);
+        });
+
+        const activeTheme = $('.theme-chip--active').data('value');
+        if (activeTheme) {
+            $('#themeHidden').val(activeTheme);
+        }
+
+        const input = document.getElementById('logoUpload');
+        const preview = document.getElementById('logoPreview');
+        if (input && preview) {
+            input.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    preview.innerHTML = '<img src="' + ev.target.result + '" alt="Preview" style="max-height:70px; border:1px solid #e2e8f0; border-radius:6px; padding:6px; background:#fff;">';
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    });
+</script>
+<style>
+    .theme-chip-list { display:flex; flex-wrap:wrap; gap:8px; }
+    .theme-chip { border:1px solid #e5e7eb; background:#f8fafc; border-radius:10px; padding:6px 10px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; transition:all .2s ease; }
+    .theme-chip__swatch { width:28px; height:18px; border-radius:6px; display:block; }
+    .theme-chip__label { font-weight:600; font-size:12px; color:#111827; }
+    .theme-chip--active { border-color: #2563eb; box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
+    .logo-preview img { display:block; }
+</style>
+{% endblock %}
+

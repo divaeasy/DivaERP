@@ -76,9 +76,15 @@
                         <div class="dossier-chip-list">
                             {% for choice in userForm.dossiers.vars.choices %}
                                 {% set isSelected = choice.value in selectedDossiers %}
+                                {% set dossierLogo = choice.data is defined ? choice.data.logo : null %}
+                                {% set dossierTheme = choice.data is defined and choice.data.theme ? choice.data.theme : '#2563eb' %}
                                 <button type="button"
                                         class="dossier-chip {% if isSelected %}dossier-chip--active{% endif %}"
-                                        data-value="{{ choice.value }}">
+                                        data-value="{{ choice.value }}"
+                                        style="--dossier-color: {{ dossierTheme }}">
+                                    {% if dossierLogo %}
+                                        <span class="dossier-chip__avatar"><img src="{{ dossierLogo }}" alt="{{ choice.label }}"></span>
+                                    {% endif %}
                                     <span class="dossier-chip__label">{{ choice.label }}</span>
                                     <span class="dossier-chip__check"><i class="fas fa-check"></i></span>
                                 </button>
@@ -281,7 +287,7 @@
         align-items: flex-start;
     }
     .dossier-chip {
-        border: 1px solid #e5e7eb;
+        border: 1px solid var(--dossier-color, #e5e7eb);
         background: #f8fafc;
         color: #0f172a;
         border-radius: 999px;
@@ -294,9 +300,18 @@
         cursor: pointer;
         transition: all .2s ease;
     }
+    .dossier-chip__avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        display: inline-flex;
+    }
+    .dossier-chip__avatar img { width: 100%; height: 100%; object-fit: cover; }
     .dossier-chip__check { display: none; color: #fff; }
     .dossier-chip--active {
-        border-color: #2563eb;
+        border-color: var(--dossier-color, #2563eb);
         background: #e0ecff;
         color: #1d4ed8;
         box-shadow: 0 0 0 3px rgba(37,99,235,.12);

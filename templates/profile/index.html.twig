@@ -8,7 +8,7 @@
 {{ parent() }}
 <style>
     .profile-header {
-        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
         border-radius: 12px;
         padding: 40px;
         color: white;
@@ -34,7 +34,7 @@
         align-items: center;
         justify-content: center;
         font-size: 48px;
-        color: #4e73df;
+        color: var(--theme-primary);
         margin-bottom: 20px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
@@ -76,7 +76,7 @@
         color: #5a5c69;
     }
     .profile-card-header i {
-        color: #4e73df;
+        color: var(--theme-primary);
         margin-right: 10px;
     }
     .profile-card-body {
@@ -101,7 +101,7 @@
         flex: 1;
     }
     .btn-edit-profile {
-        background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+        background: linear-gradient(180deg, var(--theme-primary) 10%, var(--theme-secondary) 100%);
         color: white;
         padding: 12px 30px;
         border-radius: 6px;
@@ -115,7 +115,7 @@
     }
     .btn-edit-profile:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.4);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
         color: white;
         text-decoration: none;
     }
@@ -133,7 +133,7 @@
     .stat-value {
         font-size: 28px;
         font-weight: 700;
-        color: #4e73df;
+        color: var(--theme-primary);
     }
     .stat-label {
         font-size: 12px;
@@ -189,7 +189,7 @@
                 </div>
                 <div class="info-row">
                     <div class="info-label">Dossier actif</div>
-                    <div class="info-value">{{ user.dossier ? user.dossier.nom : '-' }}</div>
+                    <div class="info-value">{{ user.currentDossier ? user.currentDossier.nom : '-' }}</div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">Compte vérifié</div>
@@ -233,7 +233,7 @@
             <div class="profile-card-body">
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <div class="stat-value">{{ user.dossier ? '1' : '0' }}</div>
+                        <div class="stat-value">{{ user.currentDossier ? '1' : '0' }}</div>
                         <div class="stat-label">Dossier</div>
                     </div>
                     <div class="stat-item">

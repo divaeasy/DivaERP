@@ -17,6 +17,23 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('dossier')]
 class DossierController extends AbstractController
 {
+    /**
+     * Keep backward compatibility with legacy hex values stored before themed dossiers used keys.
+     */
+    private function normalizeThemeKey(?string $theme): string
+    {
+        $normalized = strtolower(trim((string) $theme));
+
+        return match ($normalized) {
+            'ocean', '#4e73df', '#224abe' => 'ocean',
+            'forest' => 'forest',
+            'sand' => 'sand',
+            'night' => 'night',
+            'neutral', '', 'null' => 'neutral',
+            default => 'neutral',
+        };
+    }
+
     #[Route('/', name: 'dossier.list')]
     public function index(Request $request, DossierRepository $dossierRepository, ManagerRegistry $doctrine): Response
     {
@@ -54,30 +71,37 @@ class DossierController extends AbstractController
             $dossier = new Dossier();
             $new = true;
         }
-        // Dossier doesn't use TimeStampTrait, no need to set doctrine/user
+        $dossier->setTheme($this->normalizeThemeKey($dossier->getTheme()));
+       // Dossier doesn't use TimeStampTrait, no need to set doctrine/user
         
        $form = $this->createForm(DossierFormType::class, $dossier);
        $form->handleRequest($request);
-       $newFilename = '';
        if($form->isSubmitted() && $form->isValid()){
 
-            
-        If ($new){
-            $message = "Le dossier est ajouté avec succès";
-            
-        }else{
-            $message = "Le dossier a été mis à jour avec succès";
-           
-        }
-        $entityManager = $doctrine->getManager();
-        $entityManager->persist($dossier);
-        $entityManager->flush();
-       
-        $this->addFlash(
-           'success',
-           $message
-        );
-        return $this->redirectToRoute('dossier.list');
+            $logoFile = $form->get('logoFile')->getData();
+            if ($logoFile) {
+                $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/dossiers';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $newFilename = uniqid('logo_', true) . '.' . $logoFile->guessExtension();
+                $logoFile->move($uploadDir, $newFilename);
+                $dossier->setLogo('/uploads/dossiers/' . $newFilename);
+            }
+
+            $dossier->setTheme($this->normalizeThemeKey($form->get('theme')->getData()));
+
+            if ($new){
+                $message = "Le dossier est ajouté avec succès";
+            }else{
+                $message = "Le dossier a été mis à jour avec succès";
+            }
+            $entityManager = $doctrine->getManager();
+            $entityManager->persist($dossier);
+            $entityManager->flush();
+
+            $this->addFlash('success', $message);
+            return $this->redirectToRoute('dossier.list');
        }else{
             return $this->render('dossier/add-dossier.html.twig', [
                 'dossier'=>$form->createView(),

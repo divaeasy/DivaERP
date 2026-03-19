@@ -1,92 +1,558 @@
 {% extends "template_oukatech.html.twig" %}
 {% block PageTitle %}Dossier{% endblock %}
 
-
 {% block body %}
-<div class="page-header">
+{% set dossierEntity = dossier is defined ? dossier.vars.data : null %}
+{% set themes = {
+    'ocean': {
+        'name': 'Ocean',
+        'description': 'Bleu net et dynamique',
+        'colors': ['#2563eb', '#1d4ed8', '#22d3ee']
+    },
+    'forest': {
+        'name': 'Forest',
+        'description': 'Vert pro et rassurant',
+        'colors': ['#15803d', '#166534', '#10b981']
+    },
+    'sand': {
+        'name': 'Sand',
+        'description': 'Ambre lumineux et doux',
+        'colors': ['#f59e0b', '#d97706', '#fbbf24']
+    },
+    'night': {
+        'name': 'Night',
+        'description': 'Slate moderne et accent azur',
+        'colors': ['#334155', '#1e293b', '#22d3ee']
+    },
+    'neutral': {
+        'name': 'Neutral',
+        'description': 'Gris sobre et polyvalent',
+        'colors': ['#4b5563', '#6b7280', '#9ca3af']
+    }
+} %}
+
+<div class="page-header dossier-editor__header">
     <div class="d-flex align-items-center">
         <a href="{{ path('dossier.list') }}" class="btn-back mr-3">
             <i class="fas fa-arrow-left"></i> Retour
         </a>
-        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier le dossier' : 'Nouveau dossier' }}</h1>
+        <div>
+            <h1 class="h3 mb-1 text-gray-800">{{ id > 0 ? 'Modifier le dossier' : 'Nouveau dossier' }}</h1>
+            <p class="text-muted mb-0">Mettez a jour l'identite visuelle et les informations de travail du dossier.</p>
+        </div>
     </div>
 </div>
 
-<div class="form-card">
-    {{ form_start(dossier, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
-    
-    <div class="card-header-custom">
-        <h5><i class="fas fa-folder mr-2"></i>Informations du dossier</h5>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-6">
-            <div class="form-group">
-                {{ form_label(dossier.nom, 'Nom', {'label_attr': {'class': 'required'}}) }}
-                {{ form_widget(dossier.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom du dossier'}}) }}
-                <div class="invalid-feedback">Le nom est obligatoire</div>
-                {{ form_errors(dossier.nom) }}
-            </div>
+<div class="dossier-editor">
+    {{ form_start(dossier, {'attr': {'class': 'needs-validation dossier-editor__form', 'novalidate': 'novalidate'}}) }}
+
+    <div class="row align-items-start">
+        <div class="col-xl-7 mb-4">
+            <section class="form-card dossier-panel mb-4">
+                <div class="dossier-panel__head">
+                    <span class="dossier-panel__eyebrow">Informations</span>
+                    <h5><i class="fas fa-folder-open mr-2"></i>Identite du dossier</h5>
+                    <p>Nom, adresse, reference et devise utilises dans toute l'application.</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.nom, 'Nom', {'label_attr': {'class': 'required'}}) }}
+                            {{ form_widget(dossier.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom du dossier'}}) }}
+                            {{ form_errors(dossier.nom) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.rc, 'RC') }}
+                            {{ form_widget(dossier.rc, {'attr': {'class': 'form-control', 'placeholder': 'Registre du commerce'}}) }}
+                            {{ form_errors(dossier.rc) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    {{ form_label(dossier.adresse, 'Adresse') }}
+                    {{ form_widget(dossier.adresse, {'attr': {'class': 'form-control', 'placeholder': 'Adresse du dossier'}}) }}
+                    {{ form_errors(dossier.adresse) }}
+                </div>
+
+                <div class="form-group mb-0">
+                    {{ form_label(dossier.devise, 'Devise') }}
+                    {{ form_widget(dossier.devise, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                    {{ form_errors(dossier.devise) }}
+                </div>
+            </section>
+
+            <section class="form-card dossier-panel dossier-panel--compact">
+                <div class="dossier-panel__head">
+                    <span class="dossier-panel__eyebrow">Branding</span>
+                    <h5><i class="fas fa-image mr-2"></i>Logo</h5>
+                    <p>Ajoutez un logo propre pour le switcher de dossier, les fiches utilisateurs et les vues de gestion.</p>
+                </div>
+
+                <div class="logo-uploader">
+                    <div class="logo-uploader__preview logo-uploader__preview--large" id="logoPreview">
+                        {% if dossierEntity is defined and dossierEntity and dossierEntity.logo %}
+                            <img src="{{ dossierEntity.logo }}" alt="Logo actuel" id="logoPreviewImage">
+                        {% else %}
+                            <div class="logo-uploader__placeholder" id="logoPreviewPlaceholder">
+                                <i class="fas fa-image"></i>
+                                <span>Aperçu du logo</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="logo-uploader__controls">
+                        <div class="logo-upload-trigger-wrap">
+                            <button type="button" class="logo-upload-trigger" id="logoUploadButton">
+                                <i class="fas fa-upload mr-2"></i>Choisir un logo
+                            </button>
+                            {{ form_widget(dossier.logoFile, {'attr': {'class': 'logo-upload-input', 'id': 'logoUpload', 'accept': 'image/*', 'onchange': 'window.handleDossierLogoChange && window.handleDossierLogoChange(this)'}}) }}
+                        </div>
+                        <span class="logo-upload-filename" id="logoFileName">{% if dossierEntity is defined and dossierEntity and dossierEntity.logo %}Logo actuel chargé{% else %}Aucun fichier sélectionné{% endif %}</span>
+                        <small class="text-muted">Formats conseillés : PNG ou JPG. Le logo sera affiché avec le nom du dossier.</small>
+                        {{ form_errors(dossier.logoFile) }}
+                    </div>
+                </div>
+            </section>
         </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                {{ form_label(dossier.adresse, 'Adresse') }}
-                {{ form_widget(dossier.adresse, {'attr': {'class': 'form-control', 'placeholder': 'Adresse du dossier'}}) }}
-                {{ form_errors(dossier.adresse) }}
-            </div>
+
+        <div class="col-xl-5 mb-4">
+            <section class="form-card dossier-panel dossier-panel--compact dossier-panel--sticky">
+                <div class="dossier-panel__head">
+                    <span class="dossier-panel__eyebrow">Theme</span>
+                    <h5><i class="fas fa-palette mr-2"></i>Palette du dossier</h5>
+                    <p>Le theme choisi pilote les couleurs principales du menu, des boutons et des contenus.</p>
+                </div>
+
+                <div class="theme-option-grid">
+                    {% for child in dossier.theme %}
+                        {% set themeKey = child.vars.value %}
+                        {% set themeMeta = themes[themeKey] ?? themes['neutral'] %}
+                        <div class="theme-option">
+                            {{ form_widget(child, {'attr': {'class': 'theme-radio-input'}}) }}
+                            <label for="{{ child.vars.id }}" class="theme-option__card" data-theme-card="true">
+                                <span class="theme-option__preview">
+                                    {% for color in themeMeta.colors %}
+                                        <span class="theme-option__dot" style="background: {{ color }};"></span>
+                                    {% endfor %}
+                                </span>
+                                <span class="theme-option__content">
+                                    <span class="theme-option__title">{{ themeMeta.name }}</span>
+                                    <span class="theme-option__text">{{ themeMeta.description }}</span>
+                                </span>
+                                <span class="theme-option__check">
+                                    <i class="fas fa-check"></i>
+                                </span>
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+                {{ form_errors(dossier.theme) }}
+            </section>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <div class="form-group">
-                {{ form_label(dossier.rc, 'RC') }}
-                {{ form_widget(dossier.rc, {'attr': {'class': 'form-control', 'placeholder': 'Registre du commerce'}}) }}
-                {{ form_errors(dossier.rc) }}
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                {{ form_label(dossier.logo, 'Logo') }}
-                {{ form_widget(dossier.logo, {'attr': {'class': 'form-control', 'placeholder': 'URL du logo'}}) }}
-                {{ form_errors(dossier.logo) }}
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                {{ form_label(dossier.devise, 'Devise') }}
-                {{ form_widget(dossier.devise, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                {{ form_errors(dossier.devise) }}
-            </div>
-        </div>
-    </div>
-
-    <div class="form-actions">
+    <div class="form-actions dossier-editor__actions">
         <button type="submit" class="btn btn-primary">
-            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre a jour' : 'Enregistrer' }}
         </button>
         <a href="{{ path('dossier.list') }}" class="btn btn-secondary">
             <i class="fas fa-times mr-2"></i>Annuler
         </a>
     </div>
 
-    {{ form_rest(dossier) }}
-    {{ form_end(dossier) }}
+    {{ form_widget(dossier._token) }}
+    {{ form_end(dossier, {'render_rest': false}) }}
 </div>
-
-<p class="text-muted small mt-3">
-    <i class="fas fa-info-circle mr-1"></i>
-    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
-</p>
 {% endblock %}
 
 {% block javascripts %}
 <script>
-    $(document).ready(function() {
-        $('.js-example-basic-single').select2({
-            theme: 'bootstrap-5',
-            allowClear: true
+(function () {
+    window.handleDossierLogoChange = function (inputElement) {
+        var preview = document.getElementById('logoPreview');
+        var fileName = document.getElementById('logoFileName');
+        var file = inputElement && inputElement.files && inputElement.files[0] ? inputElement.files[0] : null;
+
+        if (!preview || !fileName) {
+            return;
+        }
+
+        if (!file) {
+            fileName.textContent = '{% if dossierEntity is defined and dossierEntity and dossierEntity.logo %}Logo actuel chargé{% else %}Aucun fichier sélectionné{% endif %}';
+            return;
+        }
+
+        fileName.textContent = file.name;
+
+        if (!file.type.match(/^image\//)) {
+            return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function (loadEvent) {
+            preview.innerHTML = '<img src="' + loadEvent.target.result + '" alt="Aperçu du logo" id="logoPreviewImage">';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    function initDossierForm() {
+        if (window.jQuery && $.fn.select2) {
+            $('.js-example-basic-single').each(function () {
+                if (!$(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2({
+                        theme: 'bootstrap-5',
+                        allowClear: true,
+                        width: '100%'
+                    });
+                }
+            });
+        }
+
+        var input = document.getElementById('logoUpload');
+        var preview = document.getElementById('logoPreview');
+        var fileName = document.getElementById('logoFileName');
+        var themeOptions = Array.from(document.querySelectorAll('.theme-option'));
+
+        function syncThemeSelection() {
+            themeOptions.forEach(function (option) {
+                var radio = option.querySelector('.theme-radio-input');
+                option.classList.toggle('theme-option--selected', !!(radio && radio.checked));
+            });
+        }
+
+        themeOptions.forEach(function (option) {
+            if (option.dataset.bound === '1') {
+                return;
+            }
+
+            option.dataset.bound = '1';
+            var radio = option.querySelector('.theme-radio-input');
+            var card = option.querySelector('[data-theme-card="true"]');
+
+            if (card && radio) {
+                card.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change', { bubbles: true }));
+                    syncThemeSelection();
+                });
+            }
+
+            if (radio) {
+                radio.addEventListener('change', syncThemeSelection);
+            }
         });
-    });
+
+        syncThemeSelection();
+
+        if (!input || !preview || input.dataset.enhanced === '1') {
+            return;
+        }
+
+        input.dataset.enhanced = '1';
+        input.classList.add('logo-upload-input--ready');
+
+        input.addEventListener('change', function () {
+            window.handleDossierLogoChange(input);
+        });
+    }
+
+    if (document.readyState !== 'loading') {
+        initDossierForm();
+    }
+
+    document.addEventListener('DOMContentLoaded', initDossierForm);
+    document.addEventListener('turbo:load', initDossierForm);
+    document.addEventListener('turbo:render', initDossierForm);
+})();
 </script>
+
+<style>
+    .dossier-editor__header {
+        margin-bottom: 1.5rem;
+    }
+
+    .dossier-editor__form {
+        margin-bottom: 0;
+    }
+
+    .dossier-panel {
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 18px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+        padding: 1.6rem;
+    }
+
+    .dossier-panel--compact {
+        padding: 1.4rem;
+    }
+
+    .dossier-panel__head {
+        margin-bottom: 1.25rem;
+    }
+
+    .dossier-panel__eyebrow {
+        display: inline-block;
+        margin-bottom: 0.45rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--theme-primary);
+    }
+
+    .dossier-panel__head h5 {
+        margin-bottom: 0.35rem;
+        color: #0f172a;
+        font-weight: 700;
+    }
+
+    .dossier-panel__head p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.92rem;
+        line-height: 1.55;
+    }
+
+    .theme-option-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.85rem;
+    }
+
+    .theme-option {
+        position: relative;
+    }
+
+    .theme-radio-input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+        z-index: -1;
+    }
+
+    .theme-option__card {
+        display: flex;
+        align-items: center;
+        gap: 0.95rem;
+        min-height: 84px;
+        padding: 0.95rem 1rem;
+        border: 1px solid #dbe3f0;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        margin-bottom: 0;
+    }
+
+    .theme-option__card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+        border-color: rgba(37, 99, 235, 0.25);
+    }
+
+    .theme-option__preview {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-shrink: 0;
+    }
+
+    .theme-option__dot {
+        width: 14px;
+        height: 44px;
+        border-radius: 999px;
+        box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.35);
+    }
+
+    .theme-option__content {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .theme-option__title {
+        color: #0f172a;
+        font-weight: 700;
+        font-size: 0.98rem;
+    }
+
+    .theme-option__text {
+        color: #64748b;
+        font-size: 0.76rem;
+        line-height: 1.3;
+        margin-top: 0.2rem;
+    }
+
+    .theme-option__check {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        color: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        flex-shrink: 0;
+        transition: all 0.18s ease;
+    }
+
+    .theme-radio-input:checked + .theme-option__card {
+        border-color: var(--theme-primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.11), 0 20px 35px rgba(15, 23, 42, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(239, 246, 255, 0.9) 100%);
+    }
+
+    .theme-radio-input:checked + .theme-option__card .theme-option__check {
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        color: #ffffff;
+    }
+
+    .theme-option--selected .theme-option__card {
+        border-color: var(--theme-primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.11), 0 20px 35px rgba(15, 23, 42, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(239, 246, 255, 0.9) 100%);
+    }
+
+    .theme-option--selected .theme-option__check {
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        color: #ffffff;
+    }
+
+    .logo-uploader {
+        display: grid;
+        grid-template-columns: 196px minmax(0, 1fr);
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .logo-uploader__preview {
+        min-height: 156px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        overflow: hidden;
+    }
+
+    .logo-uploader__preview--large {
+        min-height: 188px;
+    }
+
+    .logo-uploader__preview img {
+        max-width: 100%;
+        max-height: 148px;
+        object-fit: contain;
+        display: block;
+    }
+
+    .logo-uploader__placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.6rem;
+        color: #94a3b8;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+    .logo-uploader__placeholder i {
+        font-size: 1.45rem;
+        color: var(--theme-primary);
+    }
+
+    .logo-uploader__controls {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.65rem;
+        min-width: 0;
+    }
+
+    .logo-upload-input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .logo-upload-trigger-wrap {
+        position: relative;
+        display: inline-flex;
+        width: 100%;
+    }
+
+    .logo-upload-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0.85rem 1rem;
+        border-radius: 14px;
+        background: linear-gradient(180deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        color: #ffffff;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        margin-bottom: 0;
+        border: 0;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+        width: 100%;
+    }
+
+    .logo-upload-trigger:hover {
+        color: #ffffff;
+        text-decoration: none;
+    }
+
+    .logo-upload-trigger:focus {
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14), 0 14px 28px rgba(15, 23, 42, 0.12);
+    }
+
+    .logo-upload-filename {
+        font-size: 0.88rem;
+        color: #475569;
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .dossier-editor__actions {
+        margin-top: 0;
+        padding-top: 1rem;
+    }
+
+    .dossier-panel--sticky {
+        position: sticky;
+        top: 1.5rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .logo-uploader {
+            grid-template-columns: 1fr;
+        }
+
+        .logo-uploader__preview {
+            min-height: 180px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .theme-option-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .theme-option__card {
+            min-height: 84px;
+        }
+    }
+</style>
 {% endblock %}
