@@ -1213,6 +1213,11 @@
         .border-bottom-primary { border-bottom: .25rem solid var(--theme-primary) !important; }
         .form-check-input:checked { background-color: var(--theme-primary); border-color: var(--theme-primary); }
         .custom-select:focus, .custom-file-input:focus { border-color: var(--theme-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+        /* Modal Backdrop Styling */
+        .modal-backdrop { background-color: rgba(15, 23, 42, 0.5); }
+        .modal-backdrop.show { opacity: 1; }
+        .modal.fade .modal-dialog { transition: transform 0.3s ease-out; }
+        .modal.show .modal-dialog { transform: translate(0, 0); }
     </style>
 
     <!-- Page Wrapper -->
