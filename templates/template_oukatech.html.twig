@@ -15,16 +15,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
 
     <!-- FontAwesome -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGkJpeuLSQaJDlqVVD4lwaH8UQPlFC0zKQJL2Yg4G8y3t0rMyGn0171l2Ey6EPWGLAltDMi8NYDxD+4xA==" crossorigin="anonymous" referrerpolicy="no-referrer">
-        <link rel="stylesheet" href="/node_modules/@fortawesome/fontawesome-free/css/all.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
 
     <!-- SB Admin 2 CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css">
-    <link href="/node_modules/select2/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/node_modules/select2-bootstrap-5-theme/dist/select2-bootstrap-5.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5.min.css">
     
     <!-- Custom ERP Styles -->
     <style>
@@ -951,33 +950,70 @@
         .badge-draft { background: #f6c23e; color: white; }
         .badge-expired { background: #858796; color: white; }
 
+        
         /* ===== DISABLED NAV LINKS ===== */
         .nav-link.nav-disabled,
         .collapse-item.nav-disabled {
-            opacity: 0.5 !important;
-            color: inherit !important;
+            color: rgba(255, 255, 255, 0.45) !important;
             cursor: not-allowed !important;
             pointer-events: none !important;
-            background: transparent !important;
-            border-left: none !important;
+            background: rgba(0, 0, 0, 0.15) !important;
+            border-left: 2px solid rgba(255, 255, 255, 0.2) !important;
             transition: all 0.2s ease !important;
+            position: relative;
+            padding-left: 20px !important;
         }
         
         .nav-link.nav-disabled:hover,
         .collapse-item.nav-disabled:hover {
-            background: transparent !important;
-            opacity: 0.5 !important;
+            background: rgba(0, 0, 0, 0.15) !important;
+            color: rgba(255, 255, 255, 0.45) !important;
         }
         
         .nav-link.nav-disabled::before,
         .collapse-item.nav-disabled::before {
             content: '\f023';
-            display: inline-block;
             font-family: 'Font Awesome 6 Free';
             font-weight: 900;
             margin-right: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.35);
+            display: inline-block;
+            width: 14px;
+            text-align: center;
+        }
+        
+        .nav-link.nav-disabled::after,
+        .collapse-item.nav-disabled::after {
+            content: 'Accès restreint';
+            display: none;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
             font-size: 11px;
-            opacity: 0.7;
+            font-weight: 600;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 1000;
+            bottom: 120%;
+            margin-bottom: 6px;
+        }
+        
+        .nav-link.nav-disabled::after,
+        .collapse-item.nav-disabled::after {
+            border-bottom: 4px solid rgba(0, 0, 0, 0.8);
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 116%;
+            display: none;
         }
         th[data-sort-key] {
             cursor: pointer;
@@ -1773,65 +1809,53 @@
         <i class="fas fa-angle-up"></i>
     </a>
 
-    <!-- Logout Modal-->
+    <!-- Logout Modal - Modern Clean Design -->
     <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 8px;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px 8px 0 0; border: none; padding: 24px;">
-                    <h5 class="modal-title" id="logoutModalLabel" style="font-weight: 600; font-size: 18px; margin: 0;">
-                        <i class="fas fa-sign-out-alt mr-3" style="margin-right: 12px;"></i>D�connexion
-                    </h5>
-                    <button class="close" type="button" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body" style="padding: 28px; font-size: 15px; color: #5a5c69; line-height: 1.6;">
-                    <div style="display: flex; align-items: flex-start; gap: 12px;">
-                        <i class="fas fa-question-circle" style="color: #f06a9a; font-size: 20px; margin-top: 2px; flex-shrink: 0;"></i>
-                        <div>
-                            <p style="margin: 0; font-weight: 500;">Voulez-vous vraiment vous d�connecter ?</p>
-                            <p style="margin: 8px 0 0 0; font-size: 13px; color: #999;">Vous serez d�connect� de votre compte et devrez vous r�authentifier pour acc�der � vos donn�es.</p>
-                        </div>
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                <!-- Close Button (Top Right) -->
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="position: absolute; right: 20px; top: 20px; background: none; border: none; font-size: 28px; color: #b0bfe6; opacity: 0.7; z-index: 10; transition: all 0.2s ease; padding: 0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'; this.style.color='#5a5c69';" onmouseout="this.style.opacity='0.7'; this.style.color='#b0bfe6';">
+                    <span aria-hidden="true" style="font-weight: 300; line-height: 1;">&times;</span>
+                </button>
+                
+                <!-- Content Area -->
+                <div style="padding: 48px 32px 32px; text-align: center;" class="logout-modal-content">
+                    <!-- Icon Circle Badge -->
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);">
+                        <i class="fas fa-sign-out-alt" style="font-size: 36px; color: white;"></i>
                     </div>
-                </div>
-                <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid #e3e6f0; gap: 10px;">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal" style="background-color: #e9ecef; border: none; color: #5a5c69; font-weight: 500; padding: 10px 20px; border-radius: 6px; transition: all 0.2s ease;">
-                        <i class="fas fa-times mr-2"></i>Annuler
-                    </button>
-                    <a class="btn" href="{{ path('app_logout') }}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; font-weight: 500; padding: 10px 24px; border-radius: 6px; transition: all 0.2s ease; text-decoration: none;">
-                        <i class="fas fa-sign-out-alt mr-2"></i>D�connexion
-                    </a>
+                    
+                    <!-- Heading -->
+                    <h3 id="logoutModalLabel" style="margin: 0 0 12px; font-size: 24px; font-weight: 700; color: #0f172a;">
+                        Déconnexion
+                    </h3>
+                    
+                    <!-- Subtitle -->
+                    <p style="margin: 0 0 24px; font-size: 15px; color: #64748b; line-height: 1.6;">
+                        Êtes-vous sûr de vouloir quitter votre compte?
+                    </p>
+                    
+                    <!-- Additional Info -->
+                    <div style="background: rgba(0, 0, 0, 0.02); border-left: 3px solid var(--theme-primary); border-radius: 6px; padding: 14px 16px; margin-bottom: 28px; text-align: left;">
+                        <p style="margin: 0; font-size: 13px; color: #64748b; line-height: 1.5;">
+                            <i class="fas fa-info-circle mr-2" style="color: var(--theme-primary);"></i>
+                            Vous serez déconnecté de votre séance et devrez vous réauthentifier pour accéder à vos données.
+                        </p>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 12px; justify-content: center;">
+                        <button type="button" class="btn" data-dismiss="modal" style="background-color: #e9ecef; border: none; color: #5a5c69; font-weight: 600; padding: 12px 28px; border-radius: 8px; font-size: 14px; transition: all 0.3s ease; cursor: pointer; flex: 1; max-width: 140px;" onmouseover="this.style.backgroundColor='#dfe3e9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';" onmouseout="this.style.backgroundColor='#e9ecef'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                            <i class="fas fa-times mr-2"></i>Annuler
+                        </button>
+                        <a href="{{ path('app_logout') }}" class="btn" style="background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%); color: white; border: none; font-weight: 600; padding: 12px 28px; border-radius: 8px; font-size: 14px; transition: all 0.3s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; justify-content: center; flex: 1; max-width: 160px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); cursor: pointer;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 24px rgba(0, 0, 0, 0.18)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(0, 0, 0, 0.12)';">
+                            <i class="fas fa-sign-out-alt"></i>Déconnexion
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <script>
-        // Add hover effects for logout modal buttons
-        document.addEventListener('DOMContentLoaded', function() {
-            const logoutBtn = document.querySelector('#logoutModal .btn[href*="logout"]');
-            const cancelBtn = document.querySelector('#logoutModal .btn-secondary');
-            
-            if (logoutBtn) {
-                logoutBtn.addEventListener('mouseover', function() {
-                    this.style.boxShadow = '0 4px 12px rgba(240, 106, 154, 0.3)';
-                    this.style.transform = 'translateY(-2px)';
-                });
-                logoutBtn.addEventListener('mouseout', function() {
-                    this.style.boxShadow = 'none';
-                    this.style.transform = 'translateY(0)';
-                });
-            }
-            
-            if (cancelBtn) {
-                cancelBtn.addEventListener('mouseover', function() {
-                    this.style.backgroundColor = '#dee2e6';
-                });
-                cancelBtn.addEventListener('mouseout', function() {
-                    this.style.backgroundColor = '#e9ecef';
-                });
-            }
-        });
-    </script>
 
     <!-- Global Delete Confirmation Modal -->
     <div class="modal fade modal-delete" id="deleteConfirmModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
@@ -1881,7 +1905,7 @@
     <!-- Page level custom scripts -->
     <script src="/assets/js/chart-area-demo.js"></script>
     <script src="/assets/js/chart-pie-demo.js"></script>
-    <script src="/node_modules/select2/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     
     <!-- Global ERP Scripts -->
     <script>
