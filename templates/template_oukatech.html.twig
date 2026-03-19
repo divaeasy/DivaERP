@@ -574,24 +574,26 @@
             color: #0e7490;
             transform: translateY(-1px);
         }
-.btn-einvoicing--no-facture {
-    color: rgba(107, 114, 128, 0.5);
-}
-.btn-einvoicing--no-facture:hover {
-    color: rgba(107, 114, 128, 0.7);
-    background: transparent;
-    transform: none;
-}
-.btn-convert {
-    color: #1cc88a;
-    background: transparent;
-}
-.btn-convert:hover {
-    background: rgba(28, 200, 138, 0.12);
-    color: #0f8659;
-    transform: translateY(-1px);
-}
-            border-bottom: 1px solid var(--theme-border);
+        .btn-einvoicing--no-facture {
+            color: rgba(107, 114, 128, 0.5);
+        }
+        .btn-einvoicing--no-facture:hover {
+            color: rgba(107, 114, 128, 0.7);
+            background: transparent;
+            transform: none;
+        }
+        .btn-convert {
+            color: #1cc88a;
+            background: transparent;
+        }
+        .btn-convert:hover {
+            background: rgba(28, 200, 138, 0.12);
+            color: #0f8659;
+            transform: translateY(-1px);
+        }
+
+        .page-header {
+            margin-bottom: 1rem;
         }
         .page-header h1 {
             margin: 0;
@@ -1063,17 +1065,51 @@
 
 <body id="page-top" class="js-loading">
     {% set themePalettes = {
-        'ocean': {'primary':'#2563eb','secondary':'#1d4ed8','accent':'#22d3ee','text':'#0f172a','bg':'#f8fafc'},
-        'forest': {'primary':'#15803d','secondary':'#166534','accent':'#10b981','text':'#0f172a','bg':'#f8fafc'},
-        'sand': {'primary':'#f59e0b','secondary':'#d97706','accent':'#fbbf24','text':'#1f2937','bg':'#fffaf0'},
-        'night': {'primary':'#334155','secondary':'#1e293b','accent':'#22d3ee','text':'#0f172a','bg':'#f8fafc'},
-        'neutral': {'primary':'#4b5563','secondary':'#6b7280','accent':'#9ca3af','text':'#0f172a','bg':'#f8fafc'}
+        'indigo': {
+        'primary':'#4f46e5',
+        'secondary':'#4338ca',
+        'accent':'#818cf8',
+        'text':'#0f172a',
+        'bg':'#f9fafb'
+    },
+
+    'ardoise': {
+        'primary':'#475569',
+        'secondary':'#334155',
+        'accent':'#94a3b8',
+        'text':'#020617',
+        'bg':'#f8fafc'
+    },
+
+    'bleu-corporate': {
+        'primary':'#1e40af',
+        'secondary':'#1e3a8a',
+        'accent':'#60a5fa',
+        'text':'#0f172a',
+        'bg':'#f8fafc'
+    },
+
+    'emeraude': {
+        'primary':'#059669',
+        'secondary':'#047857',
+        'accent':'#34d399',
+        'text':'#022c22',
+        'bg':'#f0fdf4'
+    },
+
+    'minimal-clair': {
+        'primary':'#111827',
+        'secondary':'#374151',
+        'accent':'#6b7280',
+        'text':'#111827',
+        'bg':'#ffffff'
+    }
     } %}
     {% set rawSelectedThemeKey = app.user and app.user.currentDossier and app.user.currentDossier.theme ? app.user.currentDossier.theme : 'neutral' %}
     {% set selectedThemeKey = rawSelectedThemeKey in themePalettes|keys
         ? rawSelectedThemeKey
-        : (rawSelectedThemeKey in ['#4e73df', '#224abe'] ? 'ocean' : 'neutral') %}
-    {% set palette = themePalettes[selectedThemeKey] ?? themePalettes['neutral'] %}
+        : (rawSelectedThemeKey in ['#4e73df', '#224abe'] ? 'bleu-corporate' : 'ardoise') %}
+    {% set palette = themePalettes[selectedThemeKey] ?? themePalettes['ardoise'] %}
     <style>
         :root {
             --theme-primary: {{ palette.primary }};
@@ -1275,7 +1311,7 @@
                 Facturation
             </div>
             
-            <!-- Nav Item - Pi�ces (Comptable+) -->
+            <!-- Nav Item - Piéces (Comptable+) -->
             <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
                 <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
                    href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
@@ -1293,7 +1329,7 @@
                 </div>
             </li>
             
-            <!-- Nav Item - R�glements (Comptable+) -->
+            <!-- Nav Item - Réglements (Comptable+) -->
             <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
                 <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
                    href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
@@ -1384,7 +1420,7 @@
                 </div>
             </li>
 
-            <!-- Nav Item - Unit�s (Comptable+) -->
+            <!-- Nav Item - Unités (Comptable+) -->
             <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
                 <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
                    href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
@@ -1536,14 +1572,14 @@
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="dossierDropdown">
                                 {% set dossierThemes = {
-                                    'ocean': '#2563eb',
-                                    'forest': '#15803d',
-                                    'sand': '#f59e0b',
-                                    'night': '#334155',
-                                    'neutral': '#4b5563'
+                                    'indigo': '#4f46e5',
+                                    'ardoise': '#475569',
+                                    'bleu-corporate': '#1e40af',
+                                    'emeraude': '#059669',
+                                    'minimal-clair': '#111827'
                                 } %}
                                 {% for dossier in app.user.dossiers %}
-                                    {% set dossierThemeColor = dossierThemes[dossier.theme] ?? dossierThemes['neutral'] %}
+                                    {% set dossierThemeColor = dossierThemes[dossier.theme] ?? dossierThemes['indigo'] %}
                                     <a class="dropdown-item {% if app.user.currentDossier and dossier.id == app.user.currentDossier.id %}active{% endif %}"
                                        href="{{ path('dossier.switch', {'id': dossier.id}) }}">
                                         <span class="dossier-switcher__item">
@@ -1773,7 +1809,7 @@
                                 <div class="toast-notification toast-success" role="alert">
                                     <div class="toast-icon"><i class="fas fa-check-circle"></i></div>
                                     <div class="toast-content">
-                                        <div class="toast-title">Succ�s</div>
+                                        <div class="toast-title">Succès</div>
                                         <div class="toast-message">{{message}}</div>
                                     </div>
                                     <button type="button" class="toast-close" aria-label="Fermer">&times;</button>
@@ -1858,29 +1894,116 @@
     </div>
 
     <!-- Global Delete Confirmation Modal -->
-    <div class="modal fade modal-delete" id="deleteConfirmModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel"><i class="fas fa-exclamation-triangle mr-2"></i>Confirmation de suppression</h5>
-                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden; position: relative;">
+            
+            <!-- Close Button -->
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                style="position: absolute; right: 20px; top: 20px; background: none; border: none; font-size: 28px; color: #fca5a5; opacity: 0.7; z-index: 10; transition: all 0.2s ease;"
+                onmouseover="this.style.opacity='1'; this.style.color='#dc2626';"
+                onmouseout="this.style.opacity='0.7'; this.style.color='#fca5a5';">
+                <span aria-hidden="true" style="font-weight: 300;">&times;</span>
+            </button>
+
+            <!-- Content -->
+            <div style="padding: 48px 32px 32px; text-align: center;">
+                
+                <!-- Icon -->
+                <div style="
+                    width: 80px;
+                    height: 80px;
+                    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 28px;
+                    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.25);
+                ">
+                    <i class="fas fa-trash-alt" style="font-size: 34px; color: white;"></i>
+                </div>
+
+                <!-- Title -->
+                <h3 id="deleteModalLabel" style="margin: 0 0 12px; font-size: 24px; font-weight: 700; color: #0f172a;">
+                    Confirmation de suppression
+                </h3>
+
+                <!-- Message -->
+                <p style="margin: 0 0 20px; font-size: 15px; color: #64748b; line-height: 1.6;">
+                    Êtes-vous sûr de vouloir supprimer
+                    <strong id="deleteModalItemName" style="color:#0f172a;">cet élément</strong> ?
+                </p>
+
+                <!-- Warning box -->
+                <div style="
+                    background: rgba(220, 38, 38, 0.05);
+                    border-left: 3px solid #dc2626;
+                    border-radius: 6px;
+                    padding: 14px 16px;
+                    margin-bottom: 28px;
+                    text-align: left;
+                ">
+                    <p style="margin: 0; font-size: 13px; color: #7f1d1d; line-height: 1.5;">
+                        <i class="fas fa-exclamation-triangle mr-2" style="color: #dc2626;"></i>
+                        Cette action est irréversible. Les données supprimées ne pourront pas être récupérées.
+                    </p>
+                </div>
+
+                <!-- Buttons -->
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    
+                    <!-- Cancel -->
+                    <button type="button" class="btn" data-dismiss="modal"
+                        style="
+                            background-color: #e9ecef;
+                            border: none;
+                            color: #5a5c69;
+                            font-weight: 600;
+                            padding: 12px 28px;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            transition: all 0.3s ease;
+                            cursor: pointer;
+                            flex: 1;
+                            max-width: 140px;
+                        "
+                        onmouseover="this.style.backgroundColor='#dfe3e9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';"
+                        onmouseout="this.style.backgroundColor='#e9ecef'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <i class="fas fa-times mr-2"></i>Annuler
                     </button>
-                </div>
-                <div class="modal-body">
-                    <i class="fas fa-trash-alt"></i>
-                    <p class="mb-0">�tes-vous s�r de vouloir supprimer <strong id="deleteModalItemName">cet �l�ment</strong> ?</p>
-                    <p class="text-muted small mt-2">Cette action est irr�versible.</p>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Annuler</button>
-                    <a class="btn btn-danger btn-confirm-delete" id="confirmDeleteBtn" href="#">
-                        <i class="fas fa-trash mr-1"></i> Supprimer
+
+                    <!-- Confirm -->
+                    <a id="confirmDeleteBtn" href="#"
+                        class="btn"
+                        style="
+                            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                            color: white;
+                            border: none;
+                            font-weight: 600;
+                            padding: 12px 28px;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            transition: all 0.3s ease;
+                            text-decoration: none;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                            justify-content: center;
+                            flex: 1;
+                            max-width: 160px;
+                            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.25);
+                        "
+                        onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 24px rgba(220, 38, 38, 0.35)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(220, 38, 38, 0.25)';">
+                        <i class="fas fa-trash"></i>Supprimer
                     </a>
+
                 </div>
             </div>
         </div>
     </div>
+</div>
 
 
 
@@ -2098,7 +2221,7 @@
             $('.delete-btn').on('click', function(e) {
                 e.preventDefault();
                 var deleteUrl = $(this).data('delete-url');
-                var itemName = $(this).data('item-name') || 'cet �l�ment';
+                var itemName = $(this).data('item-name') || 'cet élèment';
                 
                 $('#deleteModalItemName').text(itemName);
                 $('#confirmDeleteBtn').attr('href', deleteUrl);
@@ -2157,7 +2280,7 @@
                         $(this).select2({
                             theme: 'bootstrap-5',
                             allowClear: true,
-                            placeholder: $(this).attr('placeholder') || 'S�lectionner...',
+                            placeholder: $(this).attr('placeholder') || 'Sélectionner...',
                             width: '100%'
                         });
                     }
@@ -2222,7 +2345,7 @@
                     $navSearchResults.show();
                 } else {
                     $navSearchResults.append(
-                        '<span class="dropdown-item text-muted">Aucun r�sultat trouv�</span>'
+                        '<span class="dropdown-item text-muted">Aucun résultat trouvé</span>'
                     );
                     $navSearchResults.show();
                 }

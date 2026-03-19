@@ -25,12 +25,12 @@ class DossierController extends AbstractController
         $normalized = strtolower(trim((string) $theme));
 
         return match ($normalized) {
-            'ocean', '#4e73df', '#224abe' => 'ocean',
-            'forest' => 'forest',
-            'sand' => 'sand',
-            'night' => 'night',
-            'neutral', '', 'null' => 'neutral',
-            default => 'neutral',
+            'indigo', 'ocean', '#4e73df', '#224abe' => 'indigo',
+            'ardoise', 'forest' => 'ardoise',
+            'bleu-corporate', 'sand' => 'bleu-corporate',
+            'emeraude', 'night' => 'emeraude',
+            'minimal-clair', 'neutral', '', 'null' => 'minimal-clair',
+            default => 'indigo',
         };
     }
 

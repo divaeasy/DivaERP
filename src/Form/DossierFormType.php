@@ -30,13 +30,13 @@ class DossierFormType extends AbstractType
                 'required' => true,
                 'expanded' => true,
                 'multiple' => false,
-                'empty_data' => 'neutral',
+                'empty_data' => 'indigo',
                 'choices' => [
-                    'Ocean' => 'ocean',
-                    'Forest' => 'forest',
-                    'Sand' => 'sand',
-                    'Night' => 'night',
-                    'Neutral' => 'neutral',
+                    'Indigo' => 'indigo',
+                    'Ardoise' => 'ardoise',
+                    'Bleu corporate' => 'bleu-corporate',
+                    'Émeraude' => 'emeraude',
+                    'Minimal clair' => 'minimal-clair',
                 ],
                 'choice_attr' => static function ($choice, string $label, string $value): array {
                     return [
