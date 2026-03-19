@@ -77,9 +77,9 @@
                         <i class="fas fa-edit"></i>
                     </a>
                     <a href="{{ path('invoice_einvoicing_test', {id: entetepiece.id}) }}" 
-                       class="btn btn-action {% if entetepiece.isSubmittedToTiime %}btn-success{% elseif entetepiece.isFactureX %}btn-info{% else %}btn-secondary{% endif %}" 
+                       class="btn btn-action btn-einvoicing {% if not entetepiece.isSubmittedToTiime and not entetepiece.isFactureX %}btn-einvoicing--no-facture{% endif %}" 
                        title="{% if entetepiece.isSubmittedToTiime %}E-Facture transmise{% elseif entetepiece.isFactureX %}Facture-X générée{% else %}E-Facturation{% endif %}">
-                        <i class="fas {% if entetepiece.isSubmittedToTiime %}fa-check-circle{% elseif entetepiece.isFactureX %}fa-file-pdf{% else %}fa-file-invoice{% endif %}" style="color: white;"></i>
+                        <i class="fas {% if entetepiece.isSubmittedToTiime %}fa-check-circle{% elseif entetepiece.isFactureX %}fa-file-pdf{% else %}fa-file-invoice{% endif %}"></i>
                     </a>
                     <button type="button" class="btn btn-action btn-delete delete-btn"
                             data-delete-url="{{ path('entetepiece.delete', {id: entetepiece.id}) }}"

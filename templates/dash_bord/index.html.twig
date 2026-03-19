@@ -12,111 +12,184 @@
             <a href="{{ path('export.dashboard.excel') }}" class="btn btn-sm btn-success no-loading" title="Exporter en Excel">
                 <i class="fas fa-file-excel mr-1"></i> Excel
             </a>
-            <a href="{{ path('export.dashboard.pdf') }}" class="btn btn-sm btn-danger no-loading" title="Exporter en PDF">
+            {# <a href="{{ path('export.dashboard.pdf') }}" class="btn btn-sm btn-danger no-loading" title="Exporter en PDF">
                 <i class="fas fa-file-pdf mr-1"></i> PDF
-            </a>
+            </a> #}
         </div>
     </div>
 </div>
 
-<!-- Cartes KPI -->
-<div class="row mb-4">
-    <!-- Chiffre d'affaires total -->
-    <div class="col mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            💰 Chiffre d'affaires</div>
-                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ totalRevenueCurrent|number_format(2, ',', ' ') }}</div>
-                        <small class="text-muted">Jan — {{ "now"|date("M") }} {{ currentYear }}</small>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-wallet fa-2x text-primary"></i>
-                    </div>
-                </div>
-            </div>
+<!-- Cartes KPI - Modern Design -->
+<div class="kpi-grid">
+    
+    <!-- Revenue -->
+    <div class="kpi-card kpi-card--revenue">
+        <div class="kpi-card__icon">
+            <i class="fas fa-wallet"></i>
+        </div>
+        <div class="kpi-card__content">
+            <span class="kpi-card__label">Chiffre d'affaires</span>
+            <h3 class="kpi-card__value">{{ totalRevenueCurrent|number_format(2, ',', ' ') }}</h3>
+            <span class="kpi-card__meta">Jan — {{ "now"|date("M") }} {{ currentYear }}</span>
         </div>
     </div>
 
-    <!-- Évolution % -->
-    <div class="col mb-4">
-        <div class="card {% if growthPercentage >= 0 %}border-left-success{% else %}border-left-danger{% endif %} shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold {% if growthPercentage >= 0 %}text-success{% else %}text-danger{% endif %} text-uppercase mb-1">
-                            {% if growthPercentage >= 0 %}📈 Croissance{% else %}📉 Baisse{% endif %}</div>
-                        <div class="h6 mb-0 font-weight-bold text-gray-800">
-                            {% if growthPercentage >= 0 %}+{% endif %}{{ growthPercentage }}%
-                        </div>
-                        <small class="text-muted">vs même période {{ previousYear }}</small>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-chart-line fa-2x {% if growthPercentage >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
-                    </div>
-                </div>
-            </div>
+    <!-- Growth -->
+    <div class="kpi-card {% if growthPercentage >= 0 %}kpi-card--growth{% else %}kpi-card--decline{% endif %}">
+        <div class="kpi-card__icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="kpi-card__content">
+            <span class="kpi-card__label">
+                {% if growthPercentage >= 0 %}Croissance{% else %}Baisse{% endif %}
+            </span>
+            <h3 class="kpi-card__value">
+                {% if growthPercentage >= 0 %}+{% endif %}{{ growthPercentage }}%
+            </h3>
+            <span class="kpi-card__meta">vs {{ previousYear }}</span>
         </div>
     </div>
 
-    <!-- Nombre de factures -->
-    <div class="col mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            🧾 Factures</div>
-                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ invoiceCount }}</div>
-                        <small class="text-muted">Année {{ currentYear }}</small>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-file-invoice fa-2x text-info"></i>
-                    </div>
-                </div>
-            </div>
+    <!-- Invoices -->
+    <div class="kpi-card kpi-card--invoices">
+        <div class="kpi-card__icon">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <div class="kpi-card__content">
+            <span class="kpi-card__label">Factures</span>
+            <h3 class="kpi-card__value">{{ invoiceCount }}</h3>
+            <span class="kpi-card__meta">Année {{ currentYear }}</span>
         </div>
     </div>
 
-    <!-- Nouveaux clients -->
-    <div class="col mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            👥 Nouveaux clients</div>
-                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ newCustomersThisMonth }}</div>
-                        <small class="text-muted">Ce mois</small>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-user-plus fa-2x text-warning"></i>
-                    </div>
-                </div>
-            </div>
+    <!-- Clients -->
+    <div class="kpi-card kpi-card--clients">
+        <div class="kpi-card__icon">
+            <i class="fas fa-user-plus"></i>
+        </div>
+        <div class="kpi-card__content">
+            <span class="kpi-card__label">Nouveaux clients</span>
+            <h3 class="kpi-card__value">{{ newCustomersThisMonth }}</h3>
+            <span class="kpi-card__meta">Ce mois</span>
         </div>
     </div>
 
-    <!-- Produits vendus -->
-    <div class="col mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            📦 Produits vendus</div>
-                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ totalProductsSold }}</div>
-                        <small class="text-muted">Année {{ currentYear }}</small>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-boxes fa-2x text-success"></i>
-                    </div>
-                </div>
-            </div>
+    <!-- Products -->
+    <div class="kpi-card kpi-card--products">
+        <div class="kpi-card__icon">
+            <i class="fas fa-boxes"></i>
+        </div>
+        <div class="kpi-card__content">
+            <span class="kpi-card__label">Produits vendus</span>
+            <h3 class="kpi-card__value">{{ totalProductsSold }}</h3>
+            <span class="kpi-card__meta">Année {{ currentYear }}</span>
         </div>
     </div>
+
+</div>
+
+<style>
+    /* GRID instead of flex-nowrap (responsive 🔥) */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+/* CARD */
+.kpi-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 16px;
+
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(8px);
+
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+
+    transition: all 0.25s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+/* ICON (NEW STYLE 🔥) */
+.kpi-card__icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+    font-size: 18px;
+
+    background: rgba(0,0,0,0.05);
+}
+
+/* CONTENT */
+.kpi-card__content {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-card__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.kpi-card__value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.kpi-card__meta {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* COLOR SYSTEM (clean + consistent) */
+.kpi-card--revenue .kpi-card__icon {
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.kpi-card--growth .kpi-card__icon {
+    color: #16a34a;
+    background: rgba(22, 163, 74, 0.1);
+}
+
+.kpi-card--decline .kpi-card__icon {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.1);
+}
+
+.kpi-card--invoices .kpi-card__icon {
+    color: #0891b2;
+    background: rgba(8, 145, 178, 0.1);
+}
+
+.kpi-card--clients .kpi-card__icon {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.kpi-card--products .kpi-card__icon {
+    color: #7c3aed;
+    background: rgba(124, 58, 237, 0.1);
+}
+</style>
 
     <!-- Factures en retard -->
     {# <div class="col mb-4">

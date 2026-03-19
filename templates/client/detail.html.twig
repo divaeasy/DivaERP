@@ -5,13 +5,13 @@
 <div class="page-header">
     <div class="d-flex align-items-center">
         <a href="{{ path('client.list') }}" class="btn-back mr-3">
-            <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-left"></i>
         </a>
         <h1 class="h3 mb-0 text-gray-800">Détails du Client</h1>
     </div>
     <div class="page-actions">
         <a href="{{ path('client.edit', {id: client.id}) }}" class="btn btn-primary">
-            <i class="fas fa-edit mr-2"></i>Modifier
+                <i class="fas fa-edit mr-2"></i>Modifier
         </a>
     </div>
 </div>
@@ -48,7 +48,7 @@
                         {% if client.tel %}
                             <a href="tel:{{ client.tel }}">{{ client.tel }}</a>
                         {% else %}
-                            <span class="text-muted">Non renseigné</span>
+                                <span class="text-muted">Non renseigné</span>
                         {% endif %}
                     </div>
                 </div>
@@ -136,7 +136,7 @@
                     <div class="detail-value">
                         {% if client.web %}
                             <a href="{{ client.web }}" target="_blank" rel="noopener">
-                                <i class="fas fa-external-link-alt mr-1"></i>Visiter
+                                    <i class="fas fa-external-link-alt mr-1"></i>Visiter
                             </a>
                         {% else %}
                             <span class="text-muted">Non renseigné</span>
