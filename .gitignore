@@ -22,6 +22,7 @@
 
 ###> symfony/asset-mapper ###
 /public/assets/
+/public/uplaods/
 /assets/vendor/
 ###< symfony/asset-mapper ###
 node_modules
