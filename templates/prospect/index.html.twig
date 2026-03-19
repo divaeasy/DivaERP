@@ -52,8 +52,7 @@
                 <td>{{ prospect.tel }}</td>
                 <td>{{ prospect.email }}</td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-action btn-sm convert-prospect-btn" 
-                            style="background: #1cc88a; color: #fff;" 
+                    <button type="button" class="btn btn-action btn-convert convert-prospect-btn" 
                             title="Convertir en client"
                             data-convert-url="{{ path('prospect.convert', {id: prospect.id}) }}"
                             data-prospect-name="{{ prospect.nom }}">
