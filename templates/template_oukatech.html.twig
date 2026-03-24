@@ -32,14 +32,10 @@
             animation-duration: 0s !important;
             transition-duration: 0s !important;
         }
-        .js-loading .sidebar-scroll-container,
-        .js-loading #content,
         .js-loading .select2-container,
         .js-loading .collapse {
             opacity: 0;
         }
-        .js-loaded .sidebar-scroll-container,
-        .js-loaded #content,
         .js-loaded .select2-container,
         .js-loaded .collapse {
             opacity: 1;
@@ -1063,7 +1059,7 @@
 
 </head>
 
-<body id="page-top" class="js-loading">
+<body id="page-top" class="js-loading" data-turbo="false">
     {% set themePalettes = {
         'indigo': {
         'primary':'#4f46e5',
@@ -1213,9 +1209,15 @@
         .border-bottom-primary { border-bottom: .25rem solid var(--theme-primary) !important; }
         .form-check-input:checked { background-color: var(--theme-primary); border-color: var(--theme-primary); }
         .custom-select:focus, .custom-file-input:focus { border-color: var(--theme-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
-        /* Modal Backdrop Styling */
-        .modal-backdrop { background-color: rgba(15, 23, 42, 0.5); }
-        .modal-backdrop.show { opacity: 1; }
+        /* Modal Backdrop Styling (fixed + consistent) */
+        .modal-backdrop {
+            background-color: #0f172a !important;
+            opacity: 0 !important;
+            transition: opacity 0.15s linear !important;
+        }
+        .modal-backdrop.show {
+            opacity: 0.38 !important;
+        }
         .modal.fade .modal-dialog { transition: transform 0.3s ease-out; }
         .modal.show .modal-dialog { transform: translate(0, 0); }
     </style>
@@ -2073,6 +2075,50 @@
                 }
             });
 
+            // Keep modal backdrop deterministic across Turbo navigation.
+            if (!window.__modalBackdropHooksBound) {
+                window.__modalBackdropHooksBound = true;
+
+                window.syncSingleModalBackdrop = function() {
+                    var $backdrops = $('body > .modal-backdrop');
+                    if ($backdrops.length > 1) {
+                        $backdrops.slice(0, -1).remove();
+                    }
+                };
+
+                window.clearModalBackdropState = function() {
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open').css('padding-right', '');
+                };
+
+                // Clean stale backdrops before opening a modal.
+                $(document).on('show.bs.modal.modalBackdropFix', '.modal', function() {
+                    if ($('.modal.show').not(this).length === 0) {
+                        clearModalBackdropState();
+                    }
+                });
+
+                // Cleanup when all modals are closed.
+                $(document).on('hidden.bs.modal.modalBackdropFix', '.modal', function() {
+                    if ($('.modal.show').length === 0) {
+                        clearModalBackdropState();
+                    } else {
+                        syncSingleModalBackdrop();
+                    }
+                });
+
+                // Turbo lifecycle: prevent stale backdrop accumulation after navigation.
+                document.addEventListener('turbo:before-render', function() {
+                    clearModalBackdropState();
+                });
+                document.addEventListener('turbo:load', function() {
+                    syncSingleModalBackdrop();
+                });
+                document.addEventListener('turbo:render', function() {
+                    syncSingleModalBackdrop();
+                });
+            }
+
             // Loading Spinner Functions
             window.showLoading = function() {
                 $('#loadingOverlay').addClass('active');
@@ -2107,6 +2153,17 @@
                     return; // Let the default behavior happen
                 }
                 
+                // Close all open modals and remove backdrops before navigation.
+                $('.modal.show').each(function() {
+                    $(this).modal('hide');
+                });
+                if (typeof clearModalBackdropState === 'function') {
+                    clearModalBackdropState();
+                } else {
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open').css('padding-right', '');
+                }
+                
                 // Show loading spinner
                 showLoading();
             });
@@ -2128,6 +2185,29 @@
             $(window).on('pageshow', function(event) {
                 hideLoading();
             });
+
+            // Turbo can render without triggering pageshow, so make sure overlay is always reset.
+            if (!window.__loadingOverlayTurboHooksBound) {
+                window.__loadingOverlayTurboHooksBound = true;
+
+                document.addEventListener('turbo:load', function() {
+                    hideLoading();
+                });
+
+                document.addEventListener('turbo:render', function() {
+                    hideLoading();
+                });
+
+                document.addEventListener('turbo:fetch-request-error', function() {
+                    hideLoading();
+                });
+
+                document.addEventListener('turbo:submit-end', function(event) {
+                    if (!event.detail || event.detail.success === false) {
+                        hideLoading();
+                    }
+                });
+            }
 
             // ===== FORM VALIDATION =====
             $('form').each(function() {

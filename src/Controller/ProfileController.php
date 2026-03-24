@@ -50,9 +50,13 @@ class ProfileController extends AbstractController
             return $this->redirectToRoute('app_profile');
         }
 
+        $statusCode = ($form->isSubmitted() && !$form->isValid())
+            ? Response::HTTP_UNPROCESSABLE_ENTITY
+            : Response::HTTP_OK;
+
         return $this->render('profile/edit.html.twig', [
             'user' => $user,
             'form' => $form->createView(),
-        ]);
+        ], new Response(null, $statusCode));
     }
 }

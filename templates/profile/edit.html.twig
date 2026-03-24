@@ -1,76 +1,487 @@
 {% extends 'template_oukatech.html.twig' %}
 
+{% block PageTitle %}
+    Modifier mon profil
+{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+    .profile-shell {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .profile-overview {
+        position: relative;
+        background: #ffffff;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 16px;
+        padding: 1.5rem 1.75rem;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-overview::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
+    }
+
+    .profile-overview__identity {
+        display: flex;
+        gap: 1rem;
+        min-width: 260px;
+        align-items: flex-start;
+    }
+
+    .profile-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 16px;
+        background: linear-gradient(140deg, var(--theme-primary), var(--theme-secondary));
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.65rem;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.18);
+        flex-shrink: 0;
+    }
+
+    .profile-eyebrow {
+        margin: 0 0 0.25rem;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .profile-title {
+        margin: 0;
+        font-size: 1.6rem;
+        line-height: 1.2;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .profile-subtitle {
+        margin: 0.35rem 0 0;
+        color: #475569;
+        font-size: 0.95rem;
+    }
+
+    .profile-tags {
+        margin-top: 0.95rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .profile-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.38rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 0.34rem 0.72rem;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #334155;
+    }
+
+    .profile-tag--success {
+        background: #ecfdf3;
+        border-color: #bbf7d0;
+        color: #166534;
+    }
+
+    .profile-tag--warning {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+    }
+
+    .profile-overview__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: center;
+    }
+
+    .profile-btn {
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        padding: 0.65rem 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+
+    .profile-btn--primary {
+        background: linear-gradient(150deg, var(--theme-primary), var(--theme-secondary));
+        color: #ffffff;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
+    }
+
+    .profile-btn--primary:hover {
+        color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 13px 28px rgba(15, 23, 42, 0.18);
+        text-decoration: none;
+    }
+
+    .profile-btn--ghost {
+        background: #ffffff;
+        color: #334155;
+        border-color: #dbe3ee;
+    }
+
+    .profile-btn--ghost:hover {
+        border-color: #c1cfdf;
+        background: #f8fafc;
+        color: #0f172a;
+        text-decoration: none;
+    }
+
+    .profile-btn--block {
+        width: 100%;
+    }
+
+    .profile-panel {
+        background: #ffffff;
+        border: 1px solid rgba(15, 23, 42, 0.07);
+        border-radius: 14px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+
+    .profile-panel__header {
+        padding: 1rem 1.15rem;
+        border-bottom: 1px solid #e7edf4;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .profile-panel__header i {
+        color: var(--theme-primary);
+    }
+
+    .profile-panel__body {
+        padding: 1.05rem 1.15rem 1.15rem;
+    }
+
+    .profile-field {
+        margin-bottom: 0.95rem;
+    }
+
+    .profile-field:last-child {
+        margin-bottom: 0;
+    }
+
+    .profile-field label {
+        margin: 0 0 0.4rem;
+        color: #475569;
+        font-size: 0.84rem;
+        font-weight: 600;
+    }
+
+    .profile-field .form-control {
+        height: 42px;
+        border: 1.5px solid #d1d9e6;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        color: #0f172a;
+        box-shadow: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .profile-field .form-control:focus {
+        border-color: var(--theme-primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .profile-field ul {
+        margin: 0.45rem 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 0.8rem;
+        color: #b42318;
+    }
+
+    .password-note {
+        margin: 0 0 1rem;
+        border-radius: 10px;
+        border: 1px dashed #cbd5e1;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.82rem;
+        padding: 0.75rem 0.85rem;
+    }
+
+    .stats-stack {
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(160deg, #f8fafc, #f1f5f9);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.8rem 0.85rem;
+    }
+
+    .stat-card__label {
+        margin: 0;
+        font-size: 0.74rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .stat-card__value {
+        margin: 0.35rem 0 0;
+        color: #0f172a;
+        font-size: 1.22rem;
+        font-weight: 700;
+    }
+
+    .hint-list {
+        margin: 0;
+        padding-left: 1rem;
+        color: #475569;
+        font-size: 0.85rem;
+    }
+
+    .hint-list li {
+        margin-bottom: 0.55rem;
+    }
+
+    .hint-list li:last-child {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 767.98px) {
+        .profile-overview {
+            padding: 1.15rem 1rem;
+        }
+
+        .profile-overview__identity {
+            width: 100%;
+        }
+
+        .profile-overview__actions {
+            width: 100%;
+        }
+
+        .profile-btn {
+            width: 100%;
+        }
+
+        .profile-title {
+            font-size: 1.35rem;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block body %}
-<div class="page-header">
-    <div class="d-flex align-items-center">
-        <a href="{{ path('app_profile') }}" class="btn-back mr-3">
-            <i class="fas fa-arrow-left"></i>
-        </a>
-        <h1 class="h3 mb-0 text-gray-800">Modifier mon profil</h1>
-    </div>
-</div>
+{% set fullName = (user.prenom ~ ' ' ~ user.nom)|trim %}
+{% set dossiers = user.dossiers is defined ? user.dossiers : [] %}
 
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="form-card">
-            {{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        {{ form_label(form.prenom) }}
-                        {{ form_widget(form.prenom) }}
-                        {{ form_errors(form.prenom) }}
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        {{ form_label(form.nom) }}
-                        {{ form_widget(form.nom) }}
-                        {{ form_errors(form.nom) }}
-                    </div>
-                </div>
+{% set roleLabels = [] %}
+{% for role in user.roles %}
+    {% set roleLabel = role == 'ROLE_ADMIN'
+        ? 'Administrateur'
+        : (role == 'ROLE_USER'
+            ? 'Utilisateur'
+            : role|replace({'ROLE_': '', '_': ' '})|lower|title)
+    %}
+    {% set roleLabels = roleLabels|merge([roleLabel]) %}
+{% endfor %}
+
+<div class="profile-shell">
+    <section class="profile-overview">
+        <div class="profile-overview__identity">
+            <div class="profile-avatar">
+                {{ user.prenom|default('U')|slice(0, 1)|upper }}
             </div>
-
-            <div class="form-group">
-                {{ form_label(form.email) }}
-                {{ form_widget(form.email) }}
-                {{ form_errors(form.email) }}
-            </div>
-
-            <hr class="my-4">
-            <h5 class="text-gray-700 mb-3"><i class="fas fa-lock mr-2"></i>Changer le mot de passe</h5>
-            <p class="text-muted small mb-3">Laissez ces champs vides pour conserver votre mot de passe actuel.</p>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        {{ form_label(form.plainPassword.first) }}
-                        {{ form_widget(form.plainPassword.first) }}
-                        {{ form_errors(form.plainPassword.first) }}
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        {{ form_label(form.plainPassword.second) }}
-                        {{ form_widget(form.plainPassword.second) }}
-                        {{ form_errors(form.plainPassword.second) }}
-                    </div>
+            <div>
+                <p class="profile-eyebrow">Edition du profil</p>
+                <h1 class="profile-title">{{ fullName is not empty ? fullName : user.email }}</h1>
+                <p class="profile-subtitle">Mettez a jour vos informations personnelles et vos identifiants.</p>
+                <div class="profile-tags">
+                    <span class="profile-tag">
+                        <i class="fas fa-user-shield"></i>
+                        {{ roleLabels|first|default('Utilisateur') }}
+                    </span>
+                    {% if user.isVerified %}
+                        <span class="profile-tag profile-tag--success">
+                            <i class="fas fa-check-circle"></i>
+                            Compte verifie
+                        </span>
+                    {% else %}
+                        <span class="profile-tag profile-tag--warning">
+                            <i class="fas fa-clock"></i>
+                            Verification en attente
+                        </span>
+                    {% endif %}
                 </div>
             </div>
+        </div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save mr-2"></i>Enregistrer les modifications
-                </button>
-                <a href="{{ path('app_profile') }}" class="btn btn-secondary">
-                    <i class="fas fa-times mr-2"></i>Annuler
-                </a>
-            </div>
-            
-            {{ form_end(form) }}
+        <div class="profile-overview__actions">
+            <a href="{{ path('app_profile') }}" class="profile-btn profile-btn--ghost">
+                <i class="fas fa-arrow-left"></i>
+                Retour au profil
+            </a>
+        </div>
+    </section>
+
+    {{ form_start(form, {'attr': {'class': 'profile-form', 'novalidate': 'novalidate'}}) }}
+    <div class="row">
+        <div class="col-lg-8">
+            <section class="profile-panel">
+                <div class="profile-panel__header">
+                    <i class="fas fa-id-card"></i>
+                    Informations personnelles
+                </div>
+                <div class="profile-panel__body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="profile-field">
+                                {{ form_label(form.prenom, 'Prenom') }}
+                                {{ form_widget(form.prenom, {'attr': {'class': 'form-control', 'placeholder': 'Votre prenom'}}) }}
+                                {{ form_errors(form.prenom) }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="profile-field">
+                                {{ form_label(form.nom, 'Nom') }}
+                                {{ form_widget(form.nom, {'attr': {'class': 'form-control', 'placeholder': 'Votre nom'}}) }}
+                                {{ form_errors(form.nom) }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-field">
+                        {{ form_label(form.email, 'Adresse email') }}
+                        {{ form_widget(form.email, {'attr': {'class': 'form-control', 'placeholder': 'votre@email.com'}}) }}
+                        {{ form_errors(form.email) }}
+                    </div>
+                </div>
+            </section>
+
+            <section class="profile-panel">
+                <div class="profile-panel__header">
+                    <i class="fas fa-lock"></i>
+                    Securite
+                </div>
+                <div class="profile-panel__body">
+                    <p class="password-note">
+                        Laissez les champs vides si vous ne souhaitez pas modifier votre mot de passe.
+                    </p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="profile-field">
+                                {{ form_label(form.plainPassword.first, 'Nouveau mot de passe') }}
+                                {{ form_widget(form.plainPassword.first, {'attr': {'class': 'form-control', 'autocomplete': 'new-password'}}) }}
+                                {{ form_errors(form.plainPassword.first) }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="profile-field">
+                                {{ form_label(form.plainPassword.second, 'Confirmer le mot de passe') }}
+                                {{ form_widget(form.plainPassword.second, {'attr': {'class': 'form-control', 'autocomplete': 'new-password'}}) }}
+                                {{ form_errors(form.plainPassword.second) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-lg-4">
+            <section class="profile-panel">
+                <div class="profile-panel__header">
+                    <i class="fas fa-chart-line"></i>
+                    Resume du compte
+                </div>
+                <div class="profile-panel__body">
+                    <div class="stats-stack">
+                        <div class="stat-card">
+                            <p class="stat-card__label">Roles</p>
+                            <p class="stat-card__value">{{ roleLabels|length }}</p>
+                        </div>
+                        <div class="stat-card">
+                            <p class="stat-card__label">Dossiers autorises</p>
+                            <p class="stat-card__value">{{ dossiers|length }}</p>
+                        </div>
+                        <div class="stat-card">
+                            <p class="stat-card__label">Statut</p>
+                            <p class="stat-card__value">{{ user.isVerified ? 'Verifie' : 'En attente' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="profile-panel">
+                <div class="profile-panel__header">
+                    <i class="fas fa-check-circle"></i>
+                    Actions
+                </div>
+                <div class="profile-panel__body">
+                    <button type="submit" class="profile-btn profile-btn--primary profile-btn--block mb-2">
+                        <i class="fas fa-save"></i>
+                        Enregistrer les modifications
+                    </button>
+                    <a href="{{ path('app_profile') }}" class="profile-btn profile-btn--ghost profile-btn--block">
+                        <i class="fas fa-times"></i>
+                        Annuler
+                    </a>
+                </div>
+            </section>
+
+            <section class="profile-panel">
+                <div class="profile-panel__header">
+                    <i class="fas fa-lightbulb"></i>
+                    Bonnes pratiques
+                </div>
+                <div class="profile-panel__body">
+                    <ul class="hint-list">
+                        <li>Utilisez un mot de passe fort avec lettres, chiffres et caracteres speciaux.</li>
+                        <li>Verifiez votre adresse email pour conserver l'acces a la recuperation.</li>
+                        <li>Revoyez vos informations apres chaque modification.</li>
+                    </ul>
+                </div>
+            </section>
         </div>
     </div>
+    {{ form_end(form) }}
 </div>
 {% endblock %}

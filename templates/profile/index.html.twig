@@ -1,261 +1,552 @@
 {% extends 'template_oukatech.html.twig' %}
 
-{% block PageTitle%}
-    Profile de l'utilisateur
+{% block PageTitle %}
+    Mon profil
 {% endblock %}
 
 {% block stylesheets %}
 {{ parent() }}
 <style>
-    .profile-header {
-        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
-        border-radius: 12px;
-        padding: 40px;
-        color: white;
-        margin-bottom: 30px;
+    .profile-shell {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .profile-overview {
         position: relative;
+        background: #ffffff;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 16px;
+        padding: 1.5rem 1.75rem;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
         overflow: hidden;
-    }
-    .profile-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 100%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    }
-    .profile-avatar {
-        width: 120px;
-        height: 120px;
-        background: white;
-        border-radius: 50%;
         display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 48px;
-        color: var(--theme-primary);
-        margin-bottom: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    .profile-name {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-    .profile-email {
-        opacity: 0.9;
-        font-size: 16px;
-    }
-    .profile-role {
-        display: inline-block;
-        background: rgba(255,255,255,0.2);
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 10px;
-    }
-    .profile-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
-        margin-bottom: 25px;
-    }
-    .profile-card-header {
-        padding: 20px 25px;
-        border-bottom: 1px solid #e3e6f0;
-        display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
+        gap: 1.25rem;
+        flex-wrap: wrap;
     }
-    .profile-card-header h5 {
-        margin: 0;
-        font-weight: 600;
-        color: #5a5c69;
+
+    .profile-overview::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
     }
-    .profile-card-header i {
-        color: var(--theme-primary);
-        margin-right: 10px;
-    }
-    .profile-card-body {
-        padding: 25px;
-    }
-    .info-row {
+
+    .profile-overview__identity {
         display: flex;
-        padding: 12px 0;
-        border-bottom: 1px solid #f8f9fc;
+        gap: 1rem;
+        min-width: 260px;
+        align-items: flex-start;
     }
-    .info-row:last-child {
-        border-bottom: none;
-    }
-    .info-label {
-        width: 180px;
-        font-weight: 600;
-        color: #858796;
-        flex-shrink: 0;
-    }
-    .info-value {
-        color: #5a5c69;
-        flex: 1;
-    }
-    .btn-edit-profile {
-        background: linear-gradient(180deg, var(--theme-primary) 10%, var(--theme-secondary) 100%);
-        color: white;
-        padding: 12px 30px;
-        border-radius: 6px;
-        font-weight: 600;
-        border: none;
-        text-decoration: none;
+
+    .profile-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 16px;
+        background: linear-gradient(140deg, var(--theme-primary), var(--theme-secondary));
+        color: #ffffff;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        transition: all 0.2s;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.65rem;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.18);
+        flex-shrink: 0;
     }
-    .btn-edit-profile:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
-        color: white;
+
+    .profile-eyebrow {
+        margin: 0 0 0.25rem;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .profile-title {
+        margin: 0;
+        font-size: 1.6rem;
+        line-height: 1.2;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .profile-subtitle {
+        margin: 0.35rem 0 0;
+        color: #475569;
+        font-size: 0.95rem;
+    }
+
+    .profile-tags {
+        margin-top: 0.95rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .profile-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.38rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 0.34rem 0.72rem;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #334155;
+    }
+
+    .profile-tag--success {
+        background: #ecfdf3;
+        border-color: #bbf7d0;
+        color: #166534;
+    }
+
+    .profile-tag--warning {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+    }
+
+    .profile-overview__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: center;
+    }
+
+    .profile-btn {
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        padding: 0.65rem 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .profile-btn--primary {
+        background: linear-gradient(150deg, var(--theme-primary), var(--theme-secondary));
+        color: #ffffff;
+        border: 1px solid transparent;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
+    }
+
+    .profile-btn--primary:hover {
+        color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 13px 28px rgba(15, 23, 42, 0.18);
         text-decoration: none;
     }
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 20px;
+
+    .profile-btn--ghost {
+        background: #ffffff;
+        color: #334155;
+        border: 1px solid #dbe3ee;
     }
-    .stat-item {
-        text-align: center;
-        padding: 20px;
-        background: #f8f9fc;
-        border-radius: 8px;
+
+    .profile-btn--ghost:hover {
+        border-color: #c1cfdf;
+        background: #f8fafc;
+        color: #0f172a;
+        text-decoration: none;
     }
-    .stat-value {
-        font-size: 28px;
+
+    .profile-panel {
+        background: #ffffff;
+        border: 1px solid rgba(15, 23, 42, 0.07);
+        border-radius: 14px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+
+    .profile-panel__header {
+        padding: 1rem 1.15rem;
+        border-bottom: 1px solid #e7edf4;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
         font-weight: 700;
+        color: #0f172a;
+    }
+
+    .profile-panel__header i {
         color: var(--theme-primary);
     }
-    .stat-label {
-        font-size: 12px;
-        color: #858796;
+
+    .profile-panel__body {
+        padding: 1.05rem 1.15rem 1.15rem;
+    }
+
+    .profile-details {
+        margin: 0;
+    }
+
+    .profile-details__row {
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        gap: 0.8rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #edf2f7;
+        align-items: center;
+    }
+
+    .profile-details__row:last-child {
+        border-bottom: none;
+    }
+
+    .profile-details dt {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .profile-details dd {
+        margin: 0;
+        color: #0f172a;
+        font-weight: 600;
+        font-size: 0.93rem;
+        word-break: break-word;
+    }
+
+    .role-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .role-pill {
+        background: rgba(37, 99, 235, 0.08);
+        border: 1px solid rgba(37, 99, 235, 0.18);
+        color: #1e3a8a;
+        border-radius: 999px;
+        padding: 0.3rem 0.72rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .security-note {
+        margin-top: 0.9rem;
+        border-radius: 10px;
+        border: 1px dashed #cbd5e1;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.82rem;
+        padding: 0.7rem 0.8rem;
+    }
+
+    .stats-stack {
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(160deg, #f8fafc, #f1f5f9);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.8rem 0.85rem;
+    }
+
+    .stat-card__label {
+        margin: 0;
+        font-size: 0.74rem;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 5px;
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .stat-card__value {
+        margin: 0.35rem 0 0;
+        color: #0f172a;
+        font-size: 1.22rem;
+        font-weight: 700;
+    }
+
+    .dossier-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .dossier-item {
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 0.55rem 0.65rem;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+    }
+
+    .dossier-item--active {
+        border-color: rgba(37, 99, 235, 0.35);
+        background: rgba(37, 99, 235, 0.06);
+    }
+
+    .dossier-item__icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #e2e8f0;
+        color: #475569;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .dossier-item__icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .dossier-item__name {
+        font-size: 0.88rem;
+        color: #1e293b;
+        font-weight: 600;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .dossier-item__badge {
+        font-size: 0.67rem;
+        padding: 0.25rem 0.52rem;
+        border-radius: 999px;
+        background: #dbeafe;
+        color: #1e3a8a;
+        font-weight: 700;
+        border: 1px solid #bfdbfe;
+    }
+
+    .empty-text {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.88rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .profile-details__row {
+            grid-template-columns: 1fr;
+            gap: 0.35rem;
+            padding: 0.7rem 0;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .profile-overview {
+            padding: 1.15rem 1rem;
+        }
+
+        .profile-overview__identity {
+            width: 100%;
+        }
+
+        .profile-overview__actions {
+            width: 100%;
+        }
+
+        .profile-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .profile-title {
+            font-size: 1.35rem;
+        }
     }
 </style>
 {% endblock %}
 
 {% block body %}
-<div class="profile-header">
-    <div class="d-flex align-items-center">
-        <div class="profile-avatar">
-            {{ user.prenom|slice(0, 1)|upper }}
-        </div>
-        <div class="ml-4">
-            <div class="profile-name">{{ user.prenom }} {{ user.nom }}</div>
-            <div class="profile-email">{{ user.email }}</div>
-            <div class="profile-role">
-                {% for role in user.roles %}
-                    {% if role == 'ROLE_ADMIN' %}Administrateur{% elseif role == 'ROLE_USER' %}Utilisateur{% else %}{{ role }}{% endif %}{% if not loop.last %}, {% endif %}
-                {% endfor %}
+{% set dossiers = user.dossiers is defined ? user.dossiers : [] %}
+{% set fullName = (user.prenom ~ ' ' ~ user.nom)|trim %}
+
+{% set roleLabels = [] %}
+{% for role in user.roles %}
+    {% set roleLabel = role == 'ROLE_ADMIN'
+        ? 'Administrateur'
+        : (role == 'ROLE_USER'
+            ? 'Utilisateur'
+            : role|replace({'ROLE_': '', '_': ' '})|lower|title)
+    %}
+    {% set roleLabels = roleLabels|merge([roleLabel]) %}
+{% endfor %}
+
+<div class="profile-shell">
+    <section class="profile-overview">
+        <div class="profile-overview__identity">
+            <div class="profile-avatar">
+                {{ user.prenom|default('U')|slice(0, 1)|upper }}
+            </div>
+            <div>
+                <p class="profile-eyebrow">Compte utilisateur</p>
+                <h1 class="profile-title">{{ fullName is not empty ? fullName : user.email }}</h1>
+                <p class="profile-subtitle">{{ user.email }}</p>
+                <div class="profile-tags">
+                    <span class="profile-tag">
+                        <i class="fas fa-user-shield"></i>
+                        {{ roleLabels|first|default('Utilisateur') }}
+                    </span>
+                    {% if user.isVerified %}
+                        <span class="profile-tag profile-tag--success">
+                            <i class="fas fa-check-circle"></i>
+                            Compte verifie
+                        </span>
+                    {% else %}
+                        <span class="profile-tag profile-tag--warning">
+                            <i class="fas fa-clock"></i>
+                            Verification en attente
+                        </span>
+                    {% endif %}
+                </div>
             </div>
         </div>
-        <div class="ml-auto">
-            <a href="{{ path('app_profile_edit') }}" class="btn-edit-profile">
-                <i class="fas fa-edit"></i> Modifier le profil
+
+        <div class="profile-overview__actions">
+            <a href="{{ path('app_profile_edit') }}" class="profile-btn profile-btn--primary">
+                <i class="fas fa-pen"></i>
+                Modifier le profil
+            </a>
+            <a href="{{ path('app_dash_bord') }}" class="profile-btn profile-btn--ghost">
+                <i class="fas fa-home"></i>
+                Tableau de bord
             </a>
         </div>
-    </div>
-</div>
+    </section>
 
-<div class="row">
-    <div class="col-lg-8">
-        <div class="profile-card">
-            <div class="profile-card-header">
-                <h5><i class="fas fa-user-circle"></i> Informations personnelles</h5>
-            </div>
-            <div class="profile-card-body">
-                <div class="info-row">
-                    <div class="info-label">Prénom</div>
-                    <div class="info-value">{{ user.prenom }}</div>
+    <div class="row">
+        <div class="col-lg-8">
+            <section class="profile-panel">
+                <div class="profile-panel__header">
+                    <i class="fas fa-id-card"></i>
+                    Informations personnelles
                 </div>
-                <div class="info-row">
-                    <div class="info-label">Nom</div>
-                    <div class="info-value">{{ user.nom }}</div>
+                <div class="profile-panel__body">
+                    <dl class="profile-details">
+                        <div class="profile-details__row">
+                            <dt>Prenom</dt>
+                            <dd>{{ user.prenom|default('-') }}</dd>
+                        </div>
+                        <div class="profile-details__row">
+                            <dt>Nom</dt>
+                            <dd>{{ user.nom|default('-') }}</dd>
+                        </div>
+                        <div class="profile-details__row">
+                            <dt>Email</dt>
+                            <dd>{{ user.email|default('-') }}</dd>
+                        </div>
+                        <div class="profile-details__row">
+                            <dt>Dossier actif</dt>
+                            <dd>{{ user.currentDossier ? user.currentDossier.nom : 'Aucun dossier actif' }}</dd>
+                        </div>
+                    </dl>
                 </div>
-                <div class="info-row">
-                    <div class="info-label">Adresse email</div>
-                    <div class="info-value">{{ user.email }}</div>
+            </section>
+
+            <section class="profile-panel">
+                <div class="profile-panel__header">
+                    <i class="fas fa-shield-alt"></i>
+                    Acces et securite
                 </div>
-                <div class="info-row">
-                    <div class="info-label">Dossier actif</div>
-                    <div class="info-value">{{ user.currentDossier ? user.currentDossier.nom : '-' }}</div>
+                <div class="profile-panel__body">
+                    <dl class="profile-details">
+                        <div class="profile-details__row">
+                            <dt>Mot de passe</dt>
+                            <dd>********</dd>
+                        </div>
+                        <div class="profile-details__row">
+                            <dt>Roles attribues</dt>
+                            <dd>
+                                <div class="role-pills">
+                                    {% for roleLabel in roleLabels %}
+                                        <span class="role-pill">{{ roleLabel }}</span>
+                                    {% else %}
+                                        <span class="role-pill">Utilisateur</span>
+                                    {% endfor %}
+                                </div>
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <p class="security-note">
+                        Pour mettre a jour vos informations de connexion, utilisez le bouton "Modifier le profil".
+                    </p>
                 </div>
-                <div class="info-row">
-                    <div class="info-label">Compte vérifié</div>
-                    <div class="info-value">
-                        {% if user.isVerified %}
-                            <span class="badge badge-success"><i class="fas fa-check mr-1"></i> Vérifié</span>
-                        {% else %}
-                            <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i> En attente</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+            </section>
         </div>
 
-        <div class="profile-card">
-            <div class="profile-card-header">
-                <h5><i class="fas fa-shield-alt"></i> Sécurité</h5>
-            </div>
-            <div class="profile-card-body">
-                <div class="info-row">
-                    <div class="info-label">Mot de passe</div>
-                    <div class="info-value">••••••••</div>
+        <div class="col-lg-4">
+            <section class="profile-panel">
+                <div class="profile-panel__header">
+                    <i class="fas fa-chart-line"></i>
+                    Resume du compte
                 </div>
-                <div class="info-row">
-                    <div class="info-label">Rôles</div>
-                    <div class="info-value">
-                        {% for role in user.roles %}
-                            <span class="badge badge-primary mr-1">{{ role }}</span>
-                        {% endfor %}
+                <div class="profile-panel__body">
+                    <div class="stats-stack">
+                        <div class="stat-card">
+                            <p class="stat-card__label">Roles</p>
+                            <p class="stat-card__value">{{ roleLabels|length }}</p>
+                        </div>
+                        <div class="stat-card">
+                            <p class="stat-card__label">Dossiers autorises</p>
+                            <p class="stat-card__value">{{ dossiers|length }}</p>
+                        </div>
+                        <div class="stat-card">
+                            <p class="stat-card__label">Statut</p>
+                            <p class="stat-card__value">{{ user.isVerified ? 'Verifie' : 'En attente' }}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
+            </section>
 
-    <div class="col-lg-4">
-        <div class="profile-card">
-            <div class="profile-card-header">
-                <h5><i class="fas fa-chart-bar"></i> Activité</h5>
-            </div>
-            <div class="profile-card-body">
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value">{{ user.currentDossier ? '1' : '0' }}</div>
-                        <div class="stat-label">Dossier</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">{{ user.roles|length }}</div>
-                        <div class="stat-label">Rôles</div>
-                    </div>
+            <section class="profile-panel">
+                <div class="profile-panel__header">
+                    <i class="fas fa-folder-open"></i>
+                    Dossiers autorises
                 </div>
-            </div>
-        </div>
-
-        <div class="profile-card">
-            <div class="profile-card-header">
-                <h5><i class="fas fa-cog"></i> Actions rapides</h5>
-            </div>
-            <div class="profile-card-body">
-                <a href="{{ path('app_profile_edit') }}" class="btn btn-outline-primary btn-block mb-2">
-                    <i class="fas fa-edit mr-2"></i>Modifier mes informations
-                </a>
-                <a href="{{ path('app_dash_bord') }}" class="btn btn-outline-secondary btn-block">
-                    <i class="fas fa-home mr-2"></i>Retour au tableau de bord
-                </a>
-            </div>
+                <div class="profile-panel__body">
+                    {% if dossiers|length > 0 %}
+                        <ul class="dossier-list">
+                            {% for dossier in dossiers %}
+                                <li class="dossier-item {% if user.currentDossier and dossier.id == user.currentDossier.id %}dossier-item--active{% endif %}">
+                                    <span class="dossier-item__icon">
+                                        {% if dossier.logo %}
+                                            <img src="{{ dossier.logo }}" alt="{{ dossier.nom }}">
+                                        {% else %}
+                                            <i class="fas fa-folder"></i>
+                                        {% endif %}
+                                    </span>
+                                    <span class="dossier-item__name">{{ dossier.nom }}</span>
+                                    {% if user.currentDossier and dossier.id == user.currentDossier.id %}
+                                        <span class="dossier-item__badge">Actif</span>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="empty-text">Aucun dossier n'est assigne a ce compte.</p>
+                    {% endif %}
+                </div>
+            </section>
         </div>
     </div>
 </div>
