@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 
 <head>
@@ -62,11 +62,15 @@
             top: 0;
             left: 0;
             height: 100vh;
-            width: 224px;
+            width: var(--sidebar-width, 92px) !important;
+            min-width: var(--sidebar-width, 92px) !important;
+            max-width: var(--sidebar-width, 92px) !important;
+            flex: 0 0 var(--sidebar-width, 92px) !important;
             z-index: 1030;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: hidden;
         }
         #accordionSidebar .sidebar-brand {
             flex-shrink: 0;
@@ -79,7 +83,6 @@
             flex-shrink: 0;
         }
         #accordionSidebar .nav-item,
-        #accordionSidebar .sidebar-heading,
         #accordionSidebar > hr {
             flex-shrink: 0;
         }
@@ -90,30 +93,37 @@
             overflow-y: auto;
             overflow-x: hidden;
             scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.3) transparent;
+            scrollbar-color: rgba(255,255,255,0.28) transparent;
+            padding: 12px 0 16px;
         }
         .sidebar-scroll-container::-webkit-scrollbar {
-            width: 6px;
+            width: 5px;
         }
         .sidebar-scroll-container::-webkit-scrollbar-track {
             background: transparent;
+            border-radius: 999px;
         }
         .sidebar-scroll-container::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.3);
-            border-radius: 3px;
+            background: rgba(255,255,255,0.28);
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12);
         }
         .sidebar-scroll-container::-webkit-scrollbar-thumb:hover {
-            background: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.42);
         }
         
         /* Content wrapper adjustment */
         #content-wrapper {
-            margin-left: 224px;
-            width: calc(100% - 224px);
+            margin-left: var(--sidebar-width, 92px) !important;
+            width: calc(100% - var(--sidebar-width, 92px)) !important;
             height: 100vh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+        }
+        #wrapper #accordionSidebar + #content-wrapper {
+            margin-left: var(--sidebar-width, 92px) !important;
+            width: calc(100% - var(--sidebar-width, 92px)) !important;
         }
         
         /* Fixed topbar */
@@ -155,17 +165,19 @@
         
         /* Content area scrollbar styling */
         #content::-webkit-scrollbar {
-            width: 8px;
+            width: 10px;
         }
         #content::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: rgba(15, 23, 42, 0.08);
+            border-radius: 999px;
         }
         #content::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
+            background: linear-gradient(180deg, var(--theme-accent, #94a3b8), var(--theme-primary, #475569));
+            border-radius: 999px;
+            border: 2px solid rgba(255,255,255,0.72);
         }
         #content::-webkit-scrollbar-thumb:hover {
-            background: #a1a1a1;
+            background: linear-gradient(180deg, var(--theme-primary, #475569), var(--theme-secondary, #334155));
         }
         
         /* Footer - always at bottom, scrolls with content */
@@ -183,16 +195,19 @@
         
         /* When sidebar is toggled */
         .sidebar.toggled {
-            width: 104px !important;
+            width: var(--sidebar-width, 92px) !important;
+            min-width: var(--sidebar-width, 92px) !important;
+            max-width: var(--sidebar-width, 92px) !important;
         }
         .sidebar.toggled + #content-wrapper {
-            margin-left: 104px;
-            width: calc(100% - 104px);
+            margin-left: var(--sidebar-width, 92px) !important;
+            width: calc(100% - var(--sidebar-width, 92px)) !important;
         }
         
         /* Mobile responsive */
         @media (max-width: 768px) {
             #accordionSidebar {
+                width: 82px;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
             }
@@ -203,6 +218,10 @@
                 margin-left: 0;
                 width: 100%;
             }
+            .sidebar-icon-link::before,
+            .sidebar-icon-link::after {
+                display: none !important;
+            }
         }
 
         /* ===== LOADING SPINNER OVERLAY - Content Area Only ===== */
@@ -210,7 +229,7 @@
             display: none;
             position: fixed;
             top: 70px; /* Below topbar */
-            left: 224px; /* After sidebar */
+            left: var(--sidebar-width, 92px); /* After sidebar */
             right: 0;
             bottom: 0;
             background: rgba(255, 255, 255, 0.92);
@@ -236,7 +255,7 @@
             }
         }
         .sidebar.toggled ~ #content-wrapper .loading-overlay {
-            left: 104px;
+            left: var(--sidebar-width, 92px);
         }
         .loading-spinner {
             background: white;
@@ -948,70 +967,12 @@
         .badge-draft { background: #f6c23e; color: white; }
         .badge-expired { background: #858796; color: white; }
 
-        
         /* ===== DISABLED NAV LINKS ===== */
         .nav-link.nav-disabled,
         .collapse-item.nav-disabled {
-            color: rgba(255, 255, 255, 0.45) !important;
-            cursor: not-allowed !important;
             pointer-events: none !important;
-            background: rgba(0, 0, 0, 0.15) !important;
-            border-left: 2px solid rgba(255, 255, 255, 0.2) !important;
-            transition: all 0.2s ease !important;
-            position: relative;
-            padding-left: 20px !important;
-        }
-        
-        .nav-link.nav-disabled:hover,
-        .collapse-item.nav-disabled:hover {
-            background: rgba(0, 0, 0, 0.15) !important;
-            color: rgba(255, 255, 255, 0.45) !important;
-        }
-        
-        .nav-link.nav-disabled::before,
-        .collapse-item.nav-disabled::before {
-            content: '\f023';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            margin-right: 8px;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.35);
-            display: inline-block;
-            width: 14px;
-            text-align: center;
-        }
-        
-        .nav-link.nav-disabled::after,
-        .collapse-item.nav-disabled::after {
-            content: 'Accès restreint';
-            display: none;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            white-space: nowrap;
-            pointer-events: none;
-            z-index: 1000;
-            bottom: 120%;
-            margin-bottom: 6px;
-        }
-        
-        .nav-link.nav-disabled::after,
-        .collapse-item.nav-disabled::after {
-            border-bottom: 4px solid rgba(0, 0, 0, 0.8);
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            content: '';
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: 116%;
-            display: none;
+            cursor: not-allowed !important;
+            opacity: 0.42 !important;
         }
         th[data-sort-key] {
             cursor: pointer;
@@ -1115,13 +1076,252 @@
             --theme-bg: {{ palette.bg }};
             --theme-surface: #ffffff;
             --theme-border: rgba(0,0,0,0.06);
+            --sidebar-width: 84px;
+            --sidebar-link-size: 40px;
+            --sidebar-tooltip-bg: rgba(15, 23, 42, 0.96);
         }
         body { background: var(--theme-bg); color: var(--theme-text); }
         #content-wrapper { background: var(--theme-bg); }
         .bg-gradient-primary { background: var(--theme-primary) !important; }
-        .sidebar { background: linear-gradient(180deg, var(--theme-primary), var(--theme-secondary)) !important; }
-        .sidebar .sidebar-brand-text, .sidebar .nav-link { color: #eef2ff; }
-        .sidebar .nav-link:hover { background: rgba(255,255,255,0.08); }
+        #accordionSidebar.sidebar {
+            background: linear-gradient(180deg, var(--theme-secondary) 0%, var(--theme-primary) 60%, var(--theme-secondary) 100%) !important;
+            border-right: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 12px 0 28px rgba(15, 23, 42, 0.16);
+            width: var(--sidebar-width) !important;
+            min-width: var(--sidebar-width) !important;
+            max-width: var(--sidebar-width) !important;
+        }
+        #accordionSidebar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 24%, rgba(0,0,0,0.08) 100%);
+        }
+        #accordionSidebar .sidebar-brand {
+            min-height: 4.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            border-bottom: 1px solid rgba(255,255,255,0.16);
+        }
+        #accordionSidebar .sidebar-brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(160deg, rgba(255,255,255,0.26), rgba(255,255,255,0.12));
+            border: 1px solid rgba(255,255,255,0.24);
+            box-shadow: 0 10px 20px rgba(2, 6, 23, 0.22);
+            transform: none !important;
+        }
+        #accordionSidebar .sidebar-brand-icon i {
+            color: #f8fafc;
+            font-size: 18px;
+        }
+        #accordionSidebar .sidebar-brand-text {
+            display: none;
+        }
+        #accordionSidebar .sidebar-scroll-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 0 12px;
+        }
+        @media (max-height: 860px) {
+            #accordionSidebar .sidebar-scroll-container {
+                gap: 6px;
+                padding: 8px 0 10px;
+            }
+        }
+        @media (max-height: 740px) {
+            #accordionSidebar .sidebar-scroll-container {
+                justify-content: flex-start;
+                gap: 4px;
+                padding: 6px 0 8px;
+            }
+        }
+        #accordionSidebar .nav-item {
+            margin: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(var(--sidebar-link-size) + 4px);
+        }
+        #accordionSidebar .sidebar-rail-separator {
+            display: none;
+        }
+        .sidebar-icon-link {
+            width: var(--sidebar-link-size) !important;
+            height: var(--sidebar-link-size) !important;
+            border-radius: 12px;
+            margin: 0 auto !important;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            padding: 0 !important;
+            color: rgba(241, 245, 249, 0.95) !important;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid transparent;
+            position: relative;
+            transition: transform 0.22s ease, background-color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, color 0.22s ease;
+            min-width: var(--sidebar-link-size) !important;
+            max-width: var(--sidebar-link-size) !important;
+            flex: 0 0 var(--sidebar-link-size) !important;
+            line-height: 1 !important;
+        }
+        .sidebar-icon-link i {
+            font-size: 17px;
+            line-height: 1;
+            width: 1em;
+            text-align: center;
+        }
+        .sidebar-icon-link:hover,
+        .sidebar-icon-link:focus {
+            transform: translateY(-1px);
+            background: rgba(255,255,255,0.16);
+            border-color: rgba(255,255,255,0.32);
+            box-shadow: 0 10px 20px rgba(2, 6, 23, 0.24);
+            color: #ffffff !important;
+        }
+        .sidebar-icon-link.active {
+            background: linear-gradient(160deg, rgba(255,255,255,0.34), rgba(255,255,255,0.2));
+            border-color: rgba(255,255,255,0.56);
+            color: #ffffff !important;
+            box-shadow: 0 12px 24px rgba(2, 6, 23, 0.28), inset 0 1px 0 rgba(255,255,255,0.45), 0 0 0 1px rgba(255,255,255,0.14);
+        }
+        .sidebar-icon-link.active i {
+            filter: drop-shadow(0 1px 2px rgba(2, 6, 23, 0.25));
+            color: #ffffff !important;
+        }
+        .sidebar-icon-link.active:hover,
+        .sidebar-icon-link.active:focus {
+            transform: translateY(-1px) scale(1.02);
+            background: linear-gradient(160deg, rgba(255,255,255,0.4), rgba(255,255,255,0.24));
+            border-color: rgba(255,255,255,0.66);
+            box-shadow: 0 14px 28px rgba(2, 6, 23, 0.32), inset 0 1px 0 rgba(255,255,255,0.52), 0 0 0 1px rgba(255,255,255,0.2);
+        }
+        .sidebar-icon-link:active:not(.nav-disabled) {
+            transform: scale(0.97);
+            box-shadow: 0 6px 14px rgba(2, 6, 23, 0.2);
+        }
+        .sidebar-icon-link::after {
+            content: attr(data-nav-label);
+            position: absolute;
+            left: calc(100% + 14px);
+            top: 50%;
+            transform: translate3d(-10px, -50%, 0);
+            opacity: 0;
+            pointer-events: none;
+            background: var(--sidebar-tooltip-bg);
+            color: #f8fafc;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            padding: 8px 12px;
+            border-radius: 10px;
+            box-shadow: 0 12px 28px rgba(2, 6, 23, 0.35);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 1075;
+        }
+        .sidebar-icon-link::before {
+            content: '';
+            position: absolute;
+            left: calc(100% + 7px);
+            top: 50%;
+            transform: translate3d(-8px, -50%, 0);
+            opacity: 0;
+            pointer-events: none;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-right: 7px solid var(--sidebar-tooltip-bg);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 1075;
+        }
+        .sidebar-icon-link:hover::after,
+        .sidebar-icon-link:hover::before,
+        .sidebar-icon-link:focus::after,
+        .sidebar-icon-link:focus::before {
+            opacity: 1;
+            transform: translate3d(0, -50%, 0);
+        }
+        .sidebar-icon-link.nav-disabled {
+            pointer-events: none !important;
+            opacity: 0.4 !important;
+            background: rgba(15, 23, 42, 0.2) !important;
+            border-color: rgba(255,255,255,0.16) !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+        .sidebar-icon-link.nav-disabled::before,
+        .sidebar-icon-link.nav-disabled::after {
+            display: none !important;
+        }
+        /* JS-driven hover card (outside sidebar) */
+        .sidebar-icon-link::before,
+        .sidebar-icon-link::after {
+            content: none !important;
+            display: none !important;
+        }
+        .sidebar-hover-card {
+            position: fixed;
+            z-index: 2005;
+            top: 0;
+            left: 0;
+            transform: translate3d(0, -50%, 0) scale(0.98);
+            opacity: 0;
+            pointer-events: none;
+            background: var(--sidebar-tooltip-bg);
+            color: #f8fafc;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            padding: 8px 12px;
+            border-radius: 10px;
+            box-shadow: 0 14px 30px rgba(2, 6, 23, 0.32);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+        .sidebar-hover-card::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -7px;
+            transform: translateY(-50%);
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-right: 7px solid var(--sidebar-tooltip-bg);
+        }
+        .sidebar-hover-card.show {
+            opacity: 1;
+            transform: translate3d(0, -50%, 0) scale(1);
+        }
+        .sidebar-scroll-container {
+            scrollbar-color: rgba(255,255,255,0.3) transparent;
+        }
+        .sidebar-scroll-container::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        .sidebar-scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #content {
+            scrollbar-width: thin;
+            scrollbar-color: var(--theme-primary) rgba(15, 23, 42, 0.08);
+        }
         /* Buttons */
         .btn-primary,
         .btn-info,
@@ -1159,6 +1359,32 @@
         .custom-control-input:checked ~ .custom-control-label::before,
         .form-check-input:checked { background-color: var(--theme-primary); border-color: var(--theme-primary); }
         .topbar { background: var(--theme-surface) !important; }
+        .topbar {
+            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06) !important;
+            padding-left: 0.85rem;
+            padding-right: 1rem;
+        }
+        .navbar-search .form-control {
+            height: 42px;
+            border-radius: 11px 0 0 11px;
+            border: 1px solid rgba(15, 23, 42, 0.08) !important;
+            background: #f8fafc !important;
+            font-weight: 600;
+        }
+        .navbar-search .btn {
+            border-radius: 0 11px 11px 0;
+            min-width: 46px;
+            box-shadow: none !important;
+        }
+        .topbar .nav-item .nav-link {
+            border-radius: 10px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .topbar .nav-item .nav-link:hover {
+            background: rgba(15, 23, 42, 0.05);
+            color: var(--theme-primary) !important;
+        }
         .dropdown-item.active,
         .dropdown-item:active { background: var(--theme-primary); color: #fff; }
         .btn-link { color: var(--theme-primary) !important; }
@@ -1226,280 +1452,139 @@
     <div id="wrapper">
 
         <!-- Sidebar -->
-        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+        {% set currentRoute = app.request.attributes.get('_route') %}
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ path('app_dash_bord') }}">
-                <div class="sidebar-brand-icon rotate-n-15">
-                    <i class="fas fa-laugh-wink"></i>
+            <a class="sidebar-brand d-flex align-items-center justify-content-center nav-loading"
+               href="{{ path('app_dash_bord') }}"
+               aria-label="Dashboard">
+                <div class="sidebar-brand-icon">
+                    <i class="fas fa-layer-group"></i>
                 </div>
-                <div class="sidebar-brand-text mx-3">Diva Easy</div>
             </a>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider my-0">
 
             <!-- Scrollable Sidebar Content -->
             <div class="sidebar-scroll-container">
 
-            <!-- Nav Item - Dashboard -->
-            <li class="nav-item">
-                <a class="nav-link nav-loading" href="{{ path('app_dash_bord') }}">
-                    <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Dashboard</span></a>
-            </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if currentRoute == 'app_dash_bord' %}active{% endif %}"
+                       href="{{ path('app_dash_bord') }}"
+                       data-nav-label="Dashboard"
+                       aria-label="Dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </a>
+                </li>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
+                <li class="sidebar-rail-separator" aria-hidden="true"></li>
 
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Interface
-            </div>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['client.list', 'client.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('client.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Clients"
+                       aria-label="Clients">
+                        <i class="fas fa-users"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['prospect.list', 'prospect.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('prospect.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Prospects"
+                       aria-label="Prospects">
+                        <i class="fas fa-user-tag"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['article.list', 'article.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('article.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Articles"
+                       aria-label="Articles">
+                        <i class="fas fa-boxes"></i>
+                    </a>
+                </li>
 
-            <!-- Nav Item - Pages Collapse Menu (Commercial+) -->
-            <li class="nav-item {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_COMMERCIAL') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_COMMERCIAL') %}collapse{% endif %}" 
-                   data-target="#collapseTwo"
-                    aria-expanded="true" aria-controls="collapseTwo">
-                    <i class="fas fa-fw fa-users"></i>
-                    <span>Clients</span>
-                </a>
-                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('client.list')}}">Liste</a>
-                        <a class="collapse-item nav-loading" href="{{path('client.edit')}}">Ajout</a>
-                    </div>
-                </div>
-            </li>
-            
-            <!-- Nav Item - Prospects (Commercial+) -->
-            <li class="nav-item {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_COMMERCIAL') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_COMMERCIAL') %}collapse{% endif %}" 
-                   data-target="#collapseProspects"
-                    aria-expanded="true" aria-controls="collapseProspects">
-                    <i class="fas fa-fw fa-user-plus"></i>
-                    <span>Prospects</span>
-                </a>
-                <div id="collapseProspects" class="collapse" aria-labelledby="headingProspects" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('prospect.list')}}">Liste</a>
-                        <a class="collapse-item nav-loading" href="{{path('prospect.edit')}}">Ajout</a>
-                    </div>
-                </div>
-            </li>
-            
-            <li class="nav-item {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_COMMERCIAL') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_COMMERCIAL') %}collapse{% endif %}" 
-                   data-target="#collapseTree"
-                    aria-expanded="true" aria-controls="collapseTree">
-                    <i class="fas fa-fw fa-boxes"></i>
-                    <span>Articles</span>
-                </a>
-                <div id="collapseTree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('article.list')}}">Liste</a>
-                        <a class="collapse-item nav-loading" href="{{path('article.edit')}}">Ajout</a>
-                    </div>
-                </div>
-            </li>
-            
-            <!-- Divider -->
-            <hr class="sidebar-divider">
+                <li class="sidebar-rail-separator" aria-hidden="true"></li>
 
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Facturation
-            </div>
-            
-            <!-- Nav Item - Piéces (Comptable+) -->
-            <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_COMPTABLE') %}collapse{% endif %}" 
-                   data-target="#collapsePieces"
-                    aria-expanded="true" aria-controls="collapsePieces">
-                    <i class="fas fa-fw fa-file-invoice"></i>
-                    <span>Pièces</span>
-                </a>
-                <div id="collapsePieces" class="collapse" aria-labelledby="headingPieces" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('entetepiece.list')}}">Liste Pièces</a>
-                        <a class="collapse-item nav-loading" href="{{path('entetepiece.edit')}}">Nouvelle Pièce</a>
-                    </div>
-                </div>
-            </li>
-            
-            <!-- Nav Item - Réglements (Comptable+) -->
-            <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_COMPTABLE') %}collapse{% endif %}" 
-                   data-target="#collapseReglements"
-                    aria-expanded="true" aria-controls="collapseReglements">
-                    <i class="fas fa-fw fa-money-bill-wave"></i>
-                    <span>Règlements</span>
-                </a>
-                <div id="collapseReglements" class="collapse" aria-labelledby="headingReglements" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('reglement.list')}}">Liste</a>
-                        <a class="collapse-item nav-loading" href="{{path('reglement.edit')}}">Ajout</a>
-                    </div>
-                </div>
-            </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute in ['entetepiece.list', 'entetepiece.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('entetepiece.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Pieces"
+                       aria-label="Pieces">
+                        <i class="fas fa-file-invoice"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute in ['reglement.list', 'reglement.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('reglement.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Reglements"
+                       aria-label="Reglements">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </a>
+                </li>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
+                <li class="sidebar-rail-separator" aria-hidden="true"></li>
 
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Paramètres
-            </div>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if currentRoute in ['dossier.list', 'dossier.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_ADMIN') %}{{ path('dossier.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Dossiers"
+                       aria-label="Dossiers">
+                        <i class="fas fa-folder-open"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute in ['devise.list', 'devise.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('devise.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Devises"
+                       aria-label="Devises">
+                        <i class="fas fa-euro-sign"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['tarif.list', 'tarif.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('tarif.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Tarifs"
+                       aria-label="Tarifs">
+                        <i class="fas fa-tags"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['tarifvente.list', 'tarifvente.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('tarifvente.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Tarifs Vente"
+                       aria-label="Tarifs Vente">
+                        <i class="fas fa-receipt"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute in ['unite.list', 'unite.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('unite.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Unites"
+                       aria-label="Unites">
+                        <i class="fas fa-balance-scale"></i>
+                    </a>
+                </li>
 
-            <!-- Nav Item - Dossiers (Admin only) -->
-            <li class="nav-item {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_ADMIN') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_ADMIN') %}collapse{% endif %}" 
-                   data-target="#collapseDossiers"
-                    aria-expanded="true" aria-controls="collapseDossiers">
-                    <i class="fas fa-fw fa-folder-open"></i>
-                    <span>Dossiers</span>
-                </a>
-                <div id="collapseDossiers" class="collapse" aria-labelledby="headingDossiers" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('dossier.list')}}">Liste</a>
-                        <a class="collapse-item nav-loading" href="{{path('dossier.edit')}}">Ajout</a>
-                    </div>
-                </div>
-            </li>
+                <li class="sidebar-rail-separator" aria-hidden="true"></li>
 
-            <!-- Nav Item - Utilisateurs (Admin only) -->
-            {# <li class="nav-item {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}">
-                <a class="nav-link nav-loading {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_ADMIN') %}{{ path('users.list') }}{% else %}javascript:void(0){% endif %}">
-                    <i class="fas fa-fw fa-users-cog"></i>
-                    <span>Utilisateurs</span>
-                </a>
-            </li> #}
-
-            <!-- Nav Item - Devises (Comptable+) -->
-            <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_COMPTABLE') %}collapse{% endif %}" 
-                   data-target="#collapseDevises"
-                    aria-expanded="true" aria-controls="collapseDevises">
-                    <i class="fas fa-fw fa-euro-sign"></i>
-                    <span>Devises</span>
-                </a>
-                <div id="collapseDevises" class="collapse" aria-labelledby="headingDevises" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('devise.list')}}">Liste</a>
-                        <a class="collapse-item nav-loading" href="{{path('devise.edit')}}">Ajout</a>
-                    </div>
-                </div>
-            </li>
-
-            <!-- Nav Item - Tarifs (Commercial+) -->
-            <li class="nav-item {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_COMMERCIAL') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_COMMERCIAL') %}collapse{% endif %}" 
-                   data-target="#collapseTarifs"
-                    aria-expanded="true" aria-controls="collapseTarifs">
-                    <i class="fas fa-fw fa-tags"></i>
-                    <span>Tarifs</span>
-                </a>
-                <div id="collapseTarifs" class="collapse" aria-labelledby="headingTarifs" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('tarif.list')}}">Liste Tarifs</a>
-                        <a class="collapse-item nav-loading" href="{{path('tarif.edit')}}">Ajout Tarif</a>
-                        <a class="collapse-item nav-loading" href="{{path('tarifvente.list')}}">Tarifs Vente</a>
-                        <a class="collapse-item nav-loading" href="{{path('tarifvente.edit')}}">Ajout Tarif Vente</a>
-                    </div>
-                </div>
-            </li>
-
-            <!-- Nav Item - Unités (Comptable+) -->
-            <li class="nav-item {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_COMPTABLE') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_COMPTABLE') %}collapse{% endif %}" 
-                   data-target="#collapseUnites"
-                    aria-expanded="true" aria-controls="collapseUnites">
-                    <i class="fas fa-fw fa-balance-scale"></i>
-                    <span>Unités</span>
-                </a>
-                <div id="collapseUnites" class="collapse" aria-labelledby="headingUnites" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('unite.list')}}">Liste</a>
-                        <a class="collapse-item nav-loading" href="{{path('unite.edit')}}">Ajout</a>
-                    </div>
-                </div>
-            </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Localisation
-            </div>
-
-            <!-- Nav Item - Pays (Admin only) -->
-            <li class="nav-item {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_ADMIN') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_ADMIN') %}collapse{% endif %}" 
-                   data-target="#collapsePays"
-                    aria-expanded="true" aria-controls="collapsePays">
-                    <i class="fas fa-fw fa-globe"></i>
-                    <span>Pays</span>
-                </a>
-                <div id="collapsePays" class="collapse" aria-labelledby="headingPays" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('pays.list')}}">Liste</a>
-                        <a class="collapse-item nav-loading" href="{{path('pays.edit')}}">Ajout</a>
-                    </div>
-                </div>
-            </li>
-
-            <!-- Nav Item - Villes (Admin only) -->
-            <li class="nav-item {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}">
-                <a class="nav-link collapsed {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %}" 
-                   href="{% if is_granted('ROLE_ADMIN') %}#{% else %}javascript:void(0){% endif %}" 
-                   data-toggle="{% if is_granted('ROLE_ADMIN') %}collapse{% endif %}" 
-                   data-target="#collapseVilles"
-                    aria-expanded="true" aria-controls="collapseVilles">
-                    <i class="fas fa-fw fa-city"></i>
-                    <span>Villes</span>
-                </a>
-                <div id="collapseVilles" class="collapse" aria-labelledby="headingVilles" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">                        
-                        <a class="collapse-item nav-loading" href="{{path('ville.list')}}">Liste</a>
-                        <a class="collapse-item nav-loading" href="{{path('ville.edit')}}">Ajout</a>
-                    </div>
-                </div>
-            </li>
-
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if currentRoute in ['pays.list', 'pays.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_ADMIN') %}{{ path('pays.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Pays"
+                       aria-label="Pays">
+                        <i class="fas fa-globe"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-loading sidebar-icon-link {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if currentRoute in ['ville.list', 'ville.edit'] %}active{% endif %}"
+                       href="{% if is_granted('ROLE_ADMIN') %}{{ path('ville.list') }}{% else %}javascript:void(0){% endif %}"
+                       data-nav-label="Villes"
+                       aria-label="Villes">
+                        <i class="fas fa-city"></i>
+                    </a>
+                </li>
             </div>
             <!-- End Scrollable Sidebar Content -->
-
-            <!-- Divider -->
-            <hr class="sidebar-divider d-none d-md-block">
-
-            <!-- Sidebar Toggler (Sidebar) -->
-            <div class="text-center d-none d-md-inline">
-                <button class="rounded-circle border-0" id="sidebarToggle"></button>
-            </div>
-
         </ul>
         <!-- End of Sidebar -->
 
@@ -2542,21 +2627,135 @@
                 }
             });
 
-            // ===== SIDEBAR DROPDOWN TOGGLE ON CLICK =====
-            $('#accordionSidebar .nav-link[data-toggle="collapse"]').on('click', function(e) {
-                var $this = $(this);
-                var targetId = $this.attr('data-target');
-                var $target = $(targetId);
-                
-                // If already expanded, collapse it
-                if ($target.hasClass('show')) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    $target.collapse('hide');
-                    $this.attr('aria-expanded', 'false');
-                    $this.addClass('collapsed');
+            // ===== SIDEBAR HOVER CARDS (rendered above content, no sidebar overflow) =====
+            if (!window.__sidebarHoverCardBound) {
+                window.__sidebarHoverCardBound = true;
+
+                var hoverCard = document.getElementById('sidebarHoverCard');
+                var activeSidebarLink = null;
+
+                var isCompactViewport = function() {
+                    return window.matchMedia('(max-width: 768px)').matches;
+                };
+
+                var ensureHoverCard = function() {
+                    if (hoverCard && hoverCard.isConnected) {
+                        return hoverCard;
+                    }
+
+                    hoverCard = document.getElementById('sidebarHoverCard');
+                    if (!hoverCard) {
+                        hoverCard = document.createElement('div');
+                        hoverCard.id = 'sidebarHoverCard';
+                        hoverCard.className = 'sidebar-hover-card';
+                        document.body.appendChild(hoverCard);
+                    }
+
+                    return hoverCard;
+                };
+
+                var placeHoverCard = function(link) {
+                    var sidebar = document.getElementById('accordionSidebar');
+                    var card = ensureHoverCard();
+                    if (!sidebar || !link || !card) {
+                        return;
+                    }
+
+                    var linkRect = link.getBoundingClientRect();
+                    var sidebarRect = sidebar.getBoundingClientRect();
+                    var label = link.getAttribute('data-nav-label') || link.getAttribute('aria-label') || '';
+                    card.textContent = label;
+                    card.style.left = Math.round(sidebarRect.right + 12) + 'px';
+                    card.style.top = Math.round(linkRect.top + (linkRect.height / 2)) + 'px';
+                };
+
+                var showHoverCard = function(link) {
+                    if (!link || link.classList.contains('nav-disabled') || isCompactViewport()) {
+                        hideHoverCard();
+                        return;
+                    }
+
+                    var card = ensureHoverCard();
+                    if (!card) {
+                        return;
+                    }
+
+                    activeSidebarLink = link;
+                    placeHoverCard(link);
+                    card.classList.add('show');
+                };
+
+                var hideHoverCard = function() {
+                    activeSidebarLink = null;
+                    var card = ensureHoverCard();
+                    if (card) {
+                        card.classList.remove('show');
+                    }
+                };
+
+                document.addEventListener('mouseover', function(event) {
+                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link') : null;
+                    if (!link) {
+                        return;
+                    }
+
+                    var fromElement = event.relatedTarget;
+                    if (fromElement && link.contains(fromElement)) {
+                        return;
+                    }
+
+                    showHoverCard(link);
+                }, true);
+
+                document.addEventListener('mouseout', function(event) {
+                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link') : null;
+                    if (!link) {
+                        return;
+                    }
+
+                    var toElement = event.relatedTarget;
+                    if (toElement && link.contains(toElement)) {
+                        return;
+                    }
+
+                    hideHoverCard();
+                }, true);
+
+                document.addEventListener('focusin', function(event) {
+                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link') : null;
+                    if (link) {
+                        showHoverCard(link);
+                    }
+                });
+
+                document.addEventListener('focusout', function(event) {
+                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link') : null;
+                    if (link) {
+                        hideHoverCard();
+                    }
+                });
+
+                var sidebarScrollContainer = document.querySelector('.sidebar-scroll-container');
+                if (sidebarScrollContainer) {
+                    sidebarScrollContainer.addEventListener('scroll', function() {
+                        if (activeSidebarLink) {
+                            placeHoverCard(activeSidebarLink);
+                        }
+                    }, { passive: true });
                 }
-            });
+
+                window.addEventListener('resize', function() {
+                    if (activeSidebarLink) {
+                        placeHoverCard(activeSidebarLink);
+                    } else {
+                        hideHoverCard();
+                    }
+                });
+
+                document.addEventListener('turbo:before-visit', hideHoverCard);
+                document.addEventListener('turbo:before-cache', hideHoverCard);
+            }
+
         });
     </script>
 
@@ -2619,4 +2818,5 @@
 </body>
 
 </html>
+
 
