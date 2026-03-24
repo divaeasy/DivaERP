@@ -1059,7 +1059,7 @@
 
 </head>
 
-<body id="page-top" class="js-loading" data-turbo="false">
+<body id="page-top" class="js-loading">
     {% set themePalettes = {
         'indigo': {
         'primary':'#4f46e5',
@@ -1751,7 +1751,7 @@
                                 </a>
                                 {% endif %}
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item js-open-logout-modal" href="#">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Déconnexion
                                 </a>
@@ -2079,8 +2079,20 @@
             if (!window.__modalBackdropHooksBound) {
                 window.__modalBackdropHooksBound = true;
 
-                window.syncSingleModalBackdrop = function() {
+                window.syncSingleModalBackdrop = function(forceClean) {
+                    var $openModals = $('.modal.show');
                     var $backdrops = $('body > .modal-backdrop');
+
+                    // If no modal is open, any backdrop is stale and must be removed.
+                    if ($openModals.length === 0) {
+                        if (!forceClean) {
+                            return;
+                        }
+                        $backdrops.remove();
+                        $('body').removeClass('modal-open').css('padding-right', '');
+                        return;
+                    }
+
                     if ($backdrops.length > 1) {
                         $backdrops.slice(0, -1).remove();
                     }
@@ -2103,20 +2115,102 @@
                     if ($('.modal.show').length === 0) {
                         clearModalBackdropState();
                     } else {
-                        syncSingleModalBackdrop();
+                        syncSingleModalBackdrop(false);
                     }
                 });
 
+                // After modal open transition, keep exactly one backdrop.
+                $(document).on('shown.bs.modal.modalBackdropFix', '.modal', function() {
+                    syncSingleModalBackdrop(false);
+                });
+
+                // Open logout modal with controlled backdrop lifecycle (prevents stacked backdrops).
+                $(document).on('click.logoutModalTrigger', '.js-open-logout-modal', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    // Close profile dropdown before opening modal.
+                    $('.dropdown-menu.show').removeClass('show');
+                    $('.dropdown-toggle').attr('aria-expanded', 'false');
+
+                    // Do exactly what a hard refresh cleanup would do, then open the modal.
+                    clearModalBackdropState();
+                    $('#logoutModal').modal('show');
+                });
+
                 // Turbo lifecycle: prevent stale backdrop accumulation after navigation.
+                document.addEventListener('turbo:before-cache', function() {
+                    // Turbo caches DOM snapshots; ensure modal/backdrop are never cached open.
+                    $('.modal.show').removeClass('show').css('display', 'none').attr('aria-hidden', 'true');
+                    clearModalBackdropState();
+                });
+                document.addEventListener('turbo:before-visit', function() {
+                    clearModalBackdropState();
+                });
                 document.addEventListener('turbo:before-render', function() {
                     clearModalBackdropState();
                 });
                 document.addEventListener('turbo:load', function() {
-                    syncSingleModalBackdrop();
+                    syncSingleModalBackdrop(true);
                 });
                 document.addEventListener('turbo:render', function() {
-                    syncSingleModalBackdrop();
+                    syncSingleModalBackdrop(true);
                 });
+
+                // Reconcile backdrop mutations immediately (same effect as manual refresh, no refresh needed).
+                if (!window.__modalBackdropObserverBound) {
+                    window.__modalBackdropObserverBound = true;
+                    window.__modalBackdropSyncQueued = false;
+
+                    window.queueBackdropSync = function() {
+                        if (window.__modalBackdropSyncQueued) {
+                            return;
+                        }
+                        window.__modalBackdropSyncQueued = true;
+                        window.requestAnimationFrame(function() {
+                            window.__modalBackdropSyncQueued = false;
+                            syncSingleModalBackdrop(false);
+                        });
+                    };
+
+                    var backdropObserver = new MutationObserver(function(mutations) {
+                        var shouldSync = false;
+                        for (var i = 0; i < mutations.length; i++) {
+                            var mutation = mutations[i];
+                            if (mutation.type !== 'childList') {
+                                continue;
+                            }
+                            var added = mutation.addedNodes;
+                            var removed = mutation.removedNodes;
+                            for (var a = 0; a < added.length; a++) {
+                                if (added[a].nodeType === 1 && added[a].classList && added[a].classList.contains('modal-backdrop')) {
+                                    shouldSync = true;
+                                    break;
+                                }
+                            }
+                            if (!shouldSync) {
+                                for (var r = 0; r < removed.length; r++) {
+                                    if (removed[r].nodeType === 1 && removed[r].classList && removed[r].classList.contains('modal-backdrop')) {
+                                        shouldSync = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (shouldSync) {
+                                break;
+                            }
+                        }
+
+                        if (shouldSync) {
+                            queueBackdropSync();
+                        }
+                    });
+
+                    backdropObserver.observe(document.body, { childList: true });
+                }
+
+                // Initial pass on first load.
+                syncSingleModalBackdrop(true);
             }
 
             // Loading Spinner Functions
