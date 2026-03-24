@@ -51,8 +51,8 @@
         </thead>
         <tbody>
             {% for dossier in dossiers %}
-            {% set rawTheme = dossier.theme|default('indigo') %}
-            {% set resolvedTheme = rawTheme in themes|keys ? rawTheme : 'indigo' %}
+            {% set rawTheme = dossier.theme|default('ardoise') %}
+            {% set resolvedTheme = rawTheme in themes|keys ? rawTheme : 'ardoise' %}
             {% set themeMeta = themes[resolvedTheme] %}
             <tr>
                 <td><strong>#{{ dossier.id }}</strong></td>

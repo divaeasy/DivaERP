@@ -1584,7 +1584,7 @@
                                     'minimal-clair': '#111827'
                                 } %}
                                 {% for dossier in app.user.dossiers %}
-                                    {% set dossierThemeColor = dossierThemes[dossier.theme] ?? dossierThemes['indigo'] %}
+                                    {% set dossierThemeColor = dossierThemes[dossier.theme] ?? dossierThemes['ardoise'] %}
                                     <a class="dropdown-item {% if app.user.currentDossier and dossier.id == app.user.currentDossier.id %}active{% endif %}"
                                        href="{{ path('dossier.switch', {'id': dossier.id}) }}">
                                         <span class="dossier-switcher__item">
