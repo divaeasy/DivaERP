@@ -1,4 +1,4 @@
-{% extends 'template_oukatech.html.twig' %}
+﻿{% extends 'template_oukatech.html.twig' %}
 
 {% block PageTitle %}
     Gestion des Dossiers
@@ -26,14 +26,6 @@
     </div>
 </div>
 
-{% set themes = {
-    'indigo': {'label': 'Indigo', 'color': '#4f46e5'},
-    'ardoise': {'label': 'Ardoise', 'color': '#475569'},
-    'bleu-corporate': {'label': 'Bleu corporate', 'color': '#1e40af'},
-    'emeraude': {'label': 'Émeraude', 'color': '#059669'},
-    'minimal-clair': {'label': 'Minimal clair', 'color': '#111827'}
-} %}
-
 <div class="table-container">
     {% if dossiers|length > 0 %}
     <table class="table">
@@ -51,9 +43,9 @@
         </thead>
         <tbody>
             {% for dossier in dossiers %}
-            {% set rawTheme = dossier.theme|default('ardoise') %}
-            {% set resolvedTheme = rawTheme in themes|keys ? rawTheme : 'ardoise' %}
-            {% set themeMeta = themes[resolvedTheme] %}
+            {% set dossierTheme = dossier.theme %}
+            {% set themeColor = dossierTheme ? dossierTheme.primaryColor : '#475569' %}
+            {% set themeLabel = dossierTheme ? dossierTheme.name : 'Thème non défini' %}
             <tr>
                 <td><strong>#{{ dossier.id }}</strong></td>
                 <td>{{ dossier.nom }}</td>
@@ -67,8 +59,8 @@
                     {% endif %}
                 </td>
                 <td>
-                    <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:{{ themeMeta.color }};border:1px solid #e2e8f0; margin-right:6px;vertical-align:middle;"></span>
-                    <small class="text-muted">{{ themeMeta.label }}</small>
+                    <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:{{ themeColor }};border:1px solid #e2e8f0; margin-right:6px;vertical-align:middle;"></span>
+                    <small class="text-muted">{{ themeLabel }}</small>
                 </td>
                 <td>{{ dossier.devise }}</td>
                 <td class="text-center">

@@ -77,7 +77,7 @@
                             {% for choice in userForm.dossiers.vars.choices %}
                                 {% set isSelected = choice.value in selectedDossiers %}
                                 {% set dossierLogo = choice.data is defined ? choice.data.logo : null %}
-                                {% set dossierTheme = choice.data is defined and choice.data.theme ? choice.data.theme : '#2563eb' %}
+                                {% set dossierTheme = choice.data is defined and choice.data.theme ? choice.data.theme.primaryColor : '#2563eb' %}
                                 <button type="button"
                                         class="dossier-chip {% if isSelected %}dossier-chip--active{% endif %}"
                                         data-value="{{ choice.value }}"

@@ -3,7 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\DossierRepository;
-use App\Traits\TimeStampTrait;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DossierRepository::class)]
@@ -26,8 +25,9 @@ class Dossier
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $logo = null;
 
-    #[ORM\Column(length: 50, nullable: true)]
-    private ?string $theme = null;
+    #[ORM\ManyToOne(targetEntity: Theme::class)]
+    #[ORM\JoinColumn(name: 'theme_id', nullable: true, onDelete: 'SET NULL')]
+    private Theme|string|null $theme = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $rc = null;
@@ -79,12 +79,12 @@ class Dossier
         return $this;
     }
 
-    public function getTheme(): ?string
+    public function getTheme(): ?Theme
     {
-        return $this->theme;
+        return $this->theme instanceof Theme ? $this->theme : null;
     }
 
-    public function setTheme(?string $theme): static
+    public function setTheme(?Theme $theme): static
     {
         $this->theme = $theme;
 

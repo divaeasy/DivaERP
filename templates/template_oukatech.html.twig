@@ -295,7 +295,8 @@
             color: white;
             font-weight: bold;
             font-size: 18px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18), inset 0 1px 0 rgba(255,255,255,0.25);
+            border: 2px solid rgba(255, 255, 255, 0.82);
         }
 
         /* ===== REQUIRED FIELD INDICATOR ===== */
@@ -1021,52 +1022,21 @@
 </head>
 
 <body id="page-top" class="js-loading">
-    {% set themePalettes = {
-        'indigo': {
-        'primary':'#4f46e5',
-        'secondary':'#4338ca',
-        'accent':'#818cf8',
-        'text':'#0f172a',
-        'bg':'#f9fafb'
-    },
-
-    'ardoise': {
+    {% set fallbackPalette = {
         'primary':'#475569',
         'secondary':'#334155',
         'accent':'#94a3b8',
-        'text':'#020617',
-        'bg':'#f8fafc'
-    },
-
-    'bleu-corporate': {
-        'primary':'#1e40af',
-        'secondary':'#1e3a8a',
-        'accent':'#60a5fa',
         'text':'#0f172a',
         'bg':'#f8fafc'
-    },
-
-    'emeraude': {
-        'primary':'#059669',
-        'secondary':'#047857',
-        'accent':'#34d399',
-        'text':'#022c22',
-        'bg':'#f0fdf4'
-    },
-
-    'minimal-clair': {
-        'primary':'#111827',
-        'secondary':'#374151',
-        'accent':'#6b7280',
-        'text':'#111827',
-        'bg':'#ffffff'
-    }
     } %}
-    {% set rawSelectedThemeKey = app.user and app.user.currentDossier and app.user.currentDossier.theme ? app.user.currentDossier.theme : 'neutral' %}
-    {% set selectedThemeKey = rawSelectedThemeKey in themePalettes|keys
-        ? rawSelectedThemeKey
-        : (rawSelectedThemeKey in ['#4e73df', '#224abe'] ? 'bleu-corporate' : 'ardoise') %}
-    {% set palette = themePalettes[selectedThemeKey] ?? themePalettes['ardoise'] %}
+    {% set currentDossierTheme = app.user and app.user.currentDossier ? app.user.currentDossier.theme : null %}
+    {% set palette = {
+        'primary': currentDossierTheme and currentDossierTheme.primaryColor ? currentDossierTheme.primaryColor : fallbackPalette.primary,
+        'secondary': currentDossierTheme and currentDossierTheme.secondaryColor ? currentDossierTheme.secondaryColor : fallbackPalette.secondary,
+        'accent': currentDossierTheme and currentDossierTheme.accentColor ? currentDossierTheme.accentColor : fallbackPalette.accent,
+        'text': currentDossierTheme and currentDossierTheme.textColor ? currentDossierTheme.textColor : fallbackPalette.text,
+        'bg': currentDossierTheme and currentDossierTheme.backgroundColor ? currentDossierTheme.backgroundColor : fallbackPalette.bg
+    } %}
     <style>
         :root {
             --theme-primary: {{ palette.primary }};
@@ -1358,32 +1328,74 @@
         .form-control:focus { border-color: var(--theme-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
         .custom-control-input:checked ~ .custom-control-label::before,
         .form-check-input:checked { background-color: var(--theme-primary); border-color: var(--theme-primary); }
-        .topbar { background: var(--theme-surface) !important; }
         .topbar {
+            background: rgba(255, 255, 255, 0.86) !important;
             border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06) !important;
-            padding-left: 0.85rem;
-            padding-right: 1rem;
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08) !important;
+            padding: 0.55rem 1rem;
+            backdrop-filter: saturate(160%) blur(12px);
+        }
+        .topbar::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -1px;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255,255,255,0), rgba(15, 23, 42, 0.16), rgba(255,255,255,0));
+            pointer-events: none;
+        }
+        .topbar .navbar-nav {
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .navbar-search {
+            max-width: 560px;
+            width: 100%;
+        }
+        .navbar-search .input-group {
+            border: 1px solid rgba(15, 23, 42, 0.09);
+            background: rgba(248, 250, 252, 0.95);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
         }
         .navbar-search .form-control {
-            height: 42px;
-            border-radius: 11px 0 0 11px;
-            border: 1px solid rgba(15, 23, 42, 0.08) !important;
-            background: #f8fafc !important;
+            height: 44px;
+            border: none !important;
+            background: transparent !important;
             font-weight: 600;
+            padding-left: 0.95rem;
         }
-        .navbar-search .btn {
-            border-radius: 0 11px 11px 0;
-            min-width: 46px;
+        .navbar-search .form-control:focus {
             box-shadow: none !important;
         }
+        .navbar-search .btn {
+            border-radius: 0;
+            min-width: 50px;
+            box-shadow: none !important;
+            background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%) !important;
+            border: 0 !important;
+        }
         .topbar .nav-item .nav-link {
-            border-radius: 10px;
-            transition: background-color 0.2s ease, color 0.2s ease;
+            min-height: 40px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
         }
         .topbar .nav-item .nav-link:hover {
-            background: rgba(15, 23, 42, 0.05);
+            background: rgba(15, 23, 42, 0.06);
             color: var(--theme-primary) !important;
+            transform: translateY(-1px);
+        }
+        .topbar-divider {
+            margin-left: 0.35rem !important;
+            margin-right: 0.4rem !important;
+            border-color: rgba(15, 23, 42, 0.12) !important;
         }
         .dropdown-item.active,
         .dropdown-item:active { background: var(--theme-primary); color: #fff; }
@@ -1397,6 +1409,15 @@
             display: inline-flex;
             align-items: center;
             gap: 12px;
+            padding: 0.4rem 0.65rem;
+            border-radius: 12px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            background: rgba(248, 250, 252, 0.82);
+            transition: all 0.2s ease;
+        }
+        .dossier-switcher__toggle:hover {
+            border-color: rgba(37, 99, 235, 0.28);
+            background: rgba(239, 246, 255, 0.86);
         }
         .dossier-switcher__toggle img,
         .dossier-switcher__item img {
@@ -1404,9 +1425,10 @@
             object-fit: cover;
         }
         .dossier-switcher__toggle img {
-            width: 22px;
-            height: 22px;
-            border-radius: 4px;
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
         }
         .dossier-switcher__item {
             display: flex;
@@ -1595,7 +1617,7 @@
             <div id="content">
 
                 <!-- Topbar -->
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                <nav class="navbar navbar-expand navbar-light topbar topbar-modern mb-4 static-top">
 
                     <!-- Sidebar Toggle (Topbar) -->
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
@@ -1663,15 +1685,8 @@
                             </a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="dossierDropdown">
-                                {% set dossierThemes = {
-                                    'indigo': '#4f46e5',
-                                    'ardoise': '#475569',
-                                    'bleu-corporate': '#1e40af',
-                                    'emeraude': '#059669',
-                                    'minimal-clair': '#111827'
-                                } %}
                                 {% for dossier in app.user.dossiers %}
-                                    {% set dossierThemeColor = dossierThemes[dossier.theme] ?? dossierThemes['ardoise'] %}
+                                    {% set dossierThemeColor = dossier.theme and dossier.theme.primaryColor ? dossier.theme.primaryColor : '#475569' %}
                                     <a class="dropdown-item {% if app.user.currentDossier and dossier.id == app.user.currentDossier.id %}active{% endif %}"
                                        href="{{ path('dossier.switch', {'id': dossier.id}) }}">
                                         <span class="dossier-switcher__item">
