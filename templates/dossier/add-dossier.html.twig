@@ -1,4 +1,4 @@
-{% extends "template_oukatech.html.twig" %}
+﻿{% extends "template_oukatech.html.twig" %}
 {% block PageTitle %}Dossier{% endblock %}
 
 {% block body %}
@@ -68,7 +68,7 @@
                         {% else %}
                             <div class="logo-uploader__placeholder" id="logoPreviewPlaceholder">
                                 <i class="fas fa-image"></i>
-                                <span>AperÃ§u du logo</span>
+                                <span>Aperçu du logo</span>
                             </div>
                         {% endif %}
                     </div>
@@ -80,8 +80,8 @@
                             </button>
                             {{ form_widget(dossier.logoFile, {'attr': {'class': 'logo-upload-input', 'id': 'logoUpload', 'accept': 'image/*', 'onchange': 'window.handleDossierLogoChange && window.handleDossierLogoChange(this)'}}) }}
                         </div>
-                        <span class="logo-upload-filename" id="logoFileName">{% if dossierEntity is defined and dossierEntity and dossierEntity.logo %}Logo actuel chargÃ©{% else %}Aucun fichier sÃ©lectionnÃ©{% endif %}</span>
-                        <small class="text-muted">Formats conseillÃ©s : PNG ou JPG. Le logo sera affichÃ© avec le nom du dossier.</small>
+                        <span class="logo-upload-filename" id="logoFileName">{% if dossierEntity is defined and dossierEntity and dossierEntity.logo %}Logo actuel chargé{% else %}Aucun fichier sélectionné{% endif %}</span>
+                        <small class="text-muted">Formats conseillés : PNG ou JPG. Le logo sera affiché avec le nom du dossier.</small>
                         {{ form_errors(dossier.logoFile) }}
                     </div>
                 </div>
@@ -176,7 +176,7 @@
             </div>
 
             <div class="form-group mb-3">
-                <label for="themeDescription">Description</label>
+                <label for="themeDescription">Description</label>                                                                                                           v                                                                      
                 <input type="text" id="themeDescription" name="description" class="form-control" placeholder="Ex: Palette elegante pour pilotage commercial">
             </div>
 
@@ -188,15 +188,9 @@
                         <input type="text" class="form-control" value="#4F46E5" data-hex-input data-color-role="primary" maxlength="7" required>
                     </div>
                 </div>
-                <div class="theme-color-row theme-color-row--readonly" data-color-role="secondary">
-                    <label for="themeSecondaryColor">Couleur secondaire <span class="theme-color-row__hint">Auto</span></label>
-                    <div class="theme-color-inputs">
-                        <input type="color" id="themeSecondaryColor" value="#4338CA" data-color-input data-color-role="secondary" disabled tabindex="-1" aria-readonly="true">
-                        <input type="text" class="form-control" value="#4338CA" data-hex-input data-color-role="secondary" maxlength="7" readonly aria-readonly="true">
-                    </div>
-                </div>
+                  
                 <div class="theme-color-row theme-color-row--readonly" data-color-role="accent">
-                    <label for="themeAccentColor">Couleur accent <span class="theme-color-row__hint">Auto</span></label>
+                    <label for="themeAccentColor">Couleur accent<span class="theme-color-row__hint">Auto</span></label>
                     <div class="theme-color-inputs">
                         <input type="color" id="themeAccentColor" value="#818CF8" data-color-input data-color-role="accent" disabled tabindex="-1" aria-readonly="true">
                         <input type="text" class="form-control" value="#818CF8" data-hex-input data-color-role="accent" maxlength="7" readonly aria-readonly="true">
