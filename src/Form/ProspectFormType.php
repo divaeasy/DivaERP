@@ -4,8 +4,6 @@ namespace App\Form;
 
 use App\Entity\Pays;
 use App\Entity\Prospects;
-use App\Entity\Reglement;
-use App\Entity\Tarifs;
 use App\Entity\Ville;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -16,6 +14,9 @@ class ProspectFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $prospect = $options['data'] ?? null;
+        $isEdit = $prospect instanceof Prospects && null !== $prospect->getId();
+
         $builder
         ->add('nom')
         ->add('adr1')
@@ -30,12 +31,12 @@ class ProspectFormType extends AbstractType
             'class' => Ville::class,
             'choice_label' => 'libelle',
             'required' => false,
-            'placeholder' => 'Sélectionner une ville',
+            'placeholder' => $isEdit ? false : 'Selectionner une ville',
         ])
         ->add('pays', EntityType::class, [
             'class' => Pays::class,
             'choice_label' => 'libelle',
-            'placeholder' => 'Sélectionner un pays',
+            'placeholder' => $isEdit ? false : 'Selectionner un pays',
         ])
        
         ;

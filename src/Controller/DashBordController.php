@@ -24,6 +24,7 @@ class DashBordController extends AbstractController
         $totalRevenuePerv = $dashboardService->getTotalRevenue($previousYear);
         $growthPercentage = $dashboardService->getYearGrowth($currentYear, $previousYear);
         $invoiceCount = $dashboardService->getTotalInvoiceCount($currentYear);
+        $totalClients = $dashboardService->getTotalClients();
         $newCustomersThisMonth = $dashboardService->getNewCustomersThisMonth();
         $totalProductsSold = $dashboardService->getTotalProductsSold($currentYear);
         $overdueInvoices = $dashboardService->getOverdueInvoices($currentYear);
@@ -57,6 +58,7 @@ class DashBordController extends AbstractController
             'totalRevenuePerv' => $totalRevenuePerv,
             'growthPercentage' => round($growthPercentage, 2),
             'invoiceCount' => $invoiceCount,
+            'totalClients' => $totalClients,
             'newCustomersThisMonth' => $newCustomersThisMonth,
             'totalProductsSold' => $totalProductsSold,
             'overdueInvoices' => $overdueInvoices,

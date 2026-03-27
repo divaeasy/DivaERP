@@ -40,6 +40,7 @@ class EntetePController extends AbstractController
         $invoiceIds = array_map(static fn (Entetepiece $piece): int => $piece->getId(), $pagination['items']);
         $remiseByInvoice = $entetepieceRepository->getWeightedRemiseByInvoiceIds($invoiceIds);
         $amountByInvoice = $entetepieceRepository->getTotalAmountByInvoiceIds($invoiceIds);
+        $lineCountByInvoice = $entetepieceRepository->getLineCountByInvoiceIds($invoiceIds);
 
         return $this->render('entetepiece/index.html.twig', [
             'search' => $searchForm->createView(),
@@ -49,6 +50,7 @@ class EntetePController extends AbstractController
             'totalItems' => $pagination['totalItems'],
             'remiseByInvoice' => $remiseByInvoice,
             'amountByInvoice' => $amountByInvoice,
+            'lineCountByInvoice' => $lineCountByInvoice,
         ]);
     }
 
@@ -119,7 +121,10 @@ class EntetePController extends AbstractController
             $entityManager->flush();
 
             $this->addFlash('success', $message);
-            $redirectUrl = $this->generateUrl('entetepiece.edit', ['id' => $entetepiece->getId()]) . '#piece-lines';
+            if ($new) {
+                $this->addFlash('warning', 'Pensez à ajouter au moins une ligne avant de générer la facture.');
+            }
+            $redirectUrl = $this->buildPieceLinesRedirectUrl((int) $entetepiece->getId());
 
             return $this->redirect($redirectUrl);
         }
@@ -200,6 +205,14 @@ class EntetePController extends AbstractController
         $setter($next);
 
         return $next;
+    }
+
+    private function buildPieceLinesRedirectUrl(int $pieceId): string
+    {
+        return $this->generateUrl('entetepiece.edit', [
+            'id' => $pieceId,
+            'scroll' => 'piece-lines',
+        ]) . '#piece-lines';
     }
 }
 

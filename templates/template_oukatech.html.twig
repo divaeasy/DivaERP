@@ -88,14 +88,14 @@
         #accordionSidebar > hr {
             flex-shrink: 0;
         }
-        
+       
         /* Sidebar content container (no scroll) */
         .sidebar-scroll-container {
             flex: 1;
             overflow: hidden;
             padding: 12px 0 16px;
         }
-        
+       
         /* Content wrapper adjustment */
         #content-wrapper {
             margin-left: var(--sidebar-width, 92px) !important;
@@ -109,7 +109,7 @@
             margin-left: var(--sidebar-width, 92px) !important;
             width: calc(100% - var(--sidebar-width, 92px)) !important;
         }
-        
+       
         /* Fixed topbar */
         .topbar {
             position: sticky !important;
@@ -119,7 +119,7 @@
             margin-bottom: 0 !important;
             background: white !important;
         }
-        
+       
         /* Content area - MUST be scrollable */
         #content {
             flex: 1 1 auto !important;
@@ -133,7 +133,7 @@
             display: flex;
             flex-direction: column;
         }
-        
+       
         /* Ensure body block content doesn't break scroll */
         #content > .container-fluid {
             flex: 1 0 auto;
@@ -141,12 +141,12 @@
             padding: 1.5rem !important;
             margin: 0 !important;
         }
-        
+       
         /* Add padding to dashboard rows for chart spacing */
         #content .row {
             padding: 0 1.5rem;
         }
-        
+       
         /* Content area scrollbar styling */
         #content::-webkit-scrollbar {
             width: 10px;
@@ -163,7 +163,7 @@
         #content::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(180deg, var(--theme-primary, #475569), var(--theme-secondary, #334155));
         }
-        
+       
         /* Footer - always at bottom, scrolls with content */
         .site-footer {
             flex-shrink: 0;
@@ -176,7 +176,7 @@
             color: #b7b9cc;
             letter-spacing: 0.3px;
         }
-        
+       
         /* When sidebar is toggled */
         .sidebar.toggled {
             width: var(--sidebar-width, 92px) !important;
@@ -187,7 +187,7 @@
             margin-left: var(--sidebar-width, 92px) !important;
             width: calc(100% - var(--sidebar-width, 92px)) !important;
         }
-        
+       
         /* Mobile responsive */
         @media (max-width: 768px) {
             #accordionSidebar {
@@ -210,7 +210,7 @@
                 display: none !important;
             }
         }
-
+ 
         /* ===== LOADING SPINNER OVERLAY - Content Area Only ===== */
         .loading-overlay {
             display: none;
@@ -228,12 +228,12 @@
         .loading-overlay.active {
             display: flex;
         }
-        
+       
         /* Topbar dropdown z-index fix */
         .topbar .dropdown-menu {
             z-index: 1050 !important;
         }
-        
+       
         /* Responsive loading overlay */
         @media (max-width: 768px) {
             .loading-overlay {
@@ -269,7 +269,7 @@
             font-weight: 600;
             font-size: 15px;
         }
-
+ 
         /* ===== USER AVATAR STYLING ===== */
         .user-avatar {
             display: inline-flex;
@@ -549,6 +549,12 @@
         }
         .btn-action i {
             font-size: 18px;
+        }
+        .btn-action.disabled,
+        .btn-action[aria-disabled="true"] {
+            pointer-events: none;
+            opacity: 0.45;
+            transform: none !important;
         }
         .btn-edit, .btn-view {
             color: var(--theme-primary);
@@ -1035,7 +1041,7 @@
             --theme-surface: #ffffff;
             --theme-border: rgba(0,0,0,0.06);
             --sidebar-width-collapsed: 84px;
-            --sidebar-width-expanded: 244px;
+            --sidebar-width-expanded: 268px;
             --sidebar-width: var(--sidebar-width-collapsed);
             --sidebar-link-size: clamp(38px, 4.7vh, 48px);
             --sidebar-tooltip-bg: rgba(15, 23, 42, 0.96);
@@ -1106,6 +1112,7 @@
             min-width: 0;
             line-height: 1.2;
         }
+
         .sidebar-brand-name {
             color: #ecfeff;
             font-size: 0.86rem;
@@ -1115,14 +1122,17 @@
             text-overflow: ellipsis;
             max-width: 130px;
         }
+
         .sidebar-brand-subtitle {
             color: rgba(236, 254, 255, 0.78);
             font-size: 0.69rem;
             white-space: nowrap;
         }
+
         #accordionSidebar .sidebar-collapse-control {
             position: fixed;
-            top: 6.3%;
+            top: auto;
+            bottom: 1.5vh;
             left: calc(var(--sidebar-width));
             width: 34px;
             height: 46px;
@@ -1141,6 +1151,7 @@
             will-change: left, transform;
             transform: none;
         }
+
         #accordionSidebar .sidebar-collapse-control:hover,
         #accordionSidebar .sidebar-collapse-control:focus {
             /* transform: translateX(1px); */
@@ -1148,35 +1159,53 @@
             filter: brightness(1.04);
             outline: none;
         }
+
         body.sidebar-expanded #accordionSidebar .sidebar-brand {
             justify-content: flex-start;
             padding-left: 0.8rem;
             padding-right: 0.8rem;
             gap: 0.65rem;
         }
-        #accordionSidebar .sidebar-brand-icon i {
-            color: #f8fafc;
-            font-size: 1rem;
-        }
+
         body.sidebar-expanded .sidebar-brand-meta {
             display: inline-flex;
             flex-direction: column;
         }
+
+        body.sidebar-expanded #accordionSidebar .sidebar-scroll-container {
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 6px;
+            padding: 12px 10px 14px;
+        }
+
+        body.sidebar-expanded #accordionSidebar .nav-item {
+            justify-content: stretch;
+        }
+
+        #accordionSidebar .sidebar-brand-icon i {
+            color: #f8fafc;
+            font-size: 1rem;
+        }
+
         #accordionSidebar .sidebar-scroll-container {
             position: relative;
             z-index: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 7px;
-            padding: 12px 9px 10px;
-            overflow: hidden;
+            justify-content: flex-start;
+            gap: 6px;
+            padding: 12px 9px 14px;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
+
         body:not(.sidebar-expanded) #accordionSidebar .sidebar-scroll-container {
             justify-content: center;
             align-items: center;
         }
+
         #accordionSidebar .sidebar-scroll-container::before {
             content: '';
             position: absolute;
@@ -1189,12 +1218,11 @@
             background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.02));
             pointer-events: none;
         }
-        body.sidebar-expanded #accordionSidebar .sidebar-scroll-container {
-            align-items: stretch;
-            justify-content: flex-start;
-            gap: 4px;
-            padding: 10px 9px 8px;
+
+        body.sidebar-expanded #accordionSidebar .sidebar-scroll-container::before {
+            display: none;
         }
+
         @media (max-height: 860px) {
             #accordionSidebar .sidebar-scroll-container {
                 gap: 6px;
@@ -1219,9 +1247,7 @@
             position: relative;
             z-index: 1;
         }
-        body.sidebar-expanded #accordionSidebar .nav-item {
-            justify-content: stretch;
-        }
+        
         #accordionSidebar .sidebar-rail-separator {
             display: none;
         }
@@ -1297,13 +1323,13 @@
             pointer-events: none;
         }
         body.sidebar-expanded .sidebar-icon-link {
-            width: 100% !important;
-            min-width: 100% !important;
-            max-width: 100% !important;
-            height: calc(var(--sidebar-link-size) + 2px) !important;
+            width: calc(100% - 2px) !important;
+            min-width: calc(100% - 2px) !important;
+            max-width: calc(100% - 2px) !important;
+            height: var(--sidebar-link-size) !important;
             justify-content: flex-start;
-            gap: 10px;
-            padding: 0 12px !important;
+            gap: 12px;
+            padding: 0 14px !important;
             border-radius: 13px;
         }
         body.sidebar-expanded .sidebar-icon-link i {
@@ -1321,6 +1347,7 @@
             opacity: 1;
             margin-left: 2px;
         }
+        
         .sidebar-icon-link:hover,
         .sidebar-icon-link:focus {
             transform: translateY(-1px);
@@ -3063,13 +3090,49 @@
             // ===== INITIALIZE SELECT2 WITH IMPROVED STYLING =====
             if ($.fn.select2) {
                 $('.js-example-basic-single').each(function() {
-                    if (!$(this).hasClass('select2-hidden-accessible')) {
-                        $(this).select2({
+                    var $select = $(this);
+                    var currentValue = $select.val();
+                    var hasSelection = false;
+
+                    if ($select.prop('multiple')) {
+                        hasSelection = Array.isArray(currentValue) ? currentValue.length > 0 : String(currentValue || '').trim() !== '';
+                    } else {
+                        hasSelection = currentValue !== null && String(currentValue).trim() !== '';
+                    }
+
+                    var placeholderText = String(
+                        $select.attr('placeholder') ||
+                        $select.data('placeholder') ||
+                        'Selectionner une option'
+                    ).trim();
+
+                    if (placeholderText === '') {
+                        placeholderText = 'Selectionner une option';
+                    }
+
+                    if (!hasSelection) {
+                        $select.attr('data-placeholder', placeholderText);
+                    }
+
+                    if (!hasSelection && $select.is('select') && !$select.prop('multiple')) {
+                        if ($select.find('option[value=\"\"]').length === 0) {
+                            $select.prepend($('<option></option>').attr('value', ''));
+                        }
+                        $select.val('');
+                    }
+
+                    if (!$select.hasClass('select2-hidden-accessible')) {
+                        var select2Options = {
                             theme: 'bootstrap-5',
                             allowClear: true,
-                            placeholder: $(this).attr('placeholder') || 'Sélectionner...',
                             width: '100%'
-                        });
+                        };
+
+                        if (!hasSelection) {
+                            select2Options.placeholder = placeholderText;
+                        }
+
+                        $select.select2(select2Options);
                     }
                 });
             }

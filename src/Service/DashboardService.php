@@ -25,6 +25,7 @@ class DashboardService
             ORDER BY y DESC
         ";
 
+        $sql = $this->applyFactureFilter($sql, 'ep');
         $sql = $this->applyDossierFilter($sql, 'ep', $params);
         $statement = $this->connection->prepare($sql);
         $result = $statement->executeQuery($params);
@@ -54,7 +55,7 @@ class DashboardService
                 AND ep.datep <= :endDate
         ";
 
-
+        $sql = $this->applyFactureFilter($sql, 'ep');
         $sql = $this->applyDossierFilter($sql, 'ep', $params);
 
         $statement = $this->connection->prepare($sql);
@@ -87,7 +88,7 @@ class DashboardService
             ORDER BY MONTH(ep.datep) ASC
         ";
 
-
+        $sql = $this->applyFactureFilter($sql, 'ep');
         $sql = $this->applyDossierFilter($sql, 'ep', $params);
 
         $statement = $this->connection->prepare($sql);
@@ -138,7 +139,24 @@ class DashboardService
                 AND ep.datep <= :endDate
         ";
 
+        $sql = $this->applyFactureFilter($sql, 'ep');
         $sql = $this->applyDossierFilter($sql, 'ep', $params);
+
+        $statement = $this->connection->prepare($sql);
+        $result = $statement->executeQuery($params);
+
+        return (int) ($result->fetchOne() ?? 0);
+    }
+
+    public function getTotalClients(): int
+    {
+        $params = [];
+        $sql = "
+            SELECT COUNT(*) AS total
+            FROM clients c
+        ";
+
+        $sql = $this->applyDossierFilter($sql, 'c', $params);
 
         $statement = $this->connection->prepare($sql);
         $result = $statement->executeQuery($params);
@@ -151,7 +169,8 @@ class DashboardService
         $currentYear = (int) date('Y');
         $currentMonth = (int) date('m');
         $startDate = sprintf('%04d-%02d-01', $currentYear, $currentMonth);
-        $endDate = sprintf('%04d-%02d-31', $currentYear, $currentMonth);
+        $lastDay = (int) (new \DateTime($startDate))->format('t');
+        $endDate = sprintf('%04d-%02d-%02d', $currentYear, $currentMonth, $lastDay);
 
         $params = [
             'startDate' => $startDate,
@@ -159,13 +178,13 @@ class DashboardService
         ];
 
         $sql = "
-            SELECT COUNT(DISTINCT ep.client_id) AS total
-            FROM entetepiece ep
-            WHERE ep.datep >= :startDate
-                AND ep.datep <= :endDate
+            SELECT COUNT(*) AS total
+            FROM clients c
+            WHERE DATE(c.created_at) >= :startDate
+                AND DATE(c.created_at) <= :endDate
         ";
 
-        $sql = $this->applyDossierFilter($sql, 'ep', $params);
+        $sql = $this->applyDossierFilter($sql, 'c', $params);
 
         $statement = $this->connection->prepare($sql);
         $result = $statement->executeQuery($params);
@@ -191,6 +210,7 @@ class DashboardService
                 AND ep.datep <= :endDate
         ";
 
+        $sql = $this->applyFactureFilter($sql, 'ep');
         $sql = $this->applyDossierFilter($sql, 'ep', $params);
 
         $statement = $this->connection->prepare($sql);
@@ -226,6 +246,7 @@ class DashboardService
             LIMIT 5
         ";
 
+        $sql = $this->applyFactureFilter($sql, 'ep');
         $sql = $this->applyDossierFilter($sql, 'ep', $params);
 
         $statement = $this->connection->prepare($sql);
@@ -301,6 +322,7 @@ class DashboardService
 
         ";
 
+        $sql = $this->applyFactureFilter($sql, 'ep');
         $sql = $this->applyDossierFilter($sql, 'ep', $params);
 
         $statement = $this->connection->prepare($sql);
@@ -336,6 +358,7 @@ class DashboardService
 
         ";
 
+        $sql = $this->applyFactureFilter($sql, 'ep');
         $sql = $this->applyDossierFilter($sql, 'ep', $params);
 
         $statement = $this->connection->prepare($sql);
@@ -364,17 +387,16 @@ class DashboardService
 
         $sql = "
             SELECT
-                MONTH(ep.datep) AS month,
-                COUNT(DISTINCT ep.client_id) AS unique_customers,
-                COUNT(*) AS total_sales
-            FROM entetepiece ep
-            WHERE ep.datep >= :startDate
-                AND ep.datep <= :endDate
-            GROUP BY MONTH(ep.datep)
-            ORDER BY MONTH(ep.datep) ASC
+                MONTH(c.created_at) AS month,
+                COUNT(*) AS total_customers
+            FROM clients c
+            WHERE DATE(c.created_at) >= :startDate
+                AND DATE(c.created_at) <= :endDate
+            GROUP BY MONTH(c.created_at)
+            ORDER BY MONTH(c.created_at) ASC
         ";
 
-        $sql = $this->applyDossierFilter($sql, 'ep', $params);
+        $sql = $this->applyDossierFilter($sql, 'c', $params);
 
         $statement = $this->connection->prepare($sql);
         $result = $statement->executeQuery($params);
@@ -382,8 +404,8 @@ class DashboardService
         $growth = [];
         foreach ($result->fetchAllAssociative() as $row) {
             $growth[(int) $row['month']] = [
-                'customers' => (int) $row['unique_customers'],
-                'sales' => (int) $row['total_sales'],
+                'customers' => (int) $row['total_customers'],
+                'sales' => 0,
             ];
         }
 
@@ -403,6 +425,13 @@ class DashboardService
         return 'COALESCE((SELECT SUM(lp.montant) FROM lignepiece lp WHERE lp.piece_id = ep.id), ep.montant, 0)';
     }
 
+    private function applyFactureFilter(string $sql, string $alias): string
+    {
+        $condition = sprintf("LOWER(TRIM(%s.type)) IN ('facture', 'fact')", $alias);
+
+        return $this->appendWhereCondition($sql, $condition);
+    }
+
     private function applyDossierFilter(string $sql, string $alias, array &$params): string
     {
         $dossierId = $this->getCurrentDossierId();
@@ -411,18 +440,27 @@ class DashboardService
         }
 
         $params['dossierId'] = $dossierId;
-        $filter = sprintf(' AND %s.dossier_id = :dossierId', $alias);
+        $condition = sprintf('%s.dossier_id = :dossierId', $alias);
 
-        // Insert filter after JOIN ON condition before WHERE, or in WHERE patterns
-        if (preg_match('/(ep\.id)(?=\s*WHERE)/is', $sql)) {
-            $sql = preg_replace('/(ep\.id)(?=\s*WHERE)/is', '$1 ' . $filter, $sql, 1);
-        } elseif (stripos($sql, ':endDate') !== false) {
-            $sql = preg_replace('/(AND[ \\t\\n\\r]*ep\\.datep[ \\t\\n\\r]*<= [ \\t\\n\\r]*:endDate)/i', '$1' . $filter, $sql);
-        } elseif (stripos($sql, 'ep.datep IS NOT NULL') !== false) {
-            $sql = preg_replace('/(IS[ \\t\\n\\r]*NOT[ \\t\\n\\r]*NULL)/i', '$1' . $filter, $sql);
+        return $this->appendWhereCondition($sql, $condition);
+    }
+
+    private function appendWhereCondition(string $sql, string $condition): string
+    {
+        $trimmedSql = rtrim($sql);
+        $hasWhere = stripos($trimmedSql, 'WHERE') !== false;
+
+        if (preg_match('/\b(GROUP BY|ORDER BY|LIMIT)\b/i', $trimmedSql, $match, PREG_OFFSET_CAPTURE)) {
+            $position = $match[0][1];
+            $head = rtrim(substr($trimmedSql, 0, $position));
+            $tail = ltrim(substr($trimmedSql, $position));
+
+            $head .= $hasWhere ? ' AND ' . $condition : ' WHERE ' . $condition;
+
+            return $head . ' ' . $tail;
         }
 
-        return $sql;
+        return $trimmedSql . ($hasWhere ? ' AND ' : ' WHERE ') . $condition;
     }
 
     private function getCurrentDossierId(): ?int
