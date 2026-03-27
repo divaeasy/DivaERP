@@ -9,8 +9,8 @@ use App\Entity\User;
 use App\Form\LignepieceFormType;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -31,12 +31,10 @@ class LignePController extends AbstractController
 
         return round($montant, 2);
     }
+
     #[Route('/', name: 'lignepiece.list')]
     public function index(ManagerRegistry $doctrine): Response
     {
-
-        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
-
         $repository = $doctrine->getRepository(Lignepiece::class);
         $user = $this->getUser();
         if ($user instanceof User && $user->getCurrentDossier() !== null) {
@@ -44,149 +42,148 @@ class LignePController extends AbstractController
         } else {
             $lignepieces = [];
         }
-         return $this->render('lignepiece/index.html.twig', [
-             'lignepieces' => $lignepieces,
-         ]);
+
+        return $this->render('lignepiece/index.html.twig', [
+            'lignepieces' => $lignepieces,
+        ]);
     }
+
     #[Route('/edit/{id?0}/{pceId?0}', name: 'lignepiece.edit')]
-    public function UpdateLignepiece(ManagerRegistry $doctrine, Request $request, $id,$pceId): Response
+    public function updateLignepiece(ManagerRegistry $doctrine, Request $request, int $id, int $pceId): Response
     {
-        //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Lignepiece::class);
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
         $lignepiece = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
+
         $new = false;
-        if(!$lignepiece){
+        if (!$lignepiece) {
             $lignepiece = new Lignepiece();
             $new = true;
         }
-        $lignepiece->doctrine=$doctrine;
-        $lignepiece->user=$this->getUser();
-        
-       $form = $this->createForm(LignepieceFormType::class, $lignepiece);
-       $form->handleRequest($request);
-       $newFilename = '';
-       if($form->isSubmitted() && $form->isValid()){
 
-            
-        If ($new){
-            $message = "La lignepiece est ajoutée avec succès";
-            
-        }else{
-            $message = "La lignepiece a été mise à jour avec succès";
-           
+        $lignepiece->doctrine = $doctrine;
+        $lignepiece->user = $this->getUser();
+
+        $form = $this->createForm(LignepieceFormType::class, $lignepiece);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $message = $new
+                ? 'La ligne piece est ajoutee avec succes'
+                : 'La ligne piece a ete mise a jour avec succes';
+
+            if ($lignepiece->getDossier() === null && $lignepiece->getPiece() !== null) {
+                $lignepiece->setDossier($lignepiece->getPiece()->getDossier());
+            }
+
+            $lignepiece->setMontant($this->computeMontant($lignepiece));
+            $entityManager = $doctrine->getManager();
+            $entityManager->persist($lignepiece);
+            $this->recalculatePieceAmount($entityManager, $lignepiece->getPiece());
+            $entityManager->flush();
+
+            $this->addFlash('success', $message);
+
+            return $this->redirect($this->buildPieceRedirectUrl($pceId));
         }
-        if ($lignepiece->getDossier() === null && $lignepiece->getPiece() !== null) {
-            $lignepiece->setDossier($lignepiece->getPiece()->getDossier());
-        }
-        $lignepiece->setMontant($this->computeMontant($lignepiece));
-        $entityManager = $doctrine->getManager();
-        $entityManager->persist($lignepiece);
-        $entityManager->flush();
-       
-        $this->addFlash(
-           'success',
-           $message
-        );
-        return $this->redirectToRoute('entetepiece.edit', array('id' => $pceId));
-       }else{
-            return $this->render('lignepiece/add-lignepiece.html.twig', [
-                'lignepiece'=>$form->createView(),
-                'id' => $id,
-                'pceId' => $pceId
-            ]);
-       }
-        
+
+        return $this->render('lignepiece/add-lignepiece.html.twig', [
+            'lignepiece' => $form->createView(),
+            'id' => $id,
+            'pceId' => $pceId,
+        ]);
     }
+
     #[Route('/add/{pceId?0}', name: 'lignepiece.add')]
-    public function addLignepiece(ManagerRegistry $doctrine, Request $request, $pceId): Response
+    public function addLignepiece(ManagerRegistry $doctrine, Request $request, int $pceId): Response
     {
-        //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Entetepiece::class);
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
         $entetePiece = $repository->findOneBy(['id' => $pceId, 'dossier' => $currentDossier]);
         if ($entetePiece === null) {
-            $this->addFlash('error', "La pièce demandée n'existe pas");
+            $this->addFlash('error', "La piece demandee n'existe pas");
+
             return $this->redirectToRoute('entetepiece.list');
         }
-        
-        $new = false;
-        $lignepiece = new Lignepiece();
-        
-        $lignepiece->doctrine=$doctrine; 
-        $lignepiece->user=$this->getUser();
-        $lignepiece->setPiece($entetePiece);
-        if ($entetePiece !== null) {
-            $lignepiece->setDossier($entetePiece->getDossier());
-        }
-       $form = $this->createForm(LignepieceFormType::class, $lignepiece);
-       $form->handleRequest($request);
-       
-       if($form->isSubmitted() && $form->isValid()){
 
-        $message = "La lignepiece est ajoutée avec succès";
-       
-        $lignepiece->setMontant($this->computeMontant($lignepiece));
-        $entityManager = $doctrine->getManager();
-        $entityManager->persist($lignepiece);
-        $entityManager->flush();
-       
-        $this->addFlash(
-           'success',
-           $message
-        );
-        return $this->redirectToRoute('entetepiece.edit', array('id' => $pceId));
-       }else{
-            return $this->render('lignepiece/add-lignepiece.html.twig', [
-                'lignepiece'=>$form->createView(),
-                'id' => 0,
-                'pceId' => $pceId
-            ]);
-       }
-        
+        $lignepiece = new Lignepiece();
+        $lignepiece->doctrine = $doctrine;
+        $lignepiece->user = $this->getUser();
+        $lignepiece->setPiece($entetePiece);
+        $lignepiece->setDossier($entetePiece->getDossier());
+
+        $form = $this->createForm(LignepieceFormType::class, $lignepiece);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $lignepiece->setMontant($this->computeMontant($lignepiece));
+
+            $entityManager = $doctrine->getManager();
+            $entityManager->persist($lignepiece);
+            $this->recalculatePieceAmount($entityManager, $entetePiece);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'La ligne piece est ajoutee avec succes');
+
+            return $this->redirect($this->buildPieceRedirectUrl($pceId));
+        }
+
+        return $this->render('lignepiece/add-lignepiece.html.twig', [
+            'lignepiece' => $form->createView(),
+            'id' => 0,
+            'pceId' => $pceId,
+        ]);
     }
 
-
-
     #[Route('/delete/{id}', name: 'lignepiece.delete')]
-    public function deleteLignepiece(ManagerRegistry $doctrine,$id): RedirectResponse
+    public function deleteLignepiece(ManagerRegistry $doctrine, Request $request, int $id): RedirectResponse
     {
-        //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Lignepiece::class);
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
         $lignepiece = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
-        if($lignepiece){
+
+        if ($lignepiece) {
+            $pieceId = $lignepiece->getPiece()?->getId();
             $manager = $doctrine->getManager();
             $manager->remove($lignepiece);
+            if ($pieceId !== null) {
+                $piece = $doctrine->getRepository(Entetepiece::class)->find($pieceId);
+                if ($piece instanceof Entetepiece) {
+                    $this->recalculatePieceAmount($manager, $piece);
+                }
+            }
             $manager->flush();
-            $this->addFlash(
-               'success',
-               "La lignepiece a été supprimée avec succès"
-            );
-        }else{
-            $this->addFlash(
-                'error',
-                "La lignepiece demandée n'existe pas"
-             );
+            $this->addFlash('success', 'La ligne piece a ete supprimee avec succes');
+
+            if ($pieceId !== null) {
+                return $this->redirect($this->buildPieceRedirectUrl($pieceId));
+            }
+        } else {
+            $this->addFlash('error', "La ligne piece demandee n'existe pas");
         }
+
+        $fallbackPieceId = $request->query->getInt('pceId', 0);
+        if ($fallbackPieceId > 0) {
+            return $this->redirect($this->buildPieceRedirectUrl($fallbackPieceId));
+        }
+
         return $this->redirectToRoute('lignepiece.list');
-        
     }
 
     /**
-     * Retourne le prix de vente d'un article en fonction du client de la pièce en cours.
+     * Retourne le prix de vente d'un article en fonction du client de la piece en cours.
      */
     #[Route('/price', name: 'lignepiece.price', methods: ['GET'])]
     public function getTarifventePrice(Request $request, ManagerRegistry $doctrine): JsonResponse
     {
         $articleId = $request->query->getInt('articleId', 0);
-        $pieceId   = $request->query->getInt('pieceId', 0);
+        $pieceId = $request->query->getInt('pieceId', 0);
 
         if ($articleId <= 0 || $pieceId <= 0) {
-            return $this->json(['error' => 'Paramètres manquants'], 400);
+            return $this->json(['error' => 'Parametres manquants'], 400);
         }
 
         $user = $this->getUser();
@@ -197,13 +194,13 @@ class LignePController extends AbstractController
 
         $piece = $doctrine->getRepository(Entetepiece::class)->find($pieceId);
         if ($piece === null || $piece->getDossier()?->getId() !== $currentDossier->getId()) {
-            return $this->json(['error' => 'Pièce introuvable'], 404);
+            return $this->json(['error' => 'Piece introuvable'], 404);
         }
 
         $client = $piece->getClient();
         $tarifvente = $doctrine->getRepository(Tarifvente::class)->findOneBy([
             'article' => $articleId,
-            'client'  => $client,
+            'client' => $client,
             'dossier' => $currentDossier,
         ]);
 
@@ -213,4 +210,28 @@ class LignePController extends AbstractController
 
         return $this->json(['price' => $tarifvente->getPrix()], 200);
     }
+
+    private function recalculatePieceAmount(\Doctrine\ORM\EntityManagerInterface $entityManager, ?Entetepiece $piece): void
+    {
+        if (!$piece instanceof Entetepiece) {
+            return;
+        }
+
+        $sum = (float) $entityManager->createQueryBuilder()
+            ->select('COALESCE(SUM(lp.montant), 0)')
+            ->from(Lignepiece::class, 'lp')
+            ->where('lp.piece = :piece')
+            ->setParameter('piece', $piece)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $piece->setMontant(round($sum, 2));
+        $entityManager->persist($piece);
+    }
+
+    private function buildPieceRedirectUrl(int $pieceId): string
+    {
+        return $this->generateUrl('entetepiece.edit', ['id' => $pieceId]) . '#piece-lines';
+    }
 }
+

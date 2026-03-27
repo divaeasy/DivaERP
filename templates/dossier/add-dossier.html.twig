@@ -26,18 +26,11 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <div class="form-group">
                             {{ form_label(dossier.nom, 'Nom', {'label_attr': {'class': 'required'}}) }}
                             {{ form_widget(dossier.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom du dossier'}}) }}
                             {{ form_errors(dossier.nom) }}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            {{ form_label(dossier.rc, 'RC') }}
-                            {{ form_widget(dossier.rc, {'attr': {'class': 'form-control', 'placeholder': 'Registre du commerce'}}) }}
-                            {{ form_errors(dossier.rc) }}
                         </div>
                     </div>
                 </div>
@@ -48,10 +41,151 @@
                     {{ form_errors(dossier.adresse) }}
                 </div>
 
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form_label(dossier.codepostal, 'Code postal') }}
+                            {{ form_widget(dossier.codepostal, {'attr': {'class': 'form-control', 'placeholder': 'Code postal'}}) }}
+                            {{ form_errors(dossier.codepostal) }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form_label(dossier.ville, 'Ville') }}
+                            {{ form_widget(dossier.ville, {'attr': {'class': 'form-control', 'placeholder': 'Ville'}}) }}
+                            {{ form_errors(dossier.ville) }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form_label(dossier.pays, 'Pays') }}
+                            {{ form_widget(dossier.pays, {'attr': {'class': 'form-control', 'placeholder': 'Pays'}}) }}
+                            {{ form_errors(dossier.pays) }}
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group mb-0">
                     {{ form_label(dossier.devise, 'Devise') }}
                     {{ form_widget(dossier.devise, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
                     {{ form_errors(dossier.devise) }}
+                </div>
+            </section>
+
+            <section class="form-card dossier-panel mb-4 dossier-panel--compact">
+                <div class="dossier-panel__head">
+                    <h5><i class="fas fa-id-card mr-2"></i>Infos legales et contact</h5>
+                    <p>Ces informations sont reutilisees dans le PDF facture (pied de page).</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.siret, 'SIRET / ICE') }}
+                            {{ form_widget(dossier.siret, {'attr': {'class': 'form-control', 'placeholder': 'Ex: 12345678901234'}}) }}
+                            {{ form_errors(dossier.siret) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.naf, 'Code NAF') }}
+                            {{ form_widget(dossier.naf, {'attr': {'class': 'form-control', 'placeholder': 'Code NAF'}}) }}
+                            {{ form_errors(dossier.naf) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.tvaintra, 'TVA Intra') }}
+                            {{ form_widget(dossier.tvaintra, {'attr': {'class': 'form-control', 'placeholder': 'Numero TVA'}}) }}
+                            {{ form_errors(dossier.tvaintra) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.tel, 'Telephone') }}
+                            {{ form_widget(dossier.tel, {'attr': {'class': 'form-control', 'placeholder': 'Telephone'}}) }}
+                            {{ form_errors(dossier.tel) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-0">
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.email, 'Email') }}
+                            {{ form_widget(dossier.email, {'attr': {'class': 'form-control', 'placeholder': 'contact@entreprise.com'}}) }}
+                            {{ form_errors(dossier.email) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.rc, 'RC') }}
+                            {{ form_widget(dossier.rc, {'attr': {'class': 'form-control', 'placeholder': 'Registre du commerce'}}) }}
+                            {{ form_errors(dossier.rc) }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-card dossier-panel mb-4 dossier-panel--compact">
+                <div class="dossier-panel__head">
+                    <h5><i class="fas fa-university mr-2"></i>Coordonnees bancaires</h5>
+                </div>
+                <div class="row mb-0">
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.iban, 'IBAN') }}
+                            {{ form_widget(dossier.iban, {'attr': {'class': 'form-control', 'placeholder': 'IBAN'}}) }}
+                            {{ form_errors(dossier.iban) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.bic, 'BIC') }}
+                            {{ form_widget(dossier.bic, {'attr': {'class': 'form-control', 'placeholder': 'BIC / SWIFT'}}) }}
+                            {{ form_errors(dossier.bic) }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-card dossier-panel dossier-panel--compact">
+                <div class="dossier-panel__head">
+                    <h5><i class="fas fa-hashtag mr-2"></i>Numerotations</h5>
+                    <p>Compteurs utilises a la creation des pieces (numero suivant automatique).</p>
+                </div>
+                <div class="row mb-0">
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.devisno, 'Devis') }}
+                            {{ form_widget(dossier.devisno, {'attr': {'class': 'form-control', 'min': 0}}) }}
+                            {{ form_errors(dossier.devisno) }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.cmdno, 'Commande') }}
+                            {{ form_widget(dossier.cmdno, {'attr': {'class': 'form-control', 'min': 0}}) }}
+                            {{ form_errors(dossier.cmdno) }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.blno, 'BL') }}
+                            {{ form_widget(dossier.blno, {'attr': {'class': 'form-control', 'min': 0}}) }}
+                            {{ form_errors(dossier.blno) }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.factureno, 'Facture') }}
+                            {{ form_widget(dossier.factureno, {'attr': {'class': 'form-control', 'min': 0}}) }}
+                            {{ form_errors(dossier.factureno) }}
+                        </div>
+                    </div>
                 </div>
             </section>
 

@@ -27,30 +27,30 @@ class EntetePieceFormType extends AbstractType
 
         $builder
             ->add('type', ChoiceType::class, [
-                'choices'  => [
+                'choices' => [
                     'Devis' => 'Devis',
                     'Commande' => 'Commande',
                     'BL' => 'BL',
-                    'Facture' => 'Facture'
+                    'Facture' => 'Facture',
                 ],
                 'placeholder' => ' ',
                 'required' => true,
                 'empty_data' => 'Non',
-                'label' => 'Type de pièce',
-                'data' => 'Facture' 
-                ])
+                'label' => 'Type de piece',
+                'data' => 'Facture',
+            ])
             ->add('typet', ChoiceType::class, [
-                'choices'  => [
+                'choices' => [
                     'Client' => 'Client',
                     'Prospect' => 'Prospect',
-                    'Fournisseur' => 'Fournisseur'
+                    'Fournisseur' => 'Fournisseur',
                 ],
                 'placeholder' => ' ',
                 'required' => true,
                 'empty_data' => 'Non',
                 'label' => 'Type de tiers',
-                'data' => 'Client' 
-                ])
+                'data' => 'Client',
+            ])
             ->add('pieceno')
             ->add('pieceref')
             ->add('remise')
@@ -58,32 +58,38 @@ class EntetePieceFormType extends AbstractType
                 'widget' => 'single_text',
             ])
             ->add('statut', ChoiceType::class, [
-                'choices'  => [
+                'choices' => [
                     'Brouillon' => 'Brouillon',
                     'Active' => 'Active',
-                    'Périmée' => 'Périmée'
+                    'Perimee' => 'Perimee',
                 ],
                 'placeholder' => ' ',
                 'required' => true,
                 'empty_data' => 'Non',
                 'label' => 'Statut',
-                'data' => 'Active' 
-                ])
+                'data' => 'Active',
+            ])
             ->add('edition')
             ->add('rapport')
             ->add('client', EntityType::class, [
                 'class' => Clients::class,
                 'choice_label' => 'nom',
-                'placeholder' => 'Sélectionner un client',
+                'placeholder' => 'Selectionner un client',
+                'choice_attr' => static function (?Clients $client): array {
+                    return [
+                        'data-reglement-id' => (string) ($client?->getReglement()?->getId() ?? ''),
+                    ];
+                },
                 'query_builder' => function (ClientsRepository $repository) use ($currentDossier) {
                     $qb = $repository->createQueryBuilder('c')
                         ->orderBy('c.nom', 'ASC');
                     if ($currentDossier !== null) {
                         $qb->andWhere('c.dossier = :dossier')
-                           ->setParameter('dossier', $currentDossier);
+                            ->setParameter('dossier', $currentDossier);
                     } else {
                         $qb->andWhere('1 = 0');
                     }
+
                     return $qb;
                 },
             ])
@@ -91,20 +97,19 @@ class EntetePieceFormType extends AbstractType
                 'class' => Devises::class,
                 'choice_label' => 'libelle',
                 'required' => false,
-                'placeholder' => 'Sélectionner une devise',
+                'placeholder' => 'Selectionner une devise',
             ])
             ->add('reglement', EntityType::class, [
                 'class' => Reglement::class,
                 'choice_label' => 'libelle',
                 'required' => false,
-                'placeholder' => 'Sélectionner un règlement',
+                'placeholder' => 'Selectionner un reglement',
             ])
             ->add('datep', null, [
                 'widget' => 'single_text',
                 'required' => false,
-                'label' => 'Date pièce',
-            ])
-        ;
+                'label' => 'Date piece',
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -117,6 +122,8 @@ class EntetePieceFormType extends AbstractType
     private function getCurrentDossier(): ?\App\Entity\Dossier
     {
         $user = $this->security->getUser();
+
         return $user instanceof User ? $user->getCurrentDossier() : null;
     }
 }
+

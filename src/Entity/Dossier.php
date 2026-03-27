@@ -22,6 +22,15 @@ class Dossier
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $adresse = null;
 
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $codepostal = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $ville = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $pays = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $logo = null;
 
@@ -32,11 +41,41 @@ class Dossier
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $rc = null;
 
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $siret = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $naf = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $tvaintra = null;
+
+    #[ORM\Column(length: 40, nullable: true)]
+    private ?string $email = null;
+
+    #[ORM\Column(length: 40, nullable: true)]
+    private ?string $tel = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $iban = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $bic = null;
+
     #[ORM\ManyToOne]
     private ?Devises $devise = null;
 
     #[ORM\Column(nullable: true)]
     private ?int $factureno = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $devisno = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $cmdno = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $blno = null;
 
     public function getId(): ?int
     {
@@ -63,6 +102,42 @@ class Dossier
     public function setAdresse(?string $adresse): static
     {
         $this->adresse = $adresse;
+
+        return $this;
+    }
+
+    public function getCodepostal(): ?string
+    {
+        return $this->codepostal;
+    }
+
+    public function setCodepostal(?string $codepostal): static
+    {
+        $this->codepostal = $codepostal;
+
+        return $this;
+    }
+
+    public function getVille(): ?string
+    {
+        return $this->ville;
+    }
+
+    public function setVille(?string $ville): static
+    {
+        $this->ville = $ville;
+
+        return $this;
+    }
+
+    public function getPays(): ?string
+    {
+        return $this->pays;
+    }
+
+    public function setPays(?string $pays): static
+    {
+        $this->pays = $pays;
 
         return $this;
     }
@@ -103,6 +178,90 @@ class Dossier
         return $this;
     }
 
+    public function getSiret(): ?string
+    {
+        return $this->siret;
+    }
+
+    public function setSiret(?string $siret): static
+    {
+        $this->siret = $siret;
+
+        return $this;
+    }
+
+    public function getNaf(): ?string
+    {
+        return $this->naf;
+    }
+
+    public function setNaf(?string $naf): static
+    {
+        $this->naf = $naf;
+
+        return $this;
+    }
+
+    public function getTvaintra(): ?string
+    {
+        return $this->tvaintra;
+    }
+
+    public function setTvaintra(?string $tvaintra): static
+    {
+        $this->tvaintra = $tvaintra;
+
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(?string $email): static
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
+    public function getTel(): ?string
+    {
+        return $this->tel;
+    }
+
+    public function setTel(?string $tel): static
+    {
+        $this->tel = $tel;
+
+        return $this;
+    }
+
+    public function getIban(): ?string
+    {
+        return $this->iban;
+    }
+
+    public function setIban(?string $iban): static
+    {
+        $this->iban = $iban;
+
+        return $this;
+    }
+
+    public function getBic(): ?string
+    {
+        return $this->bic;
+    }
+
+    public function setBic(?string $bic): static
+    {
+        $this->bic = $bic;
+
+        return $this;
+    }
+
     public function getDevise(): ?Devises
     {
         return $this->devise;
@@ -123,6 +282,42 @@ class Dossier
     public function setFactureno(?int $factureno): static
     {
         $this->factureno = $factureno;
+
+        return $this;
+    }
+
+    public function getDevisno(): ?int
+    {
+        return $this->devisno;
+    }
+
+    public function setDevisno(?int $devisno): static
+    {
+        $this->devisno = $devisno;
+
+        return $this;
+    }
+
+    public function getCmdno(): ?int
+    {
+        return $this->cmdno;
+    }
+
+    public function setCmdno(?int $cmdno): static
+    {
+        $this->cmdno = $cmdno;
+
+        return $this;
+    }
+
+    public function getBlno(): ?int
+    {
+        return $this->blno;
+    }
+
+    public function setBlno(?int $blno): static
+    {
+        $this->blno = $blno;
 
         return $this;
     }

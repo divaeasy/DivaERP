@@ -4,12 +4,18 @@ namespace App\Service\EInvoicing\FactureX;
 
 use App\Entity\Entetepiece;
 use Mpdf\Mpdf;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 class FactureXGenerator
 {
     public const MODEL_CLASSIC = 'classic';
     public const MODEL_MODERN = 'modern';
     public const DEFAULT_MODEL = self::MODEL_CLASSIC;
+
+    public function __construct(
+        #[Autowire('%kernel.project_dir%')] private string $projectDir,
+    ) {
+    }
 
     /**
      * Generate Facture-X visual PDF (XML embedding is handled by FactureXEmbedder).
@@ -115,21 +121,19 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
 <table class="footer-table">
 
 <tr class="footer-head">
-<td>Siret '.$this->e($data['seller_ice']).'</td>
-<td>'.$this->e($data['seller_name']).' : Informatique de gestion</td>
-<td>Code NAF : '.$this->e($data['seller_sc']).'</td>
+<td colspan="3">'.$this->e($data['seller_name']).'</td>
 </tr>
 
 <tr>
-<td>TVA Intra : '.$this->e($data['seller_vat_number']).'</td>
-<td>'.$this->e($data['seller_rc']).'</td>
+<td>Siret : '.$this->e($data['seller_ice']).'</td>
+<td>Code NAF : '.$this->e($data['seller_naf']).'</td>
 <td>Email : '.$this->e($data['seller_email']).'</td>
 </tr>
 
 <tr>
-<td></td>
+<td>TVA Intra : '.$this->e($data['seller_vat_number']).'</td>
 <td>Tel : '.$this->e($data['seller_phone'] ?? '').'</td>
-<td></td>
+<td>'.$this->e($data['seller_rc']).'</td>
 </tr>
 
 </table>
@@ -160,7 +164,15 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
 
         $sellerAddressRaw = (string) ($dossier?->getAdresse() ?? '');
         $sellerAddressLines = $this->compactLines(preg_split('/[\r\n,]+/', $sellerAddressRaw) ?: []);
-        $sellerCountry = $this->extractCountry($sellerAddressRaw, 'France');
+        $sellerPostalCity = trim((string) ($dossier?->getCodepostal() ?? '') . ' ' . (string) ($dossier?->getVille() ?? ''));
+        if ($sellerPostalCity !== '') {
+            $sellerAddressLines[] = $sellerPostalCity;
+        }
+        $sellerCountry = trim((string) ($dossier?->getPays() ?? ''));
+        if ($sellerCountry === '') {
+            $sellerCountry = $this->extractCountry($sellerAddressRaw, 'France');
+        }
+        $sellerAddressLines = $this->compactLines($sellerAddressLines);
 
         $buyerAddressLines = $this->compactLines([
             (string) ($client?->getAdr1() ?? ''),
@@ -240,7 +252,18 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
             (string) ($invoice->getSellerSiren() ?? ''),
             (string) ($invoice->getSellerSiret() ?? '')
         );
+        if ($sellerIce === '') {
+            $sellerIce = trim((string) ($dossier?->getSiret() ?? ''));
+        }
         $sellerVatNumber = trim((string) ($invoice->getSellerVatNumber() ?? ''));
+        if ($sellerVatNumber === '') {
+            $sellerVatNumber = trim((string) ($dossier?->getTvaintra() ?? ''));
+        }
+        $sellerNaf = trim((string) ($dossier?->getNaf() ?? ''));
+        $sellerEmail = trim((string) ($dossier?->getEmail() ?? ''));
+        $sellerPhone = trim((string) ($dossier?->getTel() ?? ''));
+        $bankIban = trim((string) ($dossier?->getIban() ?? ''));
+        $bankBic = trim((string) ($dossier?->getBic() ?? ''));
         if ($sellerIce === '') {
             $sellerIce = '-';
         }
@@ -254,6 +277,9 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         }
         if ($sellerSc === '') {
             $sellerSc = '-';
+        }
+        if ($sellerNaf === '') {
+            $sellerNaf = '-';
         }
 
         return [
@@ -273,10 +299,13 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
             'seller_rc' => $sellerRc,
             'seller_ice' => $sellerIce,
             'seller_vat_number' => $sellerVatNumber,
+            'seller_naf' => $sellerNaf,
             'seller_sc' => $sellerSc,
-            'seller_email' => '',
+            'seller_email' => $sellerEmail,
+            'seller_phone' => $sellerPhone,
             'seller_address_lines' => $sellerAddressLines,
             'seller_country' => $sellerCountry,
+            'seller_logo' => $this->resolveLogoPath((string) ($dossier?->getLogo() ?? '')),
             'buyer_name' => (string) ($client?->getRaisonSociale() ?? $client?->getNom() ?? 'Client'),
             'buyer_code' => $buyerCode,
             'buyer_address_lines' => $buyerAddressLines,
@@ -286,8 +315,8 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
             'buyer_email' => (string) ($client?->getEmail() ?? ''),
             'line_items' => $lineItems,
             'subject_text' => $subjectText,
-            'bank_iban' => '',
-            'bank_bic' => '',
+            'bank_iban' => $bankIban,
+            'bank_bic' => $bankBic,
         ];
     }
 
@@ -343,6 +372,10 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         $sellerLinesHtml = $this->linesToHtml($data['seller_address_lines']);
         $buyerLinesHtml = $this->linesToHtml($data['buyer_address_lines']);
         $buyerCityLine = trim($data['buyer_postcode'] . ' ' . $data['buyer_city']);
+        $sellerLogoHtml = '';
+        if (!empty($data['seller_logo'])) {
+            $sellerLogoHtml = '<div class="seller-logo-wrap"><img class="seller-logo" src="' . $this->e($data['seller_logo']) . '" alt="logo"></div>';
+        }
         
         return '<!DOCTYPE html>
 <html>
@@ -380,6 +413,16 @@ margin-bottom:25px;
 .header-table td{
 width:50%;
 vertical-align:top;
+}
+
+.seller-logo-wrap{
+margin-bottom:8px;
+}
+
+.seller-logo{
+max-height:55px;
+max-width:180px;
+object-fit:contain;
 }
 
 .company-name{
@@ -544,6 +587,7 @@ font-size:10px;
 <tr>
 
 <td>
+'.$sellerLogoHtml.'
 <div class="company-name">'.$this->e($data['seller_name']).'</div>
 <div class="company-details">
 '.$sellerLinesHtml.'<br>
@@ -662,6 +706,10 @@ Indemnité forfaitaire pour frais de recouvrement : 40 €.
         $buyerLinesHtml = $this->linesToHtml($data['buyer_address_lines']);
         $buyerCityLine = trim($data['buyer_postcode'] . ' ' . $data['buyer_city']);
         $sellerCityLine = trim($data['seller_country']);
+        $sellerLogoHtml = '';
+        if (!empty($data['seller_logo'])) {
+            $sellerLogoHtml = '<div style="margin-bottom:10px;"><img src="' . $this->e($data['seller_logo']) . '" alt="logo" style="max-height:55px; max-width:180px; object-fit:contain;"></div>';
+        }
 
         // Payment and bank info section (in main content)
         $contentFooterHtml = '';
@@ -712,7 +760,7 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
 <div class="content">
 
 <table class="head"><tr>
-<td width="44%" class="left" style="vertical-align: top;"><strong>' . $this->e($data['seller_name']) . '</strong><br>'
+<td width="44%" class="left" style="vertical-align: top;">' . $sellerLogoHtml . '<strong>' . $this->e($data['seller_name']) . '</strong><br>'
     . $sellerLinesHtml . '<br>'
     . $this->e($sellerCityLine) . '<br><br>'
     . '<div class="card">'
@@ -785,6 +833,34 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
             $digits = preg_replace('/\D+/', '', $candidate) ?? '';
             if ($digits !== '') {
                 return $digits;
+            }
+        }
+
+        return '';
+    }
+
+    private function resolveLogoPath(string $logo): string
+    {
+        $logo = trim($logo);
+        if ($logo === '') {
+            return '';
+        }
+
+        if (preg_match('/^https?:\/\//i', $logo)) {
+            return $logo;
+        }
+
+        $candidatePaths = [];
+        if (str_starts_with($logo, '/')) {
+            $candidatePaths[] = $this->projectDir . '/public' . $logo;
+        }
+        $candidatePaths[] = $this->projectDir . '/public/' . ltrim($logo, '/');
+        $candidatePaths[] = $logo;
+
+        foreach ($candidatePaths as $path) {
+            $resolved = realpath($path);
+            if ($resolved !== false && is_file($resolved)) {
+                return str_replace('\\', '/', $resolved);
             }
         }
 

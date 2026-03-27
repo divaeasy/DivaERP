@@ -27,7 +27,7 @@ class Clients
     #[ORM\Column(length: 255)]
     private ?string $adr1 = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $adr2 = null;
 
     #[ORM\Column(length: 255)]
@@ -42,16 +42,16 @@ class Clients
     #[ORM\ManyToOne]
     private ?Pays $pays = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $tel = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $email = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $web = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $linkedin = null;
 
     #[ORM\ManyToOne]
@@ -106,7 +106,7 @@ class Clients
         return $this->adr2;
     }
 
-    public function setAdr2(string $adr2): static
+    public function setAdr2(?string $adr2): static
     {
         $this->adr2 = $adr2;
 
@@ -166,7 +166,7 @@ class Clients
         return $this->tel;
     }
 
-    public function setTel(string $tel): static
+    public function setTel(?string $tel): static
     {
         $this->tel = $tel;
 
@@ -178,7 +178,7 @@ class Clients
         return $this->email;
     }
 
-    public function setEmail(string $email): static
+    public function setEmail(?string $email): static
     {
         $this->email = $email;
 
@@ -190,7 +190,7 @@ class Clients
         return $this->web;
     }
 
-    public function setWeb(string $web): static
+    public function setWeb(?string $web): static
     {
         $this->web = $web;
 
@@ -202,7 +202,7 @@ class Clients
         return $this->linkedin;
     }
 
-    public function setLinkedin(string $linkedin): static
+    public function setLinkedin(?string $linkedin): static
     {
         $this->linkedin = $linkedin;
 

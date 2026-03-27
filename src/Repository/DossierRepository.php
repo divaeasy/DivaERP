@@ -25,7 +25,7 @@ class DossierRepository extends ServiceEntityRepository
             ->orderBy('d.nom', 'ASC');
 
         if ($searchData && !empty($searchData->q)) {
-            $qb->andWhere('d.nom LIKE :q OR d.adresse LIKE :q')
+            $qb->andWhere('d.nom LIKE :q OR d.adresse LIKE :q OR d.ville LIKE :q OR d.pays LIKE :q OR d.codepostal LIKE :q')
                ->setParameter('q', "%{$searchData->q}%");
         }
 

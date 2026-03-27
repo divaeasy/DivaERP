@@ -8,7 +8,6 @@ use App\Entity\User;
 use App\Form\EntetePieceFormType;
 use App\Form\SearchPieceFormType;
 use App\Model\SearchPiece;
-use App\Repository\ClientsRepository;
 use App\Repository\EntetepieceRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,18 +19,13 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('piece')]
 class EntetePController extends AbstractController
 {
-
     public function __construct(private ManagerRegistry $doctrine2)
     {
-         
     }
 
     #[Route('/', name: 'entetepiece.list')]
     public function index(Request $request, EntetepieceRepository $entetepieceRepository, ManagerRegistry $doctrine): Response
     {
-
-        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
-
         $page = $request->query->getInt('page', 1);
         $searchData = new SearchPiece();
         $searchForm = $this->createForm(SearchPieceFormType::class, $searchData);
@@ -45,6 +39,7 @@ class EntetePController extends AbstractController
         $pagination = $entetepieceRepository->findPaginated($searchActive, $page);
         $invoiceIds = array_map(static fn (Entetepiece $piece): int => $piece->getId(), $pagination['items']);
         $remiseByInvoice = $entetepieceRepository->getWeightedRemiseByInvoiceIds($invoiceIds);
+        $amountByInvoice = $entetepieceRepository->getTotalAmountByInvoiceIds($invoiceIds);
 
         return $this->render('entetepiece/index.html.twig', [
             'search' => $searchForm->createView(),
@@ -53,17 +48,19 @@ class EntetePController extends AbstractController
             'totalPages' => $pagination['totalPages'],
             'totalItems' => $pagination['totalItems'],
             'remiseByInvoice' => $remiseByInvoice,
+            'amountByInvoice' => $amountByInvoice,
         ]);
     }
+
     #[Route('/edit/{id?0}', name: 'entetepiece.edit')]
-    public function addEntetePiece(ManagerRegistry $doctrine, Request $request, $id): Response
+    public function addEntetePiece(ManagerRegistry $doctrine, Request $request, int $id): Response
     {
-        //$this->denyAccessUnlessGranted('ROLE_ACMAR');
-        $repository = $doctrine->getRepository(EntetePiece::class);
+        $repository = $doctrine->getRepository(Entetepiece::class);
         $user = $this->getUser();
         if (!$user instanceof User) {
             throw $this->createAccessDeniedException();
         }
+
         $currentDossier = $user->getCurrentDossier();
         $entetepiece = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
 
@@ -71,106 +68,138 @@ class EntetePController extends AbstractController
         $lignepieces = $repositoryLignes->findBy(['piece' => $id]);
 
         $new = false;
-        if(!$entetepiece){
-            $entetepiece = new EntetePiece();
+        if (!$entetepiece) {
+            $entetepiece = new Entetepiece();
             $new = true;
-        }
-        $entetepiece->doctrine=$doctrine;
-        $entetepiece->user=$this->getUser();
-        
-       $form = $this->createForm(EntetePieceFormType::class, $entetepiece);
-       $form->remove('delai');
-       $form->remove('edition');
-       $form->remove('rapport');
-       $form->remove('pieceno');
-       $form->handleRequest($request);
-       $newFilename = '';
-       if($form->isSubmitted() && $form->isValid()){
-        if ($currentDossier !== null){
-            $NumFact = ($currentDossier->getFactureno() ?? 0) + 1;
-        }else{
-            $NumFact = 1;
-        }
-        
-        If ($new){
-            $message = "l'entête de pièce est ajouté avec succès";
-            
-            $entetepiece->setPieceno($NumFact);
             if ($currentDossier !== null) {
                 $entetepiece->setDossier($currentDossier);
+                if ($entetepiece->getDevise() === null) {
+                    $entetepiece->setDevise($currentDossier->getDevise());
+                }
             }
-        }else{
-            $message = "l'entête de pièce a été mis à jour avec succès";
-           
+            if ($entetepiece->getDatep() === null) {
+                $entetepiece->setDatep(new \DateTimeImmutable('today'));
+            }
         }
-        $entityManager = $doctrine->getManager();
-        $entityManager->persist($entetepiece);
-        $entityManager->flush();
-       
-        $this->addFlash(
-           'success',
-           $message
-        );
-        //return $this->redirectToRoute('entetepiece.list');
-        return $this->redirectToRoute('entetepiece.edit', array('id' => $entetepiece->getId()));
-       }else{
-            return $this->render('entetepiece/add-entetepiece.html.twig', [
-     
-                'entetepiece'=>$form->createView(),
-                'id'=>$id,
-                'lignepieces'=>$lignepieces 
-            ]);
-       }
-        
+
+        $entetepiece->doctrine = $doctrine;
+        $entetepiece->user = $this->getUser();
+
+        $form = $this->createForm(EntetePieceFormType::class, $entetepiece);
+        $form->remove('delai');
+        $form->remove('edition');
+        $form->remove('rapport');
+        $form->remove('pieceno');
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($currentDossier !== null) {
+                $entetepiece->setDossier($currentDossier);
+                if ($entetepiece->getDevise() === null) {
+                    $entetepiece->setDevise($currentDossier->getDevise());
+                }
+            }
+            if ($entetepiece->getDatep() === null) {
+                $entetepiece->setDatep(new \DateTimeImmutable('today'));
+            }
+            if ($entetepiece->getReglement() === null && $entetepiece->getClient()?->getReglement() !== null) {
+                $entetepiece->setReglement($entetepiece->getClient()->getReglement());
+            }
+
+            if ($new) {
+                $message = "L'entete de piece est ajoutee avec succes";
+                $nextPieceNo = $this->getAndIncrementDossierCounter($entetepiece->getType(), $currentDossier);
+                $entetepiece->setPieceno($nextPieceNo);
+            } else {
+                $message = "L'entete de piece a ete mise a jour avec succes";
+            }
+
+            $entityManager = $doctrine->getManager();
+            $entityManager->persist($entetepiece);
+            $entityManager->flush();
+
+            $this->addFlash('success', $message);
+            $redirectUrl = $this->generateUrl('entetepiece.edit', ['id' => $entetepiece->getId()]) . '#piece-lines';
+
+            return $this->redirect($redirectUrl);
+        }
+
+        return $this->render('entetepiece/add-entetepiece.html.twig', [
+            'entetepiece' => $form->createView(),
+            'id' => $id,
+            'lignepieces' => $lignepieces,
+        ]);
     }
 
     #[Route('/delete/{id}', name: 'entetepiece.delete')]
-    public function deleteEntetePiece(ManagerRegistry $doctrine,$id): RedirectResponse
+    public function deleteEntetePiece(ManagerRegistry $doctrine, int $id): RedirectResponse
     {
-        //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Entetepiece::class);
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
         $entetepiece = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
-        if($entetepiece){
+        if ($entetepiece) {
             $manager = $doctrine->getManager();
             $manager->remove($entetepiece);
             $manager->flush();
-            $this->addFlash(
-               'success',
-               "l'entête de pièce a été supprimé avec succès"
-            );
-        }else{
-            $this->addFlash(
-                'error',
-                "l'entête de pièce demandé n'existe pas"
-             );
+            $this->addFlash('success', "L'entete de piece a ete supprimee avec succes");
+        } else {
+            $this->addFlash('error', "L'entete de piece demandee n'existe pas");
         }
+
         return $this->redirectToRoute('entetepiece.list');
-        
     }
 
     #[Route('/ca/annee/', name: 'ca_annee')]
-    public function getCaAnneeMois(Request $request,EntetepieceRepository $repositoryPiece){
-        //$doctrine2 = $this->getDoctrine();
-        $annee = 2025;//$request->get('annee');
-        $mois = 1;//$request->get('mois');
-        
-        If($annee>0)
-        {
-               
-            $CaAnneeMois = $repositoryPiece->getCaAnneeMois($annee, $mois);
-            
-            $montant = $CaAnneeMois[0]["mont"];
-             
-            $response=new Response($montant);
-            return $this->json(['code'=>200, 'message'=>$montant],200);
-            
-        }else
-        {
-            $response=new Response(0); 
+    public function getCaAnneeMois(Request $request, EntetepieceRepository $repositoryPiece): Response
+    {
+        $annee = 2025;
+        $mois = 1;
+
+        if ($annee > 0) {
+            $caAnneeMois = $repositoryPiece->getCaAnneeMois($annee, $mois);
+            $montant = $caAnneeMois[0]['mont'];
+
+            return $this->json(['code' => 200, 'message' => $montant], 200);
         }
-        return $this->json(['code'=>200, 'message'=>$response],200);//return $response;
-        //return  $cotisation[0]->getMontCotisation();
+
+        return $this->json(['code' => 200, 'message' => 0], 200);
+    }
+
+    private function getAndIncrementDossierCounter(?string $pieceType, ?\App\Entity\Dossier $dossier): int
+    {
+        if ($dossier === null) {
+            return 1;
+        }
+
+        $normalized = strtolower(trim((string) $pieceType));
+
+        return match ($normalized) {
+            'devis' => $this->incrementCounter(
+                current: $dossier->getDevisno(),
+                setter: static fn (int $value) => $dossier->setDevisno($value)
+            ),
+            'commande' => $this->incrementCounter(
+                current: $dossier->getCmdno(),
+                setter: static fn (int $value) => $dossier->setCmdno($value)
+            ),
+            'bl' => $this->incrementCounter(
+                current: $dossier->getBlno(),
+                setter: static fn (int $value) => $dossier->setBlno($value)
+            ),
+            default => $this->incrementCounter(
+                current: $dossier->getFactureno(),
+                setter: static fn (int $value) => $dossier->setFactureno($value)
+            ),
+        };
+    }
+
+    private function incrementCounter(?int $current, callable $setter): int
+    {
+        $next = ($current ?? 0) + 1;
+        $setter($next);
+
+        return $next;
     }
 }
+

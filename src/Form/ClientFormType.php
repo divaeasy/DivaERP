@@ -14,6 +14,8 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
 
 class ClientFormType extends AbstractType
 {
@@ -26,10 +28,23 @@ class ClientFormType extends AbstractType
         $currentDossier = $this->getCurrentDossier();
 
         $builder
-            ->add('nom')
-            ->add('adr1')
+            ->add('nom', null, [
+                'constraints' => [
+                    new NotBlank(['message' => 'Le nom est obligatoire.']),
+                ],
+            ])
+            ->add('adr1', null, [
+                'constraints' => [
+                    new NotBlank(['message' => 'L\'adresse ligne 1 est obligatoire.']),
+                ],
+            ])
             ->add('adr2', null, ['required' => false])
-            ->add('rue', null, ['required' => false])
+            ->add('rue', null, [
+                'required' => true,
+                'constraints' => [
+                    new NotBlank(['message' => 'La rue est obligatoire.']),
+                ],
+            ])
             ->add('codepostal', null, ['required' => false])
             ->add('tel', null, ['required' => false])
             ->add('email', null, ['required' => false])
@@ -38,20 +53,26 @@ class ClientFormType extends AbstractType
             ->add('ville', EntityType::class, [
                 'class' => Ville::class,
                 'choice_label' => 'libelle',
-                'required' => false,
-                'placeholder' => 'Sélectionner une ville',
+                'required' => true,
+                'placeholder' => 'Selectionner une ville',
+                'constraints' => [
+                    new NotNull(['message' => 'La ville est obligatoire.']),
+                ],
             ])
             ->add('pays', EntityType::class, [
                 'class' => Pays::class,
                 'choice_label' => 'libelle',
-                'required' => false,
-                'placeholder' => 'Sélectionner un pays',
+                'required' => true,
+                'placeholder' => 'Selectionner un pays',
+                'constraints' => [
+                    new NotNull(['message' => 'Le pays est obligatoire.']),
+                ],
             ])
             ->add('tarif', EntityType::class, [
                 'class' => Tarifs::class,
                 'choice_label' => 'libelle',
                 'required' => false,
-                'placeholder' => 'Sélectionner un tarif',
+                'placeholder' => 'Selectionner un tarif',
                 'query_builder' => function (TarifsRepository $repository) use ($currentDossier) {
                     $qb = $repository->createQueryBuilder('t')
                         ->orderBy('t.libelle', 'ASC');
@@ -61,6 +82,7 @@ class ClientFormType extends AbstractType
                     } else {
                         $qb->andWhere('1 = 0');
                     }
+
                     return $qb;
                 },
             ])
@@ -68,9 +90,8 @@ class ClientFormType extends AbstractType
                 'class' => Reglement::class,
                 'choice_label' => 'libelle',
                 'required' => false,
-                'placeholder' => 'Sélectionner un règlement',
-            ])
-        ;
+                'placeholder' => 'Selectionner un reglement',
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -83,6 +104,8 @@ class ClientFormType extends AbstractType
     private function getCurrentDossier(): ?\App\Entity\Dossier
     {
         $user = $this->security->getUser();
+
         return $user instanceof User ? $user->getCurrentDossier() : null;
     }
 }
+

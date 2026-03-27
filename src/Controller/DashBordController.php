@@ -12,49 +12,40 @@ class DashBordController extends AbstractController
     #[Route('/dashbord', name: 'app_dash_bord')]
     public function index(DashboardService $dashboardService): Response
     {
-        $currentYear = (int)date('Y');
-        $previousYear = $currentYear - 1;
-        $currentMonth = (int)date('m');
+        $availableYears = $dashboardService->getAvailableYears();
+        $fallbackYear = (int) date('Y');
+        $currentYear = $availableYears[0] ?? $fallbackYear;
+        $previousYear = $availableYears[1] ?? ($currentYear - 1);
 
-        // Monthly sales data
         $monthlySalesCurrentYear = $dashboardService->getMonthlySales($currentYear);
         $monthlySalesPreviousYear = $dashboardService->getMonthlySales($previousYear);
 
-        // KPI Data — same-period comparison (Jan to current month)
-        $totalRevenueCurrent = $dashboardService->getTotalRevenue($currentYear, $currentMonth);
-        $totalRevenuePerv = $dashboardService->getTotalRevenue($previousYear, $currentMonth);
+        $totalRevenueCurrent = $dashboardService->getTotalRevenue($currentYear);
+        $totalRevenuePerv = $dashboardService->getTotalRevenue($previousYear);
         $growthPercentage = $dashboardService->getYearGrowth($currentYear, $previousYear);
         $invoiceCount = $dashboardService->getTotalInvoiceCount($currentYear);
         $newCustomersThisMonth = $dashboardService->getNewCustomersThisMonth();
         $totalProductsSold = $dashboardService->getTotalProductsSold($currentYear);
-
-        // Dashboard KPI: Overdue invoices
         $overdueInvoices = $dashboardService->getOverdueInvoices($currentYear);
 
-        // Charts data
         $top5Products = $dashboardService->getTop5Products($currentYear);
         $salesByCategory = $dashboardService->getSalesByCategory($currentYear);
         $paymentStatus = $dashboardService->getPaymentStatus($currentYear);
         $customerGrowth = $dashboardService->getCustomerGrowth($currentYear);
 
-        // Prepare data for templates
-        $chartMonths = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+        $chartMonths = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
         $currentYearValues = array_values($monthlySalesCurrentYear);
         $previousYearValues = array_values($monthlySalesPreviousYear);
 
-        // Top 5 products chart data
         $productNames = array_column($top5Products, 'product_name');
-        $productQty = array_map(fn($p) => (float)$p['total_qty'], $top5Products);
+        $productQty = array_map(static fn ($p) => (float) $p['total_qty'], $top5Products);
 
-        // Sales by category
         $categoryNames = array_column($salesByCategory, 'category');
-        $categoryAmounts = array_map(fn($c) => (float)$c['amount'], $salesByCategory);
+        $categoryAmounts = array_map(static fn ($c) => (float) $c['amount'], $salesByCategory);
 
-        // Payment status
         $paymentStatusLabels = array_column($paymentStatus, 'status');
-        $paymentStatusAmounts = array_map(fn($p) => (float)$p['amount'], $paymentStatus);
+        $paymentStatusAmounts = array_map(static fn ($p) => (float) $p['amount'], $paymentStatus);
 
-        // Customer growth
         $customerCounts = [];
         for ($i = 1; $i <= 12; $i++) {
             $customerCounts[$i] = $customerGrowth[$i]['customers'] ?? 0;
@@ -62,7 +53,6 @@ class DashBordController extends AbstractController
 
         return $this->render('dash_bord/index.html.twig', [
             'controller_name' => 'DashBordController',
-            // KPI Data
             'totalRevenueCurrent' => $totalRevenueCurrent,
             'totalRevenuePerv' => $totalRevenuePerv,
             'growthPercentage' => round($growthPercentage, 2),
@@ -70,8 +60,7 @@ class DashBordController extends AbstractController
             'newCustomersThisMonth' => $newCustomersThisMonth,
             'totalProductsSold' => $totalProductsSold,
             'overdueInvoices' => $overdueInvoices,
-            'currentMonth' => $currentMonth,
-            // Charts
+            'currentMonth' => (int) date('m'),
             'chartMonths' => json_encode($chartMonths),
             'currentYearValues' => json_encode($currentYearValues),
             'previousYearValues' => json_encode($previousYearValues),
@@ -84,6 +73,8 @@ class DashBordController extends AbstractController
             'paymentStatusLabels' => json_encode($paymentStatusLabels),
             'paymentStatusAmounts' => json_encode($paymentStatusAmounts),
             'customerCounts' => json_encode(array_values($customerCounts)),
+            'availableYears' => $availableYears,
         ]);
     }
 }
+

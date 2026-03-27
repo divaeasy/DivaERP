@@ -34,10 +34,12 @@
                 <th data-sort-key="id" data-sort-type="number">ID</th>
                 <th data-sort-key="nom">Nom</th>
                 <th data-sort-key="adresse">Adresse</th>
+                <th>CP / Ville / Pays</th>
                 <th data-sort-key="rc">RC</th>
                 <th>Logo</th>
                 <th>Theme</th>
                 <th data-sort-key="devise">Devise</th>
+                <th>Numerotations</th>
                 <th class="text-center" style="width: 120px;">Actions</th>
             </tr>
         </thead>
@@ -50,6 +52,11 @@
                 <td><strong>#{{ dossier.id }}</strong></td>
                 <td>{{ dossier.nom }}</td>
                 <td>{{ dossier.adresse }}</td>
+                <td>
+                    {{ dossier.codepostal ?: '-' }}
+                    {{ dossier.ville ?: '' }}
+                    {% if dossier.pays %}<br><small class="text-muted">{{ dossier.pays }}</small>{% endif %}
+                </td>
                 <td>{{ dossier.rc }}</td>
                 <td>
                     {% if dossier.logo %}
@@ -63,6 +70,10 @@
                     <small class="text-muted">{{ themeLabel }}</small>
                 </td>
                 <td>{{ dossier.devise }}</td>
+                <td>
+                    <small class="text-muted d-block">DV: {{ dossier.devisno ?? 0 }} | CMD: {{ dossier.cmdno ?? 0 }}</small>
+                    <small class="text-muted d-block">BL: {{ dossier.blno ?? 0 }} | FAC: {{ dossier.factureno ?? 0 }}</small>
+                </td>
                 <td class="text-center">
                     <a href="{{ path('dossier.edit', {id: dossier.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>

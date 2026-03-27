@@ -37,6 +37,7 @@
                 <th data-sort-key="pieceno" data-sort-type="number">N° Pièce</th>
                 <th data-sort-key="pieceref">Référence</th>
                 <th data-sort-key="remise" data-sort-type="number" class="text-right">Remise</th>
+                <th data-sort-key="montant" data-sort-type="number" class="text-right">Montant</th>
                 <th data-sort-key="statut">Statut</th>
                 <th>e-Facture</th>
                 <th data-sort-key="devise">Devise</th>
@@ -53,6 +54,8 @@
                 <td>{{ entetepiece.pieceref }}</td>
                 {% set display_remise = remiseByInvoice[entetepiece.id]|default(entetepiece.remise ?? 0) %}
                 <td class="text-right">{{ display_remise|number_format(2, ',', ' ') }}%</td>
+                {% set display_amount = amountByInvoice[entetepiece.id]|default(entetepiece.montant ?? 0) %}
+                <td class="text-right"><strong>{{ display_amount|number_format(2, ',', ' ') }}</strong></td>
                 <td>
                     {% if entetepiece.statut == 'validé' %}
                         <span class="badge badge-success">{{ entetepiece.statut }}</span>

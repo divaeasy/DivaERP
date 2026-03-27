@@ -9,6 +9,7 @@ use App\Repository\ThemeRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -19,6 +20,9 @@ class DossierFormType extends AbstractType
         $builder
             ->add('nom')
             ->add('adresse')
+            ->add('codepostal', null, ['required' => false])
+            ->add('ville', null, ['required' => false])
+            ->add('pays', null, ['required' => false])
             ->add('logoFile', FileType::class, [
                 'label' => 'Logo',
                 'mapped' => false,
@@ -26,6 +30,17 @@ class DossierFormType extends AbstractType
                 'help' => 'PNG ou JPG, 1 Mo max.',
             ])
             ->add('rc')
+            ->add('siret', null, ['required' => false])
+            ->add('naf', null, ['required' => false])
+            ->add('tvaintra', null, ['required' => false])
+            ->add('email', null, ['required' => false])
+            ->add('tel', null, ['required' => false])
+            ->add('iban', null, ['required' => false])
+            ->add('bic', null, ['required' => false])
+            ->add('devisno', IntegerType::class, ['required' => false])
+            ->add('cmdno', IntegerType::class, ['required' => false])
+            ->add('blno', IntegerType::class, ['required' => false])
+            ->add('factureno', IntegerType::class, ['required' => false])
             ->add('theme', EntityType::class, [
                 'label' => false,
                 'required' => true,

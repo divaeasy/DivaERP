@@ -131,7 +131,7 @@
 </p>
 
 {% if id > 0 %}
-<div class="form-card mt-4">
+<div class="form-card mt-4" id="piece-lines">
     <div class="card-header-custom d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="fas fa-list mr-2"></i>Lignes de la pièce</h5>
         <a class="btn btn-success btn-sm" href="{{ path('lignepiece.add', {pceId: id}) }}">
@@ -169,7 +169,7 @@
                                 <i class="fas fa-edit"></i>
                             </a>
                             <button type="button" class="btn-action btn-delete" title="Supprimer"
-                                    onclick="confirmDelete('{{ path('lignepiece.delete', {id: lignepiece.id}) }}', 'cette ligne')">
+                                    onclick="confirmDelete('{{ path('lignepiece.delete', {id: lignepiece.id, pceId: id}) }}', 'cette ligne')">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
@@ -198,6 +198,32 @@
             theme: 'bootstrap-5',
             allowClear: true
         });
+
+        var hash = window.location.hash || '';
+        if (hash === '#piece-lines') {
+            var linesSection = document.getElementById('piece-lines');
+            if (linesSection) {
+                setTimeout(function () {
+                    linesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 80);
+            }
+        }
+
+        var $client = $('#{{ entetepiece.client.vars.id }}');
+        var $reglement = $('#{{ entetepiece.reglement.vars.id }}');
+        if ($client.length && $reglement.length) {
+            function applyClientReglementIfEmpty() {
+                var selectedOption = $client.find('option:selected');
+                var clientReglementId = String(selectedOption.data('reglement-id') || '').trim();
+                var currentReglementId = String($reglement.val() || '').trim();
+                if (clientReglementId !== '' && currentReglementId === '') {
+                    $reglement.val(clientReglementId).trigger('change');
+                }
+            }
+
+            applyClientReglementIfEmpty();
+            $client.on('change', applyClientReglementIfEmpty);
+        }
     });
 </script>
 {% endblock %}

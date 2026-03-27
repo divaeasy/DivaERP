@@ -119,6 +119,34 @@ class EntetepieceRepository extends ServiceEntityRepository
         return $result;
     }
 
+    /**
+     * @param array<int> $invoiceIds
+     * @return array<int, float> Map of invoiceId => total amount
+     */
+    public function getTotalAmountByInvoiceIds(array $invoiceIds): array
+    {
+        $invoiceIds = array_values(array_filter(array_map('intval', $invoiceIds)));
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('IDENTITY(lp.piece) AS invoice_id')
+            ->addSelect('COALESCE(SUM(COALESCE(lp.montant, 0)), 0) AS total_amount')
+            ->from(Lignepiece::class, 'lp')
+            ->where($qb->expr()->in('lp.piece', ':ids'))
+            ->setParameter('ids', $invoiceIds)
+            ->groupBy('lp.piece');
+
+        $rows = $qb->getQuery()->getArrayResult();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(int) ($row['invoice_id'] ?? 0)] = (float) ($row['total_amount'] ?? 0.0);
+        }
+
+        return $result;
+    }
+
     private function applyDossierFilter(QueryBuilder $qb, string $alias): void
     {
         $user = $this->security->getUser();
