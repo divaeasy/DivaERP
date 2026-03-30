@@ -8,10 +8,13 @@ use App\Entity\Theme;
 use App\Repository\ThemeRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\Regex;
 
 class DossierFormType extends AbstractType
 {
@@ -37,7 +40,21 @@ class DossierFormType extends AbstractType
             ->add('naf', null, ['required' => false])
             ->add('tvaintra', null, ['required' => false])
             ->add('email', null, ['required' => false])
-            ->add('tel', null, ['required' => false])
+            ->add('tel', null, [
+                'required' => false,
+                'constraints' => [
+                    new Regex([
+                        'pattern' => '/^[+]?[0-9\s\-()\.]{7,20}$/',
+                        'message' => 'Format téléphone invalide'
+                    ])
+                ]
+            ])
+            ->add('email', EmailType::class, [
+                'required' => false,
+                'constraints' => [
+                    new Email(['message' => 'Format email invalide'])
+                ]
+            ])
             ->add('iban', null, ['required' => false])
             ->add('bic', null, ['required' => false])
             ->add('devisno', IntegerType::class, ['required' => false])

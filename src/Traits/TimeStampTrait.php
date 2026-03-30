@@ -10,8 +10,51 @@ use Doctrine\Persistence\ManagerRegistry;
 
 trait TimeStampTrait
 {
+    /**
+     * @internal ManagerRegistry - for internal use only (dependency injection)
+     * Set via controller using ->setDoctrine() or $entity->doctrine = $value
+     */
     public ?ManagerRegistry $doctrine = null;
+
+    /**
+     * @internal Current User - for internal use only (dependency injection)
+     * Set via controller using ->setUser() or $entity->user = $value
+     */
     public ?User $user = null;
+
+    /**
+     * Get ManagerRegistry (for internal use)
+     */
+    public function getDoctrine(): ?ManagerRegistry
+    {
+        return $this->doctrine;
+    }
+
+    /**
+     * Set ManagerRegistry (used by controllers to inject dependency)
+     */
+    public function setDoctrine(?ManagerRegistry $doctrine): self
+    {
+        $this->doctrine = $doctrine;
+        return $this;
+    }
+
+    /**
+     * Get current User (for internal lifecycle hooks)
+     */
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    /**
+     * Set current User (used by controllers to inject current user)
+     */
+    public function setUser(?User $user): self
+    {
+        $this->user = $user;
+        return $this;
+    }
 
     /**
      * Exclude non-serializable properties from serialization
