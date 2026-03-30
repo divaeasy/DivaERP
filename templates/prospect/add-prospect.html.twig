@@ -19,20 +19,12 @@
     </div>
     
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="form-group">
                 {{ form_label(form.nom, 'Nom', {'label_attr': {'class': 'required'}}) }}
                 {{ form_widget(form.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom du prospect'}}) }}
                 <div class="invalid-feedback">Le nom est obligatoire</div>
                 {{ form_errors(form.nom) }}
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                {{ form_label(form.dossier, 'Dossier', {'label_attr': {'class': 'required'}}) }}
-                {{ form_widget(form.dossier, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                <div class="invalid-feedback">Le dossier est obligatoire</div>
-                {{ form_errors(form.dossier) }}
             </div>
         </div>
     </div>
@@ -61,8 +53,9 @@
     <div class="row">
         <div class="col-md-4">
             <div class="form-group">
-                {{ form_label(form.rue, 'Rue') }}
+                {{ form_label(form.rue, 'Rue', {'label_attr': {'class': 'required'}}) }}
                 {{ form_widget(form.rue, {'attr': {'class': 'form-control', 'placeholder': 'Nom de la rue'}}) }}
+                <div class="invalid-feedback">La rue est obligatoire</div>
                 {{ form_errors(form.rue) }}
             </div>
         </div>
@@ -75,7 +68,7 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                {{ form_label(form.ville, 'Ville') }}
+                {{ form_label(form.ville, 'Ville', {'label_attr': {'class': 'required'}}) }}
                 {{ form_widget(form.ville, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
                 {{ form_errors(form.ville) }}
             </div>

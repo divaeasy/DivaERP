@@ -9,6 +9,8 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
 
 class ProspectFormType extends AbstractType
 {
@@ -21,7 +23,12 @@ class ProspectFormType extends AbstractType
         ->add('nom')
         ->add('adr1')
         ->add('adr2', null, ['required' => false])
-        ->add('rue', null, ['required' => false])
+        ->add('rue', null, [
+            'required' => true,
+            'constraints' => [
+                new NotBlank(['message' => 'La rue est obligatoire.']),
+            ],
+        ])
         ->add('codepostal', null, ['required' => false])
         ->add('tel', null, ['required' => false])
         ->add('email', null, ['required' => false])
@@ -30,8 +37,11 @@ class ProspectFormType extends AbstractType
         ->add('ville', EntityType::class, [
             'class' => Ville::class,
             'choice_label' => 'libelle',
-            'required' => false,
+            'required' => true,
             'placeholder' => $isEdit ? false : 'Selectionner une ville',
+            'constraints' => [
+                new NotNull(['message' => 'La ville est obligatoire.']),
+            ],
         ])
         ->add('pays', EntityType::class, [
             'class' => Pays::class,
