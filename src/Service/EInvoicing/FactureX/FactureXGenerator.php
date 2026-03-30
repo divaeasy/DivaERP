@@ -631,9 +631,9 @@ font-size:10px;
 
 <thead>
 <tr>
-<th width="12%">Reference</th>
-<th width="48%">Designation</th>
-<th width="10%" class="c">Quantite</th>
+<th width="12%">Référence</th>
+<th width="48%">Désignation</th>
+<th width="10%" class="c">Quantité</th>
 <th width="15%" class="r">Prix unitaire</th>
 <th width="15%" class="r">Montant</th>
 </tr>
