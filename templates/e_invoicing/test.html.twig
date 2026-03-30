@@ -312,6 +312,22 @@
     @media (max-width: 480px) {
         .einv-summary { grid-template-columns: 1fr; }
     }
+
+    /* Sticky Workflow */
+    .einv-workflow--sticky {
+        position: sticky;
+        top: 90px;
+        align-self: flex-start;
+    }
+
+    /* Responsive - Sticky adjustments */
+    @media (max-width: 991.98px) {
+        .einv-workflow--sticky {
+            position: static;
+            top: auto;
+            align-self: auto;
+        }
+    }
 </style>
 
 {% set computed_total = 0 %}
@@ -366,7 +382,7 @@
     <div class="col-lg-8">
 
         <!-- Workflow Steps -->
-        <div class="einv-workflow">
+        <div class="einv-workflow einv-workflow--sticky">
             <div class="einv-workflow-header">
                 <i class="fas fa-route"></i>
                 <h6>Processus de Facturation Électronique</h6>
