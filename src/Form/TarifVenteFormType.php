@@ -28,6 +28,8 @@ class TarifVenteFormType extends AbstractType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $tarifVente = $options['data'] ?? null;
+        $isEdit = $tarifVente instanceof Tarifvente && null !== $tarifVente->getId();
         $currentDossier = $this->getCurrentDossier();
 
         $builder
@@ -42,6 +44,7 @@ class TarifVenteFormType extends AbstractType
             ->add('tarif', EntityType::class, [
                 'class' => Tarifs::class,
                 'choice_label' => 'libelle',
+                'placeholder' => $isEdit ? false : 'Selectionner un tarif',
                 'query_builder' => function (TarifsRepository $repository) use ($currentDossier) {
                     $qb = $repository->createQueryBuilder('t')
                         ->orderBy('t.libelle', 'ASC');
@@ -57,6 +60,7 @@ class TarifVenteFormType extends AbstractType
             ->add('article', EntityType::class, [
                 'class' => Article::class,
                 'choice_label' => 'libelle',
+                'placeholder' => $isEdit ? false : 'Selectionner un article',
                 'query_builder' => function (ArticleRepository $repository) use ($currentDossier) {
                     $qb = $repository->createQueryBuilder('a')
                         ->orderBy('a.libelle', 'ASC');
@@ -72,6 +76,7 @@ class TarifVenteFormType extends AbstractType
             ->add('client', EntityType::class, [
                 'class' => Clients::class,
                 'choice_label' => 'nom',
+                'placeholder' => $isEdit ? false : 'Selectionner un client',
                 'query_builder' => function (ClientsRepository $repository) use ($currentDossier) {
                     $qb = $repository->createQueryBuilder('c')
                         ->orderBy('c.nom', 'ASC');
@@ -87,11 +92,12 @@ class TarifVenteFormType extends AbstractType
             ->add('devise', EntityType::class, [
                 'class' => Devises::class,
                 'choice_label' => 'libelle',
+                'placeholder' => $isEdit ? false : 'Selectionner une devise',
             ])
             ->add('dossier', EntityType::class, [
                 'class' => Dossier::class,
                 'choice_label' => 'nom',
-                'data' => $currentDossier,
+                'placeholder' => $isEdit ? false : 'Selectionner un dossier',
                 'query_builder' => function (DossierRepository $repository) use ($currentDossier) {
                     $qb = $repository->createQueryBuilder('d')->orderBy('d.nom', 'ASC');
                     if ($currentDossier !== null) {

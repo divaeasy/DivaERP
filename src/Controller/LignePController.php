@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Entity\Article;
+use App\Entity\Clients;
 use App\Entity\Entetepiece;
 use App\Entity\Lignepiece;
 use App\Entity\Tarifvente;
@@ -92,6 +94,7 @@ class LignePController extends AbstractController
             'lignepiece' => $form->createView(),
             'id' => $id,
             'pceId' => $pceId,
+            'pieceClientId' => $lignepiece->getPiece()?->getClient()?->getId() ?? 0,
         ]);
     }
 
@@ -134,6 +137,7 @@ class LignePController extends AbstractController
             'lignepiece' => $form->createView(),
             'id' => 0,
             'pceId' => $pceId,
+            'pieceClientId' => $entetePiece->getClient()?->getId() ?? 0,
         ]);
     }
 
@@ -181,8 +185,11 @@ class LignePController extends AbstractController
     {
         $articleId = $request->query->getInt('articleId', 0);
         $pieceId = $request->query->getInt('pieceId', 0);
+        if ($pieceId <= 0) {
+            $pieceId = $request->query->getInt('pceId', 0);
+        }
 
-        if ($articleId <= 0 || $pieceId <= 0) {
+        if ($articleId <= 0) {
             return $this->json(['error' => 'Parametres manquants'], 400);
         }
 
@@ -192,23 +199,125 @@ class LignePController extends AbstractController
             return $this->json(['error' => 'Dossier introuvable'], 403);
         }
 
-        $piece = $doctrine->getRepository(Entetepiece::class)->find($pieceId);
-        if ($piece === null || $piece->getDossier()?->getId() !== $currentDossier->getId()) {
-            return $this->json(['error' => 'Piece introuvable'], 404);
+        $piece = null;
+        if ($pieceId > 0) {
+            $piece = $doctrine->getRepository(Entetepiece::class)->findOneBy([
+                'id' => $pieceId,
+                'dossier' => $currentDossier,
+            ]);
         }
 
-        $client = $piece->getClient();
-        $tarifvente = $doctrine->getRepository(Tarifvente::class)->findOneBy([
-            'article' => $articleId,
-            'client' => $client,
-            'dossier' => $currentDossier,
-        ]);
-
-        if (!$tarifvente) {
-            return $this->json(['price' => null], 200);
+        $article = $doctrine->getRepository(Article::class)->find($articleId);
+        if ($article === null || $article->getDossier()?->getId() !== $currentDossier->getId()) {
+            return $this->json(['error' => 'Article introuvable'], 404);
         }
 
-        return $this->json(['price' => $tarifvente->getPrix()], 200);
+        $client = $piece?->getClient();
+        if ($client === null) {
+            $requestClientId = $request->query->getInt('clientId', 0);
+            if ($requestClientId > 0) {
+                $client = $doctrine->getRepository(Clients::class)->findOneBy([
+                    'id' => $requestClientId,
+                    'dossier' => $currentDossier,
+                ]);
+            }
+        }
+        $tarifventeRepository = $doctrine->getRepository(Tarifvente::class);
+
+        if ($client !== null) {
+            $clientTarifvente = $tarifventeRepository->createQueryBuilder('tv')
+                ->where('tv.article = :article')
+                ->andWhere('tv.client = :client')
+                ->andWhere('tv.dossier = :dossier')
+                ->setParameter('article', $article)
+                ->setParameter('client', $client)
+                ->setParameter('dossier', $currentDossier)
+                ->orderBy('tv.dateeffet', 'DESC')
+                ->addOrderBy('tv.id', 'DESC')
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+
+            if ($clientTarifvente instanceof Tarifvente) {
+                return $this->json(['price' => $clientTarifvente->getPrix()], 200);
+            }
+
+            $clientTarif = $client->getTarif();
+            if ($clientTarif !== null) {
+                $tarifBasedTarifvente = $tarifventeRepository->createQueryBuilder('tv')
+                    ->where('tv.article = :article')
+                    ->andWhere('tv.tarif = :tarif')
+                    ->andWhere('tv.dossier = :dossier')
+                    ->setParameter('article', $article)
+                    ->setParameter('tarif', $clientTarif)
+                    ->setParameter('dossier', $currentDossier)
+                    ->orderBy('tv.dateeffet', 'DESC')
+                    ->addOrderBy('tv.id', 'DESC')
+                    ->setMaxResults(1)
+                    ->getQuery()
+                    ->getOneOrNullResult();
+
+                if ($tarifBasedTarifvente instanceof Tarifvente) {
+                    return $this->json(['price' => $tarifBasedTarifvente->getPrix()], 200);
+                }
+            }
+        }
+
+        $fallbackTarifvente = $tarifventeRepository->createQueryBuilder('tv')
+            ->where('tv.article = :article')
+            ->andWhere('tv.dossier = :dossier')
+            ->setParameter('article', $article)
+            ->setParameter('dossier', $currentDossier)
+            ->orderBy('tv.dateeffet', 'DESC')
+            ->addOrderBy('tv.id', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if ($fallbackTarifvente instanceof Tarifvente) {
+            return $this->json(['price' => $fallbackTarifvente->getPrix()], 200);
+        }
+
+        if ($client !== null) {
+            $lastUsedPriceForClient = $doctrine->getRepository(Lignepiece::class)
+                ->createQueryBuilder('lp')
+                ->select('lp.pub AS price')
+                ->join('lp.piece', 'ep')
+                ->where('lp.article = :article')
+                ->andWhere('ep.client = :client')
+                ->andWhere('lp.dossier = :dossier')
+                ->andWhere('lp.pub IS NOT NULL')
+                ->setParameter('article', $article)
+                ->setParameter('client', $client)
+                ->setParameter('dossier', $currentDossier)
+                ->orderBy('lp.id', 'DESC')
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+
+            if (is_array($lastUsedPriceForClient) && array_key_exists('price', $lastUsedPriceForClient) && $lastUsedPriceForClient['price'] !== null) {
+                return $this->json(['price' => (float) $lastUsedPriceForClient['price']], 200);
+            }
+        }
+
+        $lastUsedPrice = $doctrine->getRepository(Lignepiece::class)->createQueryBuilder('lp')
+            ->select('lp.pub AS price')
+            ->join('lp.piece', 'ep')
+            ->where('lp.article = :article')
+            ->andWhere('lp.dossier = :dossier')
+            ->andWhere('lp.pub IS NOT NULL')
+            ->setParameter('article', $article)
+            ->setParameter('dossier', $currentDossier)
+            ->orderBy('lp.id', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (is_array($lastUsedPrice) && array_key_exists('price', $lastUsedPrice) && $lastUsedPrice['price'] !== null) {
+            return $this->json(['price' => (float) $lastUsedPrice['price']], 200);
+        }
+
+        return $this->json(['price' => null], 200);
     }
 
     private function recalculatePieceAmount(\Doctrine\ORM\EntityManagerInterface $entityManager, ?Entetepiece $piece): void
@@ -231,7 +340,10 @@ class LignePController extends AbstractController
 
     private function buildPieceRedirectUrl(int $pieceId): string
     {
-        return $this->generateUrl('entetepiece.edit', ['id' => $pieceId]) . '#piece-lines';
+        return $this->generateUrl('entetepiece.edit', [
+            'id' => $pieceId,
+            'scroll' => 'piece-lines',
+        ]) . '#piece-lines';
     }
 }
 

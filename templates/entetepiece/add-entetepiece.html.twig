@@ -138,6 +138,13 @@
             <i class="fas fa-plus mr-2"></i>Ajouter une ligne
         </a>
     </div>
+
+    {% if lignepieces|length == 0 %}
+        <div class="alert alert-warning mt-3 mb-0">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            Cette pièce ne contient aucune ligne. Ajoutez au moins une ligne avant la génération de facture.
+        </div>
+    {% endif %}
     
     <div class="table-responsive mt-3">
         <table class="table table-hover">
@@ -193,37 +200,92 @@
 
 {% block javascripts %}
 <script>
-    $(document).ready(function() {
-        $('.js-example-basic-single').select2({
-            theme: 'bootstrap-5',
-            allowClear: true
-        });
+    (function() {
+        function shouldScrollToLines() {
+            var hash = String(window.location.hash || '').trim();
+            if (hash === '#piece-lines') {
+                return true;
+            }
 
-        var hash = window.location.hash || '';
-        if (hash === '#piece-lines') {
-            var linesSection = document.getElementById('piece-lines');
-            if (linesSection) {
-                setTimeout(function () {
-                    linesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 80);
+            try {
+                var params = new URLSearchParams(window.location.search || '');
+                return String(params.get('scroll') || '').trim() === 'piece-lines';
+            } catch (e) {
+                return false;
             }
         }
 
-        var $client = $('#{{ entetepiece.client.vars.id }}');
-        var $reglement = $('#{{ entetepiece.reglement.vars.id }}');
-        if ($client.length && $reglement.length) {
-            function applyClientReglementIfEmpty() {
-                var selectedOption = $client.find('option:selected');
-                var clientReglementId = String(selectedOption.data('reglement-id') || '').trim();
-                var currentReglementId = String($reglement.val() || '').trim();
-                if (clientReglementId !== '' && currentReglementId === '') {
-                    $reglement.val(clientReglementId).trigger('change');
+        function clearScrollQueryFlag() {
+            try {
+                var params = new URLSearchParams(window.location.search || '');
+                if (String(params.get('scroll') || '').trim() !== 'piece-lines') {
+                    return;
+                }
+
+                params.delete('scroll');
+                var nextUrl = window.location.pathname;
+                var nextQuery = params.toString();
+                if (nextQuery !== '') {
+                    nextUrl += '?' + nextQuery;
+                }
+                if (window.location.hash) {
+                    nextUrl += window.location.hash;
+                }
+
+                window.history.replaceState({}, document.title, nextUrl);
+            } catch (e) {
+                // Ignore environments where URLSearchParams is unavailable.
+            }
+        }
+
+        function initPieceForm() {
+            $('.js-example-basic-single').each(function() {
+                if (!$(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2({
+                        theme: 'bootstrap-5',
+                        allowClear: true
+                    });
+                }
+            });
+
+            if (shouldScrollToLines()) {
+                var linesSection = document.getElementById('piece-lines');
+                if (linesSection) {
+                    setTimeout(function() {
+                        linesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 80);
+                    clearScrollQueryFlag();
                 }
             }
 
-            applyClientReglementIfEmpty();
-            $client.on('change', applyClientReglementIfEmpty);
+            var $client = $('#{{ entetepiece.client.vars.id }}');
+            var $reglement = $('#{{ entetepiece.reglement.vars.id }}');
+            if ($client.length && $reglement.length) {
+                function applyClientReglementIfEmpty() {
+                    var selectedOption = $client.find('option:selected');
+                    var clientReglementId = String(selectedOption.data('reglement-id') || '').trim();
+                    var currentReglementId = String($reglement.val() || '').trim();
+                    if (clientReglementId !== '' && currentReglementId === '') {
+                        $reglement.val(clientReglementId).trigger('change');
+                    }
+                }
+
+                applyClientReglementIfEmpty();
+                $client.off('change.pieceReglement').on('change.pieceReglement', applyClientReglementIfEmpty);
+            }
         }
-    });
+
+        if (!window.__pieceFormAutoScrollHooksBound) {
+            window.__pieceFormAutoScrollHooksBound = true;
+            document.addEventListener('turbo:load', initPieceForm);
+            document.addEventListener('turbo:render', initPieceForm);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPieceForm);
+        } else {
+            initPieceForm();
+        }
+    })();
 </script>
 {% endblock %}

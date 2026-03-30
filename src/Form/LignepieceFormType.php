@@ -21,19 +21,21 @@ class LignepieceFormType extends AbstractType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $lignepiece = $options['data'] ?? null;
+        $isEdit = $lignepiece instanceof Lignepiece && null !== $lignepiece->getId();
         $currentDossier = $this->getCurrentDossier();
 
         $builder
             ->add('qte', null, [
                 'constraints' => [
-                    new Assert\NotBlank(['message' => 'La quantité est obligatoire.']),
-                    new Assert\GreaterThan(['value' => 0, 'message' => 'La quantité doit être supérieure à 0.']),
+                    new Assert\NotBlank(['message' => 'La quantite est obligatoire.']),
+                    new Assert\GreaterThan(['value' => 0, 'message' => 'La quantite doit etre superieure a 0.']),
                 ],
             ])
             ->add('pub', null, [
                 'constraints' => [
                     new Assert\NotBlank(['message' => 'Le prix unitaire est obligatoire.']),
-                    new Assert\GreaterThan(['value' => 0, 'message' => 'Le prix unitaire doit être supérieur à 0.']),
+                    new Assert\GreaterThan(['value' => 0, 'message' => 'Le prix unitaire doit etre superieur a 0.']),
                 ],
                 'attr' => [
                     'readonly' => true,
@@ -48,14 +50,14 @@ class LignepieceFormType extends AbstractType
                     new Assert\Range([
                         'min' => 0,
                         'max' => 100,
-                        'notInRangeMessage' => 'La remise doit être comprise entre 0 et 100.',
+                        'notInRangeMessage' => 'La remise doit etre comprise entre 0 et 100.',
                     ]),
                 ],
             ])
             ->add('article', EntityType::class, [
                 'class' => Article::class,
                 'choice_label' => 'libelle',
-                'placeholder' => ' ',
+                'placeholder' => $isEdit ? false : 'Selectionner un article',
                 'required' => true,
                 'expanded' => false,
                 'multiple' => false,

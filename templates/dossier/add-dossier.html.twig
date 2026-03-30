@@ -17,7 +17,7 @@
 <div class="dossier-editor">
     {{ form_start(dossier, {'attr': {'class': 'needs-validation dossier-editor__form', 'novalidate': 'novalidate'}}) }}
 
-    <div class="row align-items-start">
+    <div class="row">
         <div class="col-xl-7 mb-4">
             <section class="form-card dossier-panel mb-4">
                 <div class="dossier-panel__head">
@@ -152,7 +152,7 @@
                 </div>
             </section>
 
-            <section class="form-card dossier-panel dossier-panel--compact">
+            <section class="form-card dossier-panel mb-4 dossier-panel--compact">
                 <div class="dossier-panel__head">
                     <h5><i class="fas fa-hashtag mr-2"></i>Numerotations</h5>
                     <p>Compteurs utilises a la creation des pieces (numero suivant automatique).</p>
@@ -245,7 +245,16 @@
                         {% set themeAccent = child.vars.attr['data-theme-accent']|default('#94a3b8') %}
                         {% set themeId = child.vars.attr['data-theme-id']|default('') %}
                         <div class="theme-option" data-theme-id="{{ themeId }}">
-                            {{ form_widget(child, {'attr': {'class': 'theme-radio-input'}}) }}
+                            <input
+                                type="radio"
+                                class="theme-radio-input"
+                                id="{{ child.vars.id }}"
+                                name="{{ child.vars.full_name }}"
+                                value="{{ child.vars.value }}"
+                                {% if child.vars.checked %}checked{% endif %}
+                                {% if child.vars.required %}required{% endif %}
+                                data-theme-id="{{ themeId }}"
+                            >
                             <label for="{{ child.vars.id }}" class="theme-option__card" data-theme-card="true">
                                 <span class="theme-option__preview">
                                     <span class="theme-option__dot" style="background: {{ themePrimary }};"></span>
@@ -254,7 +263,7 @@
                                 </span>
                                 <span class="theme-option__content">
                                     <span class="theme-option__title">{{ themeName }}</span>
-                                    <span class="theme-option__text">{{ themeDescription }}</span>
+                                    <span class="theme-option__text" title="{{ themeDescription }}">{{ themeDescription }}</span>
                                 </span>
                                 <span class="theme-option__check">
                                     <i class="fas fa-check"></i>
@@ -267,6 +276,15 @@
                             <span>Aucun theme disponible.</span>
                         </div>
                     {% endfor %}
+                </div>
+                <div class="theme-pagination" id="themePagination">
+                    <button type="button" class="theme-pagination__arrow" id="themePagePrev" aria-label="Themes precedents">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="theme-pagination__dots" id="themePagerDots" role="tablist" aria-label="Pagination des themes"></div>
+                    <button type="button" class="theme-pagination__arrow" id="themePageNext" aria-label="Themes suivants">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
                 {{ form_errors(dossier.theme) }}
             </section>
@@ -310,7 +328,7 @@
             </div>
 
             <div class="form-group mb-3">
-                <label for="themeDescription">Description</label>                                                                                                           v                                                                      
+                <label for="themeDescription">Description</label>
                 <input type="text" id="themeDescription" name="description" class="form-control" placeholder="Ex: Palette elegante pour pilotage commercial">
             </div>
 
@@ -393,16 +411,81 @@
         var input = document.getElementById('logoUpload');
         var preview = document.getElementById('logoPreview');
         var themeGrid = document.getElementById('themeOptionGrid');
+        var themePagination = document.getElementById('themePagination');
+        var themePagePrevButton = document.getElementById('themePagePrev');
+        var themePageNextButton = document.getElementById('themePageNext');
+        var themePagerDots = document.getElementById('themePagerDots');
+        var THEME_PAGE_SIZE = 6;
+        var currentThemePage = 0;
 
         function getThemeOptions() {
             return themeGrid ? Array.from(themeGrid.querySelectorAll('.theme-option')) : [];
         }
 
-        function syncThemeSelection() {
-            getThemeOptions().forEach(function (option) {
-                var radio = option.querySelector('.theme-radio-input');
-                option.classList.toggle('theme-option--selected', !!(radio && radio.checked));
+        function syncThemePaginationDots(pageCount) {
+            if (!themePagerDots) {
+                return;
+            }
+
+            themePagerDots.innerHTML = '';
+
+            for (var page = 0; page < pageCount; page += 1) {
+                var dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = 'theme-pagination__dot' + (page === currentThemePage ? ' is-active' : '');
+                dot.setAttribute('aria-label', 'Aller a la page ' + (page + 1));
+                dot.setAttribute('aria-current', page === currentThemePage ? 'true' : 'false');
+                dot.setAttribute('data-theme-page', String(page));
+                themePagerDots.appendChild(dot);
+            }
+        }
+
+        function applyThemePage() {
+            var options = getThemeOptions();
+            var pageCount = Math.max(1, Math.ceil(options.length / THEME_PAGE_SIZE));
+            if (currentThemePage >= pageCount) {
+                currentThemePage = pageCount - 1;
+            }
+            if (currentThemePage < 0) {
+                currentThemePage = 0;
+            }
+
+            options.forEach(function (option, index) {
+                var optionPage = Math.floor(index / THEME_PAGE_SIZE);
+                option.hidden = optionPage !== currentThemePage;
             });
+
+            if (themePagination) {
+                themePagination.classList.toggle('is-hidden', options.length <= THEME_PAGE_SIZE);
+            }
+            if (themePagePrevButton) {
+                themePagePrevButton.disabled = currentThemePage <= 0;
+            }
+            if (themePageNextButton) {
+                themePageNextButton.disabled = currentThemePage >= (pageCount - 1);
+            }
+
+            syncThemePaginationDots(pageCount);
+        }
+
+        function syncThemeSelection() {
+            var selectedIndex = -1;
+            var options = getThemeOptions();
+
+            options.forEach(function (option, index) {
+                var radio = option.querySelector('.theme-radio-input');
+                var isSelected = !!(radio && radio.checked);
+                option.classList.toggle('theme-option--selected', isSelected);
+                if (isSelected) {
+                    selectedIndex = index;
+                }
+            });
+
+            if (selectedIndex >= 0) {
+                currentThemePage = Math.floor(selectedIndex / THEME_PAGE_SIZE);
+            }
+
+            applyThemePage();
         }
 
         function bindThemeOption(option) {
@@ -428,6 +511,44 @@
             }
         }
 
+        if (themePagination && themePagination.dataset.bound !== '1') {
+            themePagination.dataset.bound = '1';
+
+            if (themePagePrevButton) {
+                themePagePrevButton.addEventListener('click', function () {
+                    currentThemePage -= 1;
+                    applyThemePage();
+                });
+            }
+
+            if (themePageNextButton) {
+                themePageNextButton.addEventListener('click', function () {
+                    currentThemePage += 1;
+                    applyThemePage();
+                });
+            }
+
+            if (themePagerDots) {
+                themePagerDots.addEventListener('click', function (event) {
+                    var target = event.target;
+                    if (!(target instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    var dot = target.closest('[data-theme-page]');
+                    if (!dot) {
+                        return;
+                    }
+
+                    var nextPage = parseInt(dot.getAttribute('data-theme-page') || '', 10);
+                    if (!Number.isNaN(nextPage)) {
+                        currentThemePage = nextPage;
+                        applyThemePage();
+                    }
+                });
+            }
+        }
+
         function escapeHtml(value) {
             return String(value || '')
                 .replace(/&/g, '&amp;')
@@ -445,6 +566,7 @@
             var firstRadio = themeGrid.querySelector('.theme-radio-input');
             var inputName = firstRadio ? firstRadio.getAttribute('name') : 'dossier_form[theme]';
             var firstId = firstRadio ? firstRadio.id : 'dossier_form_theme_0';
+            var inputRequired = firstRadio ? firstRadio.required : true;
             var idBase = firstId ? firstId.replace(/_\d+$/, '') : 'dossier_form_theme';
             var optionId = idBase + '_' + String(theme.id);
 
@@ -452,7 +574,7 @@
             option.className = 'theme-option';
             option.setAttribute('data-theme-id', String(theme.id));
             option.innerHTML = '' +
-                '<input type="radio" class="theme-radio-input" id="' + optionId + '" name="' + escapeHtml(inputName) + '" value="' + String(theme.id) + '">' +
+                '<input type="radio" class="theme-radio-input" id="' + optionId + '" name="' + escapeHtml(inputName) + '" value="' + String(theme.id) + '"' + (inputRequired ? ' required' : '') + '>' +
                 '<label for="' + optionId + '" class="theme-option__card" data-theme-card="true">' +
                     '<span class="theme-option__preview">' +
                         '<span class="theme-option__dot" style="background:' + escapeHtml(theme.primaryColor || '#475569') + ';"></span>' +
@@ -461,7 +583,7 @@
                     '</span>' +
                     '<span class="theme-option__content">' +
                         '<span class="theme-option__title">' + escapeHtml(theme.name || 'Theme') + '</span>' +
-                        '<span class="theme-option__text">' + escapeHtml(theme.description || 'Palette personnalisee') + '</span>' +
+                        '<span class="theme-option__text" title="' + escapeHtml(theme.description || 'Palette personnalisee') + '">' + escapeHtml(theme.description || 'Palette personnalisee') + '</span>' +
                     '</span>' +
                     '<span class="theme-option__check"><i class="fas fa-check"></i></span>' +
                 '</label>';
@@ -832,33 +954,15 @@
 
     .theme-option-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.85rem;
-        max-height: 500px;
-        overflow-y: auto;
-        padding-right: 8px;
-    }
-
-    .theme-option-grid::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .theme-option-grid::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 10px;
-    }
-
-    .theme-option-grid::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-
-    .theme-option-grid::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        min-height: 236px;
+        align-content: start;
     }
 
     .theme-option {
         position: relative;
+        min-width: 0;
     }
 
     .theme-empty-state {
@@ -885,9 +989,10 @@
     .theme-option__card {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        min-height: 80px;
-        padding: 0.85rem 0.9rem;
+        gap: 0.62rem;
+        min-height: 66px;
+        height: 100%;
+        padding: 0.58rem 0.7rem;
         border: 1px solid #dbe3f0;
         border-radius: 16px;
         background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
@@ -910,8 +1015,8 @@
     }
 
     .theme-option__dot {
-        width: 11px;
-        height: 36px;
+        width: 10px;
+        height: 25px;
         border-radius: 999px;
         box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.35);
     }
@@ -920,25 +1025,83 @@
         display: flex;
         flex-direction: column;
         min-width: 0;
+        flex: 1 1 auto;
     }
 
     .theme-option__title {
         color: #0f172a;
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: 0.78rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .theme-option__text {
         color: #64748b;
-        font-size: 0.7rem;
+        font-size: 0.64rem;
         line-height: 1.2;
-        margin-top: 0.15rem;
-        max-height: calc(1.2em * 2);
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
+        margin-top: 0.1rem;
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .theme-pagination {
+        margin-top: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+    }
+
+    .theme-pagination.is-hidden {
+        display: none;
+    }
+
+    .theme-pagination__arrow {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.48);
+        background: #fff;
+        color: #334155;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .theme-pagination__arrow:hover:not(:disabled) {
+        border-color: rgba(37, 99, 235, 0.5);
+        color: var(--theme-primary);
+        box-shadow: 0 8px 14px rgba(15, 23, 42, 0.1);
+    }
+
+    .theme-pagination__arrow:disabled {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+    .theme-pagination__dots {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.36rem;
+    }
+
+    .theme-pagination__dot {
+        width: 8px;
+        height: 8px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.55);
+        padding: 0;
+        transition: all 0.2s ease;
+    }
+
+    .theme-pagination__dot.is-active {
+        width: 18px;
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
     }
 
     .theme-option__check {
@@ -1086,7 +1249,8 @@
 
     .dossier-panel--sticky {
         position: sticky;
-        top: 1.5rem;
+        top: 90px;
+        align-self: flex-start;
     }
 
     .theme-modal {
@@ -1272,16 +1436,31 @@
         .theme-color-grid {
             grid-template-columns: 1fr;
         }
+
+        .dossier-panel--sticky {
+            position: static;
+            top: auto;
+            max-height: none;
+        }
     }
 
     @media (max-width: 575.98px) {
         .theme-option-grid {
-            grid-template-columns: 1fr;
-            max-height: 400px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            min-height: 220px;
         }
 
         .theme-option__card {
-            min-height: 84px;
+            min-height: 62px;
+            padding: 0.52rem 0.62rem;
+        }
+
+        .theme-option__title {
+            font-size: 0.72rem;
+        }
+
+        .theme-option__text {
+            font-size: 0.58rem;
         }
 
         .theme-modal__actions {
@@ -1294,4 +1473,3 @@
     }
 </style>
 {% endblock %}
-

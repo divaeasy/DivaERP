@@ -38,6 +38,7 @@
                 <th data-sort-key="pieceref">Référence</th>
                 <th data-sort-key="remise" data-sort-type="number" class="text-right">Remise</th>
                 <th data-sort-key="montant" data-sort-type="number" class="text-right">Montant</th>
+                <th data-sort-key="lignes" data-sort-type="number" class="text-center">Lignes</th>
                 <th data-sort-key="statut">Statut</th>
                 <th>e-Facture</th>
                 <th data-sort-key="devise">Devise</th>
@@ -55,7 +56,12 @@
                 {% set display_remise = remiseByInvoice[entetepiece.id]|default(entetepiece.remise ?? 0) %}
                 <td class="text-right">{{ display_remise|number_format(2, ',', ' ') }}%</td>
                 {% set display_amount = amountByInvoice[entetepiece.id]|default(entetepiece.montant ?? 0) %}
+                {% set line_count = lineCountByInvoice[entetepiece.id]|default(0) %}
+                {% set canLaunchEinvoicing = line_count > 0 %}
                 <td class="text-right"><strong>{{ display_amount|number_format(2, ',', ' ') }}</strong></td>
+                <td class="text-center">
+                    <span class="badge {{ line_count > 0 ? 'badge-success' : 'badge-warning' }}">{{ line_count }}</span>
+                </td>
                 <td>
                     {% if entetepiece.statut == 'validé' %}
                         <span class="badge badge-success">{{ entetepiece.statut }}</span>
@@ -79,10 +85,10 @@
                     <a href="{{ path('entetepiece.edit', {id: entetepiece.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
-                    <a href="{{ path('invoice_einvoicing_test', {id: entetepiece.id}) }}" 
-                       class="btn btn-action btn-einvoicing {% if not entetepiece.isSubmittedToTiime and not entetepiece.isFactureX %}btn-einvoicing--no-facture{% endif %}" 
-                       title="{% if entetepiece.isSubmittedToTiime %}E-Facture transmise{% elseif entetepiece.isFactureX %}Facture-X générée{% else %}E-Facturation{% endif %}">
-                        <i class="fas {% if entetepiece.isSubmittedToTiime %}fa-check-circle{% elseif entetepiece.isFactureX %}fa-file-pdf{% else %}fa-file-invoice{% endif %}"></i>
+                    <a href="{{ canLaunchEinvoicing ? path('invoice_einvoicing_test', {id: entetepiece.id}) : 'javascript:void(0)' }}" 
+                       class="btn btn-action btn-einvoicing {% if not entetepiece.isSubmittedToTiime and not entetepiece.isFactureX %}btn-einvoicing--no-facture{% endif %} {% if not canLaunchEinvoicing %}disabled no-loading{% endif %}" 
+                       title="{% if not canLaunchEinvoicing %}Ajoutez au moins une ligne pour générer la facture{% elseif entetepiece.isSubmittedToTiime %}E-Facture transmise{% elseif entetepiece.isFactureX %}Facture-X générée{% else %}E-Facturation{% endif %}">
+                        <i class="fas {% if not canLaunchEinvoicing %}fa-ban{% elseif entetepiece.isSubmittedToTiime %}fa-check-circle{% elseif entetepiece.isFactureX %}fa-file-pdf{% else %}fa-file-invoice{% endif %}"></i>
                     </a>
                     <button type="button" class="btn btn-action btn-delete delete-btn"
                             data-delete-url="{{ path('entetepiece.delete', {id: entetepiece.id}) }}"

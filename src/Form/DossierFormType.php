@@ -17,6 +17,9 @@ class DossierFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $dossier = $options['data'] ?? null;
+        $isEdit = $dossier instanceof Dossier && null !== $dossier->getId();
+
         $builder
             ->add('nom')
             ->add('adresse')
@@ -75,6 +78,7 @@ class DossierFormType extends AbstractType
             ->add('devise', EntityType::class, [
                 'class' => Devises::class,
                 'choice_label' => 'code',
+                'placeholder' => $isEdit ? false : 'Selectionner une devise',
             ]);
     }
 

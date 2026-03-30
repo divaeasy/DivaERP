@@ -23,6 +23,8 @@ class EntetePieceFormType extends AbstractType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $piece = $options['data'] ?? null;
+        $isEdit = $piece instanceof Entetepiece && null !== $piece->getId();
         $currentDossier = $this->getCurrentDossier();
 
         $builder
@@ -32,24 +34,22 @@ class EntetePieceFormType extends AbstractType
                     'Commande' => 'Commande',
                     'BL' => 'BL',
                     'Facture' => 'Facture',
+                    'FACT' => 'FACT',
                 ],
-                'placeholder' => ' ',
+                'placeholder' => $isEdit ? false : 'Selectionner un type',
                 'required' => true,
-                'empty_data' => 'Non',
                 'label' => 'Type de piece',
-                'data' => 'Facture',
             ])
             ->add('typet', ChoiceType::class, [
                 'choices' => [
                     'Client' => 'Client',
                     'Prospect' => 'Prospect',
                     'Fournisseur' => 'Fournisseur',
+                    'VAT' => 'VAT',
                 ],
-                'placeholder' => ' ',
+                'placeholder' => $isEdit ? false : 'Selectionner un type de tiers',
                 'required' => true,
-                'empty_data' => 'Non',
                 'label' => 'Type de tiers',
-                'data' => 'Client',
             ])
             ->add('pieceno')
             ->add('pieceref')
@@ -61,20 +61,19 @@ class EntetePieceFormType extends AbstractType
                 'choices' => [
                     'Brouillon' => 'Brouillon',
                     'Active' => 'Active',
+                    'Validee' => "Valid\u{00E9}e",
                     'Perimee' => 'Perimee',
                 ],
-                'placeholder' => ' ',
+                'placeholder' => $isEdit ? false : 'Selectionner un statut',
                 'required' => true,
-                'empty_data' => 'Non',
                 'label' => 'Statut',
-                'data' => 'Active',
             ])
             ->add('edition')
             ->add('rapport')
             ->add('client', EntityType::class, [
                 'class' => Clients::class,
                 'choice_label' => 'nom',
-                'placeholder' => 'Selectionner un client',
+                'placeholder' => $isEdit ? false : 'Selectionner un client',
                 'choice_attr' => static function (?Clients $client): array {
                     return [
                         'data-reglement-id' => (string) ($client?->getReglement()?->getId() ?? ''),
@@ -97,13 +96,13 @@ class EntetePieceFormType extends AbstractType
                 'class' => Devises::class,
                 'choice_label' => 'libelle',
                 'required' => false,
-                'placeholder' => 'Selectionner une devise',
+                'placeholder' => $isEdit ? false : 'Selectionner une devise',
             ])
             ->add('reglement', EntityType::class, [
                 'class' => Reglement::class,
                 'choice_label' => 'libelle',
                 'required' => false,
-                'placeholder' => 'Selectionner un reglement',
+                'placeholder' => $isEdit ? false : 'Selectionner un reglement',
             ])
             ->add('datep', null, [
                 'widget' => 'single_text',

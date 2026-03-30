@@ -44,9 +44,9 @@
         <article class="kpi-card kpi-card--clients">
             <span class="kpi-card__icon"><i class="fas fa-user-plus"></i></span>
             <div>
-                <p class="kpi-card__label">Nouveaux clients</p>
-                <p class="kpi-card__value">{{ newCustomersThisMonth }}</p>
-                <p class="kpi-card__meta">Ce mois</p>
+                <p class="kpi-card__label">Clients du dossier</p>
+                <p class="kpi-card__value">{{ totalClients }}</p>
+                <p class="kpi-card__meta">+{{ newCustomersThisMonth }} ce mois</p>
             </div>
         </article>
 
@@ -517,7 +517,7 @@ $(document).ready(function() {
             data: {
                 labels: months,
                 datasets: [{
-                    label: 'Clients actifs',
+                    label: 'Nouveaux clients',
                     data: customerSeries,
                     borderColor: hexToRgba(accentHex, 0.95),
                     backgroundColor: hexToRgba(accentHex, 0.16),
@@ -534,7 +534,7 @@ $(document).ready(function() {
                 tooltips: {
                     callbacks: {
                         label: function(tooltipItem) {
-                            return 'Clients : ' + Math.round(tooltipItem.yLabel || 0);
+                            return 'Nouveaux clients : ' + Math.round(tooltipItem.yLabel || 0);
                         }
                     }
                 },

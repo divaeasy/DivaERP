@@ -40,6 +40,9 @@ class EInvoicingController extends AbstractController
     public function generateFactureX(Request $request, Entetepiece $invoice): Response
     {
         $model = (string) ($request->query->get('model') ?? $request->request->get('model') ?? FactureXGenerator::DEFAULT_MODEL);
+        if ($invoice->getLignepieces()->isEmpty()) {
+            return $this->redirectToPieceLinesWithWarning($invoice);
+        }
 
         try {
             $result = $this->invoiceService->generateFactureX($invoice, $model);
@@ -71,6 +74,10 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/submit-tiime', name: 'submit_tiime', methods: ['GET', 'POST'])]
     public function submitToTiime(Entetepiece $invoice): Response
     {
+        if ($invoice->getLignepieces()->isEmpty()) {
+            return $this->redirectToPieceLinesWithWarning($invoice);
+        }
+
         try {
             // If Facture-X already generated, use existing files instead of regenerating.
             if ($invoice->isFactureX() && $invoice->getFactureXPdfFilename() && $invoice->getFactureXXmlFilename()) {
@@ -110,6 +117,18 @@ class EInvoicingController extends AbstractController
         }
 
         return $this->redirectToRoute('invoice_einvoicing_test', ['id' => $invoice->getId()]);
+    }
+
+    private function redirectToPieceLinesWithWarning(Entetepiece $invoice): Response
+    {
+        $this->addFlash('warning', 'Cette pièce ne contient aucune ligne. Ajoutez au moins une ligne avant la génération.');
+
+        $url = $this->generateUrl('entetepiece.edit', [
+            'id' => $invoice->getId(),
+            'scroll' => 'piece-lines',
+        ]) . '#piece-lines';
+
+        return $this->redirect($url);
     }
 
     #[Route('/{id}/check-tiime-status', name: 'check_tiime_status', methods: ['GET'])]

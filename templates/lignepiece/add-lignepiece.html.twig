@@ -99,253 +99,339 @@
 
 {% block javascripts %}
 <script>
-    $(document).ready(function() {
-        const priceUrl = '{{ path("lignepiece.price") }}';
-        const currentPieceId = '{{ pceId }}';
-
-        // Auto-calculate montant
-        function parseNumber(rawValue) {
-            if (rawValue === undefined || rawValue === null) {
-                return 0;
-            }
-            var cleaned = String(rawValue).replace(/\s+/g, '').replace(',', '.');
-            var value = parseFloat(cleaned);
-            return Number.isFinite(value) ? value : 0;
-        }
-
-        function calculateMontant() {
-            var $qte = $('[id$="_qte"]');
-            var $pub = $('[id$="_pub"]');
-            var $remise = $('[id$="_remise"]');
-            var $montant = $('[id$="_montant"]');
-
-            var qte = parseNumber($qte.val());
-            var pub = parseNumber($pub.val());
-            var remise = parseNumber($remise.val());
-
-            var montant = qte * pub * (1 - remise / 100);
-            if (!Number.isFinite(montant)) {
-                montant = 0;
+    (function() {
+        function initLignepieceForm() {
+            if (!window.jQuery) {
+                return;
             }
 
-            $montant.val(montant.toFixed(2));
-        }
-
-        function shouldShowError($field, force) {
-            return force === true || $field.data('touched') === true;
-        }
-
-        function markTouched($field) {
-            $field.data('touched', true);
-        }
-
-        function setClientError($field, message) {
-            var $group = $field.closest('.form-group');
-            var $serverErrors = $group.find('.invalid-feedback:not(.js-client-error)');
-            if ($serverErrors.length > 0) {
-                $serverErrors.addClass('d-none js-server-hidden');
+            const $article = $('[id$="_article"]');
+            if ($article.length === 0) {
+                return;
             }
-            var $existing = $group.find('.invalid-feedback.js-client-error');
-            if ($existing.length === 0) {
-                $existing = $('<div class="invalid-feedback d-block js-client-error"></div>');
-                $group.append($existing);
-            }
-            $existing.text(message);
-            $field.addClass('is-invalid');
-        }
 
-        function hideServerErrors($field) {
-            var $group = $field.closest('.form-group');
-            var $serverErrors = $group.find('.invalid-feedback:not(.js-client-error)');
-            if ($serverErrors.length > 0) {
-                $serverErrors.addClass('d-none js-server-hidden');
-            }
-        }
+            const priceUrl = '{{ path("lignepiece.price") }}';
+            const currentPieceId = '{{ pceId }}';
+            const currentClientId = '{{ pieceClientId|default(0) }}';
+            const $pieceField = $('[id$="_piece"]');
+            const $doc = $(document);
+            const $form = $article.closest('form');
+            let lastPriceRequest = 0;
 
-        function clearClientError($field) {
-            var $group = $field.closest('.form-group');
-            $group.find('.invalid-feedback.js-client-error').remove();
-            if ($group.find('.invalid-feedback:not(.js-client-error):visible').length === 0) {
-                $field.removeClass('is-invalid');
-            }
-        }
-
-        function validateRequiredPositive($field, label, force) {
-            var show = shouldShowError($field, force);
-            var raw = String($field.val() || '').trim();
-            if (raw === '') {
-                if (show) {
-                    setClientError($field, label + ' est obligatoire.');
+            function parseNumber(rawValue) {
+                if (rawValue === undefined || rawValue === null) {
+                    return 0;
                 }
-                return false;
+                var cleaned = String(rawValue).replace(/\s+/g, '').replace(',', '.');
+                var value = parseFloat(cleaned);
+                return Number.isFinite(value) ? value : 0;
             }
-            var value = parseNumber(raw);
-            if (value <= 0) {
-                if (show) {
-                    setClientError($field, label + ' doit être supérieur à 0.');
-                }
-                return false;
-            }
-            if (show) {
-                hideServerErrors($field);
-                clearClientError($field);
-            }
-            return true;
-        }
 
-        function validateRemise($field, force) {
-            var show = shouldShowError($field, force);
-            var raw = String($field.val() || '').trim();
-            if (raw === '') {
+            function calculateMontant() {
+                var $qte = $('[id$="_qte"]');
+                var $pub = $('[id$="_pub"]');
+                var $remise = $('[id$="_remise"]');
+                var $montant = $('[id$="_montant"]');
+
+                var qte = parseNumber($qte.val());
+                var pub = parseNumber($pub.val());
+                var remise = parseNumber($remise.val());
+
+                var montant = qte * pub * (1 - remise / 100);
+                if (!Number.isFinite(montant)) {
+                    montant = 0;
+                }
+
+                $montant.val(montant.toFixed(2));
+            }
+
+            function shouldShowError($field, force) {
+                return force === true || $field.data('touched') === true;
+            }
+
+            function markTouched($field) {
+                $field.data('touched', true);
+            }
+
+            function setClientError($field, message) {
+                var $group = $field.closest('.form-group');
+                var $serverErrors = $group.find('.invalid-feedback:not(.js-client-error)');
+                if ($serverErrors.length > 0) {
+                    $serverErrors.addClass('d-none js-server-hidden');
+                }
+                var $existing = $group.find('.invalid-feedback.js-client-error');
+                if ($existing.length === 0) {
+                    $existing = $('<div class="invalid-feedback d-block js-client-error"></div>');
+                    $group.append($existing);
+                }
+                $existing.text(message);
+                $field.addClass('is-invalid');
+            }
+
+            function hideServerErrors($field) {
+                var $group = $field.closest('.form-group');
+                var $serverErrors = $group.find('.invalid-feedback:not(.js-client-error)');
+                if ($serverErrors.length > 0) {
+                    $serverErrors.addClass('d-none js-server-hidden');
+                }
+            }
+
+            function clearClientError($field) {
+                var $group = $field.closest('.form-group');
+                $group.find('.invalid-feedback.js-client-error').remove();
+                if ($group.find('.invalid-feedback:not(.js-client-error):visible').length === 0) {
+                    $field.removeClass('is-invalid');
+                }
+            }
+
+            function validateRequiredPositive($field, label, force) {
+                var show = shouldShowError($field, force);
+                var raw = String($field.val() || '').trim();
+                if (raw === '') {
+                    if (show) {
+                        setClientError($field, label + ' est obligatoire.');
+                    }
+                    return false;
+                }
+                var value = parseNumber(raw);
+                if (value <= 0) {
+                    if (show) {
+                        setClientError($field, label + ' doit être supérieur à 0.');
+                    }
+                    return false;
+                }
                 if (show) {
+                    hideServerErrors($field);
                     clearClientError($field);
                 }
                 return true;
             }
-            var value = parseNumber(raw);
-            if (value < 0 || value > 100) {
+
+            function validateRemise($field, force) {
+                var show = shouldShowError($field, force);
+                var raw = String($field.val() || '').trim();
+                if (raw === '') {
+                    if (show) {
+                        clearClientError($field);
+                    }
+                    return true;
+                }
+                var value = parseNumber(raw);
+                if (value < 0 || value > 100) {
+                    if (show) {
+                        setClientError($field, 'La remise doit être comprise entre 0 et 100.');
+                    }
+                    return false;
+                }
                 if (show) {
-                    setClientError($field, 'La remise doit être comprise entre 0 et 100.');
+                    hideServerErrors($field);
+                    clearClientError($field);
                 }
-                return false;
+                return true;
             }
-            if (show) {
-                hideServerErrors($field);
-                clearClientError($field);
-            }
-            return true;
-        }
 
-        function validateRequiredSelect($field, label, force) {
-            var show = shouldShowError($field, force);
-            var raw = String($field.val() || '').trim();
-            if (raw === '') {
+            function validateRequiredSelect($field, label, force) {
+                var show = shouldShowError($field, force);
+                var raw = String($field.val() || '').trim();
+                if (raw === '') {
+                    if (show) {
+                        setClientError($field, label + ' est obligatoire.');
+                    }
+                    return false;
+                }
                 if (show) {
-                    setClientError($field, label + ' est obligatoire.');
+                    hideServerErrors($field);
+                    clearClientError($field);
                 }
-                return false;
+                return true;
             }
-            if (show) {
-                hideServerErrors($field);
-                clearClientError($field);
+
+            function setSubmitState(isValid) {
+                var $submit = $form.find('button[type="submit"]');
+                $submit.prop('disabled', !isValid);
             }
-            return true;
-        }
 
-        function setSubmitState(isValid) {
-            var $submit = $('button[type="submit"]');
-            $submit.prop('disabled', !isValid);
-        }
+            function hasVisibleErrors() {
+                return $form.find('.invalid-feedback.js-client-error:visible, .invalid-feedback:not(.js-client-error):visible').length > 0;
+            }
 
-        function hasVisibleErrors() {
-            return $('.invalid-feedback.js-client-error:visible, .invalid-feedback:not(.js-client-error):visible').length > 0;
-        }
+            function runClientValidation(options) {
+                var focusOnError = options && options.focusOnError === true;
+                var showErrors = options && options.showErrors === true;
+                var $qte = $('[id$="_qte"]');
+                var $pub = $('[id$="_pub"]');
+                var $remise = $('[id$="_remise"]');
 
-        function runClientValidation(options) {
-            var focusOnError = options && options.focusOnError === true;
-            var showErrors = options && options.showErrors === true;
-            var $article = $('[id$="_article"]');
-            var $qte = $('[id$="_qte"]');
-            var $pub = $('[id$="_pub"]');
-            var $remise = $('[id$="_remise"]');
+                var ok = true;
+                ok = validateRequiredSelect($article, "L'article", showErrors) && ok;
+                ok = validateRequiredPositive($qte, 'La quantité', showErrors) && ok;
+                ok = validateRequiredPositive($pub, 'Le prix unitaire', showErrors) && ok;
+                ok = validateRemise($remise, showErrors) && ok;
 
-            var ok = true;
-            ok = validateRequiredSelect($article, "L'article", showErrors) && ok;
-            ok = validateRequiredPositive($qte, 'La quantité', showErrors) && ok;
-            ok = validateRequiredPositive($pub, 'Le prix unitaire', showErrors) && ok;
-            ok = validateRemise($remise, showErrors) && ok;
+                setSubmitState(!hasVisibleErrors());
 
-            // Disable submit only when errors are visible
-            setSubmitState(!hasVisibleErrors());
-
-            if (!ok && focusOnError) {
-                var $firstInvalid = $('.is-invalid').first();
-                if ($firstInvalid.length) {
-                    $firstInvalid.trigger('focus');
+                if (!ok && focusOnError) {
+                    var $firstInvalid = $form.find('.is-invalid').first();
+                    if ($firstInvalid.length) {
+                        $firstInvalid.trigger('focus');
+                    }
                 }
+
+                return ok;
             }
 
-            return ok;
-        }
+            function applyPriceValue(rawPrice) {
+                var $pub = $('[id$="_pub"]');
+                var normalized = String(rawPrice || '').replace(/\s+/g, '').replace(',', '.');
+                var value = parseFloat(normalized);
+                if (Number.isFinite(value)) {
+                    $pub.val(value.toFixed(2));
+                } else {
+                    $pub.val('0.00');
+                }
+                calculateMontant();
+                runClientValidation();
+            }
 
-        // Trigger calculation and validation state on input change
-        $(document).on('change input', '[id$="_qte"], [id$="_pub"], [id$="_remise"]', function() {
-            calculateMontant();
-            runClientValidation();
-        });
+            function resolvePieceId() {
+                var candidate = String(currentPieceId || '').trim();
+                if (candidate !== '' && candidate !== '0') {
+                    return candidate;
+                }
 
-        $(document).on('blur', '[id$="_qte"]', function() {
-            var $field = $(this);
-            markTouched($field);
-            validateRequiredPositive($field, 'La quantité', true);
-            runClientValidation();
-        });
-        $(document).on('blur', '[id$="_pub"]', function() {
-            var $field = $(this);
-            markTouched($field);
-            validateRequiredPositive($field, 'Le prix unitaire', true);
-            runClientValidation();
-        });
-        $(document).on('blur', '[id$="_remise"]', function() {
-            var $field = $(this);
-            markTouched($field);
-            validateRemise($field, true);
-            runClientValidation();
-        });
-        let lastPriceRequest = 0;
+                if ($pieceField.length > 0) {
+                    candidate = String($pieceField.val() || '').trim();
+                    if (candidate !== '' && candidate !== '0') {
+                        return candidate;
+                    }
+                }
 
-        $(document).on('change', '[id$="_article"]', function() {
-            var $field = $(this);
-            markTouched($field);
-            validateRequiredSelect($field, "L'article", true);
-            runClientValidation();
+                return '';
+            }
 
-            const articleId = $field.val();
-            const $pub = $('[id$="_pub"]');
+            function resolveClientId() {
+                var candidate = String(currentClientId || '').trim();
+                if (candidate !== '' && candidate !== '0') {
+                    return candidate;
+                }
 
-            // reset while loading
-            $pub.val('');
-            calculateMontant();
+                return '';
+            }
 
-            if (articleId) {
-                const requestId = ++lastPriceRequest;
-                fetch(`${priceUrl}?articleId=${articleId}&pieceId=${currentPieceId}`, {
+            function requestAndApplyArticlePrice(articleId) {
+                var $pub = $('[id$="_pub"]');
+                if (!articleId) {
+                    $pub.val('0.00');
+                    calculateMontant();
+                    runClientValidation();
+                    return;
+                }
+
+                var requestId = ++lastPriceRequest;
+                $pub.val('');
+                calculateMontant();
+                var pieceIdForRequest = resolvePieceId();
+                var query = '?articleId=' + encodeURIComponent(articleId);
+                if (pieceIdForRequest !== '') {
+                    query += '&pieceId=' + encodeURIComponent(pieceIdForRequest);
+                }
+                var clientIdForRequest = resolveClientId();
+                if (clientIdForRequest !== '') {
+                    query += '&clientId=' + encodeURIComponent(clientIdForRequest);
+                }
+
+                fetch(priceUrl + query, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     cache: 'no-store',
                 })
-                .then(response => response.json())
-                .then(data => {
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Price request failed');
+                    }
+                    return response.json();
+                })
+                .then(function(data) {
                     if (requestId !== lastPriceRequest) {
-                        return; // a newer selection occurred
+                        return;
                     }
                     if (data && data.price !== undefined && data.price !== null) {
-                        $pub.val(parseFloat(data.price).toFixed(2));
+                        applyPriceValue(data.price);
                     } else {
-                        $pub.val('0.00');
+                        applyPriceValue('0');
                     }
-                    calculateMontant();
                 })
-                .catch(() => {
+                .catch(function() {
                     if (requestId === lastPriceRequest) {
-                        $pub.val('0.00');
-                        calculateMontant();
+                        applyPriceValue('0');
                     }
                 });
-            } else {
-                $pub.val('0.00');
-                calculateMontant();
             }
-        });
 
-        $('form').on('submit', function(e) {
-            if (!runClientValidation({ focusOnError: true, showErrors: true })) {
-                e.preventDefault();
+            $doc.off('.lignepieceForm');
+            $form.off('.lignepieceForm');
+
+            $doc.on('change.lignepieceForm input.lignepieceForm', '[id$="_qte"], [id$="_pub"], [id$="_remise"]', function() {
+                calculateMontant();
+                runClientValidation();
+            });
+
+            $doc.on('blur.lignepieceForm', '[id$="_qte"]', function() {
+                var $field = $(this);
+                markTouched($field);
+                validateRequiredPositive($field, 'La quantité', true);
+                runClientValidation();
+            });
+
+            $doc.on('blur.lignepieceForm', '[id$="_pub"]', function() {
+                var $field = $(this);
+                markTouched($field);
+                validateRequiredPositive($field, 'Le prix unitaire', true);
+                runClientValidation();
+            });
+
+            $doc.on('blur.lignepieceForm', '[id$="_remise"]', function() {
+                var $field = $(this);
+                markTouched($field);
+                validateRemise($field, true);
+                runClientValidation();
+            });
+
+            $doc.on('change.lignepieceForm select2:select.lignepieceForm select2:clear.lignepieceForm', '[id$="_article"]', function() {
+                var $field = $(this);
+                markTouched($field);
+                validateRequiredSelect($field, "L'article", true);
+                runClientValidation();
+                requestAndApplyArticlePrice(String($field.val() || '').trim());
+            });
+
+            $form.on('submit.lignepieceForm', function(e) {
+                if (!runClientValidation({ focusOnError: true, showErrors: true })) {
+                    e.preventDefault();
+                }
+            });
+
+            calculateMontant();
+            setSubmitState(true);
+
+            var initialArticleId = String($article.val() || '').trim();
+            var initialPrice = parseNumber($('[id$="_pub"]').val());
+            if (initialArticleId !== '' && initialPrice <= 0) {
+                requestAndApplyArticlePrice(initialArticleId);
+            } else {
+                runClientValidation();
             }
-        });
-        
-        // Calculate on page load to initialize value
-        calculateMontant();
-        setSubmitState(true);
-    });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initLignepieceForm);
+        } else {
+            initLignepieceForm();
+        }
+
+        document.addEventListener('turbo:load', initLignepieceForm);
+        document.addEventListener('turbo:render', initLignepieceForm);
+    })();
 </script>
 {% endblock %}
+
+
