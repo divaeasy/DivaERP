@@ -153,12 +153,15 @@ class FactureXBuilder
         foreach ($lines as $line) {
             $quantity = (float) ($line->getQuantite() ?? 1.0);
             $unitPrice = (float) ($line->getPu() ?? 0.0);
+            $rawRemise = (float) ($line->getRemise() ?? 0.0);
+            $lineRemise = max(0.0, min(100.0, $rawRemise));
+            $netUnitPrice = round($unitPrice * (1 - $lineRemise / 100), 4);
             $description = $line->getDesignation() ?? 'Service/Product';
 
             $descriptor->doAddTradeLineItem(
                 (string) $lineNo,
                 $description,
-                $unitPrice,
+                $netUnitPrice,
                 $quantity,
                 ZugferdUnitCodes::REC20_PIECE,
                 0.0,

@@ -2912,6 +2912,11 @@
 
             // Hide loading when page fully loads (for browser back button)
             $(window).on('pageshow', function(event) {
+                var nativeEvent = event.originalEvent || event;
+                if ((nativeEvent && nativeEvent.persisted) || document.documentElement.hasAttribute('data-turbo-preview')) {
+                    showLoading();
+                    return;
+                }
                 hideLoading();
             });
 
@@ -2919,11 +2924,23 @@
             if (!window.__loadingOverlayTurboHooksBound) {
                 window.__loadingOverlayTurboHooksBound = true;
 
+                document.addEventListener('turbo:before-render', function() {
+                    showLoading();
+                });
+
                 document.addEventListener('turbo:load', function() {
                     hideLoading();
                 });
 
                 document.addEventListener('turbo:render', function() {
+                    if (document.documentElement.hasAttribute('data-turbo-preview')) {
+                        showLoading();
+                        return;
+                    }
+                    hideLoading();
+                });
+
+                document.addEventListener('turbo:before-cache', function() {
                     hideLoading();
                 });
 

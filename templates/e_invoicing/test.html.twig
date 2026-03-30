@@ -326,7 +326,8 @@
     {% set computed_remise_weighted = computed_remise_weighted + (line_total * line_remise) %}
     {% set computed_remise_base = computed_remise_base + line_total %}
 {% endfor %}
-{% set invoice_total = (invoice.montant is not null and invoice.montant > 0) ? invoice.montant : computed_total %}
+{% set has_lines = invoice.lignepieces|length > 0 %}
+{% set invoice_total = has_lines ? computed_total : ((invoice.montant is not null and invoice.montant > 0) ? invoice.montant : computed_total) %}
 {% set invoice_remise = computed_remise_base > 0 ? (computed_remise_weighted / computed_remise_base) : (invoice.remise ?? 0) %}
 {% set invoice_tax_rate = invoice.taxRate is not null ? invoice.taxRate : (invoice.remise ?? 0) %}
 {% set invoice_taxable = invoice.taxableAmount is not null ? invoice.taxableAmount : invoice_total %}
