@@ -5,6 +5,7 @@ namespace App\Service;
 use Mpdf\Mpdf;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Color;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -48,7 +49,7 @@ class ExportService
     }
 
     /**
-     * Export dashboard data to Excel
+     * Export dashboard data to Excel with professional styling
      */
     public function exportDashboardToExcel(array $kpiData, string $filename = 'dashboard.xlsx'): BinaryFileResponse
     {
@@ -56,48 +57,125 @@ class ExportService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Dashboard KPI');
 
-        // Add title
-        $sheet->setCellValue('A1', 'Tableau de Bord - Données KPI');
+        // Set up page for printing (margins, orientation)
+        $sheet->getPageSetup()->setOrientation('portrait');
+        $sheet->getPageSetup()->setPaperSize(PageSetup::PAPERSIZE_A4);
+        $sheet->getPageMargins()->setLeft(0.5);
+        $sheet->getPageMargins()->setRight(0.5);
+        $sheet->getPageMargins()->setTop(0.5);
+        $sheet->getPageMargins()->setBottom(0.5);
+
+        // ========== HEADER SECTION ==========
+        // Title row with background color
+        $sheet->setCellValue('A1', 'TABLEAU DE BORD');
         $sheet->mergeCells('A1:D1');
-        $sheet->getStyle('A1:D1')->getFont()->setBold(true)->setSize(14);
+        $titleStyle = $sheet->getStyle('A1');
+        $titleStyle->getFont()->setBold(true)->setSize(16)->setColor(new Color('FFFFFFFF'));
+        $titleStyle->getFill()->setFillType('solid')->getStartColor()->setARGB('FF1E3A8A'); // Dark blue
+        $titleStyle->getAlignment()->setHorizontal('center')->setVertical('center');
+        $sheet->getRowDimension(1)->setRowHeight(28);
 
-        // Add date
-        $sheet->setCellValue('A2', 'Date d\'export: ' . date('d/m/Y H:i'));
+        // Subtitle with date
+        $sheet->setCellValue('A2', 'Indicateurs Clés de Performance (KPI) - Export du ' . date('d/m/Y à H:i'));
         $sheet->mergeCells('A2:D2');
+        $subtitleStyle = $sheet->getStyle('A2');
+        $subtitleStyle->getFont()->setSize(10)->setColor(new Color('FF666666'))->setItalic(true);
+        $subtitleStyle->getFill()->setFillType('solid')->getStartColor()->setARGB('FFF3F4F6'); // Light gray
+        $subtitleStyle->getAlignment()->setHorizontal('center');
+        $sheet->getRowDimension(2)->setRowHeight(18);
 
-        // Headers
-        $sheet->setCellValue('A4', 'Métrique');
-        $sheet->setCellValue('B4', 'Valeur');
-        $sheet->setCellValue('C4', 'Période');
-        $sheet->setCellValue('D4', 'Comparaison');
-        
+        // Empty row for spacing
+        $sheet->getRowDimension(3)->setRowHeight(8);
+
+        // ========== METRICS TABLE ==========
+        // Header row
+        $headerCells = ['A4' => 'Métrique', 'B4' => 'Valeur', 'C4' => 'Période', 'D4' => 'Comparaison'];
+        foreach ($headerCells as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
         // Style header row
-        $sheet->getStyle('A4:D4')->getFont()->setBold(true)->setColor(new Color('FFFFFFFF'));
-        $sheet->getStyle('A4:D4')->getFill()->setFillType('solid')->getStartColor()->setARGB('FF4E73DF');
+        $headerStyle = $sheet->getStyle('A4:D4');
+        $headerStyle->getFont()->setBold(true)->setColor(new Color('FFFFFFFF'))->setSize(11);
+        $headerStyle->getFill()->setFillType('solid')->getStartColor()->setARGB('FF4F46E5'); // Professional indigo
+        $headerStyle->getAlignment()->setHorizontal('center')->setVertical('center')->setWrapText(true);
+        $headerStyle->getBorders()->getAllBorders()
+            ->setBorderStyle('thin')
+            ->setColor(new Color('FFE5E7EB'));
+        $sheet->getRowDimension(4)->setRowHeight(22);
 
-        // Add KPI data
+        // Add KPI data with alternating row colors
         $row = 5;
+        $rowCount = 0;
         foreach ($kpiData as $metric => $value) {
+            // Alternate row background colors
+            $bgColor = ($rowCount % 2 === 0) ? 'FFFBFCFD' : 'FFFFFFFF';
+            $rowStyle = $sheet->getStyle("A{$row}:D{$row}");
+            $rowStyle->getFill()->setFillType('solid')->getStartColor()->setARGB($bgColor);
+            $rowStyle->getBorders()->getAllBorders()
+                ->setBorderStyle('thin')
+                ->setColor(new Color('FFE5E7EB'));
+
+            // Metric name
             $sheet->setCellValue("A{$row}", (string)$metric);
+            $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(10)->setColor(new Color('FF1F2937'));
+            $sheet->getStyle("A{$row}")->getAlignment()->setVertical('center')->setWrapText(true);
+
             if (is_array($value)) {
-                $cellValue = $value['value'] ?? '';
-                $cellPeriod = $value['period'] ?? '';
-                $cellComparison = $value['comparison'] ?? '';
-                
-                // Convert to string if needed
+                $cellValue = $value['value'] ?? '-';
+                $cellPeriod = $value['period'] ?? '-';
+                $cellComparison = $value['comparison'] ?? '-';
+
+                // Value cell
                 $sheet->setCellValue("B{$row}", (string)$cellValue);
+                $sheet->getStyle("B{$row}")->getFont()->setSize(10)->setBold(true);
+                $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal('right')->setVertical('center');
+
+                // Period cell
                 $sheet->setCellValue("C{$row}", (string)$cellPeriod);
+                $sheet->getStyle("C{$row}")->getFont()->setSize(9)->setColor(new Color('FF6B7280'));
+                $sheet->getStyle("C{$row}")->getAlignment()->setHorizontal('center')->setVertical('center');
+
+                // Comparison cell with conditional coloring
                 $sheet->setCellValue("D{$row}", (string)$cellComparison);
+                $comparisonStr = (string)$cellComparison;
+                $compStyle = $sheet->getStyle("D{$row}");
+                
+                if (strpos($comparisonStr, '+') === 0 && $comparisonStr !== '+0%') {
+                    // Positive growth
+                    $compStyle->getFont()->setColor(new Color('FF059669'))->setBold(true);
+                } elseif (strpos($comparisonStr, '-') === 0 && $comparisonStr !== '-0%') {
+                    // Negative growth
+                    $compStyle->getFont()->setColor(new Color('FFC1121B'))->setBold(true);
+                } else {
+                    // Neutral
+                    $compStyle->getFont()->setColor(new Color('FF6B7280'));
+                }
+                $compStyle->getAlignment()->setHorizontal('center')->setVertical('center');
             } else {
                 $sheet->setCellValue("B{$row}", (string)$value);
+                $sheet->getStyle("B{$row}")->getFont()->setSize(10)->setBold(true);
+                $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal('right')->setVertical('center');
             }
+
+            $sheet->getRowDimension($row)->setRowHeight(20);
             $row++;
+            $rowCount++;
         }
 
-        // Auto-fit columns
-        foreach (['A', 'B', 'C', 'D'] as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
+        // ========== COLUMN WIDTHS ==========
+        $sheet->getColumnDimension('A')->setWidth(25);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(20);
+        $sheet->getColumnDimension('D')->setWidth(18);
+
+        // ========== FOOTER SECTION ==========
+        $footerRow = $row + 1;
+        $sheet->setCellValue("A{$footerRow}", 'Généré par DivaERP - ' . date('Y-m-d H:i:s'));
+        $sheet->mergeCells("A{$footerRow}:D{$footerRow}");
+        $footerStyle = $sheet->getStyle("A{$footerRow}");
+        $footerStyle->getFont()->setSize(8)->setColor(new Color('FF9CA3AF'))->setItalic(true);
+        $footerStyle->getAlignment()->setHorizontal('right')->setVertical('center');
 
         // Write to temp file
         $tmpFile = tempnam(sys_get_temp_dir(), 'dashboard_');
@@ -111,6 +189,143 @@ class ExportService
         $response->deleteFileAfterSend(true);
 
         return $response;
+    }
+
+    /**
+     * Export list data to Excel with professional styling
+     * 
+     * @param string $filename The download filename
+     * @param string $sheetTitle The sheet title and table header
+     * @param string[] $headers Column headers
+     * @param array $rows Data rows (array of arrays)
+     */
+    public function exportListToExcel(string $filename, string $sheetTitle, array $headers, array $rows): BinaryFileResponse
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Export');
+
+        // Set up page for printing
+        $sheet->getPageSetup()->setOrientation('landscape');
+        $sheet->getPageSetup()->setPaperSize(PageSetup::PAPERSIZE_A4);
+        $sheet->getPageMargins()->setLeft(0.4);
+        $sheet->getPageMargins()->setRight(0.4);
+        $sheet->getPageMargins()->setTop(0.5);
+        $sheet->getPageMargins()->setBottom(0.5);
+
+        // ========== HEADER SECTION ==========
+        $sheet->setCellValue('A1', strtoupper($sheetTitle));
+        $sheet->mergeCells('A1:' . $this->getColumnLetter(count($headers)) . '1');
+        $titleStyle = $sheet->getStyle('A1');
+        $titleStyle->getFont()->setBold(true)->setSize(14)->setColor(new Color('FFFFFFFF'));
+        $titleStyle->getFill()->setFillType('solid')->getStartColor()->setARGB('FF1E3A8A');
+        $titleStyle->getAlignment()->setHorizontal('center')->setVertical('center');
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        // Subtitle with date and row count
+        $sheet->setCellValue('A2', 'Export du ' . date('d/m/Y à H:i') . ' - ' . count($rows) . ' enregistrement(s)');
+        $sheet->mergeCells('A2:' . $this->getColumnLetter(count($headers)) . '2');
+        $subtitleStyle = $sheet->getStyle('A2');
+        $subtitleStyle->getFont()->setSize(9)->setColor(new Color('FF666666'))->setItalic(true);
+        $subtitleStyle->getFill()->setFillType('solid')->getStartColor()->setARGB('FFF3F4F6');
+        $subtitleStyle->getAlignment()->setHorizontal('center');
+        $sheet->getRowDimension(2)->setRowHeight(16);
+
+        // Empty row for spacing
+        $sheet->getRowDimension(3)->setRowHeight(6);
+
+        // ========== HEADER ROW ==========
+        $headerRow = 4;
+        foreach ($headers as $colIndex => $header) {
+            $cell = $this->getColumnLetter($colIndex + 1) . $headerRow;
+            $sheet->setCellValue($cell, $header);
+        }
+
+        $headerRange = 'A' . $headerRow . ':' . $this->getColumnLetter(count($headers)) . $headerRow;
+        $headerStyle = $sheet->getStyle($headerRange);
+        $headerStyle->getFont()->setBold(true)->setColor(new Color('FFFFFFFF'))->setSize(10);
+        $headerStyle->getFill()->setFillType('solid')->getStartColor()->setARGB('FF4F46E5');
+        $headerStyle->getAlignment()->setHorizontal('center')->setVertical('center')->setWrapText(true);
+        $headerStyle->getBorders()->getAllBorders()
+            ->setBorderStyle('thin')
+            ->setColor(new Color('FFE5E7EB'));
+        $sheet->getRowDimension($headerRow)->setRowHeight(20);
+
+        // ========== DATA ROWS ==========
+        $dataRow = $headerRow + 1;
+        $rowCount = 0;
+        foreach ($rows as $row) {
+            // Alternate row background colors
+            $bgColor = ($rowCount % 2 === 0) ? 'FFFBFCFD' : 'FFFFFFFF';
+            $rowRange = 'A' . $dataRow . ':' . $this->getColumnLetter(count($headers)) . $dataRow;
+            $rowStyle = $sheet->getStyle($rowRange);
+            $rowStyle->getFill()->setFillType('solid')->getStartColor()->setARGB($bgColor);
+            $rowStyle->getBorders()->getAllBorders()
+                ->setBorderStyle('thin')
+                ->setColor(new Color('FFE5E7EB'));
+            $rowStyle->getFont()->setSize(9);
+            $rowStyle->getAlignment()->setVertical('center');
+
+            foreach ($row as $colIndex => $value) {
+                $cell = $this->getColumnLetter($colIndex + 1) . $dataRow;
+                $sheet->setCellValue($cell, $value);
+                
+                // Center align for ID columns, left align for text, right align for numbers
+                $cellStyle = $sheet->getStyle($cell);
+                if ($colIndex === 0 || stripos($headers[$colIndex] ?? '', 'ID') !== false) {
+                    $cellStyle->getAlignment()->setHorizontal('center');
+                } elseif (is_numeric($value) && $colIndex > 0) {
+                    $cellStyle->getAlignment()->setHorizontal('right');
+                } else {
+                    $cellStyle->getAlignment()->setHorizontal('left');
+                }
+            }
+
+            $sheet->getRowDimension($dataRow)->setRowHeight(18);
+            $dataRow++;
+            $rowCount++;
+        }
+
+        // ========== COLUMN WIDTHS ==========
+        for ($i = 0; $i < count($headers); $i++) {
+            $col = $this->getColumnLetter($i + 1);
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // ========== FOOTER SECTION ==========
+        $footerRow = $dataRow + 1;
+        $sheet->setCellValue('A' . $footerRow, 'Généré par DivaERP - ' . date('Y-m-d H:i:s'));
+        $sheet->mergeCells('A' . $footerRow . ':' . $this->getColumnLetter(count($headers)) . $footerRow);
+        $footerStyle = $sheet->getStyle('A' . $footerRow);
+        $footerStyle->getFont()->setSize(8)->setColor(new Color('FF9CA3AF'))->setItalic(true);
+        $footerStyle->getAlignment()->setHorizontal('right');
+
+        // Write to temp file
+        $tmpFile = tempnam(sys_get_temp_dir(), 'export_list_');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tmpFile);
+
+        // Return as downloadable response
+        $response = new BinaryFileResponse($tmpFile);
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $filename));
+        $response->deleteFileAfterSend(true);
+
+        return $response;
+    }
+
+    /**
+     * Helper function to convert column number to letter
+     */
+    private function getColumnLetter(int $colNum): string
+    {
+        $colLetter = '';
+        while ($colNum > 0) {
+            $colNum--;
+            $colLetter = chr(65 + ($colNum % 26)) . $colLetter;
+            $colNum = intdiv($colNum, 26);
+        }
+        return $colLetter;
     }
 
     /**
