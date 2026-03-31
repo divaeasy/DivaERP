@@ -2900,6 +2900,12 @@
             // Show loading on form submit
             $('form').on('submit', function() {
                 var form = $(this);
+
+                // Allow AJAX/local handlers to opt-out from global navigation loader.
+                if (form.hasClass('no-loading') || form.is('[data-no-loading]')) {
+                    return;
+                }
+
                 if (form[0].checkValidity() !== false) {
                     showLoading();
                 }
@@ -3060,44 +3066,110 @@
             });
 
             // ===== TOAST NOTIFICATIONS =====
-            $('.toast-notification').each(function() {
-                var toast = $(this);
-                // Auto-dismiss after 5 seconds
-                var timer = setTimeout(function() {
-                    dismissToast(toast);
-                }, 5000);
-                // Pause countdown on hover
-                toast.on('mouseenter', function() {
-                    clearTimeout(timer);
-                    toast.find('.toast-progress-bar').css('animation-play-state', 'paused');
-                });
-                toast.on('mouseleave', function() {
-                    var remaining = toast.find('.toast-progress-bar')[0];
-                    var computedStyle = window.getComputedStyle(remaining);
-                    var transform = computedStyle.getPropertyValue('transform');
-                    // Restart timer with remaining visual time
-                    toast.find('.toast-progress-bar').css('animation-play-state', 'running');
-                    timer = setTimeout(function() {
-                        dismissToast(toast);
-                    }, 2000);
-                });
-                // Close button
-                toast.find('.toast-close').on('click', function() {
-                    clearTimeout(timer);
-                    dismissToast(toast);
-                });
-            });
+            function getOrCreateToastContainer() {
+                var container = $('.toast-container').first();
+                if (container.length) {
+                    return container;
+                }
+
+                var host = $('.container-fluid.py-3').first();
+                if (!host.length) {
+                    host = $('body');
+                }
+
+                container = $('<div class="toast-container"></div>');
+                host.prepend(container);
+                return container;
+            }
 
             function dismissToast(toast) {
                 toast.addClass('toast-hiding');
                 setTimeout(function() {
                     toast.remove();
-                    // Remove container if empty
                     if ($('.toast-container').children().length === 0) {
                         $('.toast-container').remove();
                     }
                 }, 300);
             }
+
+            function bindToastLifecycle(toast) {
+                if (!toast || !toast.length) {
+                    return;
+                }
+
+                if (toast.data('toastBound') === 1) {
+                    return;
+                }
+
+                toast.data('toastBound', 1);
+
+                var timer = setTimeout(function() {
+                    dismissToast(toast);
+                }, 5000);
+
+                toast.on('mouseenter', function() {
+                    clearTimeout(timer);
+                    toast.find('.toast-progress-bar').css('animation-play-state', 'paused');
+                });
+
+                toast.on('mouseleave', function() {
+                    toast.find('.toast-progress-bar').css('animation-play-state', 'running');
+                    timer = setTimeout(function() {
+                        dismissToast(toast);
+                    }, 2000);
+                });
+
+                toast.find('.toast-close').on('click', function() {
+                    clearTimeout(timer);
+                    dismissToast(toast);
+                });
+            }
+
+            window.showAppToast = function(configOrMessage, typeArg) {
+                var config = (typeof configOrMessage === 'object' && configOrMessage !== null)
+                    ? configOrMessage
+                    : { message: configOrMessage, type: typeArg };
+
+                var message = String((config && config.message) ? config.message : '').trim();
+                if (!message) {
+                    return;
+                }
+
+                var normalizedType = String((config && config.type) ? config.type : 'info').toLowerCase();
+                if (['success', 'error', 'info'].indexOf(normalizedType) === -1) {
+                    normalizedType = 'info';
+                }
+
+                var variant = {
+                    success: { css: 'toast-success', icon: 'fas fa-check-circle', title: 'Succes' },
+                    error: { css: 'toast-error', icon: 'fas fa-exclamation-circle', title: 'Erreur' },
+                    info: { css: 'toast-info', icon: 'fas fa-info-circle', title: 'Information' }
+                }[normalizedType];
+
+                var title = String((config && config.title) ? config.title : variant.title);
+
+                var toast = $('<div/>', { 'class': 'toast-notification ' + variant.css, role: 'alert' });
+                toast.append(
+                    $('<div/>', { 'class': 'toast-icon' }).append($('<i/>', { 'class': variant.icon }))
+                );
+                toast.append(
+                    $('<div/>', { 'class': 'toast-content' })
+                        .append($('<div/>', { 'class': 'toast-title', text: title }))
+                        .append($('<div/>', { 'class': 'toast-message', text: message }))
+                );
+                toast.append($('<button/>', { type: 'button', 'class': 'toast-close', 'aria-label': 'Fermer', text: '×' }));
+                toast.append(
+                    $('<div/>', { 'class': 'toast-progress' }).append($('<div/>', { 'class': 'toast-progress-bar' }))
+                );
+
+                var container = getOrCreateToastContainer();
+                container.append(toast);
+                bindToastLifecycle(toast);
+            };
+
+            $('.toast-notification').each(function() {
+                bindToastLifecycle($(this));
+            });
 
             // Auto-close toasts on page navigation
             $(window).on('beforeunload', function() {

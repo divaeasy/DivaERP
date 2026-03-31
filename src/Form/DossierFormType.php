@@ -82,6 +82,7 @@ class DossierFormType extends AbstractType
                         'class' => 'theme-radio-input',
                         'data-theme-id' => (string) $theme->getId(),
                         'data-theme-code' => (string) $theme->getCode(),
+                        'data-theme-system' => $theme->isSystem() ? '1' : '0',
                         'data-theme-name' => (string) $theme->getName(),
                         'data-theme-description' => (string) ($theme->getDescription() ?? ''),
                         'data-theme-primary' => (string) $theme->getPrimaryColor(),

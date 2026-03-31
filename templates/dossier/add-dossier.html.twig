@@ -231,11 +231,10 @@
                     </div>
                     {% if is_granted('ROLE_ADMIN') %}
                         <button type="button" class="theme-settings-trigger js-open-theme-modal" title="Creer un nouveau theme">
-                            <i class="fas fa-cog"></i>
+                            <i class="fas fa-plus"></i>
                         </button>
                     {% endif %}
                 </div>
-
                 <div class="theme-option-grid" id="themeOptionGrid">
                     {% for child in dossier.theme %}
                         {% set themeName = child.vars.attr['data-theme-name']|default(child.vars.label|default('Theme')) %}
@@ -244,7 +243,18 @@
                         {% set themeSecondary = child.vars.attr['data-theme-secondary']|default('#334155') %}
                         {% set themeAccent = child.vars.attr['data-theme-accent']|default('#94a3b8') %}
                         {% set themeId = child.vars.attr['data-theme-id']|default('') %}
-                        <div class="theme-option" data-theme-id="{{ themeId }}">
+                        {% set themeSystemRaw = child.vars.attr['data-theme-system']|default('0') %}
+                        {% set themeIsSystem = themeSystemRaw in ['1', 1, true, 'true'] %}
+                        <div
+                            class="theme-option"
+                            data-theme-id="{{ themeId }}"
+                            data-theme-name="{{ themeName }}"
+                            data-theme-description="{{ themeDescription }}"
+                            data-theme-primary="{{ themePrimary }}"
+                            data-theme-secondary="{{ themeSecondary }}"
+                            data-theme-accent="{{ themeAccent }}"
+                            data-theme-is-system="{{ themeIsSystem ? '1' : '0' }}"
+                        >
                             <input
                                 type="radio"
                                 class="theme-radio-input"
@@ -269,6 +279,34 @@
                                     <i class="fas fa-check"></i>
                                 </span>
                             </label>
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <div class="theme-option__menu">
+                                    <button
+                                        type="button"
+                                        class="theme-option__menu-toggle no-loading"
+                                        data-no-loading="true"
+                                        data-theme-menu-toggle="true"
+                                        aria-haspopup="true"
+                                        aria-expanded="false"
+                                        aria-label="Actions du theme"
+                                    >
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                    <div class="theme-option__menu-dropdown" data-theme-menu-dropdown hidden>
+                                        <button type="button" class="theme-option__menu-item" data-theme-action="edit">
+                                            <i class="fas fa-pen mr-2"></i>Modifier
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="theme-option__menu-item theme-option__menu-item--danger"
+                                            data-theme-action="delete"
+                                            {% if themeIsSystem %}disabled title="Theme systeme non supprimable"{% endif %}
+                                        >
+                                            <i class="fas fa-trash mr-2"></i>Supprimer
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
                     {% else %}
                         <div class="theme-empty-state">
@@ -305,7 +343,18 @@
 </div>
 
 {% if is_granted('ROLE_ADMIN') %}
-<div class="theme-modal" id="themeCreateModal" aria-hidden="true" data-create-url="{{ path('dossier.theme.create') }}" data-csrf-token="{{ csrf_token('create_dossier_theme') }}">
+{% set themeUpdateUrlTemplate = path('dossier.theme.update', {id: 999999})|replace({'999999': '__ID__'}) %}
+{% set themeDeleteUrlTemplate = path('dossier.theme.delete', {id: 999999})|replace({'999999': '__ID__'}) %}
+<div
+    class="theme-modal"
+    id="themeCreateModal"
+    aria-hidden="true"
+    data-create-url="{{ path('dossier.theme.create') }}"
+    data-update-url-template="{{ themeUpdateUrlTemplate }}"
+    data-delete-url-template="{{ themeDeleteUrlTemplate }}"
+    data-csrf-token="{{ csrf_token('create_dossier_theme') }}"
+    data-manage-csrf-token="{{ csrf_token('manage_dossier_theme') }}"
+>
     <div class="theme-modal__backdrop" data-theme-modal-close="true"></div>
     <div class="theme-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="themeCreateModalTitle">
         <button type="button" class="theme-modal__close" data-theme-modal-close="true" aria-label="Fermer">&times;</button>
@@ -315,13 +364,14 @@
         </div>
 
         <h4 id="themeCreateModalTitle">Nouveau theme</h4>
-        <p class="theme-modal__subtitle">Ajoutez une palette personnalisee qui sera disponible immediatement dans ce dossier.</p>
+        <p class="theme-modal__subtitle" id="themeCreateModalSubtitle">Ajoutez une palette personnalisee qui sera disponible immediatement dans ce dossier.</p>
 
         <div class="theme-modal__message-slot">
             <div class="theme-modal__alert" id="themeCreateMessage" hidden></div>
         </div>
 
-        <form id="themeCreateForm" class="theme-modal__form" novalidate>
+        <form id="themeCreateForm" class="theme-modal__form no-loading" data-no-loading="true" novalidate>
+            <input type="hidden" id="themeEditId" name="themeId" value="">
             <div class="form-group mb-3">
                 <label for="themeName" class="required">Nom du theme</label>
                 <input type="text" id="themeName" name="name" class="form-control" placeholder="Ex: Bleu ocean premium" required>
@@ -353,8 +403,8 @@
             <div class="theme-modal__actions">
                 <button type="button" class="btn btn-secondary" data-theme-modal-close="true">Annuler</button>
                 <button type="submit" class="btn btn-primary" id="themeCreateSubmitBtn">
-                    <span class="theme-submit-label"><i class="fas fa-plus mr-2"></i>Creer le theme</span>
-                    <span class="theme-submit-loading" hidden><i class="fas fa-circle-notch fa-spin mr-2"></i>Creation...</span>
+                    <span class="theme-submit-label"><i class="fas fa-plus mr-2"></i><span id="themeSubmitLabelText">Creer le theme</span></span>
+                    <span class="theme-submit-loading" hidden><i class="fas fa-circle-notch fa-spin mr-2"></i><span id="themeSubmitLoadingText">Creation...</span></span>
                 </button>
             </div>
         </form>
@@ -417,6 +467,7 @@
         var themePagerDots = document.getElementById('themePagerDots');
         var THEME_PAGE_SIZE = 6;
         var currentThemePage = 0;
+        var isAdmin = {{ is_granted('ROLE_ADMIN') ? 'true' : 'false' }};
 
         function getThemeOptions() {
             return themeGrid ? Array.from(themeGrid.querySelectorAll('.theme-option')) : [];
@@ -468,6 +519,26 @@
             syncThemePaginationDots(pageCount);
         }
 
+        function showGlobalToast(message, type) {
+            if (!message) {
+                return;
+            }
+
+            if (typeof window.showAppToast === 'function') {
+                window.showAppToast({
+                    message: message,
+                    type: type || 'info'
+                });
+                return;
+            }
+
+            if (type === 'error') {
+                console.error(message);
+            } else {
+                console.log(message);
+            }
+        }
+
         function syncThemeSelection() {
             var selectedIndex = -1;
             var options = getThemeOptions();
@@ -486,6 +557,130 @@
             }
 
             applyThemePage();
+        }
+
+        function getThemeDataFromOption(option) {
+            if (!option) {
+                return null;
+            }
+
+            return {
+                id: parseInt(option.getAttribute('data-theme-id') || '', 10),
+                name: option.getAttribute('data-theme-name') || 'Theme',
+                description: option.getAttribute('data-theme-description') || 'Palette personnalisee',
+                primaryColor: option.getAttribute('data-theme-primary') || '#475569',
+                secondaryColor: option.getAttribute('data-theme-secondary') || '#334155',
+                accentColor: option.getAttribute('data-theme-accent') || '#94a3b8',
+                isSystem: String(option.getAttribute('data-theme-is-system') || '0') === '1'
+            };
+        }
+
+        function setThemeDataOnOption(option, theme) {
+            if (!option || !theme) {
+                return;
+            }
+
+            var themeDescription = theme.description || 'Palette personnalisee';
+            option.setAttribute('data-theme-id', String(theme.id));
+            option.setAttribute('data-theme-name', String(theme.name || 'Theme'));
+            option.setAttribute('data-theme-description', String(themeDescription));
+            option.setAttribute('data-theme-primary', String(theme.primaryColor || '#475569'));
+            option.setAttribute('data-theme-secondary', String(theme.secondaryColor || '#334155'));
+            option.setAttribute('data-theme-accent', String(theme.accentColor || '#94a3b8'));
+            option.setAttribute('data-theme-is-system', theme.isSystem ? '1' : '0');
+        }
+
+        function closeAllThemeMenus(exceptOption) {
+            getThemeOptions().forEach(function (option) {
+                if (exceptOption && option === exceptOption) {
+                    return;
+                }
+
+                var menu = option.querySelector('.theme-option__menu');
+                var toggle = option.querySelector('[data-theme-menu-toggle="true"]');
+                var dropdown = option.querySelector('[data-theme-menu-dropdown]');
+                if (dropdown) {
+                    dropdown.hidden = true;
+                }
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+                if (menu) {
+                    menu.classList.remove('theme-option__menu--open');
+                }
+            });
+        }
+
+        function openThemeDeleteModal(themeData) {
+            var deleteModal = document.getElementById('deleteConfirmModal');
+            var deleteItemName = document.getElementById('deleteModalItemName');
+            var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+            if (!themeData || Number.isNaN(themeData.id) || !deleteModal || !confirmDeleteBtn) {
+                return;
+            }
+
+            if (deleteItemName) {
+                deleteItemName.textContent = 'le theme "' + themeData.name + '"';
+            }
+
+            confirmDeleteBtn.setAttribute('href', '#');
+            confirmDeleteBtn.setAttribute('data-theme-delete-id', String(themeData.id));
+
+            if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+                window.jQuery(deleteModal).modal('show');
+            }
+        }
+
+        function bindThemeActionMenu(option) {
+            if (!isAdmin || !option || option.dataset.actionsBound === '1') {
+                return;
+            }
+
+            var menuContainer = option.querySelector('.theme-option__menu');
+            var menuToggle = option.querySelector('[data-theme-menu-toggle="true"]');
+            var menuDropdown = option.querySelector('[data-theme-menu-dropdown]');
+            if (!menuContainer || !menuToggle || !menuDropdown) {
+                return;
+            }
+
+            option.dataset.actionsBound = '1';
+
+            menuToggle.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                var shouldOpen = menuDropdown.hidden;
+                closeAllThemeMenus(shouldOpen ? option : null);
+                menuDropdown.hidden = !shouldOpen;
+                menuToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+                menuContainer.classList.toggle('theme-option__menu--open', shouldOpen);
+            });
+
+            menuDropdown.addEventListener('click', function (event) {
+                var actionButton = event.target && event.target.closest ? event.target.closest('[data-theme-action]') : null;
+                if (!actionButton || actionButton.disabled) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                var action = actionButton.getAttribute('data-theme-action');
+                var themeData = getThemeDataFromOption(option);
+                menuDropdown.hidden = true;
+                menuToggle.setAttribute('aria-expanded', 'false');
+                menuContainer.classList.remove('theme-option__menu--open');
+
+                if (action === 'edit') {
+                    openModal('edit', themeData);
+                    return;
+                }
+
+                if (action === 'delete') {
+                    openThemeDeleteModal(themeData);
+                }
+            });
         }
 
         function bindThemeOption(option) {
@@ -509,6 +704,8 @@
             if (radio) {
                 radio.addEventListener('change', syncThemeSelection);
             }
+
+            bindThemeActionMenu(option);
         }
 
         if (themePagination && themePagination.dataset.bound !== '1') {
@@ -558,8 +755,104 @@
                 .replace(/'/g, '&#039;');
         }
 
+        function buildThemeActionsMarkup(theme) {
+            if (!isAdmin) {
+                return '';
+            }
+
+            var disabledDeleteAttr = theme.isSystem ? ' disabled title="Theme systeme non supprimable"' : '';
+            return '' +
+                '<div class="theme-option__menu">' +
+                    '<button type="button" class="theme-option__menu-toggle no-loading" data-no-loading="true" data-theme-menu-toggle="true" aria-haspopup="true" aria-expanded="false" aria-label="Actions du theme">' +
+                        '<i class="fas fa-ellipsis-h"></i>' +
+                    '</button>' +
+                    '<div class="theme-option__menu-dropdown" data-theme-menu-dropdown hidden>' +
+                        '<button type="button" class="theme-option__menu-item" data-theme-action="edit"><i class="fas fa-pen mr-2"></i>Modifier</button>' +
+                        '<button type="button" class="theme-option__menu-item theme-option__menu-item--danger" data-theme-action="delete"' + disabledDeleteAttr + '><i class="fas fa-trash mr-2"></i>Supprimer</button>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        function updateThemeOption(theme) {
+            if (!themeGrid || !theme || !theme.id) {
+                return false;
+            }
+
+            var option = themeGrid.querySelector('.theme-option[data-theme-id="' + String(theme.id) + '"]');
+            if (!option) {
+                return false;
+            }
+
+            var description = theme.description || 'Palette personnalisee';
+            setThemeDataOnOption(option, theme);
+
+            var titleNode = option.querySelector('.theme-option__title');
+            if (titleNode) {
+                titleNode.textContent = theme.name || 'Theme';
+            }
+
+            var textNode = option.querySelector('.theme-option__text');
+            if (textNode) {
+                textNode.textContent = description;
+                textNode.setAttribute('title', description);
+            }
+
+            var dots = option.querySelectorAll('.theme-option__dot');
+            if (dots[0]) {
+                dots[0].style.background = theme.primaryColor || '#475569';
+            }
+            if (dots[1]) {
+                dots[1].style.background = theme.secondaryColor || '#334155';
+            }
+            if (dots[2]) {
+                dots[2].style.background = theme.accentColor || '#94a3b8';
+            }
+
+            var deleteButton = option.querySelector('[data-theme-action="delete"]');
+            if (deleteButton) {
+                deleteButton.disabled = !!theme.isSystem;
+                if (theme.isSystem) {
+                    deleteButton.setAttribute('title', 'Theme systeme non supprimable');
+                } else {
+                    deleteButton.removeAttribute('title');
+                }
+            }
+
+            bindThemeOption(option);
+            return true;
+        }
+
+        function ensureThemeEmptyState() {
+            if (!themeGrid) {
+                return;
+            }
+
+            if (themeGrid.querySelector('.theme-option')) {
+                return;
+            }
+
+            if (themeGrid.querySelector('.theme-empty-state')) {
+                return;
+            }
+
+            var emptyState = document.createElement('div');
+            emptyState.className = 'theme-empty-state';
+            emptyState.innerHTML = '<i class="fas fa-palette"></i><span>Aucun theme disponible.</span>';
+            themeGrid.appendChild(emptyState);
+        }
+
         function appendThemeOption(theme) {
             if (!themeGrid || !theme || !theme.id) {
+                return;
+            }
+
+            if (updateThemeOption(theme)) {
+                var existingRadio = themeGrid.querySelector('.theme-option[data-theme-id="' + String(theme.id) + '"] .theme-radio-input');
+                if (existingRadio) {
+                    existingRadio.checked = true;
+                    existingRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                syncThemeSelection();
                 return;
             }
 
@@ -569,10 +862,10 @@
             var inputRequired = firstRadio ? firstRadio.required : true;
             var idBase = firstId ? firstId.replace(/_\d+$/, '') : 'dossier_form_theme';
             var optionId = idBase + '_' + String(theme.id);
+            var description = theme.description || 'Palette personnalisee';
 
             var option = document.createElement('div');
             option.className = 'theme-option';
-            option.setAttribute('data-theme-id', String(theme.id));
             option.innerHTML = '' +
                 '<input type="radio" class="theme-radio-input" id="' + optionId + '" name="' + escapeHtml(inputName) + '" value="' + String(theme.id) + '"' + (inputRequired ? ' required' : '') + '>' +
                 '<label for="' + optionId + '" class="theme-option__card" data-theme-card="true">' +
@@ -583,10 +876,13 @@
                     '</span>' +
                     '<span class="theme-option__content">' +
                         '<span class="theme-option__title">' + escapeHtml(theme.name || 'Theme') + '</span>' +
-                        '<span class="theme-option__text" title="' + escapeHtml(theme.description || 'Palette personnalisee') + '">' + escapeHtml(theme.description || 'Palette personnalisee') + '</span>' +
+                        '<span class="theme-option__text" title="' + escapeHtml(description) + '">' + escapeHtml(description) + '</span>' +
                     '</span>' +
                     '<span class="theme-option__check"><i class="fas fa-check"></i></span>' +
-                '</label>';
+                '</label>' +
+                buildThemeActionsMarkup(theme);
+
+            setThemeDataOnOption(option, theme);
 
             var emptyState = themeGrid.querySelector('.theme-empty-state');
             if (emptyState) {
@@ -605,6 +901,38 @@
             syncThemeSelection();
         }
 
+        function removeThemeOption(themeId, fallbackThemeId) {
+            if (!themeGrid || !themeId) {
+                return;
+            }
+
+            var option = themeGrid.querySelector('.theme-option[data-theme-id="' + String(themeId) + '"]');
+            if (!option) {
+                return;
+            }
+
+            var radio = option.querySelector('.theme-radio-input');
+            var wasSelected = !!(radio && radio.checked);
+            option.remove();
+
+            if (wasSelected) {
+                var nextSelectedRadio = null;
+                if (fallbackThemeId) {
+                    nextSelectedRadio = themeGrid.querySelector('.theme-option[data-theme-id="' + String(fallbackThemeId) + '"] .theme-radio-input');
+                }
+                if (!nextSelectedRadio) {
+                    nextSelectedRadio = themeGrid.querySelector('.theme-option .theme-radio-input');
+                }
+                if (nextSelectedRadio) {
+                    nextSelectedRadio.checked = true;
+                    nextSelectedRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+
+            ensureThemeEmptyState();
+            syncThemeSelection();
+        }
+
         getThemeOptions().forEach(bindThemeOption);
         syncThemeSelection();
 
@@ -613,6 +941,30 @@
             input.classList.add('logo-upload-input--ready');
             input.addEventListener('change', function () {
                 window.handleDossierLogoChange(input);
+            });
+        }
+
+        if (!window.__themeMenusGlobalBound) {
+            window.__themeMenusGlobalBound = true;
+            document.addEventListener('click', function (event) {
+                if (!event.target || !event.target.closest) {
+                    return;
+                }
+
+                if (!event.target.closest('.theme-option__menu')) {
+                    var themeMenus = document.querySelectorAll('.theme-option__menu');
+                    themeMenus.forEach(function (menu) {
+                        var toggle = menu.querySelector('[data-theme-menu-toggle="true"]');
+                        var dropdown = menu.querySelector('[data-theme-menu-dropdown]');
+                        if (dropdown) {
+                            dropdown.hidden = true;
+                        }
+                        if (toggle) {
+                            toggle.setAttribute('aria-expanded', 'false');
+                        }
+                        menu.classList.remove('theme-option__menu--open');
+                    });
+                }
             });
         }
 
@@ -627,6 +979,15 @@
         var modalForm = document.getElementById('themeCreateForm');
         var modalMessage = document.getElementById('themeCreateMessage');
         var submitButton = document.getElementById('themeCreateSubmitBtn');
+        var modalTitle = document.getElementById('themeCreateModalTitle');
+        var modalSubtitle = document.getElementById('themeCreateModalSubtitle');
+        var modalEditIdInput = document.getElementById('themeEditId');
+        var themeNameInput = document.getElementById('themeName');
+        var themeDescriptionInput = document.getElementById('themeDescription');
+        var submitLabelText = document.getElementById('themeSubmitLabelText');
+        var submitLoadingText = document.getElementById('themeSubmitLoadingText');
+        var deleteConfirmModal = document.getElementById('deleteConfirmModal');
+        var deleteConfirmButton = document.getElementById('confirmDeleteBtn');
         var primaryColorInput = modal.querySelector('[data-color-input][data-color-role="primary"]');
         var primaryHexInput = modal.querySelector('[data-hex-input][data-color-role="primary"]');
         var secondaryColorInput = modal.querySelector('[data-color-input][data-color-role="secondary"]');
@@ -669,6 +1030,26 @@
             if (loading) {
                 loading.hidden = !isSubmitting;
             }
+        }
+
+        function hideGlobalLoadingOverlay() {
+            if (typeof window.hideLoading === 'function') {
+                window.hideLoading();
+                return;
+            }
+
+            var globalOverlay = document.getElementById('loadingOverlay');
+            if (globalOverlay) {
+                globalOverlay.classList.remove('active');
+            }
+        }
+
+        function buildThemeApiUrl(template, themeId) {
+            if (!template) {
+                return '';
+            }
+
+            return template.replace('__ID__', String(themeId));
         }
 
         function normalizeHexColor(rawValue, fallback) {
@@ -758,19 +1139,145 @@
             });
         }
 
-        function openModal() {
-            hideModalMessage();
+        function setModalMode(mode, themeData) {
+            if (mode === 'edit' && themeData && !Number.isNaN(themeData.id)) {
+                modal.setAttribute('data-mode', 'edit');
+                if (modalTitle) {
+                    modalTitle.textContent = 'Modifier le theme';
+                }
+                if (modalSubtitle) {
+                    modalSubtitle.textContent = 'Mettez a jour ce theme sans quitter la creation du dossier.';
+                }
+                if (submitLabelText) {
+                    submitLabelText.textContent = 'Mettre a jour le theme';
+                }
+                if (submitLoadingText) {
+                    submitLoadingText.textContent = 'Mise a jour...';
+                }
+                if (modalEditIdInput) {
+                    modalEditIdInput.value = String(themeData.id);
+                }
+                if (themeNameInput) {
+                    themeNameInput.value = themeData.name || '';
+                }
+                if (themeDescriptionInput) {
+                    themeDescriptionInput.value = themeData.description || '';
+                }
+                applyColorPair(primaryColorInput, primaryHexInput, normalizeHexColor(themeData.primaryColor, '#4F46E5'));
+                syncGeneratedPalette();
+                return;
+            }
+
+            modal.setAttribute('data-mode', 'create');
+            if (modalTitle) {
+                modalTitle.textContent = 'Nouveau theme';
+            }
+            if (modalSubtitle) {
+                modalSubtitle.textContent = 'Ajoutez une palette personnalisee qui sera disponible immediatement dans ce dossier.';
+            }
+            if (submitLabelText) {
+                submitLabelText.textContent = 'Creer le theme';
+            }
+            if (submitLoadingText) {
+                submitLoadingText.textContent = 'Creation...';
+            }
+            if (modalEditIdInput) {
+                modalEditIdInput.value = '';
+            }
+            if (modalForm) {
+                modalForm.reset();
+            }
+            applyColorPair(primaryColorInput, primaryHexInput, '#4F46E5');
             syncGeneratedPalette();
+        }
+
+        function openModal(mode, themeData) {
+            hideGlobalLoadingOverlay();
+            hideModalMessage();
+            closeAllThemeMenus();
+            setModalMode(mode || 'create', themeData || null);
             modal.classList.add('is-open');
             modal.setAttribute('aria-hidden', 'false');
             document.body.classList.add('theme-modal-open');
         }
 
         function closeModal() {
+            hideGlobalLoadingOverlay();
             modal.classList.remove('is-open');
             modal.setAttribute('aria-hidden', 'true');
             document.body.classList.remove('theme-modal-open');
             setSubmitting(false);
+            setModalMode('create');
+        }
+
+        function resetThemeDeleteState() {
+            if (!deleteConfirmButton) {
+                return;
+            }
+
+            deleteConfirmButton.removeAttribute('data-theme-delete-id');
+        }
+
+        function performThemeDelete(themeId) {
+            if (!themeId) {
+                return;
+            }
+
+            var deleteUrl = buildThemeApiUrl(modal.getAttribute('data-delete-url-template') || '', themeId);
+            var payload = {
+                _token: modal.getAttribute('data-manage-csrf-token') || ''
+            };
+
+            if (!deleteUrl) {
+                showGlobalToast('Action de suppression indisponible pour le moment.', 'error');
+                return;
+            }
+
+            deleteConfirmButton.classList.add('disabled');
+            deleteConfirmButton.setAttribute('aria-disabled', 'true');
+
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(function (response) {
+                var contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Reponse invalide: format non-JSON recu');
+                }
+
+                return response.json().then(function (json) {
+                    if (!response.ok) {
+                        throw new Error((json && json.message) ? json.message : ('Erreur serveur: ' + response.status + ' ' + response.statusText));
+                    }
+
+                    return json;
+                });
+            })
+            .then(function (json) {
+                if (!json || json.success !== true) {
+                    throw new Error((json && json.message) ? json.message : 'Suppression impossible.');
+                }
+
+                removeThemeOption(json.deletedThemeId || themeId, json.fallbackThemeId || null);
+                showGlobalToast(json.message || 'Theme supprime avec succes.', 'success');
+
+                if (window.jQuery && deleteConfirmModal && typeof window.jQuery.fn.modal === 'function') {
+                    window.jQuery(deleteConfirmModal).modal('hide');
+                }
+            })
+            .catch(function (error) {
+                showGlobalToast(error && error.message ? error.message : 'Une erreur est survenue lors de la suppression du theme.', 'error');
+            })
+            .finally(function () {
+                deleteConfirmButton.classList.remove('disabled');
+                deleteConfirmButton.setAttribute('aria-disabled', 'false');
+                resetThemeDeleteState();
+            });
         }
 
         bindPaletteInputs();
@@ -779,7 +1286,7 @@
         if (modalOpenBtn) {
             modalOpenBtn.addEventListener('click', function (event) {
                 event.preventDefault();
-                openModal();
+                openModal('create');
             });
         }
 
@@ -794,20 +1301,62 @@
             if (event.key === 'Escape' && modal.classList.contains('is-open')) {
                 closeModal();
             }
+
+            if (event.key === 'Escape') {
+                closeAllThemeMenus();
+            }
         });
+
+        if (deleteConfirmButton && deleteConfirmButton.dataset.themeBound !== '1') {
+            deleteConfirmButton.dataset.themeBound = '1';
+            deleteConfirmButton.addEventListener('click', function (event) {
+                var pendingThemeId = parseInt(deleteConfirmButton.getAttribute('data-theme-delete-id') || '', 10);
+                if (Number.isNaN(pendingThemeId)) {
+                    return;
+                }
+
+                event.preventDefault();
+                performThemeDelete(pendingThemeId);
+            });
+        }
+
+        if (window.jQuery && deleteConfirmModal && deleteConfirmModal.dataset.themeModalBound !== '1') {
+            deleteConfirmModal.dataset.themeModalBound = '1';
+            window.jQuery(deleteConfirmModal).on('hidden.bs.modal', resetThemeDeleteState);
+        }
 
         if (modalForm) {
             modalForm.addEventListener('submit', function (event) {
                 event.preventDefault();
+                hideGlobalLoadingOverlay();
                 hideModalMessage();
 
+                var modalMode = modal.getAttribute('data-mode') || 'create';
+                var editingThemeId = parseInt((modalEditIdInput ? modalEditIdInput.value : '') || '', 10);
                 var formData = new FormData(modalForm);
                 var payload = {
-                    _token: modal.getAttribute('data-csrf-token') || '',
+                    _token: modalMode === 'edit'
+                        ? (modal.getAttribute('data-manage-csrf-token') || '')
+                        : (modal.getAttribute('data-csrf-token') || ''),
                     name: (formData.get('name') || '').toString().trim(),
                     description: (formData.get('description') || '').toString().trim(),
                     primaryColor: normalizeHexColor(formData.get('primaryColor'), '#4F46E5')
                 };
+
+                var requestUrl = modal.getAttribute('data-create-url') || '';
+                if (modalMode === 'edit') {
+                    if (Number.isNaN(editingThemeId)) {
+                        showModalMessage('Theme invalide pour la mise a jour.', 'error');
+                        return;
+                    }
+
+                    requestUrl = buildThemeApiUrl(modal.getAttribute('data-update-url-template') || '', editingThemeId);
+                }
+
+                if (!requestUrl) {
+                    showModalMessage('Action indisponible. Veuillez recharger la page.', 'error');
+                    return;
+                }
 
                 if (!payload.name) {
                     showModalMessage('Le nom du theme est obligatoire.', 'error');
@@ -821,7 +1370,13 @@
 
                 setSubmitting(true);
 
-                fetch(modal.getAttribute('data-create-url'), {
+                var requestTimeout = setTimeout(function () {
+                    showModalMessage('La création du thème a pris trop de temps. Veuillez réessayer.', 'error');
+                    setSubmitting(false);
+                    hideGlobalLoadingOverlay();
+                }, 15000);
+
+                fetch(requestUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -830,29 +1385,44 @@
                     body: JSON.stringify(payload)
                 })
                 .then(function (response) {
-                    return response.json().then(function (json) {
-                        return { ok: response.ok, json: json };
-                    });
-                })
-                .then(function (result) {
-                    if (!result.ok || !result.json || !result.json.success) {
-                        throw new Error(result.json && result.json.message ? result.json.message : 'Impossible de creer le theme.');
+                    var contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error('Réponse invalide: format non-JSON reçu');
                     }
 
-                    appendThemeOption(result.json.theme);
-                    showModalMessage(result.json.message || 'Theme cree avec succes.', 'success');
+                    return response.json().then(function (json) {
+                        if (!response.ok) {
+                            throw new Error((json && json.message) ? json.message : ('Erreur serveur: ' + response.status + ' ' + response.statusText));
+                        }
 
-                    setTimeout(function () {
-                        modalForm.reset();
-                        syncGeneratedPalette();
-                        closeModal();
-                    }, 420);
+                        return json;
+                    });
+                })
+                .then(function (json) {
+                    clearTimeout(requestTimeout);
+                    hideGlobalLoadingOverlay();
+
+                    if (!json || !json.theme || !json.theme.id) {
+                        var errorMsg = (json && json.message) ? json.message : 'Donnees de theme invalides recues du serveur.';
+                        console.error('Theme API response invalid:', json);
+                        throw new Error(errorMsg);
+                    }
+
+                    setSubmitting(false);
+
+                    appendThemeOption(json.theme);
+                    showGlobalToast(
+                        json.message || (modalMode === 'edit' ? 'Theme mis a jour avec succes.' : 'Theme cree avec succes.'),
+                        'success'
+                    );
+
+                    closeModal();
                 })
                 .catch(function (error) {
-                    showModalMessage(error.message || 'Une erreur est survenue lors de la creation du theme.', 'error');
-                })
-                .finally(function () {
+                    clearTimeout(requestTimeout);
                     setSubmitting(false);
+                    hideGlobalLoadingOverlay();
+                    showModalMessage(error && error.message ? error.message : 'Une erreur est survenue lors de la creation du theme.', 'error');
                 });
             });
         }
@@ -965,6 +1535,81 @@
         min-width: 0;
     }
 
+    .theme-option__menu {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        z-index: 8;
+    }
+
+    .theme-option__menu.theme-option__menu--open {
+        z-index: 60;
+    }
+
+    .theme-option__menu-toggle {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(255, 255, 255, 0.92);
+        color: #475569;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.64rem;
+        transition: all 0.2s ease;
+    }
+
+    .theme-option__menu-toggle:hover {
+        color: var(--theme-primary);
+        border-color: rgba(37, 99, 235, 0.35);
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.16);
+    }
+
+    .theme-option__menu-dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        min-width: 140px;
+        z-index: 61;
+        background: #fff;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 10px;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.2);
+        padding: 0.25rem;
+    }
+
+    .theme-option__menu-item {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: #1e293b;
+        text-align: left;
+        font-size: 0.75rem;
+        border-radius: 8px;
+        padding: 0.38rem 0.5rem;
+        transition: all 0.15s ease;
+    }
+
+    .theme-option__menu-item:hover {
+        background: rgba(37, 99, 235, 0.09);
+        color: var(--theme-primary);
+    }
+
+    .theme-option__menu-item--danger {
+        color: #b91c1c;
+    }
+
+    .theme-option__menu-item--danger:hover {
+        background: rgba(220, 38, 38, 0.08);
+        color: #b91c1c;
+    }
+
+    .theme-option__menu-item:disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
+    }
+
     .theme-empty-state {
         grid-column: 1 / -1;
         border: 1px dashed #cbd5e1;
@@ -992,7 +1637,7 @@
         gap: 0.62rem;
         min-height: 66px;
         height: 100%;
-        padding: 0.58rem 0.7rem;
+        padding: 0.58rem 2.25rem 0.58rem 0.7rem;
         border: 1px solid #dbe3f0;
         border-radius: 16px;
         background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
