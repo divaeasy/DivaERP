@@ -77,6 +77,9 @@ class Dossier
     #[ORM\Column(nullable: true)]
     private ?int $blno = null;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $penalitesretard = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -321,6 +324,19 @@ class Dossier
 
         return $this;
     }
+
+    public function getPenalitesretard(): ?string
+    {
+        return $this->penalitesretard;
+    }
+
+    public function setPenalitesretard(?string $penalitesretard): static
+    {
+        $this->penalitesretard = $penalitesretard;
+
+        return $this;
+    }
+
     public function __toString()
     {
         return $this->getNom();

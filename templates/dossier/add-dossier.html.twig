@@ -128,6 +128,12 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="form-group mt-3 mb-0">
+                    {{ form_label(dossier.penalitesretard, 'Texte legal retard (modele 1)') }}
+                    {{ form_widget(dossier.penalitesretard, {'attr': {'class': 'form-control', 'rows': 3, 'placeholder': 'Pénalités de retard... (facultatif)'}}) }}
+                    {{ form_errors(dossier.penalitesretard) }}
+                </div>
             </section>
 
             <section class="form-card dossier-panel mb-4 dossier-panel--compact">

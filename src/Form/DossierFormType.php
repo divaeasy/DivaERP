@@ -11,6 +11,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Email;
@@ -36,6 +37,7 @@ class DossierFormType extends AbstractType
                 'help' => 'PNG ou JPG, 1 Mo max.',
             ])
             ->add('rc')
+            ->add('penalitesretard', TextareaType::class, ['required' => false])
             ->add('siret', null, ['required' => false])
             ->add('naf', null, ['required' => false])
             ->add('tvaintra', null, ['required' => false])

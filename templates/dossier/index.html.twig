@@ -37,7 +37,7 @@
                 <th>CP / Ville / Pays</th>
                 <th data-sort-key="rc">RC</th>
                 <th>Logo</th>
-                <th>Theme</th>
+                <th class="dossier-theme-col">Theme</th>
                 <th data-sort-key="devise">Devise</th>
                 <th>Numerotations</th>
                 <th class="text-center" style="width: 120px;">Actions</th>
@@ -65,9 +65,11 @@
                         <span class="text-muted">-</span>
                     {% endif %}
                 </td>
-                <td>
-                    <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:{{ themeColor }};border:1px solid #e2e8f0; margin-right:6px;vertical-align:middle;"></span>
-                    <small class="text-muted">{{ themeLabel }}</small>
+                <td class="dossier-theme-col">
+                    <span class="dossier-theme-badge" title="{{ themeLabel }}">
+                        <span class="dossier-theme-badge__swatch" style="background:{{ themeColor }};"></span>
+                        <small class="text-muted dossier-theme-badge__label">{{ themeLabel }}</small>
+                    </span>
                 </td>
                 <td>{{ dossier.devise }}</td>
                 <td>
@@ -103,4 +105,45 @@
     </div>
     {% endif %}
 </div>
+
+<style>
+    th.dossier-theme-col,
+    td.dossier-theme-col {
+        width: 170px;
+        min-width: 170px;
+        max-width: 170px;
+    }
+
+    td.dossier-theme-col {
+        overflow: hidden;
+    }
+
+    .dossier-theme-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        vertical-align: middle;
+    }
+
+    .dossier-theme-badge__swatch {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+        flex: 0 0 18px;
+    }
+
+    .dossier-theme-badge__label {
+        display: block;
+        min-width: 0;
+        max-width: calc(100% - 24px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
 {% endblock %}
