@@ -155,34 +155,34 @@
             <section class="form-card dossier-panel mb-4 dossier-panel--compact">
                 <div class="dossier-panel__head">
                     <h5><i class="fas fa-hashtag mr-2"></i>Numerotations</h5>
-                    <p>Compteurs utilises a la creation des pieces (numero suivant automatique).</p>
+                    <p>Numéros initiaux pour chaque type de pièce. Le système incrémente automatiquement à chaque création avec des séquences indépendantes.</p>
                 </div>
                 <div class="row mb-0">
                     <div class="col-md-3">
                         <div class="form-group mb-0">
                             {{ form_label(dossier.devisno, 'Devis') }}
-                            {{ form_widget(dossier.devisno, {'attr': {'class': 'form-control', 'min': 0}}) }}
+                            {{ form_widget(dossier.devisno, {'attr': {'class': 'form-control', 'min': 0, 'placeholder': 'N° devis'}}) }}
                             {{ form_errors(dossier.devisno) }}
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group mb-0">
                             {{ form_label(dossier.cmdno, 'Commande') }}
-                            {{ form_widget(dossier.cmdno, {'attr': {'class': 'form-control', 'min': 0}}) }}
+                            {{ form_widget(dossier.cmdno, {'attr': {'class': 'form-control', 'min': 0, 'placeholder': 'N° commande'}}) }}
                             {{ form_errors(dossier.cmdno) }}
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group mb-0">
                             {{ form_label(dossier.blno, 'BL') }}
-                            {{ form_widget(dossier.blno, {'attr': {'class': 'form-control', 'min': 0}}) }}
+                            {{ form_widget(dossier.blno, {'attr': {'class': 'form-control', 'min': 0, 'placeholder': 'N° BL'}}) }}
                             {{ form_errors(dossier.blno) }}
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group mb-0">
                             {{ form_label(dossier.factureno, 'Facture') }}
-                            {{ form_widget(dossier.factureno, {'attr': {'class': 'form-control', 'min': 0}}) }}
+                            {{ form_widget(dossier.factureno, {'attr': {'class': 'form-control', 'min': 0, 'placeholder': 'N° facture'}}) }}
                             {{ form_errors(dossier.factureno) }}
                         </div>
                     </div>

@@ -99,7 +99,7 @@ class AppFixtures extends Fixture
                     $invoiceDate = new DateTime(sprintf("%d-%02d-%02d", $year, $month, $day));
                     
                     $invoice = new Entetepiece();
-                    $invoice->setType('FACT');
+                    $invoice->setType('Facture');
                     $invoice->setTypet('VAT');
                     $invoice->setClient($clients[array_rand($clients)]);
                     $invoice->setPieceno(rand(1000, 9999));
