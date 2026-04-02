@@ -83,6 +83,7 @@ class EntetePController extends AbstractController
                 $entetepiece->setDatep(new \DateTimeImmutable('today'));
             }
         }
+        $originalType = $new ? null : $entetepiece->getType();
 
         $entetepiece->doctrine = $doctrine;
         $entetepiece->user = $this->getUser();
@@ -95,6 +96,11 @@ class EntetePController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if (!$new && $originalType !== null && $entetepiece->getType() !== $originalType) {
+                $entetepiece->setType($originalType);
+                $this->addFlash('warning', 'Le type de piece est verrouille apres creation.');
+            }
+
             if ($currentDossier !== null) {
                 $entetepiece->setDossier($currentDossier);
                 if ($entetepiece->getDevise() === null) {

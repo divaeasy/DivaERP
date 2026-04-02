@@ -40,8 +40,8 @@
                 <th data-sort-key="montant" data-sort-type="number" class="text-right">Montant</th>
                 <th data-sort-key="lignes" data-sort-type="number" class="text-center">Lignes</th>
                 <th data-sort-key="statut">Statut</th>
-                <th>e-Facture</th>
                 <th data-sort-key="devise">Devise</th>
+                <th data-sort-key="annee" data-sort-type="number">Année</th>
                 <th class="text-center" style="width: 120px;">Actions</th>
             </tr>
         </thead>
@@ -57,7 +57,8 @@
                 <td class="text-right">{{ display_remise|number_format(2, ',', ' ') }}%</td>
                 {% set display_amount = amountByInvoice[entetepiece.id]|default(entetepiece.montant ?? 0) %}
                 {% set line_count = lineCountByInvoice[entetepiece.id]|default(0) %}
-                {% set canLaunchEinvoicing = line_count > 0 %}
+                {% set isInvoiceType = entetepiece.type|default('')|trim|lower == 'facture' %}
+                {% set canLaunchEinvoicing = isInvoiceType and line_count > 0 %}
                 <td class="text-right"><strong>{{ display_amount|number_format(2, ',', ' ') }}</strong></td>
                 <td class="text-center">
                     <span class="badge {{ line_count > 0 ? 'badge-success' : 'badge-warning' }}">{{ line_count }}</span>
@@ -71,25 +72,19 @@
                         <span class="badge badge-warning">{{ entetepiece.statut }}</span>
                     {% endif %}
                 </td>
-                <td>
-                    {% if entetepiece.isSubmittedToTiime %}
-                        <span class="badge badge-success"><i class="fas fa-check mr-1"></i>Transmise</span>
-                    {% elseif entetepiece.isFactureX %}
-                        <span class="badge badge-info"><i class="fas fa-file-alt mr-1"></i>Générée</span>
-                    {% else %}
-                        <span class="badge badge-light text-muted">—</span>
-                    {% endif %}
-                </td>
                 <td>{{ entetepiece.devise }}</td>
+                <td>{{ entetepiece.datep ? entetepiece.datep|date('Y') : '-' }}</td>
                 <td class="text-center">
                     <a href="{{ path('entetepiece.edit', {id: entetepiece.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
-                    <a href="{{ canLaunchEinvoicing ? path('invoice_einvoicing_test', {id: entetepiece.id}) : 'javascript:void(0)' }}" 
-                       class="btn btn-action btn-einvoicing {% if not entetepiece.isSubmittedToTiime and not entetepiece.isFactureX %}btn-einvoicing--no-facture{% endif %} {% if not canLaunchEinvoicing %}disabled no-loading{% endif %}" 
-                       title="{% if not canLaunchEinvoicing %}Ajoutez au moins une ligne pour générer la facture{% elseif entetepiece.isSubmittedToTiime %}E-Facture transmise{% elseif entetepiece.isFactureX %}Facture-X générée{% else %}E-Facturation{% endif %}">
-                        <i class="fas {% if not canLaunchEinvoicing %}fa-ban{% elseif entetepiece.isSubmittedToTiime %}fa-check-circle{% elseif entetepiece.isFactureX %}fa-file-pdf{% else %}fa-file-invoice{% endif %}"></i>
-                    </a>
+                    {% if isInvoiceType %}
+                        <a href="{{ canLaunchEinvoicing ? path('invoice_einvoicing_test', {id: entetepiece.id}) : 'javascript:void(0)' }}"
+                           class="btn btn-action btn-einvoicing {% if not entetepiece.isSubmittedToTiime and not entetepiece.isFactureX %}btn-einvoicing--no-facture{% endif %} {% if not canLaunchEinvoicing %}disabled no-loading{% endif %}"
+                           title="{% if not canLaunchEinvoicing %}Ajoutez au moins une ligne pour générer la facture{% elseif entetepiece.isSubmittedToTiime %}E-Facture transmise{% elseif entetepiece.isFactureX %}Facture-X générée{% else %}E-Facturation{% endif %}">
+                            <i class="fas {% if not canLaunchEinvoicing %}fa-ban{% elseif entetepiece.isSubmittedToTiime %}fa-check-circle{% elseif entetepiece.isFactureX %}fa-file-pdf{% else %}fa-file-invoice{% endif %}"></i>
+                        </a>
+                    {% endif %}
                     <button type="button" class="btn btn-action btn-delete delete-btn"
                             data-delete-url="{{ path('entetepiece.delete', {id: entetepiece.id}) }}"
                             data-item-name="Pièce #{{ entetepiece.pieceno }}"
