@@ -27,13 +27,11 @@ class ExportController extends AbstractController
     public function __construct(private ExportService $exportService) {}
 
     #[Route('/clients', name: 'export.clients')]
-    public function exportClients(ClientsRepository $repo): StreamedResponse
+    public function exportClients(ClientsRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'clients_' . date('Y-m-d') . '.csv',
-            ['ID', 'Nom', 'Adresse', 'Ville', 'Pays', 'T�l�phone', 'Email', 'Tarif', 'R�glement'],
-            $items,
+        $headers = ['ID', 'Nom', 'Adresse', 'Ville', 'Pays', 'Telephone', 'Email', 'Tarif', 'Reglement'];
+        $rows = array_map(
             fn($c) => [
                 $c->getId(),
                 $c->getNom(),
@@ -44,18 +42,23 @@ class ExportController extends AbstractController
                 $c->getEmail(),
                 (string) $c->getTarif(),
                 (string) $c->getReglement(),
-            ]
+            ],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'clients_' . date('Y-m-d_His') . '.xlsx',
+            'Clients',
+            $headers,
+            $rows
         );
     }
 
     #[Route('/prospects', name: 'export.prospects')]
-    public function exportProspects(ProspectsRepository $repo): StreamedResponse
+    public function exportProspects(ProspectsRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'prospects_' . date('Y-m-d') . '.csv',
-            ['ID', 'Nom', 'Adresse', 'Ville', 'Pays', 'T�l�phone', 'Email', 'Web', 'LinkedIn'],
-            $items,
+        $headers = ['ID', 'Nom', 'Adresse', 'Ville', 'Pays', 'Telephone', 'Email', 'Web', 'LinkedIn'];
+        $rows = array_map(
             fn($p) => [
                 $p->getId(),
                 $p->getNom(),
@@ -66,35 +69,45 @@ class ExportController extends AbstractController
                 $p->getEmail(),
                 $p->getWeb(),
                 $p->getLinkedin(),
-            ]
+            ],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'prospects_' . date('Y-m-d_His') . '.xlsx',
+            'Prospects',
+            $headers,
+            $rows
         );
     }
 
     #[Route('/articles', name: 'export.articles')]
-    public function exportArticles(ArticleRepository $repo): StreamedResponse
+    public function exportArticles(ArticleRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'articles_' . date('Y-m-d') . '.csv',
-            ['ID', 'D�signation', 'Unit�', 'Tarif'],
-            $items,
+        $headers = ['ID', 'Désignation', 'Unité', 'Tarif'];
+        $rows = array_map(
             fn($a) => [
                 $a->getId(),
                 $a->getLibelle(),
                 (string) $a->getUnite(),
                 (string) $a->getTarif(),
-            ]
+            ],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'articles_' . date('Y-m-d_His') . '.xlsx',
+            'Articles',
+            $headers,
+            $rows
         );
     }
 
     #[Route('/factures', name: 'export.factures')]
-    public function exportFactures(EntetepieceRepository $repo): StreamedResponse
+    public function exportFactures(EntetepieceRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'factures_' . date('Y-m-d') . '.csv',
-            ['ID', 'R�f�rence', 'Client', 'Date', 'Montant', 'Statut', '�ch�ance'],
-            $items,
+        $headers = ['ID', 'Référence', 'Client', 'Date', 'Montant', 'Statut', 'Échéance'];
+        $rows = array_map(
             fn($e) => [
                 $e->getId(),
                 $e->getPieceref(),
@@ -103,92 +116,133 @@ class ExportController extends AbstractController
                 $e->getMontant(),
                 $e->getStatut(),
                 $e->getDelai() ? $e->getDelai()->format('d/m/Y') : '',
-            ]
+            ],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'factures_' . date('Y-m-d_His') . '.xlsx',
+            'Factures',
+            $headers,
+            $rows
         );
     }
 
     #[Route('/devises', name: 'export.devises')]
-    public function exportDevises(DevisesRepository $repo): StreamedResponse
+    public function exportDevises(DevisesRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'devises_' . date('Y-m-d') . '.csv',
-            ['ID', 'Code', 'Libell�'],
-            $items,
-            fn($d) => [$d->getId(), $d->getCode(), $d->getLibelle()]
+        $headers = ['ID', 'Code', 'Libellé'];
+        $rows = array_map(
+            fn($d) => [$d->getId(), $d->getCode(), $d->getLibelle()],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'devises_' . date('Y-m-d_His') . '.xlsx',
+            'Devises',
+            $headers,
+            $rows
         );
     }
 
     #[Route('/pays', name: 'export.pays')]
-    public function exportPays(PaysRepository $repo): StreamedResponse
+    public function exportPays(PaysRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'pays_' . date('Y-m-d') . '.csv',
-            ['ID', 'Libell�'],
-            $items,
-            fn($p) => [$p->getId(), $p->getLibelle()]
+        $headers = ['ID', 'Libellé'];
+        $rows = array_map(
+            fn($p) => [$p->getId(), $p->getLibelle()],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'pays_' . date('Y-m-d_His') . '.xlsx',
+            'Pays',
+            $headers,
+            $rows
         );
     }
 
     #[Route('/villes', name: 'export.villes')]
-    public function exportVilles(VilleRepository $repo): StreamedResponse
+    public function exportVilles(VilleRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'villes_' . date('Y-m-d') . '.csv',
-            ['ID', 'Libell�'],
-            $items,
-            fn($v) => [$v->getId(), $v->getLibelle()]
+        $headers = ['ID', 'Libellé'];
+        $rows = array_map(
+            fn($v) => [$v->getId(), $v->getLibelle()],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'villes_' . date('Y-m-d_His') . '.xlsx',
+            'Villes',
+            $headers,
+            $rows
         );
     }
 
     #[Route('/unites', name: 'export.unites')]
-    public function exportUnites(UniteRepository $repo): StreamedResponse
+    public function exportUnites(UniteRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'unites_' . date('Y-m-d') . '.csv',
-            ['ID', 'Code', 'Libell�'],
-            $items,
-            fn($u) => [$u->getId(), $u->getCode(), $u->getLibelle()]
+        $headers = ['ID', 'Code', 'Libellé'];
+        $rows = array_map(
+            fn($u) => [$u->getId(), $u->getCode(), $u->getLibelle()],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'unites_' . date('Y-m-d_His') . '.xlsx',
+            'Unités',
+            $headers,
+            $rows
         );
     }
 
     #[Route('/tarifs', name: 'export.tarifs')]
-    public function exportTarifs(TarifsRepository $repo): StreamedResponse
+    public function exportTarifs(TarifsRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'tarifs_' . date('Y-m-d') . '.csv',
-            ['ID', 'Libell�'],
-            $items,
-            fn($t) => [$t->getId(), $t->getLibelle()]
+        $headers = ['ID', 'Libellé'];
+        $rows = array_map(
+            fn($t) => [$t->getId(), $t->getLibelle()],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'tarifs_' . date('Y-m-d_His') . '.xlsx',
+            'Tarifs',
+            $headers,
+            $rows
         );
     }
 
     #[Route('/reglements', name: 'export.reglements')]
-    public function exportReglements(ReglementRepository $repo): StreamedResponse
+    public function exportReglements(ReglementRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'reglements_' . date('Y-m-d') . '.csv',
-            ['ID', 'Libell�'],
-            $items,
-            fn($r) => [$r->getId(), $r->getLibelle()]
+        $headers = ['ID', 'Libellé'];
+        $rows = array_map(
+            fn($r) => [$r->getId(), $r->getLibelle()],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'reglements_' . date('Y-m-d_His') . '.xlsx',
+            'Règlements',
+            $headers,
+            $rows
         );
     }
 
     #[Route('/dossiers', name: 'export.dossiers')]
-    public function exportDossiers(DossierRepository $repo): StreamedResponse
+    public function exportDossiers(DossierRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        return $this->exportService->exportCsv(
-            'dossiers_' . date('Y-m-d') . '.csv',
-            ['ID', 'Nom', 'Adresse'],
-            $items,
-            fn($d) => [$d->getId(), $d->getNom(), $d->getAdresse()]
-            
+        $headers = ['ID', 'Nom', 'Adresse'];
+        $rows = array_map(
+            fn($d) => [$d->getId(), $d->getNom(), $d->getAdresse()],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'dossiers_' . date('Y-m-d_His') . '.xlsx',
+            'Dossiers',
+            $headers,
+            $rows
         );
     }
 
@@ -200,25 +254,46 @@ class ExportController extends AbstractController
         $currentYear = (int)date('Y');
         $currentMonth = (int)date('m');
         $previousYear = $currentYear - 1;
+        
+        $revenueCurrent = (float)$dashboardService->getTotalRevenue($currentYear, $currentMonth);
+        $revenuePrevious = (float)$dashboardService->getTotalRevenue($previousYear, $currentMonth);
+        $revenueGrowth = ($revenuePrevious != 0) 
+            ? (($revenueCurrent - $revenuePrevious) / $revenuePrevious) * 100 
+            : 0;
+        $revenueGrowthStr = ($revenueGrowth >= 0 ? '+' : '') . number_format($revenueGrowth, 1) . '%';
+
         $overdue = $dashboardService->getOverdueInvoices($currentYear);
+        $overdueAmount = (float)($overdue['amount'] ?? 0);
 
         $kpiData = [
             'Chiffre d\'affaires' => [
-                'value' => '�' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
-                'period' => 'Jan - ' . date('M Y'),
-                'comparison' => ($dashboardService->getTotalRevenue($currentYear, $currentMonth) > $dashboardService->getTotalRevenue($previousYear, $currentMonth) ? '+' : '') . round((($dashboardService->getTotalRevenue($currentYear, $currentMonth) - $dashboardService->getTotalRevenue($previousYear, $currentMonth)) / (($dashboardService->getTotalRevenue($previousYear, $currentMonth) ?: 1)) * 100), 1) . '%'
+                'value' => number_format($revenueCurrent, 2, ',', ' ') . ' EUR',
+                'period' => 'Jan - ' . ucfirst(strftime('%B %Y', mktime(0, 0, 0, $currentMonth, 1))),
+                'comparison' => $revenueGrowthStr
             ],
-            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'Ann�e ' . $currentYear, 'comparison' => '+0'],
-            'Nouveaux clients' => ['value' => (string)$dashboardService->getNewCustomersThisMonth(), 'period' => date('F Y'), 'comparison' => '+0'],
-            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'Ann�e ' . $currentYear, 'comparison' => '+0'],
-            'Factures en retard' => [
-                'value' => sprintf('%d factures | %s EUR', $overdue['count'] ?? 0, number_format((float)($overdue['amount'] ?? 0), 2, '.', ',')),
-                'period' => 'Actuel',
+            'Nombre de factures' => [
+                'value' => (string)$dashboardService->getTotalInvoiceCount($currentYear),
+                'period' => 'Année ' . $currentYear,
                 'comparison' => '+0'
+            ],
+            'Nouveaux clients' => [
+                'value' => (string)$dashboardService->getNewCustomersThisMonth(),
+                'period' => ucfirst(strftime('%B %Y', time())),
+                'comparison' => '+0'
+            ],
+            'Produits vendus' => [
+                'value' => (string)$dashboardService->getTotalProductsSold($currentYear) . ' unités',
+                'period' => 'Année ' . $currentYear,
+                'comparison' => '+0'
+            ],
+            'Factures en retard' => [
+                'value' => ($overdue['count'] ?? 0) . ' factures - ' . number_format($overdueAmount, 2, ',', ' ') . ' EUR',
+                'period' => 'État actuel',
+                'comparison' => ($overdueAmount > 0 ? '-' : '+') . '0'
             ],
         ];
 
-        return $this->exportService->exportDashboardToExcel($kpiData, 'tableau_de_bord_' . date('Y-m-d') . '.xlsx');
+        return $this->exportService->exportDashboardToExcel($kpiData, 'tableau_de_bord_' . date('Y-m-d_His') . '.xlsx');
     }
 
     #[Route('/dashboard-pdf', name: 'export.dashboard.pdf')]

@@ -427,7 +427,7 @@ class DashboardService
 
     private function applyFactureFilter(string $sql, string $alias): string
     {
-        $condition = sprintf("LOWER(TRIM(%s.type)) IN ('facture', 'fact')", $alias);
+        $condition = sprintf("LOWER(TRIM(%s.type)) IN ('facture')", $alias);
 
         return $this->appendWhereCondition($sql, $condition);
     }

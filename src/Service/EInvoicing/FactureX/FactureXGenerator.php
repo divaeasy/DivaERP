@@ -202,7 +202,13 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         foreach ($invoice->getLignepieces() as $line) {
             $qty = (float) ($line->getQuantite() ?? 0.0);
             $unitPrice = (float) ($line->getPu() ?? 0.0);
-            $lineTotal = round($qty * $unitPrice, 2);
+            $rawRemise = (float) ($line->getRemise() ?? 0.0);
+            $lineRemise = max(0.0, min(100.0, $rawRemise));
+            $lineTotal = $qty * $unitPrice * (1 - $lineRemise / 100);
+            if (!is_finite($lineTotal)) {
+                $lineTotal = 0.0;
+            }
+            $lineTotal = round($lineTotal, 2);
             $computedTotalHt += $lineTotal;
 
             $designation = trim((string) ($line->getDesignation() ?? ''));
@@ -222,6 +228,7 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
                 'designation' => $designation,
                 'quantity' => $qty,
                 'unit_price' => $unitPrice,
+                'remise' => $lineRemise,
                 'total' => $lineTotal,
             ];
 
@@ -234,9 +241,10 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         }
 
         $invoiceMontant = $invoice->getMontant();
-        $totalHt = ($invoiceMontant !== null && (float) $invoiceMontant > 0)
-            ? (float) $invoiceMontant
-            : $computedTotalHt;
+        $totalHt = $lineItems !== []
+            ? $computedTotalHt
+            : (($invoiceMontant !== null && (float) $invoiceMontant > 0) ? (float) $invoiceMontant : 0.0);
+        $totalHt = round($totalHt, 2);
         $totalTva = round($totalHt * ($taxRate / 100), 2);
         $totalTtc = round($totalHt + $totalTva, 2);
 
@@ -264,6 +272,7 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         $sellerPhone = trim((string) ($dossier?->getTel() ?? ''));
         $bankIban = trim((string) ($dossier?->getIban() ?? ''));
         $bankBic = trim((string) ($dossier?->getBic() ?? ''));
+        $latePaymentPenaltyText = trim((string) ($dossier?->getPenalitesretard() ?? ''));
         if ($sellerIce === '') {
             $sellerIce = '-';
         }
@@ -317,6 +326,7 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
             'subject_text' => $subjectText,
             'bank_iban' => $bankIban,
             'bank_bic' => $bankBic,
+            'late_payment_penalty_text' => $latePaymentPenaltyText,
         ];
     }
 
@@ -375,6 +385,11 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         $sellerLogoHtml = '';
         if (!empty($data['seller_logo'])) {
             $sellerLogoHtml = '<div class="seller-logo-wrap"><img class="seller-logo" src="' . $this->e($data['seller_logo']) . '" alt="logo"></div>';
+        }
+        $legalHtml = '';
+        $legalText = trim((string) ($data['late_payment_penalty_text'] ?? ''));
+        if ($legalText !== '') {
+            $legalHtml = '<div class="legal">' . nl2br($this->e($legalText)) . '</div>';
         }
         
         return '<!DOCTYPE html>
@@ -676,10 +691,7 @@ BIC : '.($data["bank_bic"] !== "" ? $this->e($data["bank_bic"]) : "").'
 
 </div>
 
-<div class="legal">
-Pénalités de retard applicables conformément à la loi 2008-776 du 4 août 2008.
-Indemnité forfaitaire pour frais de recouvrement : 40 €.
-</div>
+' . $legalHtml . '
 
 </div>
 
@@ -778,7 +790,7 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
 
 
 <table class="lines">
-<thead><tr><th width="14%" class="c">Quantite</th><th width="52%">Designation</th><th width="17%" class="r">Prix unit HT</th><th width="17%" class="r">Prix total HT</th></tr></thead>
+<thead><tr><th width="14%" class="c">Quantité</th><th width="52%">Désignation</th><th width="17%" class="r">Prix unit HT</th><th width="17%" class="r">Prix total HT</th></tr></thead>
 <tbody>' . $rows . '</tbody>
 </table>
 

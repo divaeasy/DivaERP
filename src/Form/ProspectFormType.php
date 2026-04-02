@@ -7,10 +7,13 @@ use App\Entity\Prospects;
 use App\Entity\Ville;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
+use Symfony\Component\Validator\Constraints\Regex;
 
 class ProspectFormType extends AbstractType
 {
@@ -30,8 +33,22 @@ class ProspectFormType extends AbstractType
             ],
         ])
         ->add('codepostal', null, ['required' => false])
-        ->add('tel', null, ['required' => false])
-        ->add('email', null, ['required' => false])
+        ->add('tel', null, [
+            'required' => false,
+            'constraints' => [
+                new Regex([
+                    'pattern' => '/^[+]?[0-9\s\-()\.]{7,20}$/',
+                    'message' => 'Format téléphone invalide',
+                    'groups' => 'Default'
+                ])
+            ]
+        ])
+        ->add('email', EmailType::class, [
+            'required' => false,
+            'constraints' => [
+                new Email(['message' => 'Format email invalide'])
+            ]
+        ])
         ->add('web', null, ['required' => false])
         ->add('linkedin', null, ['required' => false])
         ->add('ville', EntityType::class, [

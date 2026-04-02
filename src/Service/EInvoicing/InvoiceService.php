@@ -101,7 +101,7 @@ class InvoiceService
             $metadata = [
                 'invoice_date' => $invoice->getDatep()?->format('Y-m-d'),
                 'buyer_name' => $invoice->getClient()?->getRaisonSociale() ?? $invoice->getClient()?->getNom(),
-                'invoice_amount' => $invoice->getMontant(),
+                'invoice_amount' => $this->computeInvoiceAmountFromLines($invoice),
                 'currency' => $invoice->getDevise()?->getCode() ?? 'EUR',
             ];
 
@@ -237,5 +237,30 @@ class InvoiceService
                 'details' => $status->getDetails(),
             ];
         }, $statuses);
+    }
+
+    private function computeInvoiceAmountFromLines(Entetepiece $invoice): float
+    {
+        $total = 0.0;
+
+        foreach ($invoice->getLignepieces() as $line) {
+            $qte = (float) ($line->getQuantite() ?? 0.0);
+            $pub = (float) ($line->getPu() ?? 0.0);
+            $rawRemise = (float) ($line->getRemise() ?? 0.0);
+            $remise = max(0.0, min(100.0, $rawRemise));
+
+            $lineTotal = $qte * $pub * (1 - ($remise / 100));
+            if (!is_finite($lineTotal)) {
+                $lineTotal = 0.0;
+            }
+
+            $total += $lineTotal;
+        }
+
+        if ($total > 0) {
+            return round($total, 2);
+        }
+
+        return round((float) ($invoice->getMontant() ?? 0.0), 2);
     }
 }

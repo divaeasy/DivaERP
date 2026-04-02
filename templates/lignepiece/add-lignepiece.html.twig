@@ -33,7 +33,7 @@
             <div class="form-group">
                 {{ form_label(lignepiece.qte, 'Quantité', {'label_attr': {'class': 'required'}}) }}
                 {% set qteErrors = lignepiece.qte.vars.errors|length > 0 %}
-                {{ form_widget(lignepiece.qte, {'attr': {'class': 'form-control' ~ (qteErrors ? ' is-invalid' : ''), 'placeholder': '1'}}) }}
+                {{ form_widget(lignepiece.qte, {'attr': {'class': 'form-control' ~ (qteErrors ? ' is-invalid' : ''), 'placeholder': '0'}}) }}
                 {% if qteErrors %}
                     <div class="invalid-feedback d-block">{{ form_errors(lignepiece.qte) }}</div>
                 {% endif %}

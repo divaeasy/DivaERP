@@ -82,6 +82,7 @@ class LignePController extends AbstractController
             $lignepiece->setMontant($this->computeMontant($lignepiece));
             $entityManager = $doctrine->getManager();
             $entityManager->persist($lignepiece);
+            $entityManager->flush();
             $this->recalculatePieceAmount($entityManager, $lignepiece->getPiece());
             $entityManager->flush();
 
@@ -125,6 +126,7 @@ class LignePController extends AbstractController
 
             $entityManager = $doctrine->getManager();
             $entityManager->persist($lignepiece);
+            $entityManager->flush();
             $this->recalculatePieceAmount($entityManager, $entetePiece);
             $entityManager->flush();
 
@@ -153,13 +155,17 @@ class LignePController extends AbstractController
             $pieceId = $lignepiece->getPiece()?->getId();
             $manager = $doctrine->getManager();
             $manager->remove($lignepiece);
+            $manager->flush();
             if ($pieceId !== null) {
-                $piece = $doctrine->getRepository(Entetepiece::class)->find($pieceId);
+                $piece = $doctrine->getRepository(Entetepiece::class)->findOneBy([
+                    'id' => $pieceId,
+                    'dossier' => $currentDossier,
+                ]);
                 if ($piece instanceof Entetepiece) {
                     $this->recalculatePieceAmount($manager, $piece);
+                    $manager->flush();
                 }
             }
-            $manager->flush();
             $this->addFlash('success', 'La ligne piece a ete supprimee avec succes');
 
             if ($pieceId !== null) {
@@ -327,7 +333,7 @@ class LignePController extends AbstractController
         }
 
         $sum = (float) $entityManager->createQueryBuilder()
-            ->select('COALESCE(SUM(lp.montant), 0)')
+            ->select('COALESCE(SUM((COALESCE(lp.qte, 0) * COALESCE(lp.pub, 0)) * (1 - (COALESCE(lp.remise, 0) / 100))), 0)')
             ->from(Lignepiece::class, 'lp')
             ->where('lp.piece = :piece')
             ->setParameter('piece', $piece)

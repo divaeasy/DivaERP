@@ -34,7 +34,6 @@ class EntetePieceFormType extends AbstractType
                     'Commande' => 'Commande',
                     'BL' => 'BL',
                     'Facture' => 'Facture',
-                    'FACT' => 'FACT',
                 ],
                 'placeholder' => $isEdit ? false : 'Selectionner un type',
                 'required' => true,

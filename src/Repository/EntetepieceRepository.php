@@ -132,7 +132,7 @@ class EntetepieceRepository extends ServiceEntityRepository
 
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('IDENTITY(lp.piece) AS invoice_id')
-            ->addSelect('COALESCE(SUM(COALESCE(lp.montant, 0)), 0) AS total_amount')
+            ->addSelect('COALESCE(SUM((COALESCE(lp.qte, 0) * COALESCE(lp.pub, 0)) * (1 - (COALESCE(lp.remise, 0) / 100))), 0) AS total_amount')
             ->from(Lignepiece::class, 'lp')
             ->where($qb->expr()->in('lp.piece', ':ids'))
             ->setParameter('ids', $invoiceIds)

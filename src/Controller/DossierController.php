@@ -80,8 +80,8 @@ class DossierController extends AbstractController
             }
 
             $message = $new
-                ? 'Le dossier est ajouté avec succès'
-                : 'Le dossier a été mis à jour avec succès';
+                ? 'Le dossier est ajoute avec succes'
+                : 'Le dossier a ete mis a jour avec succes';
 
             $entityManager = $doctrine->getManager();
             $entityManager->persist($dossier);
@@ -102,16 +102,13 @@ class DossierController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        $payload = json_decode($request->getContent(), true);
-        if (!is_array($payload)) {
-            $payload = $request->request->all();
-        }
+        $payload = $this->parseRequestPayload($request);
 
         $csrfToken = (string) ($payload['_token'] ?? '');
         if (!$this->isCsrfTokenValid('create_dossier_theme', $csrfToken)) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'La session a expiré. Veuillez réessayer.',
+                'message' => 'La session a expire. Veuillez reessayer.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -119,7 +116,7 @@ class DossierController extends AbstractController
         if (mb_strlen($name) < 3) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Le nom du thème doit contenir au moins 3 caractères.',
+                'message' => 'Le nom du theme doit contenir au moins 3 caracteres.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -127,7 +124,7 @@ class DossierController extends AbstractController
         if (!$this->isValidHexColor($primaryColor)) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'La couleur primaire doit être au format hexadécimal (#RRGGBB).',
+                'message' => 'La couleur primaire doit etre au format hexadecimal (#RRGGBB).',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -154,18 +151,132 @@ class DossierController extends AbstractController
 
         return new JsonResponse([
             'success' => true,
-            'theme' => [
-                'id' => $theme->getId(),
-                'code' => $theme->getCode(),
-                'name' => $theme->getName(),
-                'description' => $theme->getDescription() ?? 'Thème personnalisé',
-                'primaryColor' => $theme->getPrimaryColor(),
-                'secondaryColor' => $theme->getSecondaryColor(),
-                'accentColor' => $theme->getAccentColor(),
-                'textColor' => $theme->getTextColor(),
-                'backgroundColor' => $theme->getBackgroundColor(),
-            ],
-            'message' => 'Le thème a été créé avec succès.',
+            'theme' => $this->serializeTheme($theme),
+            'message' => 'Le theme a ete cree avec succes.',
+        ]);
+    }
+
+    #[Route('/theme/{id}/update', name: 'dossier.theme.update', methods: ['POST'])]
+    public function updateTheme(int $id, Request $request, ManagerRegistry $doctrine, ThemeRepository $themeRepository): JsonResponse
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $theme = $themeRepository->find($id);
+        if (!$theme instanceof Theme) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Le theme demande est introuvable.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $payload = $this->parseRequestPayload($request);
+
+        $csrfToken = (string) ($payload['_token'] ?? '');
+        if (!$this->isCsrfTokenValid('manage_dossier_theme', $csrfToken)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'La session a expire. Veuillez reessayer.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $name = trim((string) ($payload['name'] ?? ''));
+        if (mb_strlen($name) < 3) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Le nom du theme doit contenir au moins 3 caracteres.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $primaryColor = strtoupper(trim((string) ($payload['primaryColor'] ?? '')));
+        if (!$this->isValidHexColor($primaryColor)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'La couleur primaire doit etre au format hexadecimal (#RRGGBB).',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $secondaryColor = $this->shadeHexColor($primaryColor, -0.22);
+        $accentColor = $this->shadeHexColor($primaryColor, 0.24);
+        $textColor = '#0F172A';
+        $backgroundColor = $this->shadeHexColor($primaryColor, 0.92);
+
+        $theme
+            ->setName($name)
+            ->setDescription(($payload['description'] ?? null) ? trim((string) $payload['description']) : null)
+            ->setPrimaryColor($primaryColor)
+            ->setSecondaryColor($secondaryColor)
+            ->setAccentColor($accentColor)
+            ->setTextColor($textColor)
+            ->setBackgroundColor($backgroundColor);
+
+        $entityManager = $doctrine->getManager();
+        $entityManager->flush();
+
+        return new JsonResponse([
+            'success' => true,
+            'theme' => $this->serializeTheme($theme),
+            'message' => 'Le theme a ete mis a jour avec succes.',
+        ]);
+    }
+
+    #[Route('/theme/{id}/delete', name: 'dossier.theme.delete', methods: ['POST'])]
+    public function deleteTheme(
+        int $id,
+        Request $request,
+        ManagerRegistry $doctrine,
+        ThemeRepository $themeRepository,
+        DossierRepository $dossierRepository
+    ): JsonResponse {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $theme = $themeRepository->find($id);
+        if (!$theme instanceof Theme) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Le theme demande est introuvable.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $payload = $this->parseRequestPayload($request);
+        $csrfToken = (string) ($payload['_token'] ?? '');
+        if (!$this->isCsrfTokenValid('manage_dossier_theme', $csrfToken)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'La session a expire. Veuillez reessayer.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($theme->isSystem()) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Ce theme systeme ne peut pas etre supprime.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($themeRepository->count([]) <= 1) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Impossible de supprimer le dernier theme disponible.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $entityManager = $doctrine->getManager();
+        $fallbackTheme = $this->findFallbackThemeForDeletion($theme, $themeRepository);
+        $linkedDossiers = $dossierRepository->findBy(['theme' => $theme]);
+
+        foreach ($linkedDossiers as $linkedDossier) {
+            $linkedDossier->setTheme($fallbackTheme);
+        }
+
+        $deletedThemeName = (string) $theme->getName();
+        $entityManager->remove($theme);
+        $entityManager->flush();
+
+        return new JsonResponse([
+            'success' => true,
+            'deletedThemeId' => $id,
+            'fallbackThemeId' => $fallbackTheme instanceof Theme ? $fallbackTheme->getId() : null,
+            'message' => sprintf('Le theme "%s" a ete supprime avec succes.', $deletedThemeName),
         ]);
     }
 
@@ -180,9 +291,9 @@ class DossierController extends AbstractController
             $manager->remove($dossier);
             $manager->flush();
 
-            $this->addFlash('success', 'Le dossier a été supprimé avec succès');
+            $this->addFlash('success', 'Le dossier a ete supprime avec succes');
         } else {
-            $this->addFlash('error', "Le dossier demandé n'existe pas");
+            $this->addFlash('error', "Le dossier demande n'existe pas");
         }
 
         return $this->redirectToRoute('dossier.list');
@@ -249,5 +360,62 @@ class DossierController extends AbstractController
         }
 
         return $code;
+    }
+
+    private function parseRequestPayload(Request $request): array
+    {
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            $payload = $request->request->all();
+        }
+
+        return is_array($payload) ? $payload : [];
+    }
+
+    /**
+     * @return array{
+     *     id: int|null,
+     *     code: string,
+     *     name: string,
+     *     description: string,
+     *     primaryColor: string,
+     *     secondaryColor: string,
+     *     accentColor: string,
+     *     textColor: string,
+     *     backgroundColor: string,
+     *     isSystem: bool
+     * }
+     */
+    private function serializeTheme(Theme $theme): array
+    {
+        return [
+            'id' => $theme->getId(),
+            'code' => (string) $theme->getCode(),
+            'name' => (string) $theme->getName(),
+            'description' => $theme->getDescription() ?? 'Theme personnalise',
+            'primaryColor' => (string) $theme->getPrimaryColor(),
+            'secondaryColor' => (string) $theme->getSecondaryColor(),
+            'accentColor' => (string) $theme->getAccentColor(),
+            'textColor' => (string) $theme->getTextColor(),
+            'backgroundColor' => (string) $theme->getBackgroundColor(),
+            'isSystem' => $theme->isSystem(),
+        ];
+    }
+
+    private function findFallbackThemeForDeletion(Theme $themeToDelete, ThemeRepository $themeRepository): ?Theme
+    {
+        $defaultTheme = $themeRepository->findDefaultTheme();
+        if ($defaultTheme instanceof Theme && $defaultTheme->getId() !== $themeToDelete->getId()) {
+            return $defaultTheme;
+        }
+
+        return $themeRepository->createQueryBuilder('t')
+            ->andWhere('t.id != :themeId')
+            ->setParameter('themeId', $themeToDelete->getId())
+            ->orderBy('t.isSystem', 'DESC')
+            ->addOrderBy('t.name', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

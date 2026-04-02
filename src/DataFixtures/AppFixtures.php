@@ -25,6 +25,7 @@ class AppFixtures extends Fixture
             $dossier->setNom($name);
             $dossier->setAdresse('123 Rue de ' . $name);
             $dossier->setRc('RC' . rand(1000, 9999));
+            $dossier->setPenalitesretard('Penalites de retard applicables conformement a la loi 2008-776 du 4 aout 2008. Indemnite forfaitaire pour frais de recouvrement : 40 EUR.');
             $manager->persist($dossier);
             $dossiers[] = $dossier;
         }
@@ -99,7 +100,7 @@ class AppFixtures extends Fixture
                     $invoiceDate = new DateTime(sprintf("%d-%02d-%02d", $year, $month, $day));
                     
                     $invoice = new Entetepiece();
-                    $invoice->setType('FACT');
+                    $invoice->setType('Facture');
                     $invoice->setTypet('VAT');
                     $invoice->setClient($clients[array_rand($clients)]);
                     $invoice->setPieceno(rand(1000, 9999));
