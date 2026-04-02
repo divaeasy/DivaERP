@@ -38,6 +38,7 @@ class EntetePieceFormType extends AbstractType
                 'placeholder' => $isEdit ? false : 'Selectionner un type',
                 'required' => true,
                 'label' => 'Type de piece',
+                'disabled' => $isEdit,
             ])
             ->add('typet', ChoiceType::class, [
                 'choices' => [

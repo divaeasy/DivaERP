@@ -23,6 +23,9 @@
             <div class="form-group">
                 {{ form_label(entetepiece.type, 'Type de pièce', {'label_attr': {'class': 'required'}}) }}
                 {{ form_widget(entetepiece.type, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {% if id > 0 %}
+                    <small class="form-text text-muted">ⓘ Type verrouillé après création.</small>
+                {% endif %}
                 <div class="invalid-feedback">Le type de pièce est obligatoire</div>
                 {{ form_errors(entetepiece.type) }}
             </div>

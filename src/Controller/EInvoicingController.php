@@ -24,6 +24,11 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/test', name: 'test', methods: ['GET'])]
     public function testPage(Entetepiece $invoice): Response
     {
+        $nonInvoiceResponse = $this->redirectIfNotInvoiceType($invoice);
+        if ($nonInvoiceResponse !== null) {
+            return $nonInvoiceResponse;
+        }
+
         $classicFilename = $this->fileStorage->getPdfFilenameForModel($invoice, FactureXGenerator::MODEL_CLASSIC);
         $modernFilename = $this->fileStorage->getPdfFilenameForModel($invoice, FactureXGenerator::MODEL_MODERN);
         $classicGenerated = $this->fileStorage->fileExists($classicFilename);
@@ -39,6 +44,11 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/generate-facturex', name: 'generate_facturex', methods: ['GET', 'POST'])]
     public function generateFactureX(Request $request, Entetepiece $invoice): Response
     {
+        $nonInvoiceResponse = $this->redirectIfNotInvoiceType($invoice);
+        if ($nonInvoiceResponse !== null) {
+            return $nonInvoiceResponse;
+        }
+
         $model = (string) ($request->query->get('model') ?? $request->request->get('model') ?? FactureXGenerator::DEFAULT_MODEL);
         if ($invoice->getLignepieces()->isEmpty()) {
             return $this->redirectToPieceLinesWithWarning($invoice);
@@ -74,6 +84,11 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/submit-tiime', name: 'submit_tiime', methods: ['GET', 'POST'])]
     public function submitToTiime(Entetepiece $invoice): Response
     {
+        $nonInvoiceResponse = $this->redirectIfNotInvoiceType($invoice);
+        if ($nonInvoiceResponse !== null) {
+            return $nonInvoiceResponse;
+        }
+
         if ($invoice->getLignepieces()->isEmpty()) {
             return $this->redirectToPieceLinesWithWarning($invoice);
         }
@@ -129,6 +144,22 @@ class EInvoicingController extends AbstractController
         ]) . '#piece-lines';
 
         return $this->redirect($url);
+    }
+
+    private function redirectIfNotInvoiceType(Entetepiece $invoice): ?Response
+    {
+        if ($this->isInvoiceType($invoice)) {
+            return null;
+        }
+
+        $this->addFlash('error', 'La e-facturation Facture-X est disponible uniquement pour les pieces de type Facture.');
+
+        return $this->redirectToRoute('entetepiece.list');
+    }
+
+    private function isInvoiceType(Entetepiece $invoice): bool
+    {
+        return strtolower(trim((string) $invoice->getType())) === 'facture';
     }
 
     #[Route('/{id}/check-tiime-status', name: 'check_tiime_status', methods: ['GET'])]
