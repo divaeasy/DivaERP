@@ -43,8 +43,8 @@
             {% for unite in unites %}
             <tr>
                 <td><strong>#{{ unite.id }}</strong></td>
-                <td><span class="badge badge-secondary">{{ unite.code }}</span></td>
-                <td>{{ unite.libelle }}</td>
+                <td><span class="badge badge-secondary badge-lg">{{ unite.code|default('____') }}</span></td>
+                <td>{{ unite.libelle|default('____') }}</td>
                 <td class="text-center">
                     <a href="{{ path('unite.edit', {id: unite.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>

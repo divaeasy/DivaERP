@@ -47,12 +47,12 @@
             {% for prospect in prospects %}
             <tr>
                 <td><strong>#{{ prospect.id }}</strong></td>
-                <td>{{ prospect.nom }}</td>
-                <td>{{ prospect.adr1 }}</td>
-                <td>{{ prospect.ville }}</td>
-                <td>{{ prospect.pays }}</td>
-                <td>{{ prospect.tel }}</td>
-                <td>{{ prospect.email }}</td>
+                <td>{{ prospect.nom|default('____') }}</td>
+                <td>{{ prospect.adr1|default('____') }}</td>
+                <td>{{ prospect.ville|default('____') }}</td>
+                <td>{{ prospect.pays|default('____') }}</td>
+                <td>{{ prospect.tel|default('____') }}</td>
+                <td>{{ prospect.email|default('____') }}</td>
                 <td class="text-center">
                     <button type="button" class="btn btn-action btn-convert convert-prospect-btn" 
                             title="Convertir en client"

@@ -42,7 +42,7 @@
             {% for tarif in tarifs %}
             <tr>
                 <td><strong>#{{ tarif.id }}</strong></td>
-                <td>{{ tarif.libelle }}</td>
+                <td>{{ tarif.libelle|default('____') }}</td>
                 <td class="text-center">
                     <a href="{{ path('tarif.edit', {id: tarif.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>

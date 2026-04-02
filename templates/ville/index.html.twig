@@ -42,7 +42,7 @@
             {% for ville in villes %}
             <tr>
                 <td><strong>#{{ ville.id }}</strong></td>
-                <td>{{ ville.libelle }}</td>
+                <td>{{ ville.libelle|default('____') }}</td>
                 <td class="text-center">
                     <a href="{{ path('ville.edit', {id: ville.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>

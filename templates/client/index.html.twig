@@ -48,13 +48,13 @@
             {% for client in clients %}
             <tr>
                 <td><strong>#{{ client.id }}</strong></td>
-                <td>{{ client.nom }}</td>
-                <td>{{ client.adr1 }}</td>
-                <td>{{ client.ville }}</td>
-                <td>{{ client.pays }}</td>
-                <td>{{ client.tel }}</td>
-                <td>{{ client.email }}</td>
-                <td>{{ client.tarif }}</td>
+                <td>{{ client.nom|default('____') }}</td>
+                <td>{{ client.adr1|default('____') }}</td>
+                <td>{{ client.ville|default('____') }}</td>
+                <td>{{ client.pays|default('____') }}</td>
+                <td>{{ client.tel|default('____') }}</td>
+                <td>{{ client.email|default('____') }}</td>
+                <td>{{ client.tarif|default('____') }}</td>
                 <td class="text-center">
                     <a href="{{ path('client.detail', {id: client.id}) }}" class="btn btn-action btn-view" title="Voir">
                         <i class="fas fa-eye"></i>

@@ -39,7 +39,7 @@
             {% for p in pays %}
             <tr>
                 <td><strong>#{{ p.id }}</strong></td>
-                <td>{{ p.libelle }}</td>
+                <td>{{ p.libelle|default('____') }}</td>
                 <td class="text-center">
                     <a href="{{ path('pays.edit', {id: p.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>

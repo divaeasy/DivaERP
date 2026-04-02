@@ -43,8 +43,8 @@
             {% for devise in devises %}
             <tr>
                 <td><strong>#{{ devise.id }}</strong></td>
-                <td><span class="badge badge-info">{{ devise.code }}</span></td>
-                <td>{{ devise.libelle }}</td>
+                <td><span class="badge badge-info badge-lg">{{ devise.code|default('____') }}</span></td>
+                <td>{{ devise.libelle|default('____') }}</td>
                 <td class="text-center">
                     <a href="{{ path('devise.edit', {id: devise.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>

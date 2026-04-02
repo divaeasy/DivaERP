@@ -44,9 +44,9 @@
             {% for article in articles %}
             <tr>
                 <td><strong>#{{ article.id }}</strong></td>
-                <td>{{ article.libelle }}</td>
-                <td>{{ article.unite }}</td>
-                <td>{{ article.tarif }}</td>
+                <td>{{ article.libelle|default('____') }}</td>
+                <td>{{ article.unite|default('____') }}</td>
+                <td>{{ article.tarif|default('____') }}</td>
                 <td class="text-center">
                     <a href="{{ path('article.detail', {id: article.id}) }}" class="btn btn-action btn-view" title="Voir">
                         <i class="fas fa-eye"></i>

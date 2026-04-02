@@ -51,10 +51,10 @@
             {% for entetepiece in entetepieces %}
             <tr>
                 <td><strong>#{{ entetepiece.id }}</strong></td>
-                <td><span class="badge badge-primary">{{ entetepiece.type }}</span></td>
-                <td>{{ entetepiece.client }}</td>
-                <td><strong>{{ entetepiece.pieceno }}</strong></td>
-                <td>{{ entetepiece.pieceref }}</td>
+                <td><span class="badge badge-primary badge-lg">{{ entetepiece.type|default('____') }}</span></td>
+                <td>{{ entetepiece.client|default('____') }}</td>
+                <td><strong>{{ entetepiece.pieceno|default('____') }}</strong></td>
+                <td>{{ entetepiece.pieceref|default('____') }}</td>
                 {% set display_remise = remiseByInvoice[entetepiece.id]|default(entetepiece.remise ?? 0) %}
                 <td class="text-right">{{ display_remise|number_format(2, ',', ' ') }}%</td>
                 {% set display_amount = amountByInvoice[entetepiece.id]|default(entetepiece.montant ?? 0) %}
@@ -67,11 +67,11 @@
                 </td>
                 <td>
                     {% if entetepiece.statut == 'validé' %}
-                        <span class="badge badge-success">{{ entetepiece.statut }}</span>
+                        <span class="badge badge-success badge-lg">{{ entetepiece.statut }}</span>
                     {% elseif entetepiece.statut == 'brouillon' %}
-                        <span class="badge badge-secondary">{{ entetepiece.statut }}</span>
+                        <span class="badge badge-secondary badge-lg">{{ entetepiece.statut }}</span>
                     {% else %}
-                        <span class="badge badge-warning">{{ entetepiece.statut }}</span>
+                        <span class="badge badge-warning badge-lg">{{ entetepiece.statut }}</span>
                     {% endif %}
                 </td>
                 <td>{{ entetepiece.devise }}</td>

@@ -52,14 +52,14 @@
             {% set themeLabel = dossierTheme ? dossierTheme.name : 'Thème non défini' %}
             <tr>
                 <td><strong>#{{ dossier.id }}</strong></td>
-                <td>{{ dossier.nom }}</td>
-                <td>{{ dossier.adresse }}</td>
+                <td>{{ dossier.nom|default('____') }}</td>
+                <td>{{ dossier.adresse|default('____') }}</td>
                 <td>
                     {{ dossier.codepostal ?: '-' }}
                     {{ dossier.ville ?: '' }}
                     {% if dossier.pays %}<br><small class="text-muted">{{ dossier.pays }}</small>{% endif %}
                 </td>
-                <td>{{ dossier.rc }}</td>
+                <td>{{ dossier.rc|default('____') }}</td>
                 <td>
                     {% if dossier.logo %}
                         <img src="{{ dossier.logo }}" alt="Logo" style="height:32px; width:32px; object-fit:cover; border-radius:6px;">

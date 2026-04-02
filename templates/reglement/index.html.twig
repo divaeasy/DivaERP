@@ -43,8 +43,8 @@
             {% for reglement in reglements %}
             <tr>
                 <td><strong>#{{ reglement.id }}</strong></td>
-                <td>{{ reglement.libelle }}</td>
-                <td><span class="badge badge-warning">{{ reglement.echeance }} jours</span></td>
+                <td>{{ reglement.libelle|default('____') }}</td>
+                <td><span class="badge badge-warning badge-lg">{{ reglement.echeance|default('____') }} jours</span></td>
                 <td class="text-center">
                     <a href="{{ path('reglement.edit', {id: reglement.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
