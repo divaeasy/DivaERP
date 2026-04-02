@@ -1871,6 +1871,333 @@
         .modal.fade .modal-dialog { transition: transform 0.3s ease-out; }
         .modal.show .modal-dialog { transform: translate(0, 0); }
     </style>
+    <style>
+        /* ===== COMPACT DENSITY LAYER (content only, navbar untouched) ===== */
+        :root {
+            --compact-text: 13px;
+            --compact-text-sm: 12px;
+            --compact-control-height: 36px;
+            --compact-radius: 8px;
+        }
+        #content > .container-fluid {
+            padding: 0.9rem 1rem 1.05rem !important;
+            font-size: var(--compact-text);
+            line-height: 1.35;
+        }
+        #content > .container-fluid .row {
+            margin-left: -0.45rem;
+            margin-right: -0.45rem;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        #content > .container-fluid .row > [class*='col-'] {
+            padding-left: 0.45rem;
+            padding-right: 0.45rem;
+        }
+        #content > .container-fluid .page-header {
+            margin-bottom: 0.75rem;
+        }
+        #content > .container-fluid .page-header h1,
+        #content > .container-fluid .page-header .h3 {
+            font-size: 1.22rem;
+            line-height: 1.25;
+            letter-spacing: 0.01em;
+            margin-bottom: 0;
+        }
+        #content > .container-fluid .page-header .btn-back {
+            padding: 0.42rem 0.72rem;
+            border-radius: var(--compact-radius);
+            font-size: var(--compact-text-sm);
+            gap: 6px;
+        }
+        #content > .container-fluid .action-bar {
+            margin-bottom: 0.85rem;
+            padding: 0.72rem 0.85rem;
+            gap: 0.62rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+        }
+        #content > .container-fluid .action-bar .search-box {
+            max-width: 430px;
+            min-width: 190px;
+        }
+        #content > .container-fluid .action-bar .btn-add,
+        #content > .container-fluid .btn-search {
+            font-size: var(--compact-text-sm);
+            font-weight: 700;
+            padding: 0.48rem 0.86rem;
+            border-radius: var(--compact-radius);
+            gap: 0.4rem;
+            line-height: 1.2;
+        }
+        #content > .container-fluid .search-form-row {
+            gap: 0.55rem;
+        }
+        #content > .container-fluid .search-input-group {
+            min-width: 130px;
+        }
+        #content > .container-fluid .search-input {
+            height: var(--compact-control-height);
+            border-width: 1px;
+            border-radius: var(--compact-radius);
+            padding: 0.36rem 0.62rem;
+            font-size: var(--compact-text);
+        }
+        #content > .container-fluid .table-container {
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+        }
+        #content > .container-fluid .table {
+            margin-bottom: 0;
+            font-size: 13.5px;
+            line-height: 1.34;
+        }
+        #content > .container-fluid .table thead th {
+            padding: 0.7rem 0.82rem;
+            font-size: 12px;
+            letter-spacing: 0.03em;
+            text-transform: none;
+            border-bottom: 0;
+        }
+        #content > .container-fluid th[data-sort-key] {
+            padding-right: 26px !important;
+        }
+        #content > .container-fluid th[data-sort-key]::after {
+            right: 8px;
+            font-size: 10px;
+        }
+        #content > .container-fluid .table tbody td,
+        #content > .container-fluid .table tbody th {
+            padding: 0.64rem 0.82rem;
+            border-color: #e6eaf2;
+        }
+        #content > .container-fluid .table tbody tr {
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        #content > .container-fluid .table tbody tr:last-child {
+            border-bottom: 0;
+        }
+        #content > .container-fluid .table td.text-center {
+            white-space: nowrap;
+        }
+        #content > .container-fluid .btn,
+        #content > .container-fluid button.btn,
+        #content > .container-fluid a.btn {
+            font-size: var(--compact-text-sm);
+            border-radius: var(--compact-radius);
+        }
+        #content > .container-fluid .btn-sm {
+            font-size: 11px;
+            padding: 0.3rem 0.6rem;
+        }
+        #content > .container-fluid .btn-action {
+            min-width: 34px;
+            min-height: 34px;
+            padding: 0.4rem 0.48rem;
+            margin: 0 2px;
+            border-radius: 7px;
+        }
+        #content > .container-fluid .btn-action i {
+            font-size: 14px;
+        }
+        #content > .container-fluid nav[aria-label="Pagination"] {
+            margin-top: 0.72rem !important;
+        }
+        #content > .container-fluid nav[aria-label="Pagination"] small {
+            font-size: 12px;
+            margin-bottom: 0.38rem !important;
+        }
+        #content > .container-fluid .pagination .page-link {
+            padding: 0.34rem 0.62rem;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+        #content > .container-fluid .form-card {
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            padding: 1rem 1.05rem;
+            margin-bottom: 0.95rem;
+        }
+        #content > .container-fluid .form-card .card-header-custom {
+            padding-bottom: 0.55rem;
+            margin-bottom: 0.78rem;
+        }
+        #content > .container-fluid .form-card .card-header-custom h5 {
+            font-size: 0.95rem;
+            letter-spacing: 0.01em;
+        }
+        #content > .container-fluid .form-card .form-group {
+            margin-bottom: 0.72rem;
+        }
+        #content > .container-fluid .form-card .form-group label {
+            font-size: 11px;
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: #4b5563;
+        }
+        #content > .container-fluid .form-card .form-control,
+        #content > .container-fluid .form-card .form-control:not(.select2-hidden-accessible),
+        #content > .container-fluid .form-card select.form-control:not(.select2-hidden-accessible) {
+            height: var(--compact-control-height);
+            min-height: var(--compact-control-height);
+            border-width: 1px;
+            border-radius: var(--compact-radius);
+            padding: 0.36rem 0.62rem;
+            font-size: var(--compact-text);
+        }
+        #content > .container-fluid .form-card textarea.form-control {
+            min-height: 72px;
+            height: auto;
+            padding-top: 0.5rem;
+        }
+        #content > .container-fluid .form-card .form-control::placeholder {
+            font-size: var(--compact-text-sm);
+        }
+        #content > .container-fluid .invalid-feedback {
+            font-size: 11px;
+            margin-top: 2px;
+        }
+        #content > .container-fluid .form-actions {
+            margin-top: 0.9rem;
+            padding-top: 0.78rem;
+            gap: 0.5rem;
+        }
+        #content > .container-fluid .form-actions .btn {
+            padding: 0.48rem 0.9rem;
+            font-size: var(--compact-text-sm);
+        }
+        #content > .container-fluid .badge-status {
+            padding: 0.22rem 0.52rem;
+            border-radius: 999px;
+            font-size: 10px;
+            letter-spacing: 0.04em;
+        }
+        #content > .container-fluid .empty-state {
+            padding: 2.2rem 1rem;
+        }
+        #content > .container-fluid .empty-state .empty-state-icon,
+        #content > .container-fluid .empty-state > i {
+            width: 64px;
+            height: 64px;
+            line-height: 64px;
+            margin-bottom: 14px;
+        }
+        #content > .container-fluid .empty-state .empty-state-icon i,
+        #content > .container-fluid .empty-state > i {
+            font-size: 24px;
+        }
+        #content > .container-fluid .empty-state h5 {
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+        #content > .container-fluid .empty-state p {
+            font-size: var(--compact-text);
+            margin-bottom: 16px;
+        }
+        #content > .container-fluid .dashboard-shell {
+            padding-bottom: 0.6rem;
+        }
+        #content > .container-fluid .dashboard-head {
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+        }
+        #content > .container-fluid .dashboard-title {
+            font-size: 1.32rem;
+        }
+        #content > .container-fluid .kpi-grid {
+            gap: 0.65rem;
+        }
+        #content > .container-fluid .kpi-card {
+            gap: 0.65rem;
+            padding: 0.78rem 0.86rem;
+            border-radius: 12px;
+        }
+        #content > .container-fluid .kpi-card__icon {
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+            border-radius: 9px;
+            font-size: 0.82rem;
+        }
+        #content > .container-fluid .kpi-card__label {
+            font-size: 0.67rem;
+        }
+        #content > .container-fluid .kpi-card__value {
+            font-size: 1.05rem;
+        }
+        #content > .container-fluid .kpi-card__meta {
+            font-size: 0.74rem;
+        }
+        #content > .container-fluid .dashboard-panel {
+            border-radius: 12px;
+        }
+        #content > .container-fluid .dashboard-panel__header {
+            padding: 0.72rem 0.9rem 0.56rem;
+        }
+        #content > .container-fluid .dashboard-panel__title {
+            font-size: 0.84rem;
+        }
+        #content > .container-fluid .dashboard-panel__body {
+            padding: 0.72rem 0.86rem 0.78rem;
+        }
+        #content > .container-fluid .chart-height-lg {
+            height: 286px;
+        }
+        #content > .container-fluid .chart-height-md {
+            height: 248px;
+        }
+        #content > .container-fluid .select2-container--bootstrap-5 .select2-selection {
+            height: var(--compact-control-height) !important;
+            min-height: var(--compact-control-height) !important;
+            border-width: 1px !important;
+            border-radius: var(--compact-radius) !important;
+            padding: 0 9px !important;
+        }
+        #content > .container-fluid .select2-container--bootstrap-5 .select2-selection--single {
+            height: var(--compact-control-height) !important;
+        }
+        #content > .container-fluid .select2-container--bootstrap-5 .select2-selection__rendered {
+            font-size: var(--compact-text) !important;
+            line-height: calc(var(--compact-control-height) - 2px) !important;
+            padding-right: 24px !important;
+        }
+        #content > .container-fluid .select2-container--bootstrap-5 .select2-selection__placeholder {
+            font-size: var(--compact-text-sm) !important;
+        }
+        #content > .container-fluid .select2-container--bootstrap-5 .select2-selection__arrow {
+            right: 8px !important;
+            width: 16px !important;
+        }
+        .select2-container--bootstrap-5 .select2-dropdown {
+            border-width: 1px !important;
+        }
+        .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+            border-width: 1px !important;
+            padding: 6px 10px !important;
+            font-size: 12px !important;
+        }
+        .select2-container--bootstrap-5 .select2-results__option {
+            font-size: 12px !important;
+            padding: 6px 10px !important;
+        }
+        @media (max-width: 992px) {
+            #content > .container-fluid {
+                padding: 0.72rem 0.78rem 0.88rem !important;
+            }
+            #content > .container-fluid .action-bar {
+                padding: 0.62rem 0.72rem;
+            }
+            #content > .container-fluid .action-bar .search-box {
+                max-width: 100%;
+                width: 100%;
+            }
+            #content > .container-fluid .chart-height-lg,
+            #content > .container-fluid .chart-height-md {
+                height: 244px;
+            }
+        }
+    </style>
 
     <!-- Page Wrapper -->
     <div id="wrapper">
