@@ -28,7 +28,7 @@
             <div>
                 <p class="kpi-card__label">Croissance</p>
                 <p class="kpi-card__value">{% if growthPercentage >= 0 %}+{% endif %}{{ growthPercentage }}%</p>
-                <p class="kpi-card__meta">vs {{ previousYear }}</p>
+                <p class="kpi-card__meta"> vs {{ previousYear }}</p>
             </div>
         </article>
 
@@ -63,8 +63,27 @@
     <div class="row mb-4">
         <div class="col-xl-8 col-lg-7 mb-4 mb-lg-0">
             <section class="dashboard-panel h-100">
-                <header class="dashboard-panel__header">
-                    <h6 class="dashboard-panel__title">Comparaison des ventes {{ currentYear }} / {{ previousYear }}</h6>
+                <header class="dashboard-panel__header dashboard-panel__header--compare">
+                    <h6 class="dashboard-panel__title mb-0">Comparaison des ventes {{ compareYearA }} / {{ compareYearB }}</h6>
+                    <form method="get" action="{{ path('app_dash_bord') }}" class="compare-years-form no-loading">
+                        <div class="compare-years-form__group">
+                            <label for="compareYearA" class="sr-only">Annee A</label>
+                            <select id="compareYearA" name="compareYearA" class="compare-years-form__select">
+                                {% for year in availableYears %}
+                                    <option value="{{ year }}" {% if year == compareYearA %}selected{% endif %}>Annee {{ year }}</option>
+                                {% endfor %}
+                            </select>
+
+                            <span class="compare-years-form__separator">-</span>
+
+                            <label for="compareYearB" class="sr-only">Annee B</label>
+                            <select id="compareYearB" name="compareYearB" class="compare-years-form__select">
+                                {% for year in availableYears %}
+                                    <option value="{{ year }}" {% if year == compareYearB %}selected{% endif %}>Annee {{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
                 </header>
                 <div class="dashboard-panel__body chart-height-lg">
                     <canvas id="salesComparisonChart"></canvas>
@@ -254,11 +273,84 @@
     background: linear-gradient(120deg, rgba(8, 74, 83, 0.07), rgba(8, 74, 83, 0.01));
 }
 
+.dashboard-panel__header--compare {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.7rem;
+}
+
 .dashboard-panel__title {
     margin: 0;
     font-weight: 800;
     color: #14354a;
     font-size: 0.95rem;
+}
+
+.compare-years-form {
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+.compare-years-form__group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.3rem;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(241, 246, 248, 0.9));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.compare-years-form__select {
+    min-width: 122px;
+    height: 34px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    border-radius: 9px;
+    background-color: #ffffff;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23465f70' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 6l5 5 5-5'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.58rem center;
+    background-size: 12px 12px;
+    padding: 0.35rem 1.85rem 0.35rem 0.72rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #14354a;
+    line-height: 1.2;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.compare-years-form__select:hover {
+    border-color: rgba(20, 53, 74, 0.35);
+    background-color: #fafdff;
+}
+
+.compare-years-form__select:focus {
+    outline: none;
+    border-color: rgba(12, 110, 118, 0.55);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+.compare-years-form__separator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 26px;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(20, 53, 74, 0.12);
+    background: rgba(20, 53, 74, 0.06);
+    color: #2a4f66;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
 .dashboard-panel__body {
@@ -288,6 +380,31 @@
     .chart-height-md {
         height: 280px;
     }
+
+    .dashboard-panel__header--compare {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .compare-years-form {
+        width: 100%;
+    }
+
+    .compare-years-form__group {
+        width: 100%;
+        justify-content: space-between;
+        gap: 0.4rem;
+    }
+
+    .compare-years-form__select {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .compare-years-form__separator {
+        min-width: 32px;
+        padding: 0 0.35rem;
+    }
 }
 </style>
 {% endblock %}
@@ -305,7 +422,8 @@ $(document).ready(function() {
 
     var months = {{ chartMonths|raw }};
     var currentYearSeries = {{ currentYearValues|raw }};
-    var previousYearSeries = {{ previousYearValues|raw }};
+    var compareYearASeries = {{ compareYearAValues|raw }};
+    var compareYearBSeries = {{ compareYearBValues|raw }};
     var productLabels = {{ productNames|raw }};
     var productSeries = {{ productQty|raw }};
     var categoryLabels = {{ categoryNames|raw }};
@@ -342,6 +460,16 @@ $(document).ready(function() {
     Chart.defaults.global.defaultFontColor = '#5f7280';
 
     var axisColor = 'rgba(101, 120, 133, 0.25)';
+    var disabledLegendClick = function() {};
+
+    function getLegendAsLabel(position) {
+        return {
+            display: true,
+            position: position || 'bottom',
+            onClick: disabledLegendClick,
+            labels: { boxWidth: 12, padding: 14 }
+        };
+    }
 
     var salesCtx = getCtx('salesComparisonChart');
     if (salesCtx) {
@@ -351,8 +479,8 @@ $(document).ready(function() {
                 labels: months,
                 datasets: [
                     {
-                        label: 'Annee {{ currentYear }}',
-                        data: currentYearSeries,
+                        label: 'Annee {{ compareYearA }}',
+                        data: compareYearASeries,
                         borderColor: hexToRgba(primaryHex, 1),
                         backgroundColor: hexToRgba(primaryHex, 0.14),
                         borderWidth: 2,
@@ -361,8 +489,8 @@ $(document).ready(function() {
                         pointRadius: 3
                     },
                     {
-                        label: 'Annee {{ previousYear }}',
-                        data: previousYearSeries,
+                        label: 'Annee {{ compareYearB }}',
+                        data: compareYearBSeries,
                         borderColor: hexToRgba(secondaryHex, 1),
                         backgroundColor: hexToRgba(secondaryHex, 0.12),
                         borderWidth: 2,
@@ -375,7 +503,7 @@ $(document).ready(function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                legend: { display: true, position: 'top' },
+                legend: getLegendAsLabel('top'),
                 tooltips: {
                     callbacks: {
                         label: function(tooltipItem, data) {
@@ -491,10 +619,7 @@ $(document).ready(function() {
                 responsive: true,
                 maintainAspectRatio: false,
                 cutoutPercentage: 64,
-                legend: {
-                    position: 'bottom',
-                    labels: { boxWidth: 12, padding: 14 }
-                },
+                legend: getLegendAsLabel('bottom'),
                 tooltips: {
                     callbacks: {
                         label: function(tooltipItem, data) {
@@ -568,10 +693,7 @@ $(document).ready(function() {
                 responsive: true,
                 maintainAspectRatio: false,
                 cutoutPercentage: 64,
-                legend: {
-                    position: 'bottom',
-                    labels: { boxWidth: 12, padding: 14 }
-                },
+                legend: getLegendAsLabel('bottom'),
                 tooltips: {
                     callbacks: {
                         label: function(tooltipItem, data) {
@@ -586,6 +708,10 @@ $(document).ready(function() {
             }
         });
     }
+
+    $(document).on('change', '.compare-years-form__select', function() {
+        $(this).closest('form').trigger('submit');
+    });
 });
 </script>
 {% endblock %}
