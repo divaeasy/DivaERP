@@ -4,21 +4,41 @@ namespace App\Controller;
 
 use App\Service\DashboardService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 class DashBordController extends AbstractController
 {
     #[Route('/dashbord', name: 'app_dash_bord')]
-    public function index(DashboardService $dashboardService): Response
+    public function index(Request $request, DashboardService $dashboardService): Response
     {
         $availableYears = $dashboardService->getAvailableYears();
         $fallbackYear = (int) date('Y');
         $currentYear = $availableYears[0] ?? $fallbackYear;
         $previousYear = $availableYears[1] ?? ($currentYear - 1);
 
+        $comparisonYearCandidates = array_merge($availableYears, [$currentYear, $previousYear]);
+        $comparisonYearMax = (int) max($comparisonYearCandidates);
+        $comparisonYearMin = (int) min($comparisonYearCandidates);
+        $comparisonYears = range($comparisonYearMax, $comparisonYearMin);
+
+        $compareYearA = $request->query->getInt('compareYearA', $currentYear);
+        $compareYearB = $request->query->getInt('compareYearB', $previousYear);
+
+        if (!in_array($compareYearA, $comparisonYears, true)) {
+            $compareYearA = $currentYear;
+        }
+        if (!in_array($compareYearB, $comparisonYears, true)) {
+            $compareYearB = $previousYear;
+        }
+        if ($compareYearA === $compareYearB && count($comparisonYears) > 1) {
+            $compareYearB = $comparisonYears[0] === $compareYearA ? $comparisonYears[1] : $comparisonYears[0];
+        }
+
         $monthlySalesCurrentYear = $dashboardService->getMonthlySales($currentYear);
-        $monthlySalesPreviousYear = $dashboardService->getMonthlySales($previousYear);
+        $monthlySalesCompareYearA = $dashboardService->getMonthlySales($compareYearA);
+        $monthlySalesCompareYearB = $dashboardService->getMonthlySales($compareYearB);
 
         $totalRevenueCurrent = $dashboardService->getTotalRevenue($currentYear);
         $totalRevenuePerv = $dashboardService->getTotalRevenue($previousYear);
@@ -36,7 +56,8 @@ class DashBordController extends AbstractController
 
         $chartMonths = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
         $currentYearValues = array_values($monthlySalesCurrentYear);
-        $previousYearValues = array_values($monthlySalesPreviousYear);
+        $compareYearAValues = array_values($monthlySalesCompareYearA);
+        $compareYearBValues = array_values($monthlySalesCompareYearB);
 
         $productNames = array_column($top5Products, 'product_name');
         $productQty = array_map(static fn ($p) => (float) $p['total_qty'], $top5Products);
@@ -65,9 +86,12 @@ class DashBordController extends AbstractController
             'currentMonth' => (int) date('m'),
             'chartMonths' => json_encode($chartMonths),
             'currentYearValues' => json_encode($currentYearValues),
-            'previousYearValues' => json_encode($previousYearValues),
+            'compareYearAValues' => json_encode($compareYearAValues),
+            'compareYearBValues' => json_encode($compareYearBValues),
             'currentYear' => $currentYear,
             'previousYear' => $previousYear,
+            'compareYearA' => $compareYearA,
+            'compareYearB' => $compareYearB,
             'productNames' => json_encode($productNames),
             'productQty' => json_encode($productQty),
             'categoryNames' => json_encode($categoryNames),
@@ -75,7 +99,7 @@ class DashBordController extends AbstractController
             'paymentStatusLabels' => json_encode($paymentStatusLabels),
             'paymentStatusAmounts' => json_encode($paymentStatusAmounts),
             'customerCounts' => json_encode(array_values($customerCounts)),
-            'availableYears' => $availableYears,
+            'availableYears' => $comparisonYears,
         ]);
     }
 }
