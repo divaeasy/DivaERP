@@ -19,12 +19,47 @@
         <a class="btn-add" href="{{ path('article.edit') }}">
             <i class="fas fa-plus"></i> Nouvel Article
         </a>
-        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.articles') }}" title="Exporter CSV">
-            <i class="fas fa-file-csv mr-1"></i> Exporter
+        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.articles') }}" title="Exporter Excel">
+            <i class="fas fa-file-excel mr-1"></i> Exporter
         </a>
+        <button type="button" class="btn btn-sm btn-outline-primary ml-2" data-toggle="modal" data-target="#articleImportModal">
+            <i class="fas fa-file-import mr-1"></i> Importer
+        </button>
     </div>
     <div class="search-box">
         {% include "components/search_data.html.twig" with {search: search} only %}
+    </div>
+</div>
+
+<div class="modal fade" id="articleImportModal" tabindex="-1" role="dialog" aria-labelledby="articleImportModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post" action="{{ path('article.import') }}" enctype="multipart/form-data">
+                <input type="hidden" name="_token" value="{{ csrf_token('article_import') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="articleImportModalLabel">Importer des articles</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="article-import-file">Fichier Excel (.xlsx, .xls ou .xlsm)</label>
+                        <input id="article-import-file" type="file" name="import_file" class="form-control-file" accept=".xlsx,.xls,.xlsm" required>
+                    </div>
+                    <small class="text-muted d-block">
+                        Utilisez le fichier exporte, modifiez la feuille <strong>Export</strong> puis importez-le ici (format recommande: <strong>.xls</strong>).
+                    </small>
+                    <small class="text-muted d-block">
+                        Sans ID = creation. Avec ID existant = mise a jour. La colonne ID est protegee.
+                    </small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 

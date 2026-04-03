@@ -4,8 +4,11 @@ namespace App\Service;
 
 use Mpdf\Mpdf;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xls as XlsWriter;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -179,13 +182,17 @@ class ExportService
 
         // Write to temp file
         $tmpFile = tempnam(sys_get_temp_dir(), 'dashboard_');
-        $writer = new Xlsx($spreadsheet);
+        $useZip = class_exists(\ZipArchive::class);
+        $writer = $useZip ? new Xlsx($spreadsheet) : new XlsWriter($spreadsheet);
         $writer->save($tmpFile);
 
         // Return as downloadable response
         $response = new BinaryFileResponse($tmpFile);
-        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $filename));
+        $downloadFilename = $useZip ? $filename : preg_replace('/\.xlsx$/i', '.xls', $filename);
+        $response->headers->set('Content-Type', $useZip
+            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            : 'application/vnd.ms-excel');
+        $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $downloadFilename));
         $response->deleteFileAfterSend(true);
 
         return $response;
@@ -199,7 +206,14 @@ class ExportService
      * @param string[] $headers Column headers
      * @param array $rows Data rows (array of arrays)
      */
-    public function exportListToExcel(string $filename, string $sheetTitle, array $headers, array $rows): BinaryFileResponse
+    public function exportListToExcel(
+        string $filename,
+        string $sheetTitle,
+        array $headers,
+        array $rows,
+        ?array $notices = null,
+        array $options = []
+    ): BinaryFileResponse
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -292,26 +306,144 @@ class ExportService
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
+        if ((string) ($options['template'] ?? '') === 'articles_import') {
+            $this->applyArticlesImportTemplate($sheet, $headerRow + 1, max($dataRow - 1, $headerRow + 1));
+        }
+
         // ========== FOOTER SECTION ==========
-        $footerRow = $dataRow + 1;
-        $sheet->setCellValue('A' . $footerRow, 'Généré par DivaERP - ' . date('Y-m-d H:i:s'));
-        $sheet->mergeCells('A' . $footerRow . ':' . $this->getColumnLetter(count($headers)) . $footerRow);
-        $footerStyle = $sheet->getStyle('A' . $footerRow);
-        $footerStyle->getFont()->setSize(8)->setColor(new Color('FF9CA3AF'))->setItalic(true);
-        $footerStyle->getAlignment()->setHorizontal('right');
+        if ((bool) ($options['include_footer'] ?? true)) {
+            $footerRow = $dataRow + 1;
+            $sheet->setCellValue('A' . $footerRow, 'Généré par DivaERP - ' . date('Y-m-d H:i:s'));
+            $sheet->mergeCells('A' . $footerRow . ':' . $this->getColumnLetter(count($headers)) . $footerRow);
+            $footerStyle = $sheet->getStyle('A' . $footerRow);
+            $footerStyle->getFont()->setSize(8)->setColor(new Color('FF9CA3AF'))->setItalic(true);
+            $footerStyle->getAlignment()->setHorizontal('right');
+        }
+
+        if ($notices !== null && $notices !== []) {
+            $this->appendNoticesSheet($spreadsheet, $notices);
+        }
 
         // Write to temp file
         $tmpFile = tempnam(sys_get_temp_dir(), 'export_list_');
-        $writer = new Xlsx($spreadsheet);
+        $preferredFormat = strtolower((string) ($options['format'] ?? 'xlsx'));
+        if (!in_array($preferredFormat, ['xlsx', 'xls'], true)) {
+            $preferredFormat = preg_match('/\.xls$/i', $filename) ? 'xls' : 'xlsx';
+        }
+        if ($preferredFormat === 'xlsx' && !class_exists(\ZipArchive::class)) {
+            $preferredFormat = 'xls';
+        }
+
+        $writer = $preferredFormat === 'xlsx'
+            ? new Xlsx($spreadsheet)
+            : new XlsWriter($spreadsheet);
         $writer->save($tmpFile);
 
         // Return as downloadable response
         $response = new BinaryFileResponse($tmpFile);
-        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $filename));
+        $downloadFilename = preg_replace('/\.(xlsx|xls)$/i', '', $filename) . '.' . $preferredFormat;
+        $response->headers->set('Content-Type', $preferredFormat === 'xlsx'
+            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            : 'application/vnd.ms-excel');
+        $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $downloadFilename));
         $response->deleteFileAfterSend(true);
 
         return $response;
+    }
+
+    /**
+     * @param array<int, array{title: string, value: string}> $notices
+     */
+    private function appendNoticesSheet(Spreadsheet $spreadsheet, array $notices): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('Notices');
+
+        $sheet->setCellValue('A1', 'NOTICES IMPORT');
+        $sheet->mergeCells('A1:B1');
+        $sheet->getStyle('A1:B1')->getFont()->setBold(true)->setSize(14)->setColor(new Color('FFFFFFFF'));
+        $sheet->getStyle('A1:B1')->getFill()->setFillType('solid')->getStartColor()->setARGB('FF1E3A8A');
+        $sheet->getStyle('A1:B1')->getAlignment()->setHorizontal('center')->setVertical('center');
+        $sheet->getRowDimension(1)->setRowHeight(24);
+
+        $sheet->setCellValue('A3', 'Champ');
+        $sheet->setCellValue('B3', 'Instruction');
+        $sheet->getStyle('A3:B3')->getFont()->setBold(true)->setColor(new Color('FFFFFFFF'));
+        $sheet->getStyle('A3:B3')->getFill()->setFillType('solid')->getStartColor()->setARGB('FF4F46E5');
+        $sheet->getStyle('A3:B3')->getAlignment()->setHorizontal('center')->setVertical('center');
+
+        $row = 4;
+        foreach ($notices as $notice) {
+            $sheet->setCellValue('A' . $row, $notice['title']);
+            $sheet->setCellValue('B' . $row, $notice['value']);
+            $sheet->getStyle('A' . $row . ':B' . $row)->getBorders()->getAllBorders()->setBorderStyle('thin');
+            $sheet->getStyle('A' . $row . ':B' . $row)->getAlignment()->setVertical('top')->setWrapText(true);
+            $sheet->getRowDimension($row)->setRowHeight(34);
+            $row++;
+        }
+
+        $sheet->getColumnDimension('A')->setWidth(22);
+        $sheet->getColumnDimension('B')->setWidth(90);
+    }
+
+    private function applyArticlesImportTemplate(Worksheet $sheet, int $dataStartRow, int $lastDataRow): void
+    {
+        $maxRow = max($lastDataRow + 500, 2000);
+
+        // Excel validations only (no full sheet lock), so users can type freely
+        // and only get an error when value is invalid.
+        for ($row = $dataStartRow; $row <= $maxRow; $row++) {
+            $existingId = trim((string) $sheet->getCell('A' . $row)->getFormattedValue());
+
+            $idValidation = new DataValidation();
+            $idValidation->setType(DataValidation::TYPE_CUSTOM);
+            $idValidation->setErrorStyle(DataValidation::STYLE_STOP);
+            $idValidation->setAllowBlank($existingId === '');
+            $idValidation->setShowInputMessage(false);
+            $idValidation->setShowErrorMessage(true);
+            $idValidation->setErrorTitle('ID non modifiable');
+            $idValidation->setError('La colonne ID est geree automatiquement. Ne la modifiez pas.');
+            if ($existingId !== '' && ctype_digit($existingId)) {
+                $idValidation->setFormula1('$A' . $row . '=' . $existingId);
+            } else {
+                $idValidation->setFormula1('$A' . $row . '=""');
+            }
+            $sheet->getCell('A' . $row)->setDataValidation($idValidation);
+
+            // Designation must be filled only for new rows (ID empty).
+            $validation = new DataValidation();
+            $validation->setType(DataValidation::TYPE_CUSTOM);
+            $validation->setErrorStyle(DataValidation::STYLE_STOP);
+            $validation->setAllowBlank(true);
+            $validation->setShowInputMessage(false);
+            $validation->setShowErrorMessage(true);
+            $validation->setErrorTitle('Valeur invalide');
+            $validation->setError('Pour une creation, renseignez Designation.');
+            $validation->setFormula1('OR($A' . $row . '<>"",LEN(TRIM($B' . $row . '))>0)');
+            $sheet->getCell('B' . $row)->setDataValidation($validation);
+
+            $uniteValidation = new DataValidation();
+            $uniteValidation->setType(DataValidation::TYPE_CUSTOM);
+            $uniteValidation->setErrorStyle(DataValidation::STYLE_STOP);
+            $uniteValidation->setAllowBlank(true);
+            $uniteValidation->setShowInputMessage(false);
+            $uniteValidation->setShowErrorMessage(true);
+            $uniteValidation->setErrorTitle('Type invalide');
+            $uniteValidation->setError('La colonne Unite accepte uniquement un nombre (ID) ou vide.');
+            $uniteValidation->setFormula1('OR($C' . $row . '="",ISNUMBER($C' . $row . '))');
+            $sheet->getCell('C' . $row)->setDataValidation($uniteValidation);
+
+            $tarifValidation = new DataValidation();
+            $tarifValidation->setType(DataValidation::TYPE_CUSTOM);
+            $tarifValidation->setErrorStyle(DataValidation::STYLE_STOP);
+            $tarifValidation->setAllowBlank(true);
+            $tarifValidation->setShowInputMessage(false);
+            $tarifValidation->setShowErrorMessage(true);
+            $tarifValidation->setErrorTitle('Type invalide');
+            $tarifValidation->setError('La colonne Tarif accepte uniquement un nombre (ID) ou vide.');
+            $tarifValidation->setFormula1('OR($D' . $row . '="",ISNUMBER($D' . $row . '))');
+            $sheet->getCell('D' . $row)->setDataValidation($tarifValidation);
+        }
     }
 
     /**
