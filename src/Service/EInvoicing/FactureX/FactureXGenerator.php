@@ -391,6 +391,8 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         if ($legalText !== '') {
             $legalHtml = '<div class="legal">' . nl2br($this->e($legalText)) . '</div>';
         }
+        $invoiceNumberDisplay = $data['invoice_number'] !== '' ? (string) $data['invoice_number'] : (string) $data['invoice_ref'];
+        $invoiceReferenceDisplay = $data['invoice_ref'] !== '' ? (string) $data['invoice_ref'] : $invoiceNumberDisplay;
         
         return '<!DOCTYPE html>
 <html>
@@ -403,7 +405,6 @@ html, body{
 margin:0;
 padding:0;
 }
-
 body{
 font-family: DejaVu Sans, sans-serif;
 font-size:11px;
@@ -458,6 +459,24 @@ font-size:28px;
 font-style:italic;
 color:#555;
 margin:20px 0 12px 0;
+}
+
+.piece-ref{
+font-size:12px;
+color:#2f4358;
+margin:0 0 3px 0;
+}
+
+.subject{
+font-size:12px;
+color:#2f4358;
+margin:0 0 12px 0;
+}
+
+.subject-ref{
+display:inline-block;
+padding-left:8px;
+font-weight:bold;
 }
 
 /* META TABLE */
@@ -628,19 +647,21 @@ font-size:10px;
 
 <tr>
 <th>Date</th>
-<th>N° pièce</th>
+<th>N de facture</th>
 <th>Client</th>
 <th>Référence</th>
 </tr>
 
 <tr>
 <td>'.$this->e($data['invoice_date']).'</td>
-<td>'.$this->e($data['invoice_number']).'</td>
+<td>'.$this->e($invoiceNumberDisplay).'</td>
 <td>'.$this->e($data['buyer_code']).'</td>
-<td>'.$this->e($data['invoice_ref']).'</td>
+<td>'.$this->e($invoiceReferenceDisplay).'</td>
 </tr>
 
 </table>
+
+<div class="subject">Intitule: '.$this->e($data['subject_text']).'<span class="subject-ref">&nbsp;'.$this->e($invoiceReferenceDisplay).'</span></div>
 
 <table class="lines">
 
@@ -709,8 +730,8 @@ BIC : '.($data["bank_bic"] !== "" ? $this->e($data["bank_bic"]) : "").'
             $rows .= '<tr>'
                 . '<td class="c">' . number_format((float) $item['quantity'], 2, ',', ' ') . '</td>'
                 . '<td>' . $this->e($item['designation']) . '</td>'
-                . '<td class="r">' . number_format((float) $item['unit_price'], 2, ',', ' ') . '</td>'
-                . '<td class="r">' . number_format((float) $item['total'], 2, ',', ' ') . '</td>'
+                . '<td class="money-cell">' . number_format((float) $item['unit_price'], 2, ',', ' ') . '</td>'
+                . '<td class="money-cell">' . number_format((float) $item['total'], 2, ',', ' ') . '</td>'
                 . '</tr>';
         }
 
@@ -722,6 +743,8 @@ BIC : '.($data["bank_bic"] !== "" ? $this->e($data["bank_bic"]) : "").'
         if (!empty($data['seller_logo'])) {
             $sellerLogoHtml = '<div style="margin-bottom:10px;"><img src="' . $this->e($data['seller_logo']) . '" alt="logo" style="max-height:55px; max-width:180px; object-fit:contain;"></div>';
         }
+        $invoiceNumberDisplay = $data['invoice_number'] !== '' ? (string) $data['invoice_number'] : (string) $data['invoice_ref'];
+        $invoiceReferenceDisplay = $data['invoice_ref'] !== '' ? (string) $data['invoice_ref'] : $invoiceNumberDisplay;
 
         // Payment and bank info section (in main content)
         $contentFooterHtml = '';
@@ -743,18 +766,23 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
 .head { width: 100%; border-collapse: separate; border-spacing: 0; }
 .left { font-size: 14.4px; line-height: 1.6; vertical-align: top; padding-right: 22px; padding-top: 10px; }
 .left strong { font-size: 15.6px; color: #1f4469; }
-.right-wrap { vertical-align: top; padding-left: 180px; padding-top: 0; }
-.right-block { display: block; width: 324px; margin-left: auto; text-align: left; }
+.right-wrap { vertical-align: top; padding-left: 36px; padding-top: 0; }
 .banner { text-align: center; background: #b9d7f3; color: #000000; font-size: 40.8px; letter-spacing: 7px; font-weight: 700; padding: 10px 12px; border-radius: 0; margin-bottom: 20px; }
-.right { font-size: 14.4px; line-height: 1.55; text-align: left !important; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e5ed; }
+.right { font-size: 14.4px; line-height: 1.55; text-align: left !important; margin-top: 58px; padding-top: 12px; border-top: 1px solid #e0e5ed; }
 .right strong { font-size: 15.6px; color: #1f4469; }
-.cards { width: 240px; border-collapse: collapse; margin-bottom: 12px; margin-top: 15px; }
-.card { border: 1px solid #d7e3ef; background: #edf5fd; padding: 13px 0; font-size: 14.4px; line-height: 1.5;  }
-.label { color: #4a5d72; }
+.invoice-meta { width: 300px; margin-top: 15px; border-collapse: collapse; font-size: 14.4px; line-height: 1.45; }
+.invoice-meta td { padding: 1px 0; vertical-align: top; }
+.invoice-meta .meta-label { width: 108px; color: #4a5d72; }
+.invoice-meta .meta-sep { width: 14px; text-align: center; color: #4a5d72; }
+.invoice-meta .meta-value { font-weight: 700; color: #24384d; }
 .subject { margin: 8px 0 10px 0; font-size: 14.4px; color: #2f4358; }
-.lines { width: 90%; margin: 0 auto 20px auto; border-collapse: collapse; }
-.lines th { background: #e7eef6; border-bottom: 1px solid #d4dde7; display: table-header-group; color: #4f6071; font-size: 13.2px; padding: 10px 11px; text-align: left; }
+.piece-ref { margin: 0 0 4px 0; font-size: 14.4px; color: #2f4358; }
+.subject-ref { display: inline-block; padding-left: 8px; font-weight: 700; }
+.lines { width: 90%; margin: 0 auto 20px auto; border-collapse: collapse; table-layout: fixed; }
+.lines th { background: #e7eef6; border-bottom: 1px solid #d4dde7; display: table-header-group; color: #4f6071; font-size: 13.2px; padding: 12px; text-align: left; }
 .lines td { border-bottom: 1px solid #e8eef4; padding: 12px; font-size: 14.4px; }
+.lines .money-head,
+.lines .money-cell { text-align: left; padding-left: 26px; }
 .c { text-align: center; }
 .r { text-align: right; }
 .totals { width: 45.6%; margin-left: auto; border-collapse: collapse; margin-top: 15px; margin-bottom: 20px; }
@@ -775,22 +803,22 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
 <td width="44%" class="left" style="vertical-align: top;">' . $sellerLogoHtml . '<strong>' . $this->e($data['seller_name']) . '</strong><br>'
     . $sellerLinesHtml . '<br>'
     . $this->e($sellerCityLine) . '<br><br>'
-    . '<div class="card">'
-    . '<span class="label">N de facture:</span> <strong>' . $this->e($data['invoice_ref']) . '</strong><br>'
-    . '<span class="label">Date:</span> <strong>' . $this->e($data['invoice_date']) . '</strong><br>'
-    . '<span class="label">N client:</span> <strong>' . $this->e($data['buyer_code']) . '</strong>'
-    . '</div></td>
-<td width="56%" class="right-wrap" style="vertical-align: top;"><div class="banner">FACTURE</div><br><br><br><br><br><div class="right" style="margin-top: 0;"><strong>' . $this->e($data['buyer_name']) . '</strong><br>'
+    . '<table class="invoice-meta">'
+    . '<tr><td class="meta-label">N de facture</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($invoiceNumberDisplay) . '</td></tr>'
+    . '<tr><td class="meta-label">Date</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($data['invoice_date']) . '</td></tr>'
+    . '<tr><td class="meta-label">N client</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($data['buyer_code']) . '</td></tr>'
+    . '</table></td>
+<td width="56%" class="right-wrap" style="vertical-align: top;"><div class="banner">FACTURE</div><div class="right"><strong>' . $this->e($data['buyer_name']) . '</strong><br>'
     . $buyerLinesHtml . '<br>'
     . $this->e($buyerCityLine) . '<br>'
     . $this->e($data['buyer_country']) . '</div></td>
 </tr></table>
 
-<div class="subject">Intitule: ' . $this->e($data['subject_text']) . '</div>
+<div class="subject">Intitule: ' . $this->e($data['subject_text']) . '<span class="subject-ref">&nbsp;' . $this->e($invoiceReferenceDisplay) . '</span></div>
 
 
 <table class="lines">
-<thead><tr><th width="14%" class="c">Quantité</th><th width="52%">Désignation</th><th width="17%" class="r">Prix unit HT</th><th width="17%" class="r">Prix total HT</th></tr></thead>
+<thead><tr><th width="14%" class="c">Quantite</th><th width="44%">Designation</th><th width="21%" class="money-head">Prix HT</th><th width="21%" class="money-head">Montant HT</th></tr></thead>
 <tbody>' . $rows . '</tbody>
 </table>
 
