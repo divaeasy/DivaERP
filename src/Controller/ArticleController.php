@@ -3,16 +3,26 @@
 namespace App\Controller;
 
 use App\Entity\Article;
+use App\Entity\Dossier;
+use App\Entity\Tarifs;
+use App\Entity\Unite;
 use App\Entity\User;
 use App\Form\ArticleFormType;
 use App\Form\SearchArtFormType;
 use App\Model\SearchDataArt;
 use App\Repository\ArticleRepository;
+use App\Repository\TarifsRepository;
+use App\Repository\UniteRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Throwable;
 
 
 
@@ -41,6 +51,192 @@ class ArticleController extends AbstractController
             'totalPages' => $pagination['totalPages'],
             'totalItems' => $pagination['totalItems'],
         ]);
+    }
+
+    #[Route('/import', name: 'article.import', methods: ['POST'])]
+    public function importArticles(
+        Request $request,
+        ManagerRegistry $doctrine,
+        ArticleRepository $articleRepository,
+        UniteRepository $uniteRepository,
+        TarifsRepository $tarifsRepository
+    ): Response {
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if ($currentDossier === null) {
+            $this->addFlash('error', 'Aucun dossier courant selectionne.');
+            return $this->redirectToRoute('article.list');
+        }
+
+        if (!$this->isCsrfTokenValid('article_import', (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
+            return $this->redirectToRoute('article.list');
+        }
+
+        $file = $request->files->get('import_file');
+        if (!$file instanceof UploadedFile) {
+            $this->addFlash('error', 'Veuillez choisir un fichier Excel (.xlsx, .xls, .xlsm).');
+            return $this->redirectToRoute('article.list');
+        }
+
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+        if (!in_array($extension, ['xlsx', 'xls', 'xlsm'], true)) {
+            $this->addFlash('error', 'Format non supporte. Utilisez un fichier .xlsx, .xls ou .xlsm.');
+            return $this->redirectToRoute('article.list');
+        }
+        if (!class_exists(\ZipArchive::class) && in_array($extension, ['xlsx', 'xlsm'], true)) {
+            $this->addFlash('error', 'Le serveur ne supporte pas ce format. Exportez puis importez le fichier .xls.');
+            return $this->redirectToRoute('article.list');
+        }
+
+        try {
+            $reader = IOFactory::createReaderForFile($file->getPathname());
+            $reader->setReadDataOnly(false);
+            $spreadsheet = $reader->load($file->getPathname());
+        } catch (Throwable $e) {
+            $this->addFlash('error', 'Impossible de lire le fichier Excel: ' . $e->getMessage());
+            return $this->redirectToRoute('article.list');
+        }
+
+        $dataSheet = $spreadsheet->getSheetByName('Export') ?? $spreadsheet->getSheet(0);
+        $headerConfig = $this->resolveArticleHeaderConfig($dataSheet);
+        if ($headerConfig === null) {
+            $this->addFlash('error', 'Entetes introuvables. Le fichier doit contenir au minimum les colonnes ID et Designation.');
+            return $this->redirectToRoute('article.list');
+        }
+
+        $entityManager = $doctrine->getManager();
+        $highestRow = $dataSheet->getHighestDataRow();
+        $created = 0;
+        $updated = 0;
+        $ignored = 0;
+        $errors = [];
+
+        for ($rowIndex = $headerConfig['header_row'] + 1; $rowIndex <= $highestRow; $rowIndex++) {
+            $rowData = $this->readArticleImportRow($dataSheet, $headerConfig['columns'], $rowIndex);
+            if ($this->isArticleImportRowEmpty($rowData)) {
+                continue;
+            }
+
+            $idRaw = trim((string) ($rowData['id'] ?? ''));
+            $designation = trim((string) ($rowData['libelle'] ?? ''));
+            $uniteRaw = trim((string) ($rowData['unite'] ?? ''));
+            $tarifRaw = trim((string) ($rowData['tarif'] ?? ''));
+
+            if ($idRaw !== '') {
+                $idValue = preg_replace('/\D+/', '', $idRaw) ?? '';
+                if ($idValue === '') {
+                    $ignored++;
+                    $errors[] = sprintf('Ligne %d: ID invalide "%s".', $rowIndex, $idRaw);
+                    continue;
+                }
+
+                $article = $articleRepository->findOneBy([
+                    'id' => (int) $idValue,
+                    'dossier' => $currentDossier,
+                ]);
+
+                if ($article === null) {
+                    $ignored++;
+                    $errors[] = sprintf('Ligne %d: article #%s introuvable dans le dossier.', $rowIndex, $idRaw);
+                    continue;
+                }
+
+                $resolvedUnite = null;
+                if ($uniteRaw !== '') {
+                    $resolvedUnite = $this->resolveUniteForImport($uniteRepository, $uniteRaw);
+                    if ($resolvedUnite === null) {
+                        $ignored++;
+                        $errors[] = sprintf('Ligne %d: unite "%s" invalide ou introuvable.', $rowIndex, $uniteRaw);
+                        continue;
+                    }
+                }
+
+                $resolvedTarif = null;
+                if ($tarifRaw !== '') {
+                    $resolvedTarif = $this->resolveTarifForImport($tarifsRepository, $currentDossier, $tarifRaw);
+                    if ($resolvedTarif === null) {
+                        $ignored++;
+                        $errors[] = sprintf('Ligne %d: tarif "%s" invalide ou introuvable.', $rowIndex, $tarifRaw);
+                        continue;
+                    }
+                }
+
+                if ($designation !== '') {
+                    $article->setLibelle($designation);
+                }
+                if ($resolvedUnite instanceof Unite) {
+                    $article->setUnite($resolvedUnite);
+                }
+                if ($resolvedTarif instanceof Tarifs) {
+                    $article->setTarif($resolvedTarif);
+                }
+
+                $entityManager->persist($article);
+                $updated++;
+                continue;
+            }
+
+            if ($designation === '') {
+                $ignored++;
+                $errors[] = sprintf('Ligne %d: la designation est obligatoire pour creer un article.', $rowIndex);
+                continue;
+            }
+
+            $article = new Article();
+            $article->setDossier($currentDossier);
+            $article->setLibelle($designation);
+
+            if ($uniteRaw !== '') {
+                $unite = $this->resolveUniteForImport($uniteRepository, $uniteRaw);
+                if ($unite === null) {
+                    $ignored++;
+                    $errors[] = sprintf('Ligne %d: unite "%s" invalide ou introuvable.', $rowIndex, $uniteRaw);
+                    continue;
+                }
+                $article->setUnite($unite);
+            }
+
+            if ($tarifRaw !== '') {
+                $tarif = $this->resolveTarifForImport($tarifsRepository, $currentDossier, $tarifRaw);
+                if ($tarif === null) {
+                    $ignored++;
+                    $errors[] = sprintf('Ligne %d: tarif "%s" invalide ou introuvable.', $rowIndex, $tarifRaw);
+                    continue;
+                }
+                $article->setTarif($tarif);
+            }
+
+            $entityManager->persist($article);
+            $created++;
+        }
+
+        if (($created + $updated) > 0) {
+            $entityManager->flush();
+        }
+
+        if (($created + $updated) > 0) {
+            $this->addFlash(
+                'success',
+                sprintf('Import termine: %d creation(s), %d mise(s) a jour.', $created, $updated)
+            );
+        } else {
+            $this->addFlash('warning', 'Aucune ligne importee.');
+        }
+
+        if ($ignored > 0) {
+            $this->addFlash('warning', sprintf('%d ligne(s) ignoree(s).', $ignored));
+        }
+
+        if ($errors !== []) {
+            $preview = implode(' | ', array_slice($errors, 0, 5));
+            if (count($errors) > 5) {
+                $preview .= ' | ...';
+            }
+            $this->addFlash('error', $preview);
+        }
+
+        return $this->redirectToRoute('article.list');
     }
    
 
@@ -141,5 +337,124 @@ class ArticleController extends AbstractController
              );
         }
         return $this->redirectToRoute('article.list');
+    }
+
+    /**
+     * @return array{header_row: int, columns: array<string, string>}|null
+     */
+    private function resolveArticleHeaderConfig(Worksheet $sheet): ?array
+    {
+        $highestColumnIndex = Coordinate::columnIndexFromString($sheet->getHighestDataColumn());
+        $maxColIndex = min($highestColumnIndex, 26);
+
+        for ($row = 1; $row <= 20; $row++) {
+            $columns = [];
+            for ($col = 1; $col <= $maxColIndex; $col++) {
+                $column = Coordinate::stringFromColumnIndex($col);
+                $rawHeader = trim((string) $sheet->getCell($column . $row)->getFormattedValue());
+                if ($rawHeader === '') {
+                    continue;
+                }
+
+                $normalized = $this->normalizeImportHeader($rawHeader);
+                if ($normalized !== null && !isset($columns[$normalized])) {
+                    $columns[$normalized] = $column;
+                }
+            }
+
+            if (isset($columns['id'], $columns['libelle'])) {
+                return [
+                    'header_row' => $row,
+                    'columns' => $columns,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, string> $columns
+     * @return array{id: string, libelle: string, unite: string, tarif: string}
+     */
+    private function readArticleImportRow(Worksheet $sheet, array $columns, int $row): array
+    {
+        $extract = function (string $field) use ($sheet, $columns, $row): string {
+            if (!isset($columns[$field])) {
+                return '';
+            }
+            return trim((string) $sheet->getCell($columns[$field] . $row)->getFormattedValue());
+        };
+
+        return [
+            'id' => $extract('id'),
+            'libelle' => $extract('libelle'),
+            'unite' => $extract('unite'),
+            'tarif' => $extract('tarif'),
+        ];
+    }
+
+    /**
+     * @param array{id: string, libelle: string, unite: string, tarif: string} $row
+     */
+    private function isArticleImportRowEmpty(array $row): bool
+    {
+        return trim($row['id']) === ''
+            && trim($row['libelle']) === ''
+            && trim($row['unite']) === ''
+            && trim($row['tarif']) === '';
+    }
+
+    private function normalizeImportHeader(string $header): ?string
+    {
+        $value = trim($header);
+        if ($value === '') {
+            return null;
+        }
+
+        $translit = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        $normalized = $translit === false ? $value : $translit;
+        $normalized = strtolower($normalized);
+        $normalized = preg_replace('/[^a-z0-9]+/', '', $normalized) ?? '';
+
+        return match ($normalized) {
+            'id' => 'id',
+            'designation', 'libelle', 'libellearticle' => 'libelle',
+            'unite', 'unitearticle', 'codeunite' => 'unite',
+            'tarif', 'tarifs', 'tarifvente' => 'tarif',
+            default => null,
+        };
+    }
+
+    private function resolveUniteForImport(UniteRepository $uniteRepository, string $value): ?Unite
+    {
+        $input = trim($value);
+        if ($input === '') {
+            return null;
+        }
+
+        if (!ctype_digit($input)) {
+            return null;
+        }
+
+        $unite = $uniteRepository->find((int) $input);
+
+        return $unite instanceof Unite ? $unite : null;
+    }
+
+    private function resolveTarifForImport(TarifsRepository $tarifsRepository, Dossier $dossier, string $value): ?Tarifs
+    {
+        $input = trim($value);
+        if ($input === '') {
+            return null;
+        }
+
+        if (!ctype_digit($input)) {
+            return null;
+        }
+
+        $tarif = $tarifsRepository->findOneBy(['id' => (int) $input, 'dossier' => $dossier]);
+
+        return $tarif instanceof Tarifs ? $tarif : null;
     }
 }

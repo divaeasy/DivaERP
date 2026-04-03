@@ -95,10 +95,23 @@ class ExportController extends AbstractController
             $items
         );
         return $this->exportService->exportListToExcel(
-            'articles_' . date('Y-m-d_His') . '.xlsx',
+            'articles_' . date('Y-m-d_His') . '.xls',
             'Articles',
             $headers,
-            $rows
+            $rows,
+            [
+                ['title' => 'ID', 'value' => 'Ne pas modifier. Colonne protegee. Presence d un ID existant = mise a jour.'],
+                ['title' => 'Designation', 'value' => 'Obligatoire pour creation (ID vide).'],
+                ['title' => 'Unite', 'value' => 'Optionnel. Saisir un ID unite numerique ou laisser vide.'],
+                ['title' => 'Tarif', 'value' => 'Optionnel. Saisir un ID tarif numerique ou laisser vide.'],
+                ['title' => 'Mode import', 'value' => 'Ligne sans ID = creation. Ligne avec ID = mise a jour.'],
+                ['title' => 'Feuille a importer', 'value' => 'Ne modifiez que la feuille Export. La feuille Notices est informative.'],
+            ],
+            [
+                'template' => 'articles_import',
+                'include_footer' => false,
+                'format' => 'xls',
+            ]
         );
     }
 
