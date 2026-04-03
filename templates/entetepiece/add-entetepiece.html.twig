@@ -1,5 +1,5 @@
 {% extends "template_oukatech.html.twig" %}
-{% block PageTitle %}Entête de pièce{% endblock %}
+{% block PageTitle %}Entete de piece{% endblock %}
 
 {% block body %}
 <div class="page-header">
@@ -7,12 +7,33 @@
         <a href="{{ path('entetepiece.list') }}" class="btn-back mr-3">
             <i class="fas fa-arrow-left"></i> Retour
         </a>
-        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h1>
+        <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier la piece' : 'Nouvelle piece' }}</h1>
     </div>
 </div>
 
+{% if isPerimee|default(false) %}
+    <div class="alert alert-warning d-flex align-items-start" role="alert" style="border-left: 4px solid #dd6b20; background-color: #fff7e6; color: #7a4a00;">
+        <i class="fas fa-archive mr-2 mt-1"></i>
+        <div>
+            <strong>Cette piÃ¨ce est pÃ©rimÃ©e (archivÃ©e).</strong><br>
+            Mode lecture seule: aucune modification n'est autorisÃ©e.
+        </div>
+    </div>
+{% endif %}
+
 <div class="form-card">
-    {{ form_start(entetepiece, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    {{ form_start(entetepiece, {
+        'attr': {
+            'id': 'piece-edit-form',
+            'class': 'needs-validation' ~ ((isReadOnly|default(false)) ? ' piece-readonly-mode' : ''),
+            'novalidate': 'novalidate',
+            'data-read-only': (isReadOnly|default(false)) ? '1' : '0'
+        }
+    }) }}
+
+    {% if isReadOnly|default(false) %}
+        <input type="hidden" name="_readonly_mode" value="1">
+    {% endif %}
     
     <div class="card-header-custom">
         <h5><i class="fas fa-file-invoice mr-2"></i>Type de document</h5>
@@ -21,21 +42,25 @@
     <div class="row">
         <div class="col-md-6">
             <div class="form-group">
-                {{ form_label(entetepiece.type, 'Type de pièce', {'label_attr': {'class': 'required'}}) }}
+                {{ form_label(entetepiece.type, 'Type de piece', {'label_attr': {'class': 'required'}}) }}
                 {{ form_widget(entetepiece.type, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
                 {% if id > 0 %}
-                    <small class="form-text text-muted">ⓘ Type verrouillé après création.</small>
+                    <small class="form-text text-muted">Type verrouille apres creation.</small>
                 {% endif %}
-                <div class="invalid-feedback">Le type de pièce est obligatoire</div>
-                {{ form_errors(entetepiece.type) }}
+                {% if not isReadOnly|default(false) %}
+                    <div class="invalid-feedback">Le type de piece est obligatoire</div>
+                    {{ form_errors(entetepiece.type) }}
+                {% endif %}
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 {{ form_label(entetepiece.typet, 'Type de tiers', {'label_attr': {'class': 'required'}}) }}
                 {{ form_widget(entetepiece.typet, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                <div class="invalid-feedback">Le type de tiers est obligatoire</div>
-                {{ form_errors(entetepiece.typet) }}
+                {% if not isReadOnly|default(false) %}
+                    <div class="invalid-feedback">Le type de tiers est obligatoire</div>
+                    {{ form_errors(entetepiece.typet) }}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -49,37 +74,48 @@
             <div class="form-group">
                 {{ form_label(entetepiece.client, 'Client', {'label_attr': {'class': 'required'}}) }}
                 {{ form_widget(entetepiece.client, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                <div class="invalid-feedback">Le client est obligatoire</div>
-                {{ form_errors(entetepiece.client) }}
+                {% if not isReadOnly|default(false) %}
+                    <div class="invalid-feedback">Le client est obligatoire</div>
+                    {{ form_errors(entetepiece.client) }}
+                {% endif %}
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 {{ form_label(entetepiece.statut, 'Statut', {'label_attr': {'class': 'required'}}) }}
                 {{ form_widget(entetepiece.statut, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                <div class="invalid-feedback">Le statut est obligatoire</div>
-                {{ form_errors(entetepiece.statut) }}
+                {% if not isReadOnly|default(false) %}
+                    <small id="statusEligibilityHint" class="form-text text-muted mt-1"></small>
+                {% endif %}
+                {% if not isReadOnly|default(false) %}
+                    <div class="invalid-feedback">Le statut est obligatoire</div>
+                    {{ form_errors(entetepiece.statut) }}
+                {% endif %}
             </div>
         </div>
     </div>
 
     <div class="card-header-custom mt-4">
-        <h5><i class="fas fa-info-circle mr-2"></i>Détails de la pièce</h5>
+        <h5><i class="fas fa-info-circle mr-2"></i>Details de la piece</h5>
     </div>
 
     <div class="row">
         <div class="col-md-6">
             <div class="form-group">
-                {{ form_label(entetepiece.pieceref, 'Référence') }}
-                {{ form_widget(entetepiece.pieceref, {'attr': {'class': 'form-control', 'placeholder': 'Référence de la pièce'}}) }}
-                {{ form_errors(entetepiece.pieceref) }}
+                {{ form_label(entetepiece.pieceref, 'Reference') }}
+                {{ form_widget(entetepiece.pieceref, {'attr': {'class': 'form-control', 'placeholder': 'Reference de la piece'}}) }}
+                {% if not isReadOnly|default(false) %}
+                    {{ form_errors(entetepiece.pieceref) }}
+                {% endif %}
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 {{ form_label(entetepiece.remise, 'Remise (%)') }}
                 {{ form_widget(entetepiece.remise, {'attr': {'class': 'form-control', 'placeholder': '0'}}) }}
-                {{ form_errors(entetepiece.remise) }}
+                {% if not isReadOnly|default(false) %}
+                    {{ form_errors(entetepiece.remise) }}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -93,14 +129,18 @@
             <div class="form-group">
                 {{ form_label(entetepiece.devise, 'Devise') }}
                 {{ form_widget(entetepiece.devise, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                {{ form_errors(entetepiece.devise) }}
+                {% if not isReadOnly|default(false) %}
+                    {{ form_errors(entetepiece.devise) }}
+                {% endif %}
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
-                {{ form_label(entetepiece.reglement, 'Mode de règlement') }}
+                {{ form_label(entetepiece.reglement, 'Mode de reglement') }}
                 {{ form_widget(entetepiece.reglement, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                {{ form_errors(entetepiece.reglement) }}
+                {% if not isReadOnly|default(false) %}
+                    {{ form_errors(entetepiece.reglement) }}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -108,19 +148,25 @@
     <div class="row">
         <div class="col-md-6">
             <div class="form-group">
-                {{ form_label(entetepiece.datep, 'Date pièce') }}
+                {{ form_label(entetepiece.datep, 'Date piece') }}
                 {{ form_widget(entetepiece.datep, {'attr': {'class': 'form-control'}}) }}
-                {{ form_errors(entetepiece.datep) }}
+                {% if not isReadOnly|default(false) %}
+                    {{ form_errors(entetepiece.datep) }}
+                {% endif %}
             </div>
         </div>
     </div>
 
     <div class="form-actions">
-        <button type="submit" class="btn btn-primary">
-            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
-        </button>
+        {% if not isReadOnly|default(false) %}
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre a jour' : 'Enregistrer' }}
+            </button>
+        {% else %}
+            <span class="badge badge-warning p-2 mr-2">Lecture seule</span>
+        {% endif %}
         <a href="{{ path('entetepiece.list') }}" class="btn btn-secondary">
-            <i class="fas fa-times mr-2"></i>Annuler
+            <i class="fas fa-times mr-2"></i>{{ isReadOnly|default(false) ? 'Fermer' : 'Annuler' }}
         </a>
     </div>
 
@@ -130,22 +176,26 @@
 
 <p class="text-muted small mt-3">
     <i class="fas fa-info-circle mr-1"></i>
-    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+    Les champs marques d'un <span class="text-danger">*</span> sont obligatoires.
 </p>
 
 {% if id > 0 %}
 <div class="form-card mt-4" id="piece-lines">
     <div class="card-header-custom d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="fas fa-list mr-2"></i>Lignes de la pièce</h5>
-        <a class="btn btn-success btn-sm" href="{{ path('lignepiece.add', {pceId: id}) }}">
-            <i class="fas fa-plus mr-2"></i>Ajouter une ligne
-        </a>
+        <h5 class="mb-0"><i class="fas fa-list mr-2"></i>Lignes de la piece</h5>
+        {% if not isReadOnly|default(false) %}
+            <a class="btn btn-success btn-sm" href="{{ path('lignepiece.add', {pceId: id}) }}">
+                <i class="fas fa-plus mr-2"></i>Ajouter une ligne
+            </a>
+        {% else %}
+            <span class="badge badge-warning">Lecture seule</span>
+        {% endif %}
     </div>
 
     {% if lignepieces|length == 0 %}
         <div class="alert alert-warning mt-3 mb-0">
             <i class="fas fa-exclamation-triangle mr-2"></i>
-            Cette pièce ne contient aucune ligne. Ajoutez au moins une ligne avant la génération de facture.
+            Cette piece ne contient aucune ligne.
         </div>
     {% endif %}
     
@@ -154,13 +204,13 @@
             <thead>
                 <tr>
                     <th>Article</th>
-                    <th class="text-right">Quantité</th>
+                    <th class="text-right">Quantite</th>
                     <th class="text-right">Prix unitaire</th>
                     <th class="text-right">Remise</th>
                     <th class="text-right">Montant</th>
-                    <th>Créé par</th>
-                    <th>Créé le</th>
-                    <th class="text-center" style="width: 120px;">Actions</th>
+                    <th>Cree par</th>
+                    <th>Cree le</th>
+                    <th class="text-center" style="width: 140px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -174,22 +224,29 @@
                     <td>{{ lignepiece.createdBy }}</td>
                     <td>{{ lignepiece.createdAt|date('d/m/Y') }}</td>
                     <td>
-                        <div class="action-buttons">
-                            <a href="{{ path('lignepiece.edit', {id: lignepiece.id, pceId: id}) }}" class="btn-action btn-edit" title="Modifier">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button type="button" class="btn-action btn-delete" title="Supprimer"
-                                    onclick="confirmDelete('{{ path('lignepiece.delete', {id: lignepiece.id, pceId: id}) }}', 'cette ligne')">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
+                        {% if not isReadOnly|default(false) %}
+                            <div class="action-buttons">
+                                <a href="{{ path('lignepiece.edit', {id: lignepiece.id, pceId: id}) }}" class="btn-action btn-edit" title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button"
+                                        class="btn-action btn-delete delete-btn"
+                                        data-delete-url="{{ path('lignepiece.delete', {id: lignepiece.id, pceId: id}) }}"
+                                        data-item-name="cette ligne"
+                                        title="Supprimer">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        {% else %}
+                            <span class="text-muted small">Lecture seule</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% else %}
                 <tr>
                     <td colspan="8" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                        Aucune ligne ajoutée
+                        Aucune ligne ajoutee
                     </td>
                 </tr>
                 {% endfor %}
@@ -198,6 +255,22 @@
     </div>
 </div>
 {% endif %}
+
+<style>
+    .piece-readonly-mode .form-control[disabled],
+    .piece-readonly-mode .form-control:disabled,
+    .piece-readonly-mode .select2-container--bootstrap-5 .select2-selection {
+        background-color: #f5f5f5 !important;
+    }
+
+    .piece-readonly-mode .invalid-feedback,
+    .piece-readonly-mode .is-invalid,
+    .piece-readonly-mode .is-valid {
+        display: none !important;
+        border-color: inherit !important;
+        box-shadow: none !important;
+    }
+</style>
 
 {% endblock %}
 
@@ -242,6 +315,12 @@
         }
 
         function initPieceForm() {
+            var form = document.getElementById('piece-edit-form');
+            var isReadOnly = form && String(form.getAttribute('data-read-only') || '') === '1';
+            var lineCount = Number({{ statusProgression.lineCount|default(0) }});
+            var invalidLineCount = Number({{ statusProgression.invalidLineCount|default(0) }});
+            var originalStatusRaw = '{{ statusProgression.originalStatus|default("Brouillon")|e("js") }}';
+
             $('.js-example-basic-single').each(function() {
                 if (!$(this).hasClass('select2-hidden-accessible')) {
                     $(this).select2({
@@ -251,6 +330,16 @@
                 }
             });
 
+            if (isReadOnly) {
+                if (form) {
+                    $(form).find('input, select, textarea').not('[type="hidden"]').prop('disabled', true);
+                    $(form).off('submit.readonly').on('submit.readonly', function(e) {
+                        e.preventDefault();
+                        return false;
+                    });
+                }
+            }
+
             if (shouldScrollToLines()) {
                 var linesSection = document.getElementById('piece-lines');
                 if (linesSection) {
@@ -259,6 +348,95 @@
                     }, 80);
                     clearScrollQueryFlag();
                 }
+            }
+
+            if (isReadOnly) {
+                return;
+            }
+
+            var $status = $('#{{ entetepiece.statut.vars.id }}');
+            var $statusHint = $('#statusEligibilityHint');
+            if ($status.length) {
+                function normalizeStatus(rawValue) {
+                    var normalized = String(rawValue || '').toLowerCase();
+                    if (typeof normalized.normalize === 'function') {
+                        normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    }
+                    return normalized.replace(/[^a-z0-9]/g, '');
+                }
+
+                function isStatusAllowed(fromStatus, toStatus) {
+                    var from = normalizeStatus(fromStatus);
+                    var to = normalizeStatus(toStatus);
+
+                    if (to === from) {
+                        return true;
+                    }
+                    if (to === 'brouillon') {
+                        return true;
+                    }
+                    if (to === 'active') {
+                        if (from === 'brouillon') {
+                            return lineCount > 0;
+                        }
+                        return true;
+                    }
+                    if (to === 'validee' || to === 'valide') {
+                        if (from === 'brouillon' || from === 'active') {
+                            return lineCount > 0 && invalidLineCount === 0;
+                        }
+                        return from === 'validee' || from === 'valide';
+                    }
+
+                    return false;
+                }
+
+                function setStatusHint() {
+                    if (!$statusHint.length) {
+                        return;
+                    }
+
+                    if (lineCount <= 0) {
+                        $statusHint
+                            .removeClass('text-success')
+                            .addClass('text-warning')
+                            .text('Ajoutez au moins une ligne pour passer a Active.');
+                        return;
+                    }
+
+                    if (invalidLineCount > 0) {
+                        $statusHint
+                            .removeClass('text-success')
+                            .addClass('text-warning')
+                            .text('Completez toutes les lignes pour pouvoir passer a Validee.');
+                        return;
+                    }
+
+                    $statusHint
+                        .removeClass('text-warning')
+                        .addClass('text-success')
+                        .text('Statut eligible: vous pouvez passer a Active puis Validee.');
+                }
+
+                var currentStatus = normalizeStatus(originalStatusRaw);
+                $status.find('option').each(function() {
+                    var optionValue = String($(this).attr('value') || '').trim();
+                    if (optionValue === '') {
+                        return;
+                    }
+                    $(this).prop('disabled', !isStatusAllowed(currentStatus, optionValue));
+                });
+
+                var selectedStatus = String($status.val() || '').trim();
+                if (selectedStatus !== '' && !isStatusAllowed(currentStatus, selectedStatus)) {
+                    $status.val(originalStatusRaw).trigger('change');
+                }
+
+                if ($status.hasClass('select2-hidden-accessible')) {
+                    $status.trigger('change.select2');
+                }
+
+                setStatusHint();
             }
 
             var $client = $('#{{ entetepiece.client.vars.id }}');
@@ -292,3 +470,4 @@
     })();
 </script>
 {% endblock %}
+

@@ -149,6 +149,12 @@ class EInvoicingController extends AbstractController
     private function redirectIfNotInvoiceType(Entetepiece $invoice): ?Response
     {
         if ($this->isInvoiceType($invoice)) {
+            if ($this->isPerimeeStatus($invoice->getStatut())) {
+                $this->addFlash('warning', 'Cette facture est périmée et ne peut plus être traitée en e-facturation.');
+
+                return $this->redirectToRoute('entetepiece.edit', ['id' => $invoice->getId()]);
+            }
+
             return null;
         }
 
@@ -160,6 +166,25 @@ class EInvoicingController extends AbstractController
     private function isInvoiceType(Entetepiece $invoice): bool
     {
         return strtolower(trim((string) $invoice->getType())) === 'facture';
+    }
+
+    private function isPerimeeStatus(?string $status): bool
+    {
+        $normalized = mb_strtolower(trim((string) $status), 'UTF-8');
+        $normalized = strtr($normalized, [
+            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ä' => 'a', 'ã' => 'a', 'å' => 'a',
+            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o',
+            'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ý' => 'y', 'ÿ' => 'y',
+            'ç' => 'c',
+            'œ' => 'oe',
+            'æ' => 'ae',
+        ]);
+        $normalized = (string) preg_replace('/[^a-z0-9]/', '', $normalized);
+
+        return in_array($normalized, ['perimee', 'perime', 'archivee', 'archive'], true);
     }
 
     #[Route('/{id}/check-tiime-status', name: 'check_tiime_status', methods: ['GET'])]
