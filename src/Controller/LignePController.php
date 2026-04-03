@@ -58,6 +58,12 @@ class LignePController extends AbstractController
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
         $lignepiece = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
 
+        if ($lignepiece instanceof Lignepiece && $this->isPieceReadOnly($lignepiece->getPiece())) {
+            $this->addFlash('warning', 'Cette pièce est périmée et ses lignes sont en lecture seule.');
+
+            return $this->redirect($this->buildPieceRedirectUrl((int) ($lignepiece->getPiece()?->getId() ?? $pceId)));
+        }
+
         $new = false;
         if (!$lignepiece) {
             $lignepiece = new Lignepiece();
@@ -112,6 +118,12 @@ class LignePController extends AbstractController
             return $this->redirectToRoute('entetepiece.list');
         }
 
+        if ($this->isPieceReadOnly($entetePiece)) {
+            $this->addFlash('warning', 'Cette pièce est périmée et ses lignes sont en lecture seule.');
+
+            return $this->redirect($this->buildPieceRedirectUrl((int) $entetePiece->getId()));
+        }
+
         $lignepiece = new Lignepiece();
         $lignepiece->doctrine = $doctrine;
         $lignepiece->user = $this->getUser();
@@ -153,6 +165,15 @@ class LignePController extends AbstractController
 
         if ($lignepiece) {
             $pieceId = $lignepiece->getPiece()?->getId();
+            if ($this->isPieceReadOnly($lignepiece->getPiece())) {
+                $this->addFlash('warning', 'Cette pièce est périmée et ses lignes sont en lecture seule.');
+
+                if ($pieceId !== null) {
+                    return $this->redirect($this->buildPieceRedirectUrl($pieceId));
+                }
+
+                return $this->redirectToRoute('entetepiece.list');
+            }
             $manager = $doctrine->getManager();
             $manager->remove($lignepiece);
             $manager->flush();
@@ -350,6 +371,33 @@ class LignePController extends AbstractController
             'id' => $pieceId,
             'scroll' => 'piece-lines',
         ]) . '#piece-lines';
+    }
+
+    private function isPieceReadOnly(?Entetepiece $piece): bool
+    {
+        if (!$piece instanceof Entetepiece) {
+            return false;
+        }
+
+        return in_array($this->normalizeToken($piece->getStatut()), ['perimee', 'perime', 'archivee', 'archive'], true);
+    }
+
+    private function normalizeToken(?string $value): string
+    {
+        $normalized = mb_strtolower(trim((string) $value), 'UTF-8');
+        $normalized = strtr($normalized, [
+            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ä' => 'a', 'ã' => 'a', 'å' => 'a',
+            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o',
+            'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ý' => 'y', 'ÿ' => 'y',
+            'ç' => 'c',
+            'œ' => 'oe',
+            'æ' => 'ae',
+        ]);
+
+        return (string) preg_replace('/[^a-z0-9]/', '', $normalized);
     }
 }
 

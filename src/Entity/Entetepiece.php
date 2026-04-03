@@ -25,7 +25,7 @@ class Entetepiece
     #[ORM\Column(length: 8)]
     private ?string $type = null;
 
-    #[ORM\Column(length: 8)]
+    #[ORM\Column(length: 20)]
     private ?string $typet = null;
 
     #[ORM\ManyToOne]
@@ -50,7 +50,7 @@ class Entetepiece
     #[ORM\ManyToOne]
     private ?Reglement $reglement = null;
 
-    #[ORM\Column(length: 8, nullable: true)]
+    #[ORM\Column(length: 20, nullable: true)]
     private ?string $statut = null;
 
     #[ORM\Column(length: 255, nullable: true)]

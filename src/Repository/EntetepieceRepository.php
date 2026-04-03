@@ -175,6 +175,34 @@ class EntetepieceRepository extends ServiceEntityRepository
         return $result;
     }
 
+    /**
+     * @param array<int> $invoiceIds
+     * @return array<int, int> Map of invoiceId => invalid line count
+     */
+    public function getInvalidLineCountByInvoiceIds(array $invoiceIds): array
+    {
+        $invoiceIds = array_values(array_filter(array_map('intval', $invoiceIds)));
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('IDENTITY(lp.piece) AS invoice_id')
+            ->addSelect('SUM(CASE WHEN lp.article IS NULL OR COALESCE(lp.qte, 0) <= 0 OR COALESCE(lp.pub, 0) <= 0 THEN 1 ELSE 0 END) AS invalid_line_count')
+            ->from(Lignepiece::class, 'lp')
+            ->where($qb->expr()->in('lp.piece', ':ids'))
+            ->setParameter('ids', $invoiceIds)
+            ->groupBy('lp.piece');
+
+        $rows = $qb->getQuery()->getArrayResult();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(int) ($row['invoice_id'] ?? 0)] = (int) ($row['invalid_line_count'] ?? 0);
+        }
+
+        return $result;
+    }
+
     private function applyDossierFilter(QueryBuilder $qb, string $alias): void
     {
         $user = $this->security->getUser();

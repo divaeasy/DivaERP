@@ -25,6 +25,7 @@ class EntetePieceFormType extends AbstractType
     {
         $piece = $options['data'] ?? null;
         $isEdit = $piece instanceof Entetepiece && null !== $piece->getId();
+        $readOnly = (bool) ($options['read_only'] ?? false);
         $currentDossier = $this->getCurrentDossier();
 
         $builder
@@ -38,7 +39,7 @@ class EntetePieceFormType extends AbstractType
                 'placeholder' => $isEdit ? false : 'Selectionner un type',
                 'required' => true,
                 'label' => 'Type de piece',
-                'disabled' => $isEdit,
+                'disabled' => $isEdit || $readOnly,
             ])
             ->add('typet', ChoiceType::class, [
                 'choices' => [
@@ -50,26 +51,38 @@ class EntetePieceFormType extends AbstractType
                 'placeholder' => $isEdit ? false : 'Selectionner un type de tiers',
                 'required' => true,
                 'label' => 'Type de tiers',
+                'disabled' => $readOnly,
             ])
-            ->add('pieceno')
-            ->add('pieceref')
-            ->add('remise')
+            ->add('pieceno', null, [
+                'disabled' => $readOnly,
+            ])
+            ->add('pieceref', null, [
+                'disabled' => $readOnly,
+            ])
+            ->add('remise', null, [
+                'disabled' => $readOnly,
+            ])
             ->add('delai', null, [
                 'widget' => 'single_text',
+                'disabled' => $readOnly,
             ])
             ->add('statut', ChoiceType::class, [
                 'choices' => [
                     'Brouillon' => 'Brouillon',
                     'Active' => 'Active',
                     'Validee' => "Valid\u{00E9}e",
-                    'Perimee' => 'Perimee',
                 ],
                 'placeholder' => $isEdit ? false : 'Selectionner un statut',
                 'required' => true,
                 'label' => 'Statut',
+                'disabled' => $readOnly,
             ])
-            ->add('edition')
-            ->add('rapport')
+            ->add('edition', null, [
+                'disabled' => $readOnly,
+            ])
+            ->add('rapport', null, [
+                'disabled' => $readOnly,
+            ])
             ->add('client', EntityType::class, [
                 'class' => Clients::class,
                 'choice_label' => 'nom',
@@ -91,23 +104,27 @@ class EntetePieceFormType extends AbstractType
 
                     return $qb;
                 },
+                'disabled' => $readOnly,
             ])
             ->add('devise', EntityType::class, [
                 'class' => Devises::class,
                 'choice_label' => 'libelle',
                 'required' => false,
                 'placeholder' => $isEdit ? false : 'Selectionner une devise',
+                'disabled' => $readOnly,
             ])
             ->add('reglement', EntityType::class, [
                 'class' => Reglement::class,
                 'choice_label' => 'libelle',
                 'required' => false,
                 'placeholder' => $isEdit ? false : 'Selectionner un reglement',
+                'disabled' => $readOnly,
             ])
             ->add('datep', null, [
                 'widget' => 'single_text',
                 'required' => false,
                 'label' => 'Date piece',
+                'disabled' => $readOnly,
             ]);
     }
 
@@ -115,7 +132,9 @@ class EntetePieceFormType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Entetepiece::class,
+            'read_only' => false,
         ]);
+        $resolver->setAllowedTypes('read_only', 'bool');
     }
 
     private function getCurrentDossier(): ?\App\Entity\Dossier
