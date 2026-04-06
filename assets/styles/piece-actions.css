@@ -1,0 +1,252 @@
+/* Piece Actions & Transitions Styling */
+
+/* ========== TRANSITION BUTTON ========== */
+.btn-convert {
+    position: relative;
+    border: 1px solid #4F46E5;
+    color: #4F46E5;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.btn-convert:hover:not(.disabled):not(.is-disabled-ui) {
+    background: #4F46E5;
+    color: white;
+    border-color: #4F46E5;
+}
+
+.btn-convert.disabled,
+.btn-convert.is-disabled-ui {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: #D1D5DB;
+    color: #9CA3AF;
+}
+
+/* ========== E-INVOICE BUTTON ========== */
+.btn-einvoicing {
+    border: 1px solid #059669;
+    color: #059669;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.btn-einvoicing:hover:not(.disabled):not(.is-disabled-ui):not(.btn-einvoicing--no-pdf) {
+    background: #059669;
+    color: white;
+    border-color: #059669;
+}
+
+.btn-einvoicing.disabled,
+.btn-einvoicing.is-disabled-ui {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: #D1D5DB;
+    color: #9CA3AF;
+}
+
+/* PDF Status Styling */
+.btn-einvoicing--has-pdf {
+    border-color: #4F46E5;
+    color: #4F46E5;
+    background: white;
+}
+
+.btn-einvoicing--has-pdf:hover:not(.disabled):not(.is-disabled-ui) {
+    background: #4F46E5;
+    color: white;
+    border-color: #4F46E5;
+}
+
+/* No PDF generated yet - grey styling */
+.btn-einvoicing--no-pdf {
+    border-color: #6B7280;
+    color: #6B7280;
+    background: #F9FAFB;
+}
+
+.btn-einvoicing--no-pdf:hover:not(.disabled):not(.is-disabled-ui) {
+    background: #6B7280;
+    color: white;
+    border-color: #6B7280;
+}
+
+/* Color variations by piece type */
+.btn-einvoicing[data-piece-type="devis"]:not(.btn-einvoicing--no-pdf) {
+    border-color: #1B4332;
+    color: #1B4332;
+}
+
+.btn-einvoicing[data-piece-type="devis"]:not(.btn-einvoicing--no-pdf):hover:not(.disabled):not(.is-disabled-ui) {
+    background: #1B4332;
+    color: white;
+    border-color: #1B4332;
+}
+
+.btn-einvoicing[data-piece-type="commande"]:not(.btn-einvoicing--no-pdf) {
+    border-color: #003D5C;
+    color: #003D5C;
+}
+
+.btn-einvoicing[data-piece-type="commande"]:not(.btn-einvoicing--no-pdf):hover:not(.disabled):not(.is-disabled-ui) {
+    background: #003D5C;
+    color: white;
+    border-color: #003D5C;
+}
+
+.btn-einvoicing[data-piece-type="bl"]:not(.btn-einvoicing--no-pdf) {
+    border-color: #78350F;
+    color: #78350F;
+}
+
+.btn-einvoicing[data-piece-type="bl"]:not(.btn-einvoicing--no-pdf):hover:not(.disabled):not(.is-disabled-ui) {
+    background: #78350F;
+    color: white;
+    border-color: #78350F;
+}
+
+.btn-einvoicing[data-piece-type="facture"]:not(.btn-einvoicing--no-pdf) {
+    border-color: #4338CA;
+    color: #4338CA;
+}
+
+.btn-einvoicing[data-piece-type="facture"]:not(.btn-einvoicing--no-pdf):hover:not(.disabled):not(.is-disabled-ui) {
+    background: #4338CA;
+    color: white;
+    border-color: #4338CA;
+}
+
+/* ========== PIECE TYPE BADGES ========== */
+.piece-type-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.piece-type-badge.devis {
+    background: #DCEDE0;
+    color: #1B4332;
+}
+
+.piece-type-badge.commande {
+    background: #D0E4F2;
+    color: #003D5C;
+}
+
+.piece-type-badge.bl {
+    background: #FEF08A;
+    color: #78350F;
+}
+
+.piece-type-badge.facture {
+    background: #DDD6FE;
+    color: #4338CA;
+}
+
+/* ========== DROPDOWN STYLING ========== */
+.dropdown .dropdown-menu {
+    min-width: 150px;
+    border-radius: 6px;
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: #F3F4F6;
+    color: #1F2937;
+}
+
+.dropdown-item:active {
+    background: #E5E7EB;
+    color: #1F2937;
+}
+
+/* ========== ACTION SLOTS CONTAINER ========== */
+.piece-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.piece-action-slot {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ========== DISABLED BUTTON STYLING ========== */
+.js-disabled-action {
+    cursor: not-allowed !important;
+    opacity: 0.6;
+}
+
+.js-disabled-action:hover {
+    background-color: inherit !important;
+    color: inherit !important;
+}
+
+/* ========== TRANSITION FORM STYLING ========== */
+.js-piece-transition-form {
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+.js-piece-transition-form button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.js-piece-transition-form button:hover {
+    background: #F3F4F6;
+}
+
+.js-piece-transition-form button:active {
+    background: #E5E7EB;
+}
+
+/* ========== RESPONSIVE ADJUSTMENTS ========== */
+@media (max-width: 768px) {
+    .piece-actions {
+        gap: 2px;
+    }
+
+    .btn-action {
+        padding: 6px 6px;
+        font-size: 13px;
+    }
+
+    .dropdown .dropdown-menu {
+        min-width: 120px;
+    }
+
+    .dropdown-item {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
+/* ========== ARCHIVE/PERIMEE STATE ========== */
+.piece-archived {
+    opacity: 0.7;
+}
+
+.piece-archived .badge {
+    opacity: 0.8;
+}
