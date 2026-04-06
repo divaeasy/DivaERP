@@ -1,7 +1,6 @@
 {% extends "template_oukatech.html.twig" %}
 {% block PageTitle %}Article{% endblock %}
 
-
 {% block body %}
 <div class="page-header">
     <div class="d-flex align-items-center">
@@ -14,39 +13,16 @@
 
 <div class="form-card">
     {{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
-    
+
     <div class="card-header-custom">
         <h5><i class="fas fa-box mr-2"></i>Informations de l'article</h5>
     </div>
-    
-    <div class="row">
-        <div class="col-md-6">
-            <div class="form-group">
-                {{ form_label(form.libelle, 'Désignation', {'label_attr': {'class': 'required'}}) }}
-                {{ form_widget(form.libelle, {'attr': {'class': 'form-control', 'placeholder': 'Entrez la désignation de l\'article'}}) }}
-                <div class="invalid-feedback">La désignation est obligatoire</div>
-                {{ form_errors(form.libelle) }}
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                {{ form_label(form.unite, 'Unité de mesure') }}
-                {{ form_widget(form.unite, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                {{ form_errors(form.unite) }}
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                {{ form_label(form.tarif, 'Grille tarifaire') }}
-                {{ form_widget(form.tarif, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
-                {{ form_errors(form.tarif) }}
-            </div>
-        </div>
-    </div>
+
+    {% include 'article/_form_fields.html.twig' with {form: form} only %}
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">
-            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre a jour' : 'Enregistrer' }}
         </button>
         <a href="{{ path('article.list') }}" class="btn btn-secondary">
             <i class="fas fa-times mr-2"></i>Annuler
@@ -59,7 +35,7 @@
 
 <p class="text-muted small mt-3">
     <i class="fas fa-info-circle mr-1"></i>
-    Les champs marqués d'un <span class="text-danger">*</span> sont obligatoires.
+    Les champs marques d'un <span class="text-danger">*</span> sont obligatoires.
 </p>
 {% endblock %}
 

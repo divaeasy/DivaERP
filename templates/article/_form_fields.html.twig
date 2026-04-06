@@ -1,0 +1,24 @@
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            {{ form_label(form.libelle, 'Designation', {'label_attr': {'class': 'required'}}) }}
+            {{ form_widget(form.libelle, {'attr': {'class': 'form-control', 'placeholder': 'Entrez la designation de l\'article'}}) }}
+            <div class="invalid-feedback">La designation est obligatoire</div>
+            {{ form_errors(form.libelle) }}
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.unite, 'Unite de mesure') }}
+            {{ form_widget(form.unite, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+            {{ form_errors(form.unite) }}
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.tarif, 'Grille tarifaire') }}
+            {{ form_widget(form.tarif, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+            {{ form_errors(form.tarif) }}
+        </div>
+    </div>
+</div>

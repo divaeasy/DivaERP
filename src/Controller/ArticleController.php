@@ -30,8 +30,45 @@ use Throwable;
 class ArticleController extends AbstractController
 {
     #[Route('/', name: 'article.list')]
-    public function index(Request $request, ArticleRepository $artRepository ,ManagerRegistry $doctrine): Response
+    public function index(
+        Request $request,
+        ManagerRegistry $doctrine,
+        ArticleRepository $artRepository,
+        UniteRepository $uniteRepository,
+        TarifsRepository $tarifsRepository
+    ): Response
     {
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+
+        $article = new Article();
+        $article->setDoctrine($doctrine);
+        if ($user instanceof User) {
+            $article->setUser($user);
+        }
+        if ($currentDossier !== null) {
+            $article->setDossier($currentDossier);
+        }
+
+        $createForm = $this->createForm(ArticleFormType::class, $article, [
+            'action' => $this->generateUrl('article.list'),
+        ]);
+        $createForm->handleRequest($request);
+
+        if ($createForm->isSubmitted() && $createForm->isValid()) {
+            if ($currentDossier === null) {
+                $this->addFlash('error', 'Aucun dossier courant selectionne.');
+            } else {
+                $entityManager = $doctrine->getManager();
+                $entityManager->persist($article);
+                $entityManager->flush();
+
+                $this->addFlash('success', "L'article est ajoute avec succes");
+
+                return $this->redirectToRoute('article.list');
+            }
+        }
+
         $page = $request->query->getInt('page', 1);
         $searchData = new SearchDataArt();
         $searchForm = $this->createForm(SearchArtFormType::class, $searchData);
@@ -43,13 +80,30 @@ class ArticleController extends AbstractController
         }
 
         $pagination = $artRepository->findPaginated($searchActive, $page);
+        $unites = $uniteRepository->findBy([], ['libelle' => 'ASC']);
+        $tarifs = $tarifsRepository->getSearchQueryBuilder()->getQuery()->getResult();
 
         return $this->render('article/index.html.twig', [
+            'createForm' => $createForm->createView(),
             'search' => $searchForm->createView(),
             'articles' => $pagination['items'],
             'currentPage' => $pagination['currentPage'],
             'totalPages' => $pagination['totalPages'],
             'totalItems' => $pagination['totalItems'],
+            'inlineUnites' => array_map(
+                static fn (Unite $unite): array => [
+                    'id' => $unite->getId(),
+                    'label' => (string) $unite->getLibelle(),
+                ],
+                $unites
+            ),
+            'inlineTarifs' => array_map(
+                static fn (Tarifs $tarif): array => [
+                    'id' => $tarif->getId(),
+                    'label' => (string) $tarif->getLibelle(),
+                ],
+                $tarifs
+            ),
         ]);
     }
 
@@ -237,6 +291,118 @@ class ArticleController extends AbstractController
         }
 
         return $this->redirectToRoute('article.list');
+    }
+
+    #[Route('/inline-update/{id<\d+>}', name: 'article.inline_update', methods: ['POST'])]
+    public function inlineUpdateArticle(
+        Request $request,
+        ManagerRegistry $doctrine,
+        UniteRepository $uniteRepository,
+        TarifsRepository $tarifsRepository,
+        int $id
+    ): Response {
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if ($currentDossier === null) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Aucun dossier courant selectionne.',
+            ], 403);
+        }
+
+        if (!$this->isCsrfTokenValid('article_inline_update', (string) $request->request->get('_token'))) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Jeton de securite invalide.',
+            ], 403);
+        }
+
+        $repository = $doctrine->getRepository(Article::class);
+        $article = $repository->findOneBy([
+            'id' => $id,
+            'dossier' => $currentDossier,
+        ]);
+
+        if (!$article instanceof Article) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Article introuvable.',
+            ], 404);
+        }
+
+        $libelle = trim((string) $request->request->get('libelle', ''));
+        if ($libelle === '') {
+            return $this->json([
+                'success' => false,
+                'message' => 'La designation est obligatoire.',
+            ], 422);
+        }
+
+        $uniteId = trim((string) $request->request->get('uniteId', ''));
+        $unite = null;
+        if ($uniteId !== '') {
+            if (!ctype_digit($uniteId)) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Unite invalide.',
+                ], 422);
+            }
+
+            $unite = $uniteRepository->find((int) $uniteId);
+            if (!$unite instanceof Unite) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Unite introuvable.',
+                ], 404);
+            }
+        }
+
+        $tarifId = trim((string) $request->request->get('tarifId', ''));
+        $tarif = null;
+        if ($tarifId !== '') {
+            if (!ctype_digit($tarifId)) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Tarif invalide.',
+                ], 422);
+            }
+
+            $tarif = $tarifsRepository->findOneBy([
+                'id' => (int) $tarifId,
+                'dossier' => $currentDossier,
+            ]);
+            if (!$tarif instanceof Tarifs) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Tarif introuvable.',
+                ], 404);
+            }
+        }
+
+        $article->setLibelle($libelle);
+        $article->setUnite($unite);
+        $article->setTarif($tarif);
+        $article->setDoctrine($doctrine);
+        if ($user instanceof User) {
+            $article->setUser($user);
+        }
+
+        $entityManager = $doctrine->getManager();
+        $entityManager->persist($article);
+        $entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Article mis a jour avec succes.',
+            'article' => [
+                'id' => $article->getId(),
+                'libelle' => (string) $article->getLibelle(),
+                'uniteId' => $article->getUnite()?->getId(),
+                'uniteLabel' => $article->getUnite()?->getLibelle() ?? '',
+                'tarifId' => $article->getTarif()?->getId(),
+                'tarifLabel' => $article->getTarif()?->getLibelle() ?? '',
+            ],
+        ]);
     }
    
 

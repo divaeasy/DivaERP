@@ -1,35 +1,298 @@
 {% extends 'template_oukatech.html.twig' %}
 
-{% block PageTitle%}
+{% block PageTitle %}
     Gestion des Articles
 {% endblock %}
 
 {% block body %}
-<div class="page-header">
+<div class="page-header article-page-header">
     <div class="d-flex align-items-center">
         <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
             <i class="fas fa-arrow-left"></i>
         </a>
         <h1 class="h3 mb-0 text-gray-800">Gestion des Articles</h1>
     </div>
-</div>
-
-<div class="action-bar">
-    <div class="action-buttons">
-        <a class="btn-add" href="{{ path('article.edit') }}">
-            <i class="fas fa-plus"></i> Nouvel Article
-        </a>
-        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.articles') }}" title="Exporter Excel">
+    <div class="article-header-actions">
+        <a class="btn btn-sm btn-outline-success no-loading" href="{{ path('export.articles') }}" title="Exporter Excel">
             <i class="fas fa-file-excel mr-1"></i> Exporter
         </a>
-        <button type="button" class="btn btn-sm btn-outline-primary ml-2" data-toggle="modal" data-target="#articleImportModal">
+        <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#articleImportModal">
             <i class="fas fa-file-import mr-1"></i> Importer
         </button>
     </div>
-    <div class="search-box">
-        {% include "components/search_data.html.twig" with {search: search} only %}
-    </div>
 </div>
+
+<style>
+    .article-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .article-header-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .article-workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 3.3fr) minmax(340px, 1.45fr);
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        align-items: start;
+    }
+
+    .article-panel {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    .article-panel-body {
+        padding: 0;
+    }
+
+    .article-create-form {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.9rem;
+        flex-wrap: nowrap;
+    }
+
+    .article-create-form > .row {
+        flex: 1 1 auto;
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) minmax(165px, 0.48fr) minmax(165px, 0.48fr);
+        gap: 0.9rem;
+        margin: 0;
+        min-width: 0;
+    }
+
+    .article-create-form > .row > [class*="col-"] {
+        max-width: none;
+        padding: 0;
+        width: auto;
+        flex: initial;
+    }
+
+    .article-create-form .form-group {
+        margin-bottom: 0;
+    }
+
+    .article-create-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+        gap: 0.75rem;
+        flex: 0 0 auto;
+        padding-top: 1.9rem;
+    }
+
+    .article-filter-card .search-form-row {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: nowrap;
+    }
+
+    .article-filter-card .article-panel-body {
+        padding-top: 1.9rem;
+    }
+
+    .article-filter-card .search-input-group {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .article-filter-card .btn-search {
+        justify-content: center;
+        width: auto;
+        flex: 0 0 auto;
+        min-width: 150px;
+    }
+
+    .articles-table .row-selector-cell,
+    .articles-table .row-selector-head {
+        width: 52px;
+        text-align: center;
+    }
+
+    .articles-table .article-row.is-selected {
+        background: rgba(37, 99, 235, 0.08);
+    }
+
+    .articles-table .article-row.is-saving {
+        opacity: 0.72;
+        pointer-events: none;
+    }
+
+    .articles-table td[data-field="libelle"] {
+        min-width: 240px;
+    }
+
+    .articles-table td[data-field="unite"],
+    .articles-table td[data-field="tarif"] {
+        min-width: 180px;
+    }
+
+    .article-inline-text {
+        display: block;
+        min-height: 1.5rem;
+        line-height: 1.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        outline: none;
+    }
+
+    .article-inline-text[contenteditable="true"] {
+        cursor: text;
+    }
+
+    .inline-dropdown-shell {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.4rem;
+        min-height: 1.5rem;
+    }
+
+    .inline-dropdown-label {
+        display: block;
+        flex: 1 1 auto;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+    }
+
+    .inline-dropdown-trigger {
+        width: 22px;
+        height: 22px;
+        border: none;
+        background: transparent;
+        color: #6b7280;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.18s ease, color 0.18s ease;
+    }
+
+    .inline-dropdown-trigger:hover,
+    .inline-dropdown-shell.is-open .inline-dropdown-trigger {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--theme-primary);
+    }
+
+    .inline-dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        min-width: 210px;
+        max-height: 240px;
+        overflow-y: auto;
+        padding: 0.35rem;
+        border-radius: 12px;
+        background: #fff;
+        border: 1px solid rgba(203, 213, 225, 0.95);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+        display: none;
+        z-index: 40;
+    }
+
+    .inline-dropdown-shell.is-open .inline-dropdown-menu {
+        display: block;
+    }
+
+    .inline-dropdown-option {
+        width: 100%;
+        border: none;
+        background: transparent;
+        text-align: left;
+        padding: 0.55rem 0.7rem;
+        border-radius: 8px;
+        color: #334155;
+        font-size: 0.92rem;
+        transition: background-color 0.16s ease, color 0.16s ease;
+    }
+
+    .inline-dropdown-option:hover,
+    .inline-dropdown-option.is-active {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--theme-primary);
+    }
+
+    .articles-table .article-actions-cell {
+        white-space: nowrap;
+    }
+
+    .articles-table .inline-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    @media (max-width: 991px) {
+        .article-workspace {
+            grid-template-columns: 1fr;
+        }
+
+        .article-create-form {
+            flex-wrap: wrap;
+        }
+
+        .article-create-form > .row {
+            grid-template-columns: 1fr;
+        }
+
+        .article-create-actions {
+            width: 100%;
+            padding-top: 0;
+            justify-content: flex-end;
+        }
+
+        .article-filter-card .search-form-row {
+            flex-wrap: wrap;
+        }
+
+        .article-filter-card .article-panel-body {
+            padding-top: 0;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .article-page-header {
+            align-items: flex-start;
+        }
+
+        .article-header-actions {
+            width: 100%;
+        }
+
+        .article-header-actions .btn {
+            flex: 1 1 auto;
+            justify-content: center;
+        }
+
+        .article-filter-card .btn-search {
+            width: 100%;
+        }
+
+        .inline-dropdown-menu {
+            left: 0;
+            right: auto;
+            min-width: 180px;
+        }
+    }
+</style>
 
 <div class="modal fade" id="articleImportModal" tabindex="-1" role="dialog" aria-labelledby="articleImportModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -63,33 +326,70 @@
     </div>
 </div>
 
+<div class="article-workspace">
+    <div class="article-panel">
+        <div class="article-panel-body">
+            {{ form_start(createForm, {'attr': {'class': 'article-create-form needs-validation', 'novalidate': 'novalidate'}}) }}
+                {% include 'article/_form_fields.html.twig' with {form: createForm} only %}
+                <div class="article-create-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>Enregistrer
+                    </button>
+                </div>
+                {{ form_rest(createForm) }}
+            {{ form_end(createForm, {'render_rest': false}) }}
+        </div>
+    </div>
+
+    <div class="article-panel article-filter-card">
+        <div class="article-panel-body">
+            {% include "components/search_data.html.twig" with {search: search} only %}
+        </div>
+    </div>
+</div>
+
 <div class="table-container">
     {% if articles|length > 0 %}
-    <table class="table">
+    <table class="table articles-table" id="articlesTable">
         <thead>
             <tr>
+                <th class="row-selector-head">
+                    <div class="form-check d-flex justify-content-center mb-0">
+                        <input class="form-check-input position-static" type="checkbox" id="selectAllArticlesRows" aria-label="Selectionner toutes les lignes">
+                    </div>
+                </th>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="libelle">Désignation</th>
-                <th data-sort-key="unite">Unité</th>
+                <th data-sort-key="libelle">Designation</th>
+                <th data-sort-key="unite">Unite</th>
                 <th data-sort-key="tarif">Tarif</th>
-                <th class="text-center" style="width: 150px;">Actions</th>
+                <th class="text-center" style="width: 130px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for article in articles %}
-            <tr>
+            <tr class="article-row"
+                data-article-id="{{ article.id }}"
+                data-inline-update-url="{{ path('article.inline_update', {id: article.id}) }}"
+                data-libelle="{{ article.libelle|default('') }}"
+                data-unite-id="{{ article.unite ? article.unite.id : '' }}"
+                data-unite-label="{{ article.unite ? article.unite : '' }}"
+                data-tarif-id="{{ article.tarif ? article.tarif.id : '' }}"
+                data-tarif-label="{{ article.tarif ? article.tarif : '' }}"
+                tabindex="0">
+                <td class="row-selector-cell">
+                    <div class="form-check d-flex justify-content-center mb-0">
+                        <input class="form-check-input position-static article-row-checkbox" type="checkbox" value="{{ article.id }}" aria-label="Selectionner l'article {{ article.libelle|default('') }}">
+                    </div>
+                </td>
                 <td><strong>#{{ article.id }}</strong></td>
-                <td>{{ article.libelle|default('____') }}</td>
-                <td>{{ article.unite|default('____') }}</td>
-                <td>{{ article.tarif|default('____') }}</td>
-                <td class="text-center">
+                <td data-field="libelle">{{ article.libelle|default('____') }}</td>
+                <td data-field="unite">{{ article.unite|default('____') }}</td>
+                <td data-field="tarif">{{ article.tarif|default('____') }}</td>
+                <td class="text-center article-actions-cell">
                     <a href="{{ path('article.detail', {id: article.id}) }}" class="btn btn-action btn-view" title="Voir">
                         <i class="fas fa-eye"></i>
                     </a>
-                    <a href="{{ path('article.edit', {id: article.id}) }}" class="btn btn-action btn-edit" title="Modifier">
-                        <i class="fas fa-edit"></i>
-                    </a>
-                    <button type="button" class="btn btn-action btn-delete delete-btn" 
+                    <button type="button" class="btn btn-action btn-delete delete-btn"
                             data-delete-url="{{ path('article.delete', {id: article.id}) }}"
                             data-item-name="{{ article.libelle }}"
                             title="Supprimer">
@@ -106,12 +406,426 @@
         <div class="empty-state-icon">
             <i class="fas fa-boxes"></i>
         </div>
-        <h5>Aucun article trouvé</h5>
+        <h5>Aucun article trouve</h5>
         <p>Commencez par ajouter votre premier article au catalogue.</p>
-        <a href="{{ path('article.edit') }}" class="btn btn-primary">
-            <i class="fas fa-plus mr-2"></i>Nouvel article
-        </a>
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    $(function() {
+        var inlineUnites = {{ inlineUnites|json_encode|raw }};
+        var inlineTarifs = {{ inlineTarifs|json_encode|raw }};
+        var inlineUpdateToken = '{{ csrf_token('article_inline_update') }}';
+        var $articlesTable = $('#articlesTable');
+
+        if ($articlesTable.length === 0) {
+            return;
+        }
+
+        var $selectAllCheckbox = $('#selectAllArticlesRows');
+        var activeEditRow = null;
+
+        function showToast(type, message) {
+            if (typeof window.showAppToast === 'function') {
+                window.showAppToast({ type: type, message: message });
+                return;
+            }
+
+            window.alert(message);
+        }
+
+        function escapeHtml(value) {
+            return $('<div>').text(value || '').html();
+        }
+
+        function fallbackDisplay(value) {
+            return value && String(value).trim() !== '' ? value : '____';
+        }
+
+        function getFieldNameFromTarget(target) {
+            var $cell = $(target).closest('td[data-field]');
+            return $cell.length ? String($cell.data('field') || '') : '';
+        }
+
+        function getSelectableRows() {
+            return $articlesTable.find('tbody .article-row');
+        }
+
+        function updateSelectionUi() {
+            var $rows = getSelectableRows();
+            var totalRows = $rows.length;
+            var selectedRows = $rows.find('.article-row-checkbox:checked').length;
+            var allSelected = totalRows > 0 && selectedRows === totalRows;
+
+            $selectAllCheckbox.prop('checked', allSelected);
+            $selectAllCheckbox.prop('indeterminate', selectedRows > 0 && !allSelected);
+        }
+
+        function setRowSelected($row, isSelected) {
+            $row.toggleClass('is-selected', isSelected);
+            $row.find('.article-row-checkbox').prop('checked', isSelected);
+        }
+
+        function closeDropdowns(exceptShell) {
+            $articlesTable.find('.inline-dropdown-shell.is-open').each(function() {
+                var $shell = $(this);
+                if (exceptShell && $shell.is(exceptShell)) {
+                    return;
+                }
+                $shell.removeClass('is-open');
+            });
+        }
+
+        function openDropdownShell($shell) {
+            if (!$shell || !$shell.length) {
+                return;
+            }
+
+            closeDropdowns($shell);
+            $shell.addClass('is-open');
+        }
+
+        function createDropdownOption(value, label, isActive) {
+            return $('<button type="button" class="inline-dropdown-option"></button>')
+                .attr('data-value', value)
+                .toggleClass('is-active', !!isActive)
+                .text(label);
+        }
+
+        function setDropdownValue($shell, value, label) {
+            $shell.attr('data-value', value);
+            $shell.find('.inline-dropdown-label').text(fallbackDisplay(label));
+            $shell.find('.inline-dropdown-option').removeClass('is-active');
+            $shell.find('.inline-dropdown-option').filter(function() {
+                return String($(this).attr('data-value') || '') === String(value || '');
+            }).first().addClass('is-active');
+        }
+
+        function buildInlineDropdown(options, selectedValue, selectedLabel, emptyLabel) {
+            var $shell = $('<div class="inline-dropdown-shell"></div>').attr('data-value', String(selectedValue || ''));
+            var $label = $('<span class="inline-dropdown-label"></span>').text(fallbackDisplay(selectedLabel));
+            var $trigger = $('<button type="button" class="inline-dropdown-trigger" aria-label="Ouvrir la liste"><i class="fas fa-chevron-down"></i></button>');
+            var $menu = $('<div class="inline-dropdown-menu"></div>');
+            var normalizedSelectedValue = String(selectedValue || '');
+
+            $menu.append(createDropdownOption('', emptyLabel, normalizedSelectedValue === ''));
+
+            options.forEach(function(option) {
+                var optionValue = String(option.id);
+                $menu.append(
+                    createDropdownOption(optionValue, option.label, optionValue === normalizedSelectedValue)
+                        .attr('data-label', option.label)
+                );
+            });
+
+            $shell.append($label, $trigger, $menu);
+            return $shell;
+        }
+
+        function getRowSnapshot($row) {
+            return {
+                libelle: String($row.attr('data-libelle') || ''),
+                uniteId: String($row.attr('data-unite-id') || ''),
+                uniteLabel: String($row.attr('data-unite-label') || ''),
+                tarifId: String($row.attr('data-tarif-id') || ''),
+                tarifLabel: String($row.attr('data-tarif-label') || '')
+            };
+        }
+
+        function getEditValues($row) {
+            return {
+                libelle: $.trim($row.find('.inline-editable-text').text() || ''),
+                uniteId: String($row.find('.inline-dropdown-shell[data-name="uniteId"]').attr('data-value') || ''),
+                tarifId: String($row.find('.inline-dropdown-shell[data-name="tarifId"]').attr('data-value') || '')
+            };
+        }
+
+        function hasUnsavedChanges($row) {
+            if (!$row || !$row.length || !$row.hasClass('is-editing')) {
+                return false;
+            }
+
+            var snapshot = getRowSnapshot($row);
+            var currentValues = getEditValues($row);
+
+            return snapshot.libelle !== currentValues.libelle
+                || snapshot.uniteId !== currentValues.uniteId
+                || snapshot.tarifId !== currentValues.tarifId;
+        }
+
+        function restoreRowDisplay($row) {
+            var snapshot = getRowSnapshot($row);
+            closeDropdowns();
+
+            $row.find('td[data-field="libelle"]').html(escapeHtml(fallbackDisplay(snapshot.libelle)));
+            $row.find('td[data-field="unite"]').html(escapeHtml(fallbackDisplay(snapshot.uniteLabel)));
+            $row.find('td[data-field="tarif"]').html(escapeHtml(fallbackDisplay(snapshot.tarifLabel)));
+
+            var originalActions = $row.data('originalActionsHtml');
+            if (originalActions) {
+                $row.find('.article-actions-cell').html(originalActions);
+            }
+
+            $row.find('.delete-btn').attr('data-item-name', snapshot.libelle || '');
+            $row.find('.article-row-checkbox').attr('aria-label', 'Selectionner l\'article ' + (snapshot.libelle || ''));
+            $row.removeClass('is-editing is-saving');
+
+            if (activeEditRow && activeEditRow.is($row)) {
+                activeEditRow = null;
+            }
+        }
+
+        function focusEditableField($row, fieldName) {
+            if (!$row || !$row.length || !$row.hasClass('is-editing')) {
+                return;
+            }
+
+            if (fieldName === 'libelle') {
+                $row.find('.inline-editable-text').trigger('focus');
+                return;
+            }
+
+            if (fieldName === 'unite' || fieldName === 'tarif') {
+                var dropdownName = fieldName + 'Id';
+                openDropdownShell($row.find('.inline-dropdown-shell[data-name="' + dropdownName + '"]'));
+            }
+        }
+
+        function beginInlineEdit($row, preferredField) {
+            if (!$row || !$row.length) {
+                return;
+            }
+
+            if (activeEditRow && activeEditRow.length && !activeEditRow.is($row)) {
+                if (hasUnsavedChanges(activeEditRow) && !window.confirm('Des modifications non enregistrees seront perdues. Continuer ?')) {
+                    return;
+                }
+                restoreRowDisplay(activeEditRow);
+            }
+
+            if ($row.hasClass('is-editing')) {
+                focusEditableField($row, preferredField);
+                return;
+            }
+
+            var snapshot = getRowSnapshot($row);
+            var $actionsCell = $row.find('.article-actions-cell');
+            $row.data('originalActionsHtml', $actionsCell.html());
+
+            $row.find('td[data-field="libelle"]').html(
+                $('<span class="article-inline-text inline-editable-text" contenteditable="true" spellcheck="false"></span>').text(snapshot.libelle)
+            );
+            $row.find('td[data-field="unite"]').html(
+                buildInlineDropdown(inlineUnites, snapshot.uniteId, snapshot.uniteLabel, 'Aucune unite').attr('data-name', 'uniteId')
+            );
+            $row.find('td[data-field="tarif"]').html(
+                buildInlineDropdown(inlineTarifs, snapshot.tarifId, snapshot.tarifLabel, 'Aucun tarif').attr('data-name', 'tarifId')
+            );
+
+            $actionsCell.html(
+                '<div class="inline-actions">' +
+                    '<button type="button" class="btn btn-action btn-view article-inline-save-btn" title="Enregistrer">' +
+                        '<i class="fas fa-check"></i>' +
+                    '</button>' +
+                    '<button type="button" class="btn btn-action btn-delete article-inline-cancel-btn" title="Annuler">' +
+                        '<i class="fas fa-times"></i>' +
+                    '</button>' +
+                '</div>'
+            );
+
+            $row.addClass('is-editing');
+            activeEditRow = $row;
+            focusEditableField($row, preferredField);
+        }
+
+        function applySavedState($row, article) {
+            $row.attr('data-libelle', article.libelle || '');
+            $row.attr('data-unite-id', article.uniteId || '');
+            $row.attr('data-unite-label', article.uniteLabel || '');
+            $row.attr('data-tarif-id', article.tarifId || '');
+            $row.attr('data-tarif-label', article.tarifLabel || '');
+
+            restoreRowDisplay($row);
+        }
+
+        function saveInlineEdit($row) {
+            if (!$row || !$row.length || !$row.hasClass('is-editing') || $row.hasClass('is-saving')) {
+                return;
+            }
+
+            var values = getEditValues($row);
+            if (values.libelle === '') {
+                showToast('error', 'La designation est obligatoire.');
+                $row.find('.inline-editable-text').trigger('focus');
+                return;
+            }
+
+            $row.addClass('is-saving');
+
+            $.ajax({
+                url: $row.data('inlineUpdateUrl'),
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    _token: inlineUpdateToken,
+                    libelle: values.libelle,
+                    uniteId: values.uniteId,
+                    tarifId: values.tarifId
+                },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function(response) {
+                if (!response || response.success !== true || !response.article) {
+                    $row.removeClass('is-saving');
+                    showToast('error', 'La mise a jour a echoue.');
+                    return;
+                }
+
+                applySavedState($row, response.article);
+                showToast('success', response.message || 'Article mis a jour avec succes.');
+            }).fail(function(xhr) {
+                var message = 'La mise a jour a echoue.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+
+                $row.removeClass('is-saving');
+                showToast('error', message);
+            });
+        }
+
+        function cancelInlineEdit($row) {
+            if (!$row || !$row.length || !$row.hasClass('is-editing')) {
+                return;
+            }
+
+            if (hasUnsavedChanges($row) && !window.confirm('Annuler les modifications de cette ligne ?')) {
+                return;
+            }
+
+            restoreRowDisplay($row);
+        }
+
+        function openDeleteModal($button) {
+            var deleteUrl = $button.data('delete-url');
+            var itemName = $button.data('item-name') || 'cet element';
+
+            $('#deleteModalItemName').text(itemName);
+            $('#confirmDeleteBtn').attr('href', deleteUrl);
+            $('#deleteConfirmModal').modal('show');
+        }
+
+        $articlesTable.find('.delete-btn').off('click');
+        $articlesTable.on('click', '.delete-btn', function(event) {
+            event.preventDefault();
+            openDeleteModal($(this));
+        });
+
+        $articlesTable.on('change', '.article-row-checkbox', function() {
+            var $row = $(this).closest('.article-row');
+            setRowSelected($row, $(this).is(':checked'));
+            updateSelectionUi();
+        });
+
+        $selectAllCheckbox.on('change', function() {
+            var shouldSelect = $(this).is(':checked');
+            getSelectableRows().each(function() {
+                setRowSelected($(this), shouldSelect);
+            });
+            updateSelectionUi();
+        });
+
+        $articlesTable.on('dblclick', '.article-row', function(event) {
+            if ($(event.target).closest('a, button, input, label, .inline-dropdown-menu').length > 0) {
+                return;
+            }
+
+            beginInlineEdit($(this), getFieldNameFromTarget(event.target));
+        });
+
+        $articlesTable.on('click', '.article-inline-save-btn', function() {
+            saveInlineEdit($(this).closest('.article-row'));
+        });
+
+        $articlesTable.on('click', '.article-inline-cancel-btn', function() {
+            cancelInlineEdit($(this).closest('.article-row'));
+        });
+
+        $articlesTable.on('click', '.inline-dropdown-trigger, .inline-dropdown-label', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            var $shell = $(this).closest('.inline-dropdown-shell');
+            if ($shell.hasClass('is-open')) {
+                $shell.removeClass('is-open');
+                return;
+            }
+
+            openDropdownShell($shell);
+        });
+
+        $articlesTable.on('click', '.inline-dropdown-option', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            var $option = $(this);
+            var $shell = $option.closest('.inline-dropdown-shell');
+            var value = String($option.attr('data-value') || '');
+            var label = value === '' ? '' : String($option.attr('data-label') || $option.text() || '');
+
+            setDropdownValue($shell, value, label);
+            closeDropdowns();
+        });
+
+        $articlesTable.on('keydown', '.inline-editable-text', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                saveInlineEdit($(this).closest('.article-row'));
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                cancelInlineEdit($(this).closest('.article-row'));
+            }
+        });
+
+        $articlesTable.on('keydown', '.article-row', function(event) {
+            if ($(event.target).is('.inline-editable-text, .inline-dropdown-trigger, .inline-dropdown-option')) {
+                return;
+            }
+
+            if (event.key === 'Enter' && !$(this).hasClass('is-editing')) {
+                event.preventDefault();
+                beginInlineEdit($(this), 'libelle');
+            }
+        });
+
+        $(document).on('click', function(event) {
+            if ($(event.target).closest('.inline-dropdown-shell').length === 0) {
+                closeDropdowns();
+            }
+
+            if (!activeEditRow || !activeEditRow.length || !activeEditRow.hasClass('is-editing')) {
+                return;
+            }
+
+            if ($(event.target).closest(activeEditRow).length > 0) {
+                return;
+            }
+
+            if (hasUnsavedChanges(activeEditRow)) {
+                return;
+            }
+
+            restoreRowDisplay(activeEditRow);
+        });
+
+        updateSelectionUi();
+    });
+</script>
 {% endblock %}
