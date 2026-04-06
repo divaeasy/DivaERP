@@ -24,7 +24,7 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/test', name: 'test', methods: ['GET'])]
     public function testPage(Entetepiece $invoice): Response
     {
-        $nonInvoiceResponse = $this->redirectIfNotInvoiceType($invoice);
+        $nonInvoiceResponse = $this->redirectIfNotEligibleForEinvoicing($invoice);
         if ($nonInvoiceResponse !== null) {
             return $nonInvoiceResponse;
         }
@@ -44,7 +44,7 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/generate-facturex', name: 'generate_facturex', methods: ['GET', 'POST'])]
     public function generateFactureX(Request $request, Entetepiece $invoice): Response
     {
-        $nonInvoiceResponse = $this->redirectIfNotInvoiceType($invoice);
+        $nonInvoiceResponse = $this->redirectIfNotEligibleForEinvoicing($invoice);
         if ($nonInvoiceResponse !== null) {
             return $nonInvoiceResponse;
         }
@@ -69,7 +69,11 @@ class EInvoicingController extends AbstractController
 
                 $this->addFlash(
                     'success',
-                    'Facture-X generee avec succes (modele: ' . ($result['pdf_model'] ?? FactureXGenerator::DEFAULT_MODEL) . ').'
+                    sprintf(
+                        'Facture-X pour la piece %s generee avec succes (modele: %s).',
+                        $this->getPieceTypeLabel($invoice),
+                        (string) ($result['pdf_model'] ?? FactureXGenerator::DEFAULT_MODEL)
+                    )
                 );
             } else {
                 $this->addFlash('error', 'Echec de la generation: ' . ($result['error'] ?? 'erreur inconnue'));
@@ -84,7 +88,7 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/submit-tiime', name: 'submit_tiime', methods: ['GET', 'POST'])]
     public function submitToTiime(Entetepiece $invoice): Response
     {
-        $nonInvoiceResponse = $this->redirectIfNotInvoiceType($invoice);
+        $nonInvoiceResponse = $this->redirectIfNotEligibleForEinvoicing($invoice);
         if ($nonInvoiceResponse !== null) {
             return $nonInvoiceResponse;
         }
@@ -106,7 +110,10 @@ class EInvoicingController extends AbstractController
                     $invoice->setTiimeSubmissionId($result['submission_id'] ?? null);
                     $this->entityManager->flush();
 
-                    $this->addFlash('success', 'Facture transmise au PDP Tiime.');
+                    $this->addFlash(
+                        'success',
+                        sprintf('Piece %s transmise au PDP Tiime.', $this->getPieceTypeLabel($invoice))
+                    );
                     if (!empty($result['tiime_invoice_id'])) {
                         $this->addFlash('info', 'ID Tiime: ' . $result['tiime_invoice_id']);
                     }
@@ -122,7 +129,13 @@ class EInvoicingController extends AbstractController
                     $invoice->setSubmittedToTiime(true);
                     $this->entityManager->flush();
 
-                    $this->addFlash('success', 'Facture generee et transmise a Tiime.');
+                    $this->addFlash(
+                        'success',
+                        sprintf(
+                            'Facture-X pour la piece %s generee et transmise a Tiime.',
+                            $this->getPieceTypeLabel($invoice)
+                        )
+                    );
                 } else {
                     $this->addFlash('error', 'Echec: ' . ($result['error'] ?? 'erreur inconnue'));
                 }
@@ -146,26 +159,50 @@ class EInvoicingController extends AbstractController
         return $this->redirect($url);
     }
 
-    private function redirectIfNotInvoiceType(Entetepiece $invoice): ?Response
+    private function redirectIfNotEligibleForEinvoicing(Entetepiece $invoice): ?Response
     {
-        if ($this->isInvoiceType($invoice)) {
-            if ($this->isPerimeeStatus($invoice->getStatut())) {
-                $this->addFlash('warning', 'Cette facture est périmée et ne peut plus être traitée en e-facturation.');
+        if ($this->isPerimeeStatus($invoice->getStatut())) {
+            $this->addFlash(
+                'warning',
+                sprintf(
+                    'Cette piece %s est perimee et ne peut plus etre traitee en e-facturation.',
+                    $this->getPieceTypeLabel($invoice)
+                )
+            );
 
-                return $this->redirectToRoute('entetepiece.edit', ['id' => $invoice->getId()]);
-            }
-
-            return null;
+            return $this->redirectToRoute('entetepiece.edit', ['id' => $invoice->getId()]);
         }
 
-        $this->addFlash('error', 'La e-facturation Facture-X est disponible uniquement pour les pieces de type Facture.');
-
-        return $this->redirectToRoute('entetepiece.list');
+        return null;
     }
 
-    private function isInvoiceType(Entetepiece $invoice): bool
+    private function getPieceTypeLabel(Entetepiece $invoice): string
     {
-        return strtolower(trim((string) $invoice->getType())) === 'facture';
+        return match ($this->normalizeToken($invoice->getType())) {
+            'devis' => 'Devis',
+            'commande' => 'Commande',
+            'bl' => 'BL',
+            'facture' => 'Facture',
+            default => trim((string) $invoice->getType()) !== '' ? (string) $invoice->getType() : 'Piece',
+        };
+    }
+
+    private function normalizeToken(?string $value): string
+    {
+        $normalized = mb_strtolower(trim((string) $value), 'UTF-8');
+        $normalized = strtr($normalized, [
+            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ä' => 'a', 'ã' => 'a', 'å' => 'a',
+            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o',
+            'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ý' => 'y', 'ÿ' => 'y',
+            'ç' => 'c',
+            'œ' => 'oe',
+            'æ' => 'ae',
+        ]);
+
+        return (string) preg_replace('/[^a-z0-9]/', '', $normalized);
     }
 
     private function isPerimeeStatus(?string $status): bool
@@ -301,3 +338,4 @@ class EInvoicingController extends AbstractController
         return $this->json(['status' => 'received']);
     }
 }
+

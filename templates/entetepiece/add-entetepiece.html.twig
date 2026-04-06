@@ -85,7 +85,14 @@
                 {{ form_label(entetepiece.statut, 'Statut', {'label_attr': {'class': 'required'}}) }}
                 {{ form_widget(entetepiece.statut, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
                 {% if not isReadOnly|default(false) %}
-                    <small id="statusEligibilityHint" class="form-text text-muted mt-1"></small>
+                    <div id="statusEligibilityHint" class="status-eligibility-panel mt-2">
+                        <div class="status-eligibility-header d-flex justify-content-between align-items-center">
+                            <span class="status-eligibility-title">Controle d'eligibilite du statut</span>
+                            <span id="statusEligibilityBadge" class="badge badge-secondary">Brouillon</span>
+                        </div>
+                        <ul id="statusEligibilityChecklist" class="status-eligibility-list mb-0"></ul>
+                        <small id="statusEligibilitySummary" class="form-text text-muted mt-1"></small>
+                    </div>
                 {% endif %}
                 {% if not isReadOnly|default(false) %}
                     <div class="invalid-feedback">Le statut est obligatoire</div>
@@ -215,7 +222,11 @@
             </thead>
             <tbody>
                 {% for lignepiece in lignepieces %}
-                <tr>
+                <tr
+                    data-piece-line="1"
+                    data-has-article="{{ lignepiece.article ? '1' : '0' }}"
+                    data-qty="{{ lignepiece.qte|default(0) }}"
+                    data-pub="{{ lignepiece.pub|default(0) }}">
                     <td>{{ lignepiece.article }}</td>
                     <td class="text-right">{{ lignepiece.qte }}</td>
                     <td class="text-right">{{ lignepiece.pub|number_format(2, ',', ' ') }}</td>
@@ -257,6 +268,84 @@
 {% endif %}
 
 <style>
+    .status-eligibility-panel {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        background: #f8fafc;
+        padding: 10px 12px;
+    }
+
+    .status-eligibility-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #64748b;
+    }
+
+    .status-eligibility-list {
+        list-style: none;
+        padding-left: 0;
+        margin-top: 8px;
+    }
+
+    .status-eligibility-list li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 13px;
+        line-height: 1.5;
+        margin-bottom: 4px;
+        color: #334155;
+    }
+
+    .status-eligibility-list li:last-child {
+        margin-bottom: 0;
+    }
+
+    .status-eligibility-list li .status-icon {
+        width: 16px;
+        text-align: center;
+    }
+
+    .status-rule-main {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-rule-tag {
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 2px 8px;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+    }
+
+    .status-rule-tag.is-required {
+        color: #7c2d12;
+        background: #ffedd5;
+    }
+
+    .status-rule-tag.is-recommended {
+        color: #1e3a8a;
+        background: #dbeafe;
+    }
+
+    .status-eligibility-list li.is-ok {
+        color: #166534;
+    }
+
+    .status-eligibility-list li.is-missing {
+        color: #9a3412;
+    }
+
+    .status-eligibility-list li.is-recommended-missing {
+        color: #334155;
+    }
+
     .piece-readonly-mode .form-control[disabled],
     .piece-readonly-mode .form-control:disabled,
     .piece-readonly-mode .select2-container--bootstrap-5 .select2-selection {
@@ -268,6 +357,14 @@
     .piece-readonly-mode .is-valid {
         display: none !important;
         border-color: inherit !important;
+        box-shadow: none !important;
+    }
+
+    .form-actions .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        filter: grayscale(0.2);
+        transform: none !important;
         box-shadow: none !important;
     }
 </style>
@@ -317,8 +414,10 @@
         function initPieceForm() {
             var form = document.getElementById('piece-edit-form');
             var isReadOnly = form && String(form.getAttribute('data-read-only') || '') === '1';
-            var lineCount = Number({{ statusProgression.lineCount|default(0) }});
-            var invalidLineCount = Number({{ statusProgression.invalidLineCount|default(0) }});
+            var initialLineStats = {
+                lineCount: Number({{ statusProgression.lineCount|default(0) }}),
+                invalidLineCount: Number({{ statusProgression.invalidLineCount|default(0) }})
+            };
             var originalStatusRaw = '{{ statusProgression.originalStatus|default("Brouillon")|e("js") }}';
 
             $('.js-example-basic-single').each(function() {
@@ -355,92 +454,316 @@
             }
 
             var $status = $('#{{ entetepiece.statut.vars.id }}');
-            var $statusHint = $('#statusEligibilityHint');
-            if ($status.length) {
-                function normalizeStatus(rawValue) {
-                    var normalized = String(rawValue || '').toLowerCase();
-                    if (typeof normalized.normalize === 'function') {
-                        normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                    }
-                    return normalized.replace(/[^a-z0-9]/g, '');
+            var $client = $('#{{ entetepiece.client.vars.id }}');
+            var $devise = $('#{{ entetepiece.devise.vars.id }}');
+            var $reglement = $('#{{ entetepiece.reglement.vars.id }}');
+            var $statusChecklist = $('#statusEligibilityChecklist');
+            var $statusSummary = $('#statusEligibilitySummary');
+            var $statusBadge = $('#statusEligibilityBadge');
+            var $submitButtons = $(form).find('button[type="submit"]');
+
+            function normalizeStatus(rawValue) {
+                var normalized = String(rawValue || '').toLowerCase();
+                if (typeof normalized.normalize === 'function') {
+                    normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                }
+                return normalized.replace(/[^a-z0-9]/g, '');
+            }
+
+            function getStatusLabel(normalizedStatus) {
+                if (normalizedStatus === 'active') {
+                    return 'Active';
+                }
+                if (normalizedStatus === 'validee' || normalizedStatus === 'valide') {
+                    return 'Validee';
+                }
+                return 'Brouillon';
+            }
+
+            function parseNumeric(value) {
+                var rawValue = (value === null || value === undefined) ? '' : value;
+                var raw = String(rawValue).trim();
+                if (raw === '') {
+                    return 0;
+                }
+                raw = raw.replace(/\s/g, '').replace(',', '.').replace(/[^0-9.\-]/g, '');
+                var parsed = Number(raw);
+                return Number.isFinite(parsed) ? parsed : 0;
+            }
+
+            function getLiveLineStats() {
+                var stats = {
+                    lineCount: 0,
+                    invalidLineCount: 0
+                };
+
+                var $rows = $('#piece-lines tbody tr[data-piece-line="1"]');
+                if (!$rows.length) {
+                    return stats;
                 }
 
-                function isStatusAllowed(fromStatus, toStatus) {
-                    var from = normalizeStatus(fromStatus);
-                    var to = normalizeStatus(toStatus);
+                $rows.each(function() {
+                    var $row = $(this);
+                    stats.lineCount += 1;
 
-                    if (to === from) {
-                        return true;
-                    }
-                    if (to === 'brouillon') {
-                        return true;
-                    }
-                    if (to === 'active') {
-                        if (from === 'brouillon') {
-                            return lineCount > 0;
-                        }
-                        return true;
-                    }
-                    if (to === 'validee' || to === 'valide') {
-                        if (from === 'brouillon' || from === 'active') {
-                            return lineCount > 0 && invalidLineCount === 0;
-                        }
-                        return from === 'validee' || from === 'valide';
-                    }
+                    var hasArticle = String($row.data('has-article') || '') === '1';
+                    var quantity = parseNumeric($row.data('qty'));
+                    var unitPrice = parseNumeric($row.data('pub'));
 
+                    if (!hasArticle || quantity <= 0 || unitPrice <= 0) {
+                        stats.invalidLineCount += 1;
+                    }
+                });
+
+                return stats;
+            }
+
+            function getCurrentLineStats() {
+                var hasLineSection = $('#piece-lines').length > 0;
+                if (!hasLineSection) {
+                    return {
+                        lineCount: initialLineStats.lineCount,
+                        invalidLineCount: initialLineStats.invalidLineCount
+                    };
+                }
+
+                return getLiveLineStats();
+            }
+
+            function isStatusAllowed(fromStatus, toStatus, lineStats) {
+                var from = normalizeStatus(fromStatus);
+                var to = normalizeStatus(toStatus);
+
+                if (to === from) {
+                    return true;
+                }
+                if (to === 'brouillon') {
+                    return true;
+                }
+                if (to === 'active') {
+                    return lineStats.lineCount > 0;
+                }
+                if (to === 'validee' || to === 'valide') {
+                    return lineStats.lineCount > 0 && lineStats.invalidLineCount === 0;
+                }
+
+                return false;
+            }
+
+            function hasFieldValue($field) {
+                if (!$field.length) {
                     return false;
                 }
+                return String($field.val() || '').trim() !== '';
+            }
 
-                function setStatusHint() {
-                    if (!$statusHint.length) {
-                        return;
-                    }
-
-                    if (lineCount <= 0) {
-                        $statusHint
-                            .removeClass('text-success')
-                            .addClass('text-warning')
-                            .text('Ajoutez au moins une ligne pour passer a Active.');
-                        return;
-                    }
-
-                    if (invalidLineCount > 0) {
-                        $statusHint
-                            .removeClass('text-success')
-                            .addClass('text-warning')
-                            .text('Completez toutes les lignes pour pouvoir passer a Validee.');
-                        return;
-                    }
-
-                    $statusHint
-                        .removeClass('text-warning')
-                        .addClass('text-success')
-                        .text('Statut eligible: vous pouvez passer a Active puis Validee.');
+            function updateSubmitAvailability(selectedStatus, checks) {
+                if (!$submitButtons.length) {
+                    return;
                 }
 
-                var currentStatus = normalizeStatus(originalStatusRaw);
+                var normalizedStatus = normalizeStatus(selectedStatus);
+                if (normalizedStatus === '') {
+                    $submitButtons.prop('disabled', true).attr('title', 'Selectionnez un statut pour enregistrer.');
+                    return;
+                }
+
+                var blockingChecks = checks.filter(function(check) {
+                    return check.required && !check.ok;
+                });
+                var canSubmit = blockingChecks.length === 0;
+
+                if (canSubmit) {
+                    $submitButtons.prop('disabled', false).removeAttr('title');
+                    return;
+                }
+
+                var firstBlockingLabel = String(blockingChecks[0].label || 'Completez les regles obligatoires');
+                $submitButtons
+                    .prop('disabled', true)
+                    .attr('title', 'Enregistrement bloque: ' + firstBlockingLabel + '.');
+            }
+
+            function updateStatusOptionsAvailability() {
+                if (!$status.length) {
+                    return;
+                }
+
+                var lineStats = getCurrentLineStats();
+                var fromStatus = normalizeStatus(String($status.val() || originalStatusRaw));
                 $status.find('option').each(function() {
                     var optionValue = String($(this).attr('value') || '').trim();
                     if (optionValue === '') {
                         return;
                     }
-                    $(this).prop('disabled', !isStatusAllowed(currentStatus, optionValue));
+                    var normalizedOption = normalizeStatus(optionValue);
+                    var isCurrent = normalizedOption === fromStatus;
+                    var isAllowed = isCurrent || isStatusAllowed(fromStatus, optionValue, lineStats);
+                    $(this).prop('disabled', !isAllowed);
                 });
-
-                var selectedStatus = String($status.val() || '').trim();
-                if (selectedStatus !== '' && !isStatusAllowed(currentStatus, selectedStatus)) {
-                    $status.val(originalStatusRaw).trigger('change');
-                }
 
                 if ($status.hasClass('select2-hidden-accessible')) {
                     $status.trigger('change.select2');
                 }
-
-                setStatusHint();
             }
 
-            var $client = $('#{{ entetepiece.client.vars.id }}');
-            var $reglement = $('#{{ entetepiece.reglement.vars.id }}');
+            function renderStatusEligibility() {
+                if (!$status.length || !$statusChecklist.length || !$statusSummary.length) {
+                    return;
+                }
+
+                var selectedStatus = normalizeStatus(String($status.val() || originalStatusRaw));
+                var lineStats = getCurrentLineStats();
+                var lineCount = lineStats.lineCount;
+                var invalidLineCount = lineStats.invalidLineCount;
+                var hasAtLeastOneLine = lineCount > 0;
+                var hasCompleteLines = hasAtLeastOneLine && invalidLineCount === 0;
+                var hasClient = hasFieldValue($client);
+                var hasDevise = hasFieldValue($devise);
+                var hasReglement = hasFieldValue($reglement);
+
+                var requiresLineCount = selectedStatus === 'active' || selectedStatus === 'validee' || selectedStatus === 'valide';
+                var requiresLineCompleteness = selectedStatus === 'validee' || selectedStatus === 'valide';
+                var lineCompletenessLabel = 'Toutes les lignes completees (article, quantite, prix)';
+                if (!hasAtLeastOneLine) {
+                    lineCompletenessLabel = 'Aucune ligne a verifier pour le moment';
+                } else if (invalidLineCount > 0) {
+                    lineCompletenessLabel = invalidLineCount + ' ligne(s) incomplete(s) detectee(s)';
+                }
+
+                var checks = [
+                    { ok: hasAtLeastOneLine, label: 'Au moins une ligne ajoutee (' + lineCount + ')', required: requiresLineCount },
+                    { ok: hasCompleteLines, label: lineCompletenessLabel, required: requiresLineCompleteness },
+                    { ok: hasClient, label: 'Client renseigne', required: false },
+                    { ok: hasDevise, label: 'Devise renseignee', required: false },
+                    { ok: hasReglement, label: 'Reglement renseigne', required: false }
+                ];
+
+                updateSubmitAvailability(selectedStatus, checks);
+
+                var checklistHtml = checks.map(function(check) {
+                    var rowClass = 'is-ok';
+                    var iconClass = 'fa-check-circle';
+                    if (!check.ok && check.required) {
+                        rowClass = 'is-missing';
+                        iconClass = 'fa-exclamation-triangle';
+                    } else if (!check.ok) {
+                        rowClass = 'is-recommended-missing';
+                        iconClass = 'fa-info-circle';
+                    }
+
+                    return '<li class=\"' + rowClass + '\">' +
+                        '<span class=\"status-rule-main\">' +
+                            '<span class=\"status-icon\"><i class=\"fas ' + iconClass + '\"></i></span>' +
+                            '<span>' + check.label + '</span>' +
+                        '</span>' +
+                        '<span class=\"status-rule-tag ' + (check.required ? 'is-required' : 'is-recommended') + '\">' +
+                            (check.required ? 'Obligatoire' : 'Conseil') +
+                        '</span>' +
+                        '</li>';
+                }).join('');
+
+                $statusChecklist.html(checklistHtml);
+
+                if ($statusBadge.length) {
+                    $statusBadge
+                        .removeClass('badge-secondary badge-success badge-warning badge-info')
+                        .text(getStatusLabel(selectedStatus));
+
+                    if ((selectedStatus === 'validee' || selectedStatus === 'valide') && hasCompleteLines) {
+                        $statusBadge.addClass('badge-success');
+                    } else if (selectedStatus === 'active' && hasAtLeastOneLine) {
+                        $statusBadge.addClass('badge-info');
+                    } else if (selectedStatus === 'brouillon') {
+                        $statusBadge.addClass('badge-secondary');
+                    } else {
+                        $statusBadge.addClass('badge-warning');
+                    }
+                }
+
+                $statusSummary.removeClass('text-success text-warning text-info text-muted');
+
+                if (selectedStatus === 'active') {
+                    if (!hasAtLeastOneLine) {
+                        $statusSummary
+                            .addClass('text-warning')
+                            .text('Active bloque: ajoutez au moins une ligne avant de selectionner ce statut.');
+                    } else {
+                        var activeMessage = 'Le statut Active est disponible.';
+                        if (invalidLineCount > 0) {
+                            activeMessage += ' Completez ' + invalidLineCount + ' ligne(s) pour preparer la validation.';
+                        }
+                        $statusSummary
+                            .addClass(invalidLineCount > 0 ? 'text-info' : 'text-success')
+                            .text(activeMessage);
+                    }
+                    return;
+                }
+
+                if (selectedStatus === 'validee' || selectedStatus === 'valide') {
+                    if (!hasAtLeastOneLine) {
+                        $statusSummary
+                            .addClass('text-warning')
+                            .text('Pour passer en Validee, ajoutez au moins une ligne.');
+                        return;
+                    }
+                    if (!hasCompleteLines) {
+                        $statusSummary
+                            .addClass('text-warning')
+                            .text('Pour passer en Validee, completez les ' + invalidLineCount + ' ligne(s) incomplete(s) (article, quantite, prix).');
+                        return;
+                    }
+                    if (!hasClient || !hasDevise || !hasReglement) {
+                        var missingFields = [];
+                        if (!hasClient) {
+                            missingFields.push('client');
+                        }
+                        if (!hasDevise) {
+                            missingFields.push('devise');
+                        }
+                        if (!hasReglement) {
+                            missingFields.push('reglement');
+                        }
+                        $statusSummary
+                            .addClass('text-info')
+                            .text('Validee disponible. Conseil qualite: completer ' + missingFields.join(', ') + '.');
+                        return;
+                    }
+                    $statusSummary
+                        .addClass('text-success')
+                        .text('Tout est pret: la piece est pleinement eligible au statut Validee.');
+                    return;
+                }
+
+                if (!hasAtLeastOneLine) {
+                    $statusSummary
+                        .addClass('text-muted')
+                        .text('Brouillon: ajoutez au moins une ligne pour debloquer le statut Active.');
+                    return;
+                }
+
+                if (!hasCompleteLines) {
+                    $statusSummary
+                        .addClass('text-info')
+                        .text('Brouillon: Active est disponible. Completez les lignes pour atteindre Validee.');
+                    return;
+                }
+
+                $statusSummary
+                    .addClass('text-success')
+                    .text('Brouillon solide: vous pouvez evoluer vers Active puis Validee.');
+            }
+
+            function refreshStatusEligibilityUI() {
+                updateStatusOptionsAvailability();
+                renderStatusEligibility();
+            }
+
+            if ($status.length) {
+                refreshStatusEligibilityUI();
+                $status.off('change.statusEligibility').on('change.statusEligibility', refreshStatusEligibilityUI);
+            }
+
             if ($client.length && $reglement.length) {
                 function applyClientReglementIfEmpty() {
                     var selectedOption = $client.find('option:selected');
@@ -452,7 +775,35 @@
                 }
 
                 applyClientReglementIfEmpty();
-                $client.off('change.pieceReglement').on('change.pieceReglement', applyClientReglementIfEmpty);
+                $client.off('change.pieceReglement').on('change.pieceReglement', function() {
+                    applyClientReglementIfEmpty();
+                    refreshStatusEligibilityUI();
+                });
+            }
+
+            if ($devise.length) {
+                $devise.off('change.statusEligibility').on('change.statusEligibility', refreshStatusEligibilityUI);
+            }
+            if ($reglement.length) {
+                $reglement.off('change.statusEligibility').on('change.statusEligibility', refreshStatusEligibilityUI);
+            }
+
+            if (window.__pieceLinesObserver) {
+                window.__pieceLinesObserver.disconnect();
+                window.__pieceLinesObserver = null;
+            }
+
+            var linesBody = document.querySelector('#piece-lines tbody');
+            if (linesBody && typeof MutationObserver !== 'undefined') {
+                window.__pieceLinesObserver = new MutationObserver(function() {
+                    refreshStatusEligibilityUI();
+                });
+                window.__pieceLinesObserver.observe(linesBody, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ['data-piece-line', 'data-has-article', 'data-qty', 'data-pub']
+                });
             }
         }
 

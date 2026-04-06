@@ -105,8 +105,7 @@ class ClientController extends AbstractController
            'success',
            $message
         );
-        return $this->redirectToRoute('client.edit', array('id' => $client->getId()));
-        //return $this->redirectToRoute('client.list');
+        return $this->redirectToRoute('client.list');
         
        }else{
             return $this->render('client/add-client.html.twig', [

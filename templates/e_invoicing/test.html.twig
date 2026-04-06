@@ -8,7 +8,7 @@
         </a>
         <div>
             <h1 class="h3 mb-0 text-gray-800">Facturation Électronique</h1>
-            <small class="text-muted">{{ invoice.pieceref }} — {{ invoice.client.nom ?? 'Client non défini' }}</small>
+            <small class="text-muted">{{ invoice.type|default('Piece') }} #{{ invoice.pieceno|default('-') }} - {{ invoice.pieceref }} — {{ invoice.client.nom ?? 'Client non défini' }}</small>
         </div>
     </div>
 </div>
@@ -330,6 +330,9 @@
     }
 </style>
 
+{% set piece_type_label = invoice.type|default('Piece') %}
+{% set piece_type_key = piece_type_label|lower|replace({'é':'e','è':'e','ê':'e','à':'a','ç':'c',' ':'','-':''}) %}
+{% set is_facture_type = piece_type_key == 'facture' %}
 {% set computed_total = 0 %}
 {% set computed_remise_weighted = 0 %}
 {% set computed_remise_base = 0 %}
@@ -364,7 +367,7 @@
         <div class="einv-stat-value">{{ invoice.datep ? invoice.datep|date('d/m/Y') : '—' }}</div>
     </div>
     <div class="einv-stat stat-status">
-        <div class="einv-stat-label">Statut e-Facture</div>
+        <div class="einv-stat-label">Statut e-Document</div>
         <div class="einv-stat-value">
             {% if invoice.isSubmittedToTiime %}
                 <span class="einv-badge einv-badge-success"><i class="fas fa-check-circle"></i> Transmise</span>
@@ -385,7 +388,7 @@
         <div class="einv-workflow einv-workflow--sticky">
             <div class="einv-workflow-header">
                 <i class="fas fa-route"></i>
-                <h6>Processus de Facturation Électronique</h6>
+                <h6>Processus e-Facturation ({{ piece_type_label }})</h6>
             </div>
             <div class="einv-workflow-body">
                 <div class="einv-steps">
@@ -401,7 +404,13 @@
                             {% endif %}
                         </div>
                         <div class="einv-step-content">
-                            <div class="einv-step-title">Generer la Facture-X</div>
+                            <div class="einv-step-title">
+                                {% if is_facture_type %}
+                                    Generer la Facture-X
+                                {% else %}
+                                    Generer la {{ piece_type_label }}
+                                {% endif %}
+                            </div>
                             <div class="einv-step-desc">
                                 {% if classic_generated and modern_generated %}
                                     Les 2 modeles sont generes. Vous pouvez telecharger chacun separement.
@@ -410,7 +419,11 @@
                                 {% elseif modern_generated %}
                                     Le modele 2 est genere. Le modele 1 ne sera genere que si vous cliquez sur "Generer modele 1".
                                 {% else %}
-                                    Generez le PDF Facture-X (avec XML integre) puis choisissez le modele visuel a telecharger.
+                                    {% if is_facture_type %}
+                                        Generez le PDF Facture-X pour cette piece (avec XML integre), puis choisissez le modele visuel a telecharger.
+                                    {% else %}
+                                        Generez le PDF de la {{ piece_type_label }}, puis choisissez le modele visuel a telecharger.
+                                    {% endif %}
                                 {% endif %}
                             </div>
 
@@ -473,108 +486,114 @@
                         </div>
                     </div>
 
-                    {# === STEP 2: Submit to Tiime PDP === #}
-                    {% set step2_done = invoice.isSubmittedToTiime %}
-                    {% set step2_active = step1_done and not step2_done %}
-                    <div class="einv-step {{ step2_done ? 'step-done' : (step2_active ? 'step-active' : 'step-pending') }}">
-                        <div class="einv-step-indicator">
-                            {% if step2_done %}
-                                <i class="fas fa-check"></i>
-                            {% else %}
-                                2
-                            {% endif %}
-                        </div>
-                        <div class="einv-step-content">
-                            <div class="einv-step-title">Transmettre via Tiime PDP</div>
-                            <div class="einv-step-desc">
+                    {% if is_facture_type %}
+                        {# === STEP 2: Submit to Tiime PDP === #}
+                        {% set step2_done = invoice.isSubmittedToTiime %}
+                        {% set step2_active = step1_done and not step2_done %}
+                        <div class="einv-step {{ step2_done ? 'step-done' : (step2_active ? 'step-active' : 'step-pending') }}">
+                            <div class="einv-step-indicator">
                                 {% if step2_done %}
-                                    La facture a été transmise avec succès à la plateforme Tiime.
-                                    {% if invoice.tiimeInvoiceId %}
-                                        <br><small class="text-muted">ID Tiime : {{ invoice.tiimeInvoiceId }}</small>
+                                    <i class="fas fa-check"></i>
+                                {% else %}
+                                    2
+                                {% endif %}
+                            </div>
+                            <div class="einv-step-content">
+                                <div class="einv-step-title">Transmettre via Tiime PDP</div>
+                                <div class="einv-step-desc">
+                                    {% if step2_done %}
+                                        La piece {{ piece_type_label }} a été transmise avec succès à la plateforme Tiime.
+                                        {% if invoice.tiimeInvoiceId %}
+                                            <br><small class="text-muted">ID Tiime : {{ invoice.tiimeInvoiceId }}</small>
+                                        {% endif %}
+                                    {% elseif step2_active %}
+                                        Envoyer la piece {{ piece_type_label }} au PDP Tiime pour transmission à la plateforme publique de facturation (PPF).
+                                    {% else %}
+                                        Vous devez d'abord générer la Facture-X avant de pouvoir la transmettre.
                                     {% endif %}
-                                {% elseif step2_active %}
-                                    Envoyer la facture au PDP Tiime pour transmission à la plateforme publique de facturation (PPF).
-                                {% else %}
-                                    Vous devez d'abord générer la Facture-X avant de pouvoir la transmettre.
-                                {% endif %}
-                            </div>
-                            <div class="einv-step-action">
-                                {% if step2_done %}
-                                    <a href="{{ path('invoice_einvoicing_submit_tiime', {id: invoice.id}) }}" class="btn-einv btn-einv-outline btn-einv-sm">
-                                        <i class="fas fa-redo-alt"></i> Retransmettre
-                                    </a>
-                                {% elseif step2_active %}
-                                    <a href="{{ path('invoice_einvoicing_submit_tiime', {id: invoice.id}) }}" class="btn-einv btn-einv-success">
-                                        <i class="fas fa-paper-plane"></i> Transmettre à Tiime
-                                    </a>
-                                {% else %}
-                                    <span class="btn-einv btn-einv-outline disabled">
-                                        <i class="fas fa-lock"></i> Transmettre à Tiime
-                                    </span>
-                                {% endif %}
+                                </div>
+                                <div class="einv-step-action">
+                                    {% if step2_done %}
+                                        <a href="{{ path('invoice_einvoicing_submit_tiime', {id: invoice.id}) }}" class="btn-einv btn-einv-outline btn-einv-sm">
+                                            <i class="fas fa-redo-alt"></i> Retransmettre
+                                        </a>
+                                    {% elseif step2_active %}
+                                        <a href="{{ path('invoice_einvoicing_submit_tiime', {id: invoice.id}) }}" class="btn-einv btn-einv-success">
+                                            <i class="fas fa-paper-plane"></i> Transmettre à Tiime
+                                        </a>
+                                    {% else %}
+                                        <span class="btn-einv btn-einv-outline disabled">
+                                            <i class="fas fa-lock"></i> Transmettre à Tiime
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {# === STEP 3: Verify Status === #}
-                    {% set step3_active = step2_done %}
-                    <div class="einv-step {{ step3_active ? 'step-active' : 'step-pending' }}">
-                        <div class="einv-step-indicator">3</div>
-                        <div class="einv-step-content">
-                            <div class="einv-step-title">Vérifier le statut</div>
-                            <div class="einv-step-desc">
-                                {% if step3_active %}
-                                    Consultez le statut de la facture sur la plateforme Tiime et l'historique des événements.
-                                {% else %}
-                                    Le suivi du statut sera disponible après la transmission de la facture.
-                                {% endif %}
-                            </div>
-                            <div class="einv-step-action" style="gap: 8px; display: flex; flex-wrap: wrap;">
-                                {% if step3_active %}
-                                    <button type="button" class="btn-einv btn-einv-primary btn-einv-sm" id="btnCheckStatus">
-                                        <i class="fas fa-sync-alt"></i> Vérifier le statut
-                                    </button>
-                                    <button type="button" class="btn-einv btn-einv-outline btn-einv-sm" id="btnViewHistory">
-                                        <i class="fas fa-history"></i> Historique
-                                    </button>
-                                {% else %}
-                                    <span class="btn-einv btn-einv-outline btn-einv-sm disabled">
-                                        <i class="fas fa-lock"></i> Vérifier le statut
-                                    </span>
-                                {% endif %}
+                        {# === STEP 3: Verify Status === #}
+                        {% set step3_active = step2_done %}
+                        <div class="einv-step {{ step3_active ? 'step-active' : 'step-pending' }}">
+                            <div class="einv-step-indicator">3</div>
+                            <div class="einv-step-content">
+                                <div class="einv-step-title">Vérifier le statut</div>
+                                <div class="einv-step-desc">
+                                    {% if step3_active %}
+                                        Consultez le statut de la piece {{ piece_type_label }} sur la plateforme Tiime et l'historique des événements.
+                                    {% else %}
+                                        Le suivi du statut sera disponible après la transmission de la piece.
+                                    {% endif %}
+                                </div>
+                                <div class="einv-step-action" style="gap: 8px; display: flex; flex-wrap: wrap;">
+                                    {% if step3_active %}
+                                        <button type="button" class="btn-einv btn-einv-primary btn-einv-sm" id="btnCheckStatus">
+                                            <i class="fas fa-sync-alt"></i> Vérifier le statut
+                                        </button>
+                                        <button type="button" class="btn-einv btn-einv-outline btn-einv-sm" id="btnViewHistory">
+                                            <i class="fas fa-history"></i> Historique
+                                        </button>
+                                    {% else %}
+                                        <span class="btn-einv btn-einv-outline btn-einv-sm disabled">
+                                            <i class="fas fa-lock"></i> Vérifier le statut
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    {% endif %}
 
                 </div>
             </div>
         </div>
 
         <!-- History Panel (hidden by default, shown via AJAX) -->
-        <div class="einv-workflow" id="historyPanel" style="display: none;">
-            <div class="einv-workflow-header">
-                <i class="fas fa-history"></i>
-                <h6>Historique des Événements</h6>
-            </div>
-            <div class="einv-workflow-body" id="historyContent">
-                <div class="text-center text-muted py-4">
-                    <i class="fas fa-spinner fa-spin mr-2"></i> Chargement...
+        {% if is_facture_type %}
+            <div class="einv-workflow" id="historyPanel" style="display: none;">
+                <div class="einv-workflow-header">
+                    <i class="fas fa-history"></i>
+                    <h6>Historique des Événements</h6>
+                </div>
+                <div class="einv-workflow-body" id="historyContent">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Chargement...
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
 
         <!-- Status Result Panel (hidden by default) -->
-        <div class="einv-workflow" id="statusPanel" style="display: none;">
-            <div class="einv-workflow-header">
-                <i class="fas fa-satellite-dish"></i>
-                <h6>Statut Tiime</h6>
-            </div>
-            <div class="einv-workflow-body" id="statusContent">
-                <div class="text-center text-muted py-4">
-                    <i class="fas fa-spinner fa-spin mr-2"></i> Vérification en cours...
+        {% if is_facture_type %}
+            <div class="einv-workflow" id="statusPanel" style="display: none;">
+                <div class="einv-workflow-header">
+                    <i class="fas fa-satellite-dish"></i>
+                    <h6>Statut Tiime</h6>
+                </div>
+                <div class="einv-workflow-body" id="statusContent">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Vérification en cours...
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
 
     </div>
 
@@ -585,7 +604,7 @@
         <div class="einv-panel">
             <div class="einv-panel-header">
                 <i class="fas fa-file-invoice" style="color: #4e73df;"></i>
-                <h6>Détails de la Facture</h6>
+                <h6>Details de la piece {{ piece_type_label }}</h6>
             </div>
             <div class="einv-panel-body">
                 <div class="einv-info-row">
@@ -674,8 +693,8 @@
             </div>
             <div class="einv-panel-body">
                 <div class="einv-info-row">
-                    <span class="einv-info-label">Type facture</span>
-                    <span class="einv-info-value">{{ invoice.invoiceType ?? '—' }}</span>
+                    <span class="einv-info-label">Type de piece</span>
+                    <span class="einv-info-value">{{ piece_type_label }}</span>
                 </div>
                 <div class="einv-info-row">
                     <span class="einv-info-label">Taux TVA</span>
@@ -701,16 +720,25 @@
             <div class="einv-panel-body">
                 <div class="d-flex align-items-start mb-3" style="gap: 10px;">
                     <span class="einv-badge einv-badge-info" style="min-width: 24px; justify-content: center;">1</span>
-                    <small class="text-muted"><strong>Générer</strong> — Crée le PDF et XML conformes à Facture-X</small>
+                    <small class="text-muted">
+                        <strong>Générer</strong> —
+                        {% if is_facture_type %}
+                            Crée le PDF et XML conformes à Facture-X
+                        {% else %}
+                            Génère le PDF de la {{ piece_type_label }}
+                        {% endif %}
+                    </small>
                 </div>
-                <div class="d-flex align-items-start mb-3" style="gap: 10px;">
-                    <span class="einv-badge einv-badge-info" style="min-width: 24px; justify-content: center;">2</span>
-                    <small class="text-muted"><strong>Transmettre</strong> — Envoie la facture au PDP Tiime</small>
-                </div>
-                <div class="d-flex align-items-start" style="gap: 10px;">
-                    <span class="einv-badge einv-badge-info" style="min-width: 24px; justify-content: center;">3</span>
-                    <small class="text-muted"><strong>Vérifier</strong> — Suivez le statut PPF en temps réel</small>
-                </div>
+                {% if is_facture_type %}
+                    <div class="d-flex align-items-start mb-3" style="gap: 10px;">
+                        <span class="einv-badge einv-badge-info" style="min-width: 24px; justify-content: center;">2</span>
+                        <small class="text-muted"><strong>Transmettre</strong> — Envoie la piece au PDP Tiime</small>
+                    </div>
+                    <div class="d-flex align-items-start" style="gap: 10px;">
+                        <span class="einv-badge einv-badge-info" style="min-width: 24px; justify-content: center;">3</span>
+                        <small class="text-muted"><strong>Vérifier</strong> — Suivez le statut PPF en temps réel</small>
+                    </div>
+                {% endif %}
             </div>
         </div>
 
@@ -734,7 +762,7 @@ $(document).ready(function() {
             method: 'GET',
             dataType: 'json',
             success: function(data) {
-                var statusHtml = '<div class="einv-info-row"><span class="einv-info-label">ID Facture</span><span class="einv-info-value">' + data.invoice_id + '</span></div>';
+                var statusHtml = '<div class="einv-info-row"><span class="einv-info-label">ID Piece</span><span class="einv-info-value">' + data.invoice_id + '</span></div>';
                 if (data.tiime_status && typeof data.tiime_status === 'object') {
                     for (var key in data.tiime_status) {
                         statusHtml += '<div class="einv-info-row"><span class="einv-info-label">' + key + '</span><span class="einv-info-value">' + (data.tiime_status[key] || '—') + '</span></div>';
@@ -789,7 +817,7 @@ $(document).ready(function() {
                     html += '</ul>';
                     content.html(html);
                 } else {
-                    content.html('<div class="text-center py-4"><i class="fas fa-inbox fa-2x text-muted mb-2 d-block"></i><p class="text-muted small">Aucun événement enregistré pour cette facture.</p></div>');
+                    content.html('<div class="text-center py-4"><i class="fas fa-inbox fa-2x text-muted mb-2 d-block"></i><p class="text-muted small">Aucun événement enregistré pour cette piece.</p></div>');
                 }
             },
             error: function() {
@@ -803,3 +831,4 @@ $(document).ready(function() {
 });
 </script>
 {% endblock %}
+

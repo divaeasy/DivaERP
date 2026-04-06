@@ -104,8 +104,7 @@ class ProspectController extends AbstractController
            'success',
            $message
         );
-        return $this->redirectToRoute('prospect.edit', array('id' => $prospect->getId()));
-        //return $this->redirectToRoute('prospect.list');
+        return $this->redirectToRoute('prospect.list');
         
        }else{
             return $this->render('prospect/add-prospect.html.twig', [
