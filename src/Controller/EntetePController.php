@@ -52,6 +52,7 @@ class EntetePController extends AbstractController
             $invalidLineCount = (int) ($invalidLineCountByInvoice[$pieceId] ?? 0);
             $isPerimee = $this->isPerimeeStatus($piece->getStatut());
             $isInvoiceType = $this->isInvoiceType($piece->getType());
+            $isActive = $this->normalizeStatus($piece->getStatut()) === 'active';
             $isValidee = $this->isValideeStatus($piece->getStatut());
             $transitionTargets = $this->getTransitionTargetsForType($piece->getType());
             $transitionReason = null;
@@ -66,9 +67,11 @@ class EntetePController extends AbstractController
                 'isPerimee' => $isPerimee,
                 'isInvoiceType' => $isInvoiceType,
                 'showView' => $isPerimee,
-                'showEdit' => !$isPerimee && !$isInvoiceType,
+                // Facture can be edited while Active to allow completing lines/data.
+                'showEdit' => !$isPerimee && (!$isInvoiceType || $isActive),
                 'showTransition' => !$isPerimee && !$isInvoiceType && $isValidee,
-                'showEinvoicing' => $isInvoiceType && !$isPerimee,
+                // E-invoicing is available only once the piece reaches Validee.
+                'showEinvoicing' => !$isPerimee && $isValidee,
                 'transitionEnabled' => $transitionEnabled,
                 'transitionDisabledReason' => $transitionReason,
                 'transitionTargets' => $transitionTargets,
@@ -195,7 +198,7 @@ class EntetePController extends AbstractController
                     $this->addFlash('warning', 'Pensez a ajouter au moins une ligne avant de generer la facture.');
                 }
 
-                return $this->redirect($this->buildPieceLinesRedirectUrl((int) $entetepiece->getId()));
+                return $this->redirectToRoute('entetepiece.list');
             }
         }
 
@@ -567,13 +570,6 @@ class EntetePController extends AbstractController
             ];
         }
 
-        if ($from === $to) {
-            return [
-                'allowed' => true,
-                'reason' => null,
-            ];
-        }
-
         if (in_array($to, ['validee', 'valide'], true) && $lineCount <= 0) {
             return [
                 'allowed' => false,
@@ -588,10 +584,17 @@ class EntetePController extends AbstractController
             ];
         }
 
-        if ($to === 'active' && $from === 'brouillon' && $lineCount <= 0) {
+        if ($to === 'active' && in_array($from, ['brouillon', 'active'], true) && $lineCount <= 0) {
             return [
                 'allowed' => false,
                 'reason' => 'Ajoutez au moins une ligne avant de passer en Active.',
+            ];
+        }
+
+        if ($from === $to) {
+            return [
+                'allowed' => true,
+                'reason' => null,
             ];
         }
 

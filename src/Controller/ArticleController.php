@@ -299,8 +299,7 @@ class ArticleController extends AbstractController
            'success',
            $message
         );
-        return $this->redirectToRoute('article.edit', array('id' => $article->getId()));
-        //return $this->redirectToRoute('article.list');
+        return $this->redirectToRoute('article.list');
         
        }else{
             return $this->render('article/add-article.html.twig', [

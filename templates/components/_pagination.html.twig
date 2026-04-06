@@ -1,54 +1,66 @@
-{# Pagination component — include with: items, currentPage, totalPages, route, routeParams #}
+{# Pagination component — include with: currentPage, totalPages, route, routeParams, totalItems #}
 {% if totalPages is defined and totalPages > 1 %}
-<nav aria-label="Pagination" class="mt-3">
-    <div class="d-flex flex-column align-items-center justify-content-center">
-        <small class="text-muted mb-2 text-center">
-            Page {{ currentPage }} sur {{ totalPages }}
-            {% if totalItems is defined %} — {{ totalItems }} résultat{{ totalItems > 1 ? 's' : '' }}{% endif %}
-        </small>
-        <ul class="pagination pagination-sm mb-0">
-            {# Previous #}
-            <li class="page-item {% if currentPage <= 1 %}disabled{% endif %}">
-                <a class="page-link" href="{{ path(route, routeParams|default({})|merge({page: currentPage - 1})) }}">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-            </li>
+    {% set params = routeParams|default({}) %}
+    {% set startPage = max(1, currentPage - 2) %}
+    {% set endPage = min(totalPages, currentPage + 2) %}
 
-            {# Page numbers #}
-            {% set startPage = max(1, currentPage - 2) %}
-            {% set endPage = min(totalPages, currentPage + 2) %}
+    <nav aria-label="Pagination des resultats" class="app-pagination-wrapper mt-3">
+        <div class="app-pagination-meta">
+            <span>Page <strong>{{ currentPage }}</strong> sur <strong>{{ totalPages }}</strong></span>
+            {% if totalItems is defined %}
+                <span class="app-pagination-meta__separator"></span>
+                <span>{{ totalItems }} resultat{{ totalItems > 1 ? 's' : '' }}</span>
+            {% endif %}
+        </div>
+
+        <ul class="pagination app-pagination mb-0" role="list">
+            <li class="page-item {% if currentPage <= 1 %}disabled{% endif %}">
+                {% if currentPage <= 1 %}
+                    <span class="page-link" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
+                {% else %}
+                    <a class="page-link" href="{{ path(route, params|merge({page: currentPage - 1})) }}" aria-label="Page precedente">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                {% endif %}
+            </li>
 
             {% if startPage > 1 %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ path(route, routeParams|default({})|merge({page: 1})) }}">1</a>
+                    <a class="page-link" href="{{ path(route, params|merge({page: 1})) }}">1</a>
                 </li>
                 {% if startPage > 2 %}
-                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                    <li class="page-item disabled"><span class="page-link app-pagination-ellipsis">...</span></li>
                 {% endif %}
             {% endif %}
 
             {% for p in startPage..endPage %}
                 <li class="page-item {% if p == currentPage %}active{% endif %}">
-                    <a class="page-link" href="{{ path(route, routeParams|default({})|merge({page: p})) }}">{{ p }}</a>
+                    {% if p == currentPage %}
+                        <span class="page-link" aria-current="page">{{ p }}</span>
+                    {% else %}
+                        <a class="page-link" href="{{ path(route, params|merge({page: p})) }}">{{ p }}</a>
+                    {% endif %}
                 </li>
             {% endfor %}
 
             {% if endPage < totalPages %}
                 {% if endPage < totalPages - 1 %}
-                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                    <li class="page-item disabled"><span class="page-link app-pagination-ellipsis">...</span></li>
                 {% endif %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ path(route, routeParams|default({})|merge({page: totalPages})) }}">{{ totalPages }}</a>
+                    <a class="page-link" href="{{ path(route, params|merge({page: totalPages})) }}">{{ totalPages }}</a>
                 </li>
             {% endif %}
 
-            {# Next #}
             <li class="page-item {% if currentPage >= totalPages %}disabled{% endif %}">
-                <a class="page-link" href="{{ path(route, routeParams|default({})|merge({page: currentPage + 1})) }}">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
+                {% if currentPage >= totalPages %}
+                    <span class="page-link" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+                {% else %}
+                    <a class="page-link" href="{{ path(route, params|merge({page: currentPage + 1})) }}" aria-label="Page suivante">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% endif %}
             </li>
         </ul>
-    </div>
-</nav>
+    </nav>
 {% endif %}

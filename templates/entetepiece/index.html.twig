@@ -44,7 +44,7 @@
                 <th data-sort-key="statut">Statut</th>
                 <th data-sort-key="devise">Devise</th>
                 <th data-sort-key="annee" data-sort-type="number">Annee</th>
-                <th class="text-center" style="width: 220px;">Actions</th>
+                <th class="text-center" style="width: 280px;">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -58,7 +58,7 @@
             {% set statusKey = wf.statusKey|default('') %}
             {% set canView = wf.showView|default(false) %}
             {% set canEdit = wf.showEdit|default(false) %}
-            {% set canLaunchEinvoicing = wf.showEinvoicing|default(false) and line_count > 0 %}
+            {% set canOpenEinvoicing = wf.showEinvoicing|default(false) %}
 
             {% set transitionDisabledReason = wf.transitionDisabledReason|default('') %}
             {% if transitionDisabledReason == '' %}
@@ -76,9 +76,9 @@
             {% endif %}
 
             {% if isPerimee %}
-                {% set einvoiceDisabledReason = 'Cette facture est perimee et en lecture seule' %}
-            {% elseif not canLaunchEinvoicing %}
-                {% set einvoiceDisabledReason = 'Ajoutez au moins une ligne pour generer la facture' %}
+                {% set einvoiceDisabledReason = 'Cette piece est perimee et en lecture seule' %}
+            {% elseif statusKey not in ['validee', 'valide'] %}
+                {% set einvoiceDisabledReason = 'Validez la piece pour activer la e-facturation' %}
             {% else %}
                 {% set einvoiceDisabledReason = '' %}
             {% endif %}
@@ -127,60 +127,61 @@
                             {% else %}
                                 <button type="button"
                                         class="btn btn-action btn-edit is-disabled-ui js-disabled-action"
-                                        title="{{ isInvoiceType ? 'Edition directe indisponible pour les pieces Facture' : 'Action indisponible' }}">
+                                        title="{{ isInvoiceType ? 'Edition autorisee pour les pieces Facture en statut Active uniquement' : 'Action indisponible' }}">
                                     <i class="fas fa-edit"></i>
                                 </button>
                             {% endif %}
                         </span>
 
                         <span class="piece-action-slot">
-                            {% if isInvoiceType %}
-                                {% if wf.showEinvoicing|default(false) %}
-                                    <a href="{{ canLaunchEinvoicing ? path('invoice_einvoicing_test', {id: entetepiece.id}) : 'javascript:void(0)' }}"
-                                       class="btn btn-action btn-einvoicing {% if not entetepiece.isSubmittedToTiime and not entetepiece.isFactureX %}btn-einvoicing--no-facture{% endif %} {% if not canLaunchEinvoicing %}disabled no-loading js-disabled-action{% endif %}"
-                                       title="{% if not canLaunchEinvoicing %}Ajoutez au moins une ligne pour generer la facture{% elseif entetepiece.isSubmittedToTiime %}E-Facture transmise{% elseif entetepiece.isFactureX %}Facture-X generee{% else %}E-Facturation{% endif %}">
-                                        <i class="fas {% if not canLaunchEinvoicing %}fa-ban{% elseif entetepiece.isSubmittedToTiime %}fa-check-circle{% elseif entetepiece.isFactureX %}fa-file-pdf{% else %}fa-file-invoice{% endif %}"></i>
-                                    </a>
-                                {% else %}
-                                    <button type="button"
-                                            class="btn btn-action btn-einvoicing is-disabled-ui js-disabled-action"
-                                            title="{{ einvoiceDisabledReason }}">
-                                        <i class="fas fa-file-invoice"></i>
-                                    </button>
-                                {% endif %}
-                            {% else %}
-                                {% if wf.showTransition|default(false) and wf.transitionEnabled|default(false) %}
-                                    <div class="dropdown d-inline-block">
-                                        <button class="btn btn-action btn-convert dropdown-toggle no-loading"
-                                                type="button"
-                                                data-toggle="dropdown"
-                                                aria-haspopup="true"
-                                                aria-expanded="false"
-                                                title="Convertir cette piece">
-                                            <i class="fas fa-random"></i>
-                                        </button>
-                                        <div class="dropdown-menu dropdown-menu-right shadow-sm">
-                                            {% for targetType in wf.transitionTargets|default([]) %}
-                                                <form method="post"
-                                                      action="{{ path('entetepiece.transition', {id: entetepiece.id}) }}"
-                                                      class="js-piece-transition-form px-2 py-1"
-                                                      data-target-type="{{ targetType }}">
-                                                    <input type="hidden" name="targetType" value="{{ targetType }}">
-                                                    <input type="hidden" name="_token" value="{{ csrf_token('transition_piece_' ~ entetepiece.id) }}">
-                                                    <button type="submit" class="dropdown-item">
-                                                        Vers {{ targetType }}
-                                                    </button>
-                                                </form>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    <button type="button"
-                                            class="btn btn-action btn-convert is-disabled-ui js-disabled-action"
-                                            title="{{ transitionDisabledReason }}">
+                            {% if wf.showTransition|default(false) and wf.transitionEnabled|default(false) %}
+                                <div class="dropdown d-inline-block">
+                                    <button class="btn btn-action btn-convert dropdown-toggle no-loading"
+                                            type="button"
+                                            data-toggle="dropdown"
+                                            aria-haspopup="true"
+                                            aria-expanded="false"
+                                            title="Convertir cette piece">
                                         <i class="fas fa-random"></i>
                                     </button>
-                                {% endif %}
+                                    <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                        {% for targetType in wf.transitionTargets|default([]) %}
+                                            <form method="post"
+                                                  action="{{ path('entetepiece.transition', {id: entetepiece.id}) }}"
+                                                  class="js-piece-transition-form no-loading px-2 py-1"
+                                                  data-target-type="{{ targetType }}"
+                                                  data-piece-label="Piece #{{ entetepiece.pieceno|default(entetepiece.id) }}">
+                                                <input type="hidden" name="targetType" value="{{ targetType }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('transition_piece_' ~ entetepiece.id) }}">
+                                                <button type="submit" class="dropdown-item">
+                                                    Vers {{ targetType }}
+                                                </button>
+                                            </form>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <button type="button"
+                                        class="btn btn-action btn-convert is-disabled-ui js-disabled-action"
+                                        title="{{ transitionDisabledReason }}">
+                                    <i class="fas fa-random"></i>
+                                </button>
+                            {% endif %}
+                        </span>
+
+                        <span class="piece-action-slot">
+                            {% if canOpenEinvoicing %}
+                                <a href="{{ path('invoice_einvoicing_test', {id: entetepiece.id}) }}"
+                                   class="btn btn-action btn-einvoicing no-loading {% if not entetepiece.isSubmittedToTiime and not entetepiece.isFactureX %}btn-einvoicing--no-facture{% endif %}"
+                                   title="{% if entetepiece.isSubmittedToTiime %}E-Facture transmise{% elseif entetepiece.isFactureX %}Facture-X generee{% else %}Ouvrir la page e-facturation{% endif %}">
+                                    <i class="fas {% if entetepiece.isSubmittedToTiime %}fa-check-circle{% else %}fa-file-pdf{% endif %}"></i>
+                                </a>
+                            {% else %}
+                                <button type="button"
+                                        class="btn btn-action btn-einvoicing is-disabled-ui js-disabled-action"
+                                        title="{{ einvoiceDisabledReason }}">
+                                    <i class="fas fa-file-invoice"></i>
+                                </button>
                             {% endif %}
                         </span>
 
@@ -213,6 +214,106 @@
     </div>
     {% endif %}
 </div>
+
+<div class="modal fade" id="transitionConfirmModal" tabindex="-1" role="dialog" aria-labelledby="transitionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden; position: relative;">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                    style="position: absolute; right: 20px; top: 20px; background: none; border: none; font-size: 28px; color: #86efac; opacity: 0.7; z-index: 10; transition: all 0.2s ease;"
+                    onmouseover="this.style.opacity='1'; this.style.color='#15803d';"
+                    onmouseout="this.style.opacity='0.7'; this.style.color='#86efac';">
+                <span aria-hidden="true" style="font-weight: 300;">&times;</span>
+            </button>
+
+            <div style="padding: 48px 32px 32px; text-align: center;">
+                <div style="
+                    width: 80px;
+                    height: 80px;
+                    background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 28px;
+                    box-shadow: 0 8px 24px rgba(21, 128, 61, 0.25);
+                ">
+                    <i class="fas fa-random" style="font-size: 34px; color: white;"></i>
+                </div>
+
+                <h3 id="transitionModalLabel" style="margin: 0 0 12px; font-size: 24px; font-weight: 700; color: #0f172a;">
+                    Confirmation de conversion
+                </h3>
+
+                <p style="margin: 0 0 20px; font-size: 15px; color: #64748b; line-height: 1.6;">
+                    Voulez-vous convertir
+                    <strong id="transitionModalPieceName" style="color:#0f172a;">cette piece</strong>
+                    vers
+                    <strong id="transitionModalTargetType" style="color:#0f172a;">le type cible</strong> ?
+                </p>
+
+                <div style="
+                    background: rgba(21, 128, 61, 0.08);
+                    border-left: 3px solid #15803d;
+                    border-radius: 6px;
+                    padding: 14px 16px;
+                    margin-bottom: 28px;
+                    text-align: left;
+                ">
+                    <p style="margin: 0; font-size: 13px; color: #14532d; line-height: 1.5;">
+                        <i class="fas fa-exclamation-triangle mr-2" style="color: #15803d;"></i>
+                        La piece source sera automatiquement archivee (statut Perimee) apres conversion.
+                    </p>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button type="button" class="btn" data-dismiss="modal"
+                            style="
+                                background-color: #e9ecef;
+                                border: none;
+                                color: #5a5c69;
+                                font-weight: 600;
+                                padding: 12px 28px;
+                                border-radius: 8px;
+                                font-size: 14px;
+                                transition: all 0.3s ease;
+                                cursor: pointer;
+                                flex: 1;
+                                max-width: 140px;
+                            "
+                            onmouseover="this.style.backgroundColor='#dfe3e9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';"
+                            onmouseout="this.style.backgroundColor='#e9ecef'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <i class="fas fa-times mr-2"></i>Annuler
+                    </button>
+
+                    <a id="confirmTransitionBtn" href="#"
+                       class="btn"
+                       style="
+                            background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+                            color: white;
+                            border: none;
+                            font-weight: 600;
+                            padding: 12px 28px;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            transition: all 0.3s ease;
+                            text-decoration: none;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                            justify-content: center;
+                            flex: 1;
+                            max-width: 160px;
+                            box-shadow: 0 4px 16px rgba(21, 128, 61, 0.25);
+                        "
+                       onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 24px rgba(21, 128, 61, 0.35)';"
+                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(21, 128, 61, 0.25)';">
+                        <i class="fas fa-random"></i>Convertir
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block javascripts %}
@@ -223,12 +324,45 @@
                 return;
             }
 
+            var pendingTransitionForm = null;
+            var $transitionModal = $('#transitionConfirmModal');
+            var $pieceName = $('#transitionModalPieceName');
+            var $targetType = $('#transitionModalTargetType');
+
             $('.js-piece-transition-form').off('submit.pieceTransition').on('submit.pieceTransition', function(e) {
+                e.preventDefault();
+                pendingTransitionForm = this;
+                if (window.hideLoading) {
+                    window.hideLoading();
+                }
+
                 var targetType = String($(this).data('target-type') || '').trim();
-                var confirmationMessage = 'Confirmer la conversion vers ' + targetType + ' ? ' +
-                    'La piece source passera automatiquement en statut Perimee.';
-                if (!window.confirm(confirmationMessage)) {
-                    e.preventDefault();
+                var pieceLabel = String($(this).data('piece-label') || 'cette piece').trim();
+                $targetType.text(targetType !== '' ? targetType : 'le type cible');
+                $pieceName.text(pieceLabel);
+                $transitionModal.modal('show');
+            });
+
+            $('#confirmTransitionBtn').off('click.pieceTransition').on('click.pieceTransition', function(e) {
+                e.preventDefault();
+                if (!pendingTransitionForm) {
+                    return;
+                }
+
+                var formToSubmit = pendingTransitionForm;
+                pendingTransitionForm = null;
+                $transitionModal.modal('hide');
+
+                if (window.showLoading) {
+                    window.showLoading();
+                }
+                formToSubmit.submit();
+            });
+
+            $transitionModal.off('hidden.bs.modal.pieceTransition').on('hidden.bs.modal.pieceTransition', function() {
+                pendingTransitionForm = null;
+                if (window.hideLoading) {
+                    window.hideLoading();
                 }
             });
 
@@ -265,7 +399,7 @@
         display: inline-flex;
     }
     .btn-action.is-disabled-ui {
-        opacity: 0.42;
+        opacity: 0.30;
         color: rgba(107, 114, 128, 0.78) !important;
         background: transparent !important;
         border: none !important;
@@ -277,10 +411,6 @@
         color: rgba(107, 114, 128, 0.78) !important;
         background: transparent !important;
         transform: none !important;
-    }
-    .piece-actions .btn-einvoicing.btn-einvoicing--no-facture.disabled {
-        pointer-events: auto;
-        cursor: not-allowed;
     }
     .piece-actions .btn-einvoicing.btn-einvoicing--no-facture:hover {
         background: rgba(8, 145, 178, 0.12) !important;

@@ -23,6 +23,8 @@ class FactureXGenerator
     public function generateFactureX(Entetepiece $invoice, string $model = self::DEFAULT_MODEL): string
     {
         $resolvedModel = $this->normalizeModel($model);
+        $pieceTypeLabel = $this->getPieceTypeLabel($invoice->getType());
+        $pieceTypeKeyword = $this->normalizeToken($pieceTypeLabel);
 
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
@@ -34,11 +36,11 @@ class FactureXGenerator
             'PDFVersion' => '1.7',
         ]);
 
-        $mpdf->SetTitle('Facture ' . ($invoice->getPieceref() ?? (string) $invoice->getId()));
+        $mpdf->SetTitle($pieceTypeLabel . ' ' . ($invoice->getPieceref() ?? (string) $invoice->getId()));
         $mpdf->SetAuthor($invoice->getDossier()?->getNom() ?? 'DivaERP');
         $mpdf->SetCreator('DivaERP - Factur-X Generator');
-        $mpdf->SetSubject('Factur-X Invoice - EN16931');
-        $mpdf->SetKeywords('invoice,facture,factur-x,en16931,pdf');
+        $mpdf->SetSubject('Factur-X ' . $pieceTypeLabel . ' - EN16931');
+        $mpdf->SetKeywords('einvoicing,' . $pieceTypeKeyword . ',facture,factur-x,en16931,pdf');
 
         // Generate and set fixed footer using mPDF's native footer functionality
         $footerHtml = $this->generateFooterHtml($invoice, $resolvedModel);
@@ -157,6 +159,8 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
 
         $dossier = $invoice->getDossier();
         $client = $invoice->getClient();
+        $pieceTypeLabel = $this->getPieceTypeLabel($invoice->getType());
+        $pieceNumberLabel = $this->getPieceNumberLabel($pieceTypeLabel);
 
         $invoiceRef = (string) ($invoice->getPieceref() ?? ('INV-' . $invoice->getId()));
         $invoiceDate = $invoice->getDatep()?->format('d/m/Y') ?? date('d/m/Y');
@@ -235,7 +239,7 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
             $lineIndex++;
         }
 
-        $subjectText = 'Facture ' . $invoiceRef;
+        $subjectText = $pieceTypeLabel . ' ' . $invoiceRef;
         if (isset($lineItems[0]['designation']) && trim((string) $lineItems[0]['designation']) !== '') {
             $subjectText = (string) $lineItems[0]['designation'];
         }
@@ -292,6 +296,9 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         }
 
         return [
+            'piece_type_label' => $pieceTypeLabel,
+            'piece_type_label_upper' => mb_strtoupper($pieceTypeLabel, 'UTF-8'),
+            'piece_number_label' => $pieceNumberLabel,
             'invoice_ref' => $invoiceRef,
             'invoice_number' => (string) ($invoice->getPieceno() ?? ''),
             'invoice_date' => $invoiceDate,
@@ -641,13 +648,13 @@ font-size:10px;
 </tr>
 </table>
 
-<div class="title">Facture</div>
+<div class="title">'.$this->e($data['piece_type_label_upper']).'</div>
 
 <table class="meta-table">
 
 <tr>
 <th>Date</th>
-<th>N de facture</th>
+<th>'.$this->e($data['piece_number_label']).'</th>
 <th>Client</th>
 <th>Référence</th>
 </tr>
@@ -804,11 +811,11 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
     . $sellerLinesHtml . '<br>'
     . $this->e($sellerCityLine) . '<br><br>'
     . '<table class="invoice-meta">'
-    . '<tr><td class="meta-label">N de facture</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($invoiceNumberDisplay) . '</td></tr>'
+    . '<tr><td class="meta-label">' . $this->e($data['piece_number_label']) . '</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($invoiceNumberDisplay) . '</td></tr>'
     . '<tr><td class="meta-label">Date</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($data['invoice_date']) . '</td></tr>'
     . '<tr><td class="meta-label">N client</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($data['buyer_code']) . '</td></tr>'
     . '</table></td>
-<td width="56%" class="right-wrap" style="vertical-align: top;"><div class="banner">FACTURE</div><div class="right"><strong>' . $this->e($data['buyer_name']) . '</strong><br>'
+<td width="56%" class="right-wrap" style="vertical-align: top;"><div class="banner">' . $this->e($data['piece_type_label_upper']) . '</div><div class="right"><strong>' . $this->e($data['buyer_name']) . '</strong><br>'
     . $buyerLinesHtml . '<br>'
     . $this->e($buyerCityLine) . '<br>'
     . $this->e($data['buyer_country']) . '</div></td>
@@ -836,6 +843,46 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
 
 </div>
 </div></body></html>';
+    }
+
+    private function getPieceTypeLabel(?string $pieceType): string
+    {
+        return match ($this->normalizeToken($pieceType)) {
+            'devis' => 'Devis',
+            'commande' => 'Commande',
+            'bl' => 'BL',
+            'facture' => 'Facture',
+            default => trim((string) $pieceType) !== '' ? (string) $pieceType : 'Piece',
+        };
+    }
+
+    private function getPieceNumberLabel(string $pieceTypeLabel): string
+    {
+        return match ($this->normalizeToken($pieceTypeLabel)) {
+            'devis' => 'N de devis',
+            'commande' => 'N de commande',
+            'bl' => 'N de BL',
+            'facture' => 'N de facture',
+            default => 'N de piece',
+        };
+    }
+
+    private function normalizeToken(?string $value): string
+    {
+        $normalized = mb_strtolower(trim((string) $value), 'UTF-8');
+        $normalized = strtr($normalized, [
+            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ä' => 'a', 'ã' => 'a', 'å' => 'a',
+            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o',
+            'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ý' => 'y', 'ÿ' => 'y',
+            'ç' => 'c',
+            'œ' => 'oe',
+            'æ' => 'ae',
+        ]);
+
+        return (string) preg_replace('/[^a-z0-9]/', '', $normalized);
     }
 
     /**
