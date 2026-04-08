@@ -5,115 +5,310 @@
 {% endblock %}
 
 {% block body %}
-<div class="page-header article-page-header">
+<div class="page-header">
     <div class="d-flex align-items-center">
         <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
             <i class="fas fa-arrow-left"></i>
         </a>
         <h1 class="h3 mb-0 text-gray-800">Gestion des Articles</h1>
     </div>
-    <div class="article-header-actions">
-        <a class="btn btn-sm btn-outline-success no-loading" href="{{ path('export.articles') }}" title="Exporter Excel">
+</div>
+
+<div class="action-bar">
+    <div class="action-buttons">
+        <button type="button" class="btn-add no-loading" data-toggle="modal" data-target="#articleQuickCreateModal">
+            <i class="fas fa-plus"></i> Nouvelle Article
+        </button>
+        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.articles') }}" title="Exporter Excel">
             <i class="fas fa-file-excel mr-1"></i> Exporter
         </a>
-        <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#articleImportModal">
+        <button type="button" class="btn btn-sm btn-outline-primary ml-2 no-loading" data-toggle="modal" data-target="#articleImportModal">
             <i class="fas fa-file-import mr-1"></i> Importer
         </button>
+    </div>
+    <div class="table-bulk-actions" id="articlesBulkActions" data-bulk-bar-for="articles">
+        <div class="table-bulk-actions__content">
+            <div class="table-bulk-actions__left">
+                <span class="table-bulk-actions__badge">
+                    <i class="fas fa-check-circle"></i>
+                    <strong data-selection-count>0</strong>
+                </span>
+                <span class="table-bulk-actions__label" data-selection-label>
+                    Aucun article sélectionné
+                </span>
+            </div>
+            <div class="table-bulk-actions__buttons">
+                <button type="button" class="btn btn-sm table-bulk-actions__delete-btn no-loading" data-bulk-action="delete">
+                    <i class="fas fa-trash-alt mr-1"></i> Supprimer
+                </button>
+                <button type="button" class="btn btn-sm table-bulk-actions__clear-btn no-loading" data-bulk-clear>
+                    Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="search-box">
+        {% include "components/search_data.html.twig" with {search: search} only %}
     </div>
 </div>
 
 <style>
-    .article-page-header {
+    .article-quick-modal .modal-dialog {
+        max-width: 560px;
+    }
+
+    .article-quick-modal .modal-content {
+        border-radius: 14px;
+        overflow: hidden;
+        position: relative;
+        background: #fff;
+        border: none;
+        box-shadow: 0 24px 50px rgba(15, 23, 42, 0.18);
+    }
+
+    .article-quick-modal-close {
+        position: absolute;
+        right: 18px;
+        top: 16px;
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #94a3b8;
+        opacity: 0.78;
+        z-index: 3;
+        transition: color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+        width: 28px;
+        height: 28px;
+        line-height: 1;
+        padding: 0;
+    }
+
+    .article-quick-modal-close:hover {
+        opacity: 1;
+        color: #334155;
+        transform: scale(1.06);
+    }
+
+    .article-quick-modal-body {
+        padding: 42px 30px 26px;
+    }
+
+    .article-quick-modal-badge {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 22px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        flex-wrap: wrap;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        box-shadow: 0 10px 28px rgba(30, 64, 175, 0.27);
     }
 
-    .article-header-actions {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.75rem;
-        flex-wrap: wrap;
+    .article-quick-modal-badge i {
+        color: #fff;
+        font-size: 28px;
     }
 
-    .article-workspace {
-        display: grid;
-        grid-template-columns: minmax(0, 3.3fr) minmax(340px, 1.45fr);
-        gap: 1rem;
-        margin-bottom: 1.25rem;
-        align-items: start;
+    .article-quick-modal-title {
+        margin: 0 0 8px;
+        text-align: center;
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #0f172a;
     }
 
-    .article-panel {
-        background: transparent;
+    .article-quick-modal-subtitle {
+        margin: 0 0 18px;
+        text-align: center;
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.55;
+    }
+
+    .article-quick-modal-note {
+        background: rgba(15, 23, 42, 0.035);
+        border-left: 3px solid var(--theme-primary);
+        border-radius: 7px;
+        padding: 11px 13px;
+        margin: 0 0 18px;
+        color: #475569;
+        font-size: 0.84rem;
+        line-height: 1.45;
+    }
+
+    .article-quick-modal .form-group label {
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .article-quick-input {
+        border-radius: 9px;
+        border: 1px solid #cbd5e1;
+        min-height: 42px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .article-quick-input:focus {
+        border-color: var(--theme-primary);
+        box-shadow: 0 0 0 0.18rem rgba(37, 99, 235, 0.16);
+    }
+
+    .article-quick-modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 22px;
+    }
+
+    .article-quick-cancel,
+    .article-quick-submit {
+        min-width: 148px;
         border: none;
+        border-radius: 9px;
+        font-weight: 600;
+        font-size: 0.93rem;
+        padding: 11px 18px;
+        transition: transform 0.2s ease, box-shadow 0.25s ease, opacity 0.2s ease;
+    }
+
+    .article-quick-cancel {
+        background: #e9eef4;
+        color: #334155;
+    }
+
+    .article-quick-cancel:hover {
+        background: #dbe4ef;
+        color: #1f2937;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.09);
+    }
+
+    .article-quick-submit {
+        color: #fff;
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        box-shadow: 0 10px 24px rgba(30, 64, 175, 0.27);
+    }
+
+    .article-quick-submit:hover {
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px rgba(30, 64, 175, 0.36);
+    }
+
+    .article-quick-submit:disabled {
+        opacity: 0.66;
+        transform: none;
         box-shadow: none;
+    }
+
+    .unsaved-changes-modal .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+    }
+
+    .unsaved-changes-modal .modal-header {
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1rem 1.25rem 0.85rem;
+    }
+
+    .unsaved-changes-modal .modal-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .unsaved-changes-modal .modal-body {
+        color: #475569;
+        font-size: 0.95rem;
+        line-height: 1.55;
+        padding: 1rem 1.25rem 0.6rem;
+    }
+
+    .unsaved-changes-modal .modal-footer {
+        border-top: none;
+        padding: 0.7rem 1.25rem 1.15rem;
+        gap: 0.5rem;
+    }
+
+    .article-row.is-new-unsaved {
+        background: rgba(16, 185, 129, 0.1);
+        box-shadow: inset 3px 0 0 rgba(16, 185, 129, 0.72);
+        transition: background-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .article-row.is-just-created {
+        animation: articleNewRowSoftReveal 0.95s ease-out 1;
+    }
+
+    @keyframes articleNewRowSoftReveal {
+        0% {
+            background-color: rgba(16, 185, 129, 0.22);
+            box-shadow: inset 5px 0 0 rgba(5, 150, 105, 0.95);
+        }
+        100% {
+            background-color: rgba(16, 185, 129, 0.1);
+            box-shadow: inset 3px 0 0 rgba(16, 185, 129, 0.72);
+        }
+    }
+
+    .article-row.is-saved {
+        background: rgba(59, 130, 246, 0.1);
+        transition: background-color 0.25s ease;
+    }
+
+    .table-container {
         overflow: visible;
     }
 
-    .article-panel-body {
-        padding: 0;
+    .articles-table {
+        position: relative;
+        z-index: 1;
+        border-collapse: separate;
+        border-spacing: 0;
     }
 
-    .article-create-form {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.9rem;
-        flex-wrap: nowrap;
+    .articles-table thead th:first-child {
+        border-top-left-radius: 8px;
     }
 
-    .article-create-form > .row {
-        flex: 1 1 auto;
-        display: grid;
-        grid-template-columns: minmax(220px, 1fr) minmax(165px, 0.48fr) minmax(165px, 0.48fr);
-        gap: 0.9rem;
-        margin: 0;
-        min-width: 0;
+    .articles-table thead th:last-child {
+        border-top-right-radius: 8px;
     }
 
-    .article-create-form > .row > [class*="col-"] {
-        max-width: none;
-        padding: 0;
-        width: auto;
-        flex: initial;
+    .articles-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 8px;
     }
 
-    .article-create-form .form-group {
-        margin-bottom: 0;
+    .articles-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 8px;
     }
 
-    .article-create-actions {
-        display: flex;
-        justify-content: flex-end;
-        align-items: flex-start;
-        gap: 0.75rem;
-        flex: 0 0 auto;
-        padding-top: 1.9rem;
+    .articles-table .article-row.is-editing {
+        position: relative;
+        z-index: 1400;
+        background: rgba(37, 99, 235, 0.06);
+        box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
+        cursor: default;
     }
 
-    .article-filter-card .search-form-row {
-        flex-direction: row;
-        align-items: center;
-        gap: 0.75rem;
-        flex-wrap: nowrap;
+    .articles-table .article-row.is-editing.is-new-unsaved {
+        background: rgba(16, 185, 129, 0.12);
+        box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.26), inset 3px 0 0 rgba(16, 185, 129, 0.72);
     }
 
-    .article-filter-card .article-panel-body {
-        padding-top: 1.9rem;
+    .articles-table .article-row.is-edit-focus {
+        animation: articleEditFocusPulse 0.8s ease-out 1;
     }
 
-    .article-filter-card .search-input-group {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-
-    .article-filter-card .btn-search {
-        justify-content: center;
-        width: auto;
-        flex: 0 0 auto;
-        min-width: 150px;
+    @keyframes articleEditFocusPulse {
+        0% {
+            box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.35), 0 0 0 4px rgba(37, 99, 235, 0.18);
+        }
+        100% {
+            box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22), 0 0 0 0 rgba(37, 99, 235, 0);
+        }
     }
 
     .articles-table .row-selector-cell,
@@ -124,6 +319,111 @@
 
     .articles-table .article-row.is-selected {
         background: rgba(37, 99, 235, 0.08);
+    }
+
+    .action-bar {
+        position: relative;
+    }
+
+    .table-bulk-actions {
+        position: absolute;
+        left: 45.5%;
+        top: 50%;
+        transform: translate(-50%, calc(-50% + 14px));
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.22s ease, opacity 0.22s ease;
+        z-index: 8;
+        width: min(52vw, 560px);
+        min-width: 360px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.36);
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        color: #0f172a;
+    }
+
+    .table-bulk-actions.is-visible {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .table-bulk-actions__content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .table-bulk-actions__left {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .table-bulk-actions__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(37, 99, 235, 0.12);
+        color: #1e40af;
+        border-radius: 999px;
+        padding: 0.34rem 0.62rem;
+        font-size: 0.88rem;
+        white-space: nowrap;
+    }
+
+    .table-bulk-actions__label {
+        font-size: 0.88rem;
+        color: #475569;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .table-bulk-actions__buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+
+    .table-bulk-actions__delete-btn,
+    .table-bulk-actions__clear-btn {
+        border-radius: 8px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .table-bulk-actions__delete-btn {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: #fff;
+        border: none;
+        box-shadow: 0 10px 20px rgba(185, 28, 28, 0.24);
+    }
+
+    .table-bulk-actions__delete-btn:hover {
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 12px 22px rgba(185, 28, 28, 0.28);
+    }
+
+    .table-bulk-actions__clear-btn {
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #dbe3ec;
+    }
+
+    .table-bulk-actions__clear-btn:hover {
+        background: #e6edf6;
+        color: #1f2937;
+    }
+
+    #confirmDeleteBtn.bulk-delete-loading {
+        opacity: 0.7;
+        pointer-events: none;
     }
 
     .articles-table .article-row.is-saving {
@@ -161,6 +461,11 @@
         justify-content: space-between;
         gap: 0.4rem;
         min-height: 1.5rem;
+        z-index: 1;
+    }
+
+    .inline-dropdown-shell.is-open {
+        z-index: 2400;
     }
 
     .inline-dropdown-label {
@@ -205,7 +510,7 @@
         border: 1px solid rgba(203, 213, 225, 0.95);
         box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
         display: none;
-        z-index: 40;
+        z-index: 2500;
     }
 
     .inline-dropdown-shell.is-open .inline-dropdown-menu {
@@ -240,49 +545,32 @@
         gap: 0.35rem;
     }
 
-    @media (max-width: 991px) {
-        .article-workspace {
-            grid-template-columns: 1fr;
-        }
-
-        .article-create-form {
-            flex-wrap: wrap;
-        }
-
-        .article-create-form > .row {
-            grid-template-columns: 1fr;
-        }
-
-        .article-create-actions {
+    @media (max-width: 1200px) {
+        .table-bulk-actions {
+            position: static;
+            order: 3;
             width: 100%;
-            padding-top: 0;
-            justify-content: flex-end;
+            min-width: 0;
+            margin-top: 4px;
+            transform: translateY(14px);
         }
 
-        .article-filter-card .search-form-row {
-            flex-wrap: wrap;
-        }
-
-        .article-filter-card .article-panel-body {
-            padding-top: 0;
+        .table-bulk-actions.is-visible {
+            transform: translateY(0);
         }
     }
 
     @media (max-width: 768px) {
-        .article-page-header {
-            align-items: flex-start;
+        .article-quick-modal-body {
+            padding: 36px 18px 20px;
         }
 
-        .article-header-actions {
-            width: 100%;
+        .article-quick-modal-actions {
+            flex-direction: column-reverse;
         }
 
-        .article-header-actions .btn {
-            flex: 1 1 auto;
-            justify-content: center;
-        }
-
-        .article-filter-card .btn-search {
+        .article-quick-cancel,
+        .article-quick-submit {
             width: 100%;
         }
 
@@ -290,6 +578,34 @@
             left: 0;
             right: auto;
             min-width: 180px;
+        }
+
+        .table-bulk-actions {
+            position: static;
+            order: 3;
+            padding: 10px 11px;
+            width: 100%;
+            min-width: 0;
+            transform: translateY(14px);
+        }
+
+        .table-bulk-actions.is-visible {
+            transform: translateY(0);
+        }
+
+        .table-bulk-actions__content {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .table-bulk-actions__buttons {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .table-bulk-actions__label {
+            white-space: normal;
         }
     }
 </style>
@@ -314,7 +630,7 @@
                         Utilisez le fichier exporte, modifiez la feuille <strong>Export</strong> puis importez-le ici (format recommande: <strong>.xls</strong>).
                     </small>
                     <small class="text-muted d-block">
-                        Sans ID = creation. Avec ID existant = mise a jour. La colonne ID est protegee.
+                        Sans ID = création. Avec ID existant = mise à jour. La colonne ID est protégée.
                     </small>
                 </div>
                 <div class="modal-footer">
@@ -326,36 +642,80 @@
     </div>
 </div>
 
-<div class="article-workspace">
-    <div class="article-panel">
-        <div class="article-panel-body">
-            {{ form_start(createForm, {'attr': {'class': 'article-create-form needs-validation', 'novalidate': 'novalidate'}}) }}
-                {% include 'article/_form_fields.html.twig' with {form: createForm} only %}
-                <div class="article-create-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-2"></i>Enregistrer
+<div class="modal fade article-quick-modal" id="articleQuickCreateModal" tabindex="-1" role="dialog" aria-labelledby="articleQuickCreateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <button type="button" class="close article-quick-modal-close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <form id="articleQuickCreateForm" class="no-loading" data-no-loading novalidate>
+                <input type="hidden" name="_token" value="{{ csrf_token('article_create_minimal') }}">
+                <div class="article-quick-modal-body">
+                    <div class="article-quick-modal-badge">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <h3 class="article-quick-modal-title" id="articleQuickCreateModalLabel">Creation rapide d'article</h3>
+                    <p class="article-quick-modal-subtitle">Renseignez uniquement les champs obligatoires, puis finalisez le reste en edition inline dans le tableau.</p>
+                    <div class="article-quick-modal-note">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Désignation + Unité suffisent pour créer l'article.
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quickCreateLibelle">Designation <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control article-quick-input" id="quickCreateLibelle" name="libelle" maxlength="255" required>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label for="quickCreateUniteId">Unite <span class="text-danger">*</span></label>
+                        <select class="form-control article-quick-input" id="quickCreateUniteId" name="uniteId" required>
+                            <option value="">Selectionner une unite</option>
+                            {% for unite in inlineUnites %}
+                                <option value="{{ unite.id }}">{{ unite.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="article-quick-modal-actions">
+                    <button type="button" class="btn article-quick-cancel" data-dismiss="modal">Annuler</button>
+                    <button type="submit" id="articleQuickCreateSubmit" class="btn article-quick-submit">
+                        <i class="fas fa-check mr-1"></i>Creer
                     </button>
+                    </div>
                 </div>
-                {{ form_rest(createForm) }}
-            {{ form_end(createForm, {'render_rest': false}) }}
+            </form>
         </div>
     </div>
+</div>
 
-    <div class="article-panel article-filter-card">
-        <div class="article-panel-body">
-            {% include "components/search_data.html.twig" with {search: search} only %}
+<div class="modal fade unsaved-changes-modal" id="articleUnsavedChangesModal" tabindex="-1" role="dialog" aria-labelledby="articleUnsavedChangesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="articleUnsavedChangesModalLabel">Confirmer l'action</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="articleUnsavedChangesMessage" class="mb-0">Des modifications non enregistrées seront perdues. Continuer ?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="articleUnsavedChangesConfirmBtn">
+                    Continuer
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 <div class="table-container">
-    {% if articles|length > 0 %}
-    <table class="table articles-table" id="articlesTable">
+    <table class="table articles-table" id="articlesTable" data-table-id="articles" {% if articles|length == 0 %}style="display:none;"{% endif %}>
         <thead>
             <tr>
                 <th class="row-selector-head">
                     <div class="form-check d-flex justify-content-center mb-0">
-                        <input class="form-check-input position-static" type="checkbox" id="selectAllArticlesRows" aria-label="Selectionner toutes les lignes">
+                        <input class="form-check-input position-static" type="checkbox" id="selectAllArticlesRows" data-select-all-checkbox aria-label="Selectionner toutes les lignes">
                     </div>
                 </th>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
@@ -365,10 +725,11 @@
                 <th class="text-center" style="width: 130px;">Actions</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="articlesTableBody">
             {% for article in articles %}
             <tr class="article-row"
                 data-article-id="{{ article.id }}"
+                data-item-id="{{ article.id }}"
                 data-inline-update-url="{{ path('article.inline_update', {id: article.id}) }}"
                 data-libelle="{{ article.libelle|default('') }}"
                 data-unite-id="{{ article.unite ? article.unite.id : '' }}"
@@ -378,7 +739,7 @@
                 tabindex="0">
                 <td class="row-selector-cell">
                     <div class="form-check d-flex justify-content-center mb-0">
-                        <input class="form-check-input position-static article-row-checkbox" type="checkbox" value="{{ article.id }}" aria-label="Selectionner l'article {{ article.libelle|default('') }}">
+                        <input class="form-check-input position-static article-row-checkbox" type="checkbox" value="{{ article.id }}" data-row-checkbox aria-label="Selectionner l'article {{ article.libelle|default('') }}">
                     </div>
                 </td>
                 <td><strong>#{{ article.id }}</strong></td>
@@ -393,39 +754,277 @@
                             data-delete-url="{{ path('article.delete', {id: article.id}) }}"
                             data-item-name="{{ article.libelle }}"
                             title="Supprimer">
-                        <i class="fas fa-trash"></i>
+                        <i class="fas fa-trash-alt"></i>
                     </button>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'article.list', routeParams: {}} %}
-    {% else %}
-    <div class="empty-state">
+    {% if articles|length > 0 %}
+        {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'article.list', routeParams: {}} %}
+    {% endif %}
+    <div class="empty-state" id="articlesEmptyState" {% if articles|length > 0 %}style="display:none;"{% endif %}>
         <div class="empty-state-icon">
             <i class="fas fa-boxes"></i>
         </div>
         <h5>Aucun article trouve</h5>
         <p>Commencez par ajouter votre premier article au catalogue.</p>
     </div>
-    {% endif %}
 </div>
 {% endblock %}
 
 {% block javascripts %}
 <script>
+    function UniversalTableSelectionManager($table, options) {
+        this.$table = $table;
+        this.options = $.extend({
+            rowSelector: 'tbody tr[data-item-id]',
+            rowCheckboxSelector: '[data-row-checkbox]',
+            selectAllSelector: '[data-select-all-checkbox]',
+            bulkBarSelector: '',
+            enableRowClickSelection: true,
+            rowClickExclusionSelector: 'a, button, input, select, textarea, label, [contenteditable="true"], [data-ignore-row-selection], .inline-dropdown-menu, .inline-dropdown-trigger, .inline-dropdown-option',
+            onSelectionChange: null,
+            onBulkAction: null
+        }, options || {});
+
+        this.tableId = String(this.$table.attr('data-table-id') || '').trim();
+        this.selectedIds = [];
+        this.$headerCheckbox = this.$table.find(this.options.selectAllSelector).first();
+        this.$bulkBar = this.options.$bulkBar && this.options.$bulkBar.length
+            ? this.options.$bulkBar
+            : this.resolveBulkBar();
+        this.eventNamespace = '.tableSelection.' + (this.tableId || 'default');
+
+        this.bindEvents();
+        this.syncFromDom();
+    }
+
+    UniversalTableSelectionManager.prototype.resolveBulkBar = function() {
+        if (this.options.bulkBarSelector) {
+            return $(this.options.bulkBarSelector).first();
+        }
+        if (this.tableId === '') {
+            return $();
+        }
+        return $('[data-bulk-bar-for="' + this.tableId + '"]').first();
+    };
+
+    UniversalTableSelectionManager.prototype.getRows = function() {
+        return this.$table.find(this.options.rowSelector);
+    };
+
+    UniversalTableSelectionManager.prototype.getRowCheckbox = function($row) {
+        var $checkbox = $row.find(this.options.rowCheckboxSelector).first();
+        if ($checkbox.length) {
+            return $checkbox;
+        }
+        return $row.find('input[type="checkbox"]').first();
+    };
+
+    UniversalTableSelectionManager.prototype.normalizeId = function(value) {
+        return String(value || '').trim();
+    };
+
+    UniversalTableSelectionManager.prototype.getRowId = function($row) {
+        var rowId = this.normalizeId($row.attr('data-item-id'));
+        if (rowId !== '') {
+            return rowId;
+        }
+        return this.normalizeId(this.getRowCheckbox($row).val());
+    };
+
+    UniversalTableSelectionManager.prototype.hasSelectedId = function(id) {
+        return this.selectedIds.indexOf(id) !== -1;
+    };
+
+    UniversalTableSelectionManager.prototype.addSelectedId = function(id) {
+        if (id !== '' && !this.hasSelectedId(id)) {
+            this.selectedIds.push(id);
+        }
+    };
+
+    UniversalTableSelectionManager.prototype.removeSelectedId = function(id) {
+        this.selectedIds = this.selectedIds.filter(function(existingId) {
+            return existingId !== id;
+        });
+    };
+
+    UniversalTableSelectionManager.prototype.setRowSelection = function($row, isSelected, options) {
+        var config = options || {};
+        var selected = !!isSelected;
+        var rowId = this.getRowId($row);
+        var $checkbox = this.getRowCheckbox($row);
+
+        $checkbox.prop('checked', selected);
+        $row.toggleClass('is-selected', selected);
+
+        if (rowId !== '') {
+            if (selected) {
+                this.addSelectedId(rowId);
+            } else {
+                this.removeSelectedId(rowId);
+            }
+        }
+
+        if (!config.skipUiUpdate) {
+            this.updateUi();
+        }
+    };
+
+    UniversalTableSelectionManager.prototype.toggleRowSelection = function($row) {
+        var $checkbox = this.getRowCheckbox($row);
+        this.setRowSelection($row, !$checkbox.is(':checked'));
+    };
+
+    UniversalTableSelectionManager.prototype.syncFromDom = function() {
+        var nextSelectedIds = [];
+        var self = this;
+
+        this.getRows().each(function() {
+            var $row = $(this);
+            var rowId = self.getRowId($row);
+            var isChecked = self.getRowCheckbox($row).is(':checked');
+
+            $row.toggleClass('is-selected', isChecked);
+            if (isChecked && rowId !== '' && nextSelectedIds.indexOf(rowId) === -1) {
+                nextSelectedIds.push(rowId);
+            }
+        });
+
+        this.selectedIds = nextSelectedIds;
+        this.updateUi();
+    };
+
+    UniversalTableSelectionManager.prototype.updateUi = function() {
+        var totalRows = this.getRows().length;
+        var selectedCount = this.selectedIds.length;
+        var allSelected = totalRows > 0 && selectedCount === totalRows;
+
+        if (this.$headerCheckbox.length) {
+            this.$headerCheckbox.prop('checked', allSelected);
+            this.$headerCheckbox.prop('indeterminate', selectedCount > 0 && !allSelected);
+        }
+
+        if (this.$bulkBar.length) {
+            this.$bulkBar.toggleClass('is-visible', selectedCount > 0);
+            this.$bulkBar.find('[data-selection-count]').text(selectedCount);
+        }
+
+        if (typeof this.options.onSelectionChange === 'function') {
+            this.options.onSelectionChange({
+                selectedCount: selectedCount,
+                totalRows: totalRows,
+                allSelected: allSelected,
+                selectedIds: this.getSelectedIds()
+            });
+        }
+    };
+
+    UniversalTableSelectionManager.prototype.selectAll = function(shouldSelect) {
+        var self = this;
+        this.getRows().each(function() {
+            self.setRowSelection($(this), shouldSelect, { skipUiUpdate: true });
+        });
+        this.updateUi();
+    };
+
+    UniversalTableSelectionManager.prototype.clearSelection = function() {
+        this.selectAll(false);
+    };
+
+    UniversalTableSelectionManager.prototype.getSelectedIds = function() {
+        return this.selectedIds.slice();
+    };
+
+    UniversalTableSelectionManager.prototype.shouldIgnoreRowClick = function(target) {
+        return $(target).closest(this.options.rowClickExclusionSelector).length > 0;
+    };
+
+    UniversalTableSelectionManager.prototype.bindEvents = function() {
+        var self = this;
+        var namespace = this.eventNamespace;
+
+        this.$table.off(namespace);
+        this.$headerCheckbox.off(namespace);
+        this.$bulkBar.off(namespace);
+
+        this.$table.on('change' + namespace, this.options.rowCheckboxSelector, function() {
+            var $row = $(this).closest(self.options.rowSelector);
+            self.setRowSelection($row, $(this).is(':checked'));
+        });
+
+        if (this.options.enableRowClickSelection) {
+            this.$table.on('click' + namespace, this.options.rowSelector, function(event) {
+                var $row = $(this);
+                if ($row.hasClass('is-editing') || self.shouldIgnoreRowClick(event.target)) {
+                    return;
+                }
+                if (event.detail && event.detail > 1) {
+                    return;
+                }
+                if (window.getSelection && String(window.getSelection()).length > 0) {
+                    return;
+                }
+
+                self.toggleRowSelection($row);
+            });
+        }
+
+        this.$headerCheckbox.on('change' + namespace, function() {
+            self.selectAll($(this).is(':checked'));
+        });
+
+        this.$bulkBar.on('click' + namespace, '[data-bulk-clear]', function(event) {
+            event.preventDefault();
+            self.clearSelection();
+        });
+
+        this.$bulkBar.on('click' + namespace, '[data-bulk-action]', function(event) {
+            event.preventDefault();
+            if (typeof self.options.onBulkAction !== 'function') {
+                return;
+            }
+            self.options.onBulkAction(
+                String($(this).attr('data-bulk-action') || ''),
+                self.getSelectedIds(),
+                self
+            );
+        });
+    };
+
     $(function() {
         var inlineUnites = {{ inlineUnites|json_encode|raw }};
         var inlineTarifs = {{ inlineTarifs|json_encode|raw }};
         var inlineUpdateToken = '{{ csrf_token('article_inline_update') }}';
+        var createMinimalUrl = '{{ path('article.create_minimal') }}';
+        var bulkDeleteUrl = '{{ path('api.bulk_delete_articles') }}';
+        var bulkDeleteToken = '{{ csrf_token('article_bulk_delete') }}';
         var $articlesTable = $('#articlesTable');
+        var $articlesTableBody = $('#articlesTableBody');
+        var $emptyState = $('#articlesEmptyState');
+        var $quickCreateModal = $('#articleQuickCreateModal');
+        var $quickCreateForm = $('#articleQuickCreateForm');
+        var $quickCreateSubmit = $('#articleQuickCreateSubmit');
+        var $quickCreateLibelle = $('#quickCreateLibelle');
+        var $quickCreateUniteId = $('#quickCreateUniteId');
+        var $unsavedChangesModal = $('#articleUnsavedChangesModal');
+        var $unsavedChangesMessage = $('#articleUnsavedChangesMessage');
+        var $unsavedChangesConfirmBtn = $('#articleUnsavedChangesConfirmBtn');
+        var $deleteConfirmModal = $('#deleteConfirmModal');
+        var $deleteModalItemName = $('#deleteModalItemName');
+        var $confirmDeleteBtn = $('#confirmDeleteBtn');
+        var unsavedChangesConfirmAction = null;
+        var bulkDeletePending = null;
+        var isBulkDeleteSubmitting = false;
 
-        if ($articlesTable.length === 0) {
+        if ($articlesTable.length === 0 || $articlesTableBody.length === 0) {
             return;
         }
 
-        var $selectAllCheckbox = $('#selectAllArticlesRows');
+        var tableSelectionManagers = Object.create(null);
+        var articleSelectionManager = null;
         var activeEditRow = null;
 
         function showToast(type, message) {
@@ -437,6 +1036,19 @@
             window.alert(message);
         }
 
+        function requestUnsavedChangesConfirmation(message, onConfirm) {
+            if (!$unsavedChangesModal.length || !$unsavedChangesConfirmBtn.length || !$unsavedChangesMessage.length) {
+                if (typeof onConfirm === 'function') {
+                    onConfirm();
+                }
+                return;
+            }
+
+            unsavedChangesConfirmAction = onConfirm;
+            $unsavedChangesMessage.text(message);
+            $unsavedChangesModal.modal('show');
+        }
+
         function escapeHtml(value) {
             return $('<div>').text(value || '').html();
         }
@@ -445,28 +1057,201 @@
             return value && String(value).trim() !== '' ? value : '____';
         }
 
+        function refreshTableVisibility() {
+            var hasRows = $articlesTableBody.find('.article-row').length > 0;
+            $articlesTable.toggle(hasRows);
+            $emptyState.toggle(!hasRows);
+        }
+
+        function updateBulkSelectionLabel(selectedCount) {
+            var count = Number(selectedCount) || 0;
+            var label = count > 1
+                ? count + ' articles sélectionnés'
+                : (count === 1 ? '1 article sélectionné' : 'Aucun article sélectionné');
+            $('#articlesBulkActions').find('[data-selection-label]').text(label);
+        }
+
+        function removeArticleRowsByIds(ids) {
+            if (!Array.isArray(ids) || !ids.length) {
+                return;
+            }
+
+            ids.forEach(function(idValue) {
+                var rowId = String(idValue || '').trim();
+                if (rowId === '') {
+                    return;
+                }
+
+                var $row = $articlesTableBody.find('.article-row[data-item-id="' + rowId + '"]');
+                if ($row.length && activeEditRow && activeEditRow.length && activeEditRow.is($row)) {
+                    activeEditRow = null;
+                }
+                $row.remove();
+            });
+        }
+
+        function setBulkDeleteConfirmButtonLoading(isLoading) {
+            if (!$confirmDeleteBtn.length) {
+                return;
+            }
+
+            var initialHtml = String($confirmDeleteBtn.data('bulk-initial-html') || '');
+            if (!initialHtml) {
+                initialHtml = String($confirmDeleteBtn.html() || '');
+                $confirmDeleteBtn.data('bulk-initial-html', initialHtml);
+            }
+
+            if (isLoading) {
+                $confirmDeleteBtn
+                    .addClass('bulk-delete-loading')
+                    .html('<i class="fas fa-spinner fa-spin"></i>Suppression...');
+                return;
+            }
+
+            $confirmDeleteBtn
+                .removeClass('bulk-delete-loading')
+                .html(initialHtml);
+        }
+
+        function resetBulkDeleteConfirmState() {
+            if ($confirmDeleteBtn.length) {
+                $confirmDeleteBtn.removeAttr('data-bulk-delete');
+            }
+            setBulkDeleteConfirmButtonLoading(false);
+        }
+
+        function openBulkDeleteConfirmation(selectedIds, manager) {
+            if (!$deleteConfirmModal.length || !$confirmDeleteBtn.length || !$deleteModalItemName.length) {
+                showToast('error', 'La confirmation de suppression est indisponible.');
+                return;
+            }
+
+            var normalizedIds = Array.isArray(selectedIds)
+                ? selectedIds.map(function(idValue) { return String(idValue || '').trim(); }).filter(function(idValue) { return idValue !== ''; })
+                : [];
+
+            if (!normalizedIds.length) {
+                showToast('error', 'Selection vide.');
+                return;
+            }
+
+            bulkDeletePending = {
+                ids: normalizedIds,
+                manager: manager || articleSelectionManager
+            };
+
+            var count = normalizedIds.length;
+            var itemLabel = count > 1 ? ('ces ' + count + ' articles') : 'cet article';
+            $deleteModalItemName.text(itemLabel);
+            $confirmDeleteBtn.attr('href', '#').attr('data-bulk-delete', '1');
+            setBulkDeleteConfirmButtonLoading(false);
+            $deleteConfirmModal.modal('show');
+        }
+
+        function submitBulkDeleteSelection() {
+            if (isBulkDeleteSubmitting || !bulkDeletePending || !Array.isArray(bulkDeletePending.ids) || !bulkDeletePending.ids.length) {
+                return;
+            }
+
+            isBulkDeleteSubmitting = true;
+            setBulkDeleteConfirmButtonLoading(true);
+
+            var pendingSnapshot = bulkDeletePending;
+
+            $.ajax({
+                url: bulkDeleteUrl,
+                method: 'POST',
+                contentType: 'application/json; charset=UTF-8',
+                dataType: 'json',
+                data: JSON.stringify({
+                    _token: bulkDeleteToken,
+                    ids: pendingSnapshot.ids
+                }),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function(response) {
+                if (!response || response.success !== true) {
+                    showToast('error', (response && response.message) ? response.message : 'La suppression multiple a échoué.');
+                    return;
+                }
+
+                var deletedIds = Array.isArray(response.deletedIds) && response.deletedIds.length
+                    ? response.deletedIds
+                    : pendingSnapshot.ids;
+                removeArticleRowsByIds(deletedIds);
+                refreshTableVisibility();
+
+                if (pendingSnapshot.manager && typeof pendingSnapshot.manager.syncFromDom === 'function') {
+                    pendingSnapshot.manager.syncFromDom();
+                } else {
+                    updateSelectionUi();
+                }
+
+                $deleteConfirmModal.modal('hide');
+                showToast('success', response.message || 'Suppression multiple effectuee.');
+            }).fail(function(xhr) {
+                var message = 'La suppression multiple a échoué.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                showToast('error', message);
+            }).always(function() {
+                isBulkDeleteSubmitting = false;
+                setBulkDeleteConfirmButtonLoading(false);
+                if (!$deleteConfirmModal.hasClass('show')) {
+                    bulkDeletePending = null;
+                    resetBulkDeleteConfirmState();
+                }
+            });
+        }
+
         function getFieldNameFromTarget(target) {
             var $cell = $(target).closest('td[data-field]');
             return $cell.length ? String($cell.data('field') || '') : '';
         }
 
-        function getSelectableRows() {
-            return $articlesTable.find('tbody .article-row');
+        function initTableSelectionManagers() {
+            $('[data-table-id]').each(function() {
+                var $table = $(this);
+                var tableId = String($table.attr('data-table-id') || '').trim();
+
+                if (tableId === '') {
+                    return;
+                }
+
+                var managerOptions = {};
+
+                if (tableId === 'articles') {
+                    managerOptions = {
+                        rowSelector: 'tbody .article-row',
+                        rowCheckboxSelector: '.article-row-checkbox',
+                        $bulkBar: $('#articlesBulkActions'),
+                        enableRowClickSelection: false,
+                        rowClickExclusionSelector: 'a, button, input, select, textarea, label, [contenteditable="true"], .inline-dropdown-menu, .inline-dropdown-trigger, .inline-dropdown-option',
+                        onSelectionChange: function(state) {
+                            updateBulkSelectionLabel(state.selectedCount);
+                        },
+                        onBulkAction: function(action, selectedIds, manager) {
+                            if (action !== 'delete') {
+                                return;
+                            }
+
+                            openBulkDeleteConfirmation(selectedIds, manager);
+                        }
+                    };
+                }
+
+                tableSelectionManagers[tableId] = new UniversalTableSelectionManager($table, managerOptions);
+            });
+
+            articleSelectionManager = tableSelectionManagers.articles || null;
         }
 
         function updateSelectionUi() {
-            var $rows = getSelectableRows();
-            var totalRows = $rows.length;
-            var selectedRows = $rows.find('.article-row-checkbox:checked').length;
-            var allSelected = totalRows > 0 && selectedRows === totalRows;
-
-            $selectAllCheckbox.prop('checked', allSelected);
-            $selectAllCheckbox.prop('indeterminate', selectedRows > 0 && !allSelected);
-        }
-
-        function setRowSelected($row, isSelected) {
-            $row.toggleClass('is-selected', isSelected);
-            $row.find('.article-row-checkbox').prop('checked', isSelected);
+            if (articleSelectionManager) {
+                articleSelectionManager.syncFromDom();
+            }
         }
 
         function closeDropdowns(exceptShell) {
@@ -571,7 +1356,7 @@
 
             $row.find('.delete-btn').attr('data-item-name', snapshot.libelle || '');
             $row.find('.article-row-checkbox').attr('aria-label', 'Selectionner l\'article ' + (snapshot.libelle || ''));
-            $row.removeClass('is-editing is-saving');
+            $row.removeClass('is-editing is-saving is-edit-focus');
 
             if (activeEditRow && activeEditRow.is($row)) {
                 activeEditRow = null;
@@ -583,15 +1368,35 @@
                 return;
             }
 
-            if (fieldName === 'libelle') {
+            if (!fieldName || fieldName === 'libelle') {
                 $row.find('.inline-editable-text').trigger('focus');
                 return;
             }
 
             if (fieldName === 'unite' || fieldName === 'tarif') {
                 var dropdownName = fieldName + 'Id';
-                openDropdownShell($row.find('.inline-dropdown-shell[data-name="' + dropdownName + '"]'));
+                var $shell = $row.find('.inline-dropdown-shell[data-name="' + dropdownName + '"]');
+                openDropdownShell($shell);
+                $shell.find('.inline-dropdown-trigger').trigger('focus');
             }
+        }
+
+        function focusRelativeField($row, currentField, direction) {
+            var fields = ['libelle', 'unite', 'tarif'];
+            var index = fields.indexOf(currentField);
+            if (index === -1) {
+                focusEditableField($row, 'libelle');
+                return;
+            }
+
+            var nextIndex = index + direction;
+            if (nextIndex < 0) {
+                nextIndex = fields.length - 1;
+            }
+            if (nextIndex >= fields.length) {
+                nextIndex = 0;
+            }
+            focusEditableField($row, fields[nextIndex]);
         }
 
         function beginInlineEdit($row, preferredField) {
@@ -600,7 +1405,11 @@
             }
 
             if (activeEditRow && activeEditRow.length && !activeEditRow.is($row)) {
-                if (hasUnsavedChanges(activeEditRow) && !window.confirm('Des modifications non enregistrees seront perdues. Continuer ?')) {
+                if (hasUnsavedChanges(activeEditRow)) {
+                    requestUnsavedChangesConfirmation('Des modifications non enregistrées seront perdues. Continuer ?', function() {
+                        restoreRowDisplay(activeEditRow);
+                        beginInlineEdit($row, preferredField);
+                    });
                     return;
                 }
                 restoreRowDisplay(activeEditRow);
@@ -638,6 +1447,12 @@
 
             $row.addClass('is-editing');
             activeEditRow = $row;
+            if ($row.hasClass('is-new-unsaved')) {
+                $row.addClass('is-edit-focus');
+                window.setTimeout(function() {
+                    $row.removeClass('is-edit-focus');
+                }, 850);
+            }
             focusEditableField($row, preferredField);
         }
 
@@ -649,6 +1464,10 @@
             $row.attr('data-tarif-label', article.tarifLabel || '');
 
             restoreRowDisplay($row);
+            $row.removeClass('is-new-unsaved').addClass('is-saved');
+            window.setTimeout(function() {
+                $row.removeClass('is-saved');
+            }, 1800);
         }
 
         function saveInlineEdit($row) {
@@ -681,14 +1500,14 @@
             }).done(function(response) {
                 if (!response || response.success !== true || !response.article) {
                     $row.removeClass('is-saving');
-                    showToast('error', 'La mise a jour a echoue.');
+                    showToast('error', 'La mise à jour a échoué.');
                     return;
                 }
 
                 applySavedState($row, response.article);
                 showToast('success', response.message || 'Article mis a jour avec succes.');
             }).fail(function(xhr) {
-                var message = 'La mise a jour a echoue.';
+                var message = 'La mise à jour a échoué.';
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     message = xhr.responseJSON.message;
                 }
@@ -703,11 +1522,93 @@
                 return;
             }
 
-            if (hasUnsavedChanges($row) && !window.confirm('Annuler les modifications de cette ligne ?')) {
+            if (hasUnsavedChanges($row)) {
+                requestUnsavedChangesConfirmation('Annuler les modifications de cette ligne ?', function() {
+                    restoreRowDisplay($row);
+                });
                 return;
             }
 
             restoreRowDisplay($row);
+        }
+
+        function buildArticleRow(article) {
+            var rowArticleId = String(article.id || '');
+            var rowLibelle = String(article.libelle || '');
+            var rowUniteId = String(article.uniteId || '');
+            var rowUniteLabel = String(article.uniteLabel || '');
+            var rowTarifId = String(article.tarifId || '');
+            var rowTarifLabel = String(article.tarifLabel || '');
+            var rowInlineUpdateUrl = String(article.inlineUpdateUrl || '');
+            var rowDetailUrl = String(article.detailUrl || '#');
+            var rowDeleteUrl = String(article.deleteUrl || '#');
+
+            var $row = $('<tr class="article-row is-new-unsaved is-just-created" tabindex="0"></tr>')
+                .attr('data-article-id', rowArticleId)
+                .attr('data-item-id', rowArticleId)
+                .attr('data-inline-update-url', rowInlineUpdateUrl)
+                .attr('data-libelle', rowLibelle)
+                .attr('data-unite-id', rowUniteId)
+                .attr('data-unite-label', rowUniteLabel)
+                .attr('data-tarif-id', rowTarifId)
+                .attr('data-tarif-label', rowTarifLabel);
+
+            var $selectorCell = $('<td class="row-selector-cell"></td>');
+            var $selectorWrapper = $('<div class="form-check d-flex justify-content-center mb-0"></div>');
+            var $checkbox = $('<input class="form-check-input position-static article-row-checkbox" type="checkbox">')
+                .attr('value', rowArticleId)
+                .attr('data-row-checkbox', '')
+                .attr('aria-label', 'Selectionner l\'article ' + rowLibelle);
+            $selectorWrapper.append($checkbox);
+            $selectorCell.append($selectorWrapper);
+
+            var $idCell = $('<td></td>').append($('<strong></strong>').text('#' + rowArticleId));
+            var $libelleCell = $('<td data-field="libelle"></td>').text(fallbackDisplay(rowLibelle));
+            var $uniteCell = $('<td data-field="unite"></td>').text(fallbackDisplay(rowUniteLabel));
+            var $tarifCell = $('<td data-field="tarif"></td>').text(fallbackDisplay(rowTarifLabel));
+            var $actionsCell = $('<td class="text-center article-actions-cell"></td>');
+
+            var $viewBtn = $('<a class="btn btn-action btn-view" title="Voir"></a>')
+                .attr('href', rowDetailUrl)
+                .append('<i class="fas fa-eye"></i>');
+            var $deleteBtn = $('<button type="button" class="btn btn-action btn-delete delete-btn" title="Supprimer"></button>')
+                .attr('data-delete-url', rowDeleteUrl)
+                .attr('data-item-name', rowLibelle)
+                .append('<i class="fas fa-trash-alt"></i>');
+
+            $actionsCell.append($viewBtn, $deleteBtn);
+            $row.append($selectorCell, $idCell, $libelleCell, $uniteCell, $tarifCell, $actionsCell);
+
+            return $row;
+        }
+
+        function appendCreatedRow(article) {
+            var $row = buildArticleRow(article);
+            $articlesTableBody.prepend($row);
+            window.setTimeout(function() {
+                $row.removeClass('is-just-created');
+            }, 1100);
+            refreshTableVisibility();
+            updateSelectionUi();
+            scrollRowIntoView($row);
+            return $row;
+        }
+
+        function scrollRowIntoView($row) {
+            if (!$row || !$row.length || !$row[0]) {
+                return;
+            }
+
+            window.setTimeout(function() {
+                var currentScroll = window.pageYOffset || document.documentElement.scrollTop || 0;
+                var rowTop = $row[0].getBoundingClientRect().top + currentScroll;
+                var targetTop = Math.max(rowTop - 170, 0);
+
+                window.scrollTo({
+                    top: targetTop,
+                    behavior: 'smooth'
+                });
+            }, 90);
         }
 
         function openDeleteModal($button) {
@@ -715,28 +1616,56 @@
             var itemName = $button.data('item-name') || 'cet element';
 
             $('#deleteModalItemName').text(itemName);
-            $('#confirmDeleteBtn').attr('href', deleteUrl);
+            $('#confirmDeleteBtn').attr('href', deleteUrl).removeAttr('data-bulk-delete');
+            setBulkDeleteConfirmButtonLoading(false);
             $('#deleteConfirmModal').modal('show');
         }
+
+        if ($unsavedChangesConfirmBtn.length) {
+            $unsavedChangesConfirmBtn.on('click', function() {
+                var action = unsavedChangesConfirmAction;
+                unsavedChangesConfirmAction = null;
+                if ($unsavedChangesModal.length) {
+                    $unsavedChangesModal.modal('hide');
+                }
+
+                if (typeof action === 'function') {
+                    action();
+                }
+            });
+        }
+
+        if ($unsavedChangesModal.length) {
+            $unsavedChangesModal.on('hidden.bs.modal', function() {
+                unsavedChangesConfirmAction = null;
+            });
+        }
+
+        $(document).off('click.articleBulkDelete', '#confirmDeleteBtn').on('click.articleBulkDelete', '#confirmDeleteBtn', function(event) {
+            if (String($(this).attr('data-bulk-delete') || '') !== '1') {
+                return;
+            }
+
+            event.preventDefault();
+            submitBulkDeleteSelection();
+        });
+
+        if ($deleteConfirmModal.length) {
+            $deleteConfirmModal.off('hidden.bs.modal.articleBulkDelete');
+            $deleteConfirmModal.on('hidden.bs.modal.articleBulkDelete', function() {
+                if (!isBulkDeleteSubmitting) {
+                    bulkDeletePending = null;
+                    resetBulkDeleteConfirmState();
+                }
+            });
+        }
+
+        initTableSelectionManagers();
 
         $articlesTable.find('.delete-btn').off('click');
         $articlesTable.on('click', '.delete-btn', function(event) {
             event.preventDefault();
             openDeleteModal($(this));
-        });
-
-        $articlesTable.on('change', '.article-row-checkbox', function() {
-            var $row = $(this).closest('.article-row');
-            setRowSelected($row, $(this).is(':checked'));
-            updateSelectionUi();
-        });
-
-        $selectAllCheckbox.on('change', function() {
-            var shouldSelect = $(this).is(':checked');
-            getSelectableRows().each(function() {
-                setRowSelected($(this), shouldSelect);
-            });
-            updateSelectionUi();
         });
 
         $articlesTable.on('dblclick', '.article-row', function(event) {
@@ -779,6 +1708,21 @@
 
             setDropdownValue($shell, value, label);
             closeDropdowns();
+        });
+
+        $articlesTable.on('keydown', '.inline-editable-text, .inline-dropdown-trigger, .inline-dropdown-option', function(event) {
+            if (event.key !== 'Tab') {
+                return;
+            }
+
+            var $row = $(this).closest('.article-row');
+            if (!$row.hasClass('is-editing')) {
+                return;
+            }
+
+            event.preventDefault();
+            var currentField = getFieldNameFromTarget(this) || 'libelle';
+            focusRelativeField($row, currentField, event.shiftKey ? -1 : 1);
         });
 
         $articlesTable.on('keydown', '.inline-editable-text', function(event) {
@@ -825,6 +1769,90 @@
             restoreRowDisplay(activeEditRow);
         });
 
+        if ($quickCreateModal.length && $quickCreateForm.length) {
+            $quickCreateModal.on('shown.bs.modal', function() {
+                window.setTimeout(function() {
+                    $quickCreateLibelle.trigger('focus');
+                }, 120);
+            });
+
+            $quickCreateModal.on('hidden.bs.modal', function() {
+                $quickCreateForm.trigger('reset');
+                $quickCreateSubmit.prop('disabled', false);
+                if (window.hideLoading) {
+                    window.hideLoading();
+                }
+            });
+
+            $quickCreateForm.on('submit', function(event) {
+                event.preventDefault();
+                if (window.hideLoading) {
+                    window.hideLoading();
+                }
+
+                var token = String($quickCreateForm.find('input[name="_token"]').val() || '');
+                var libelle = $.trim($quickCreateLibelle.val() || '');
+                var uniteId = String($quickCreateUniteId.val() || '');
+
+                if (libelle === '') {
+                    showToast('error', 'La designation est obligatoire.');
+                    $quickCreateLibelle.trigger('focus');
+                    return;
+                }
+
+                if (uniteId === '') {
+                    showToast('error', 'L unite est obligatoire.');
+                    $quickCreateUniteId.trigger('focus');
+                    return;
+                }
+
+                $quickCreateSubmit.prop('disabled', true);
+
+                $.ajax({
+                    url: createMinimalUrl,
+                    method: 'POST',
+                    dataType: 'json',
+                    data: {
+                        _token: token,
+                        libelle: libelle,
+                        uniteId: uniteId
+                    },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).done(function(response) {
+                    if (!response || response.success !== true || !response.article) {
+                        $quickCreateSubmit.prop('disabled', false);
+                        if (window.hideLoading) {
+                            window.hideLoading();
+                        }
+                        showToast('error', 'La création rapide a échoué.');
+                        return;
+                    }
+
+                    var $newRow = appendCreatedRow(response.article);
+                    $quickCreateModal.one('hidden.bs.modal', function() {
+                        scrollRowIntoView($newRow);
+                        beginInlineEdit($newRow, 'tarif');
+                    });
+                    $quickCreateModal.modal('hide');
+                    showToast('success', response.message || 'Article créé avec succès.');
+                }).fail(function(xhr) {
+                    var message = 'La création rapide a échoué.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+
+                    $quickCreateSubmit.prop('disabled', false);
+                    if (window.hideLoading) {
+                        window.hideLoading();
+                    }
+                    showToast('error', message);
+                });
+            });
+        }
+
+        refreshTableVisibility();
         updateSelectionUi();
     });
 </script>

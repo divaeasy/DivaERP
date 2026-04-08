@@ -41,34 +41,6 @@ class ArticleController extends AbstractController
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
 
-        $article = new Article();
-        $article->setDoctrine($doctrine);
-        if ($user instanceof User) {
-            $article->setUser($user);
-        }
-        if ($currentDossier !== null) {
-            $article->setDossier($currentDossier);
-        }
-
-        $createForm = $this->createForm(ArticleFormType::class, $article, [
-            'action' => $this->generateUrl('article.list'),
-        ]);
-        $createForm->handleRequest($request);
-
-        if ($createForm->isSubmitted() && $createForm->isValid()) {
-            if ($currentDossier === null) {
-                $this->addFlash('error', 'Aucun dossier courant selectionne.');
-            } else {
-                $entityManager = $doctrine->getManager();
-                $entityManager->persist($article);
-                $entityManager->flush();
-
-                $this->addFlash('success', "L'article est ajoute avec succes");
-
-                return $this->redirectToRoute('article.list');
-            }
-        }
-
         $page = $request->query->getInt('page', 1);
         $searchData = new SearchDataArt();
         $searchForm = $this->createForm(SearchArtFormType::class, $searchData);
@@ -84,7 +56,6 @@ class ArticleController extends AbstractController
         $tarifs = $tarifsRepository->getSearchQueryBuilder()->getQuery()->getResult();
 
         return $this->render('article/index.html.twig', [
-            'createForm' => $createForm->createView(),
             'search' => $searchForm->createView(),
             'articles' => $pagination['items'],
             'currentPage' => $pagination['currentPage'],
@@ -107,6 +78,82 @@ class ArticleController extends AbstractController
         ]);
     }
 
+    #[Route('/create-minimal', name: 'article.create_minimal', methods: ['POST'])]
+    public function createMinimalArticle(
+        Request $request,
+        ManagerRegistry $doctrine,
+        UniteRepository $uniteRepository
+    ): Response {
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if ($currentDossier === null) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Aucun dossier courant sélectionné.',
+            ], 403);
+        }
+
+        if (!$this->isCsrfTokenValid('article_create_minimal', (string) $request->request->get('_token'))) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Jeton de sécurité invalide.',
+            ], 403);
+        }
+
+        $libelle = trim((string) $request->request->get('libelle', ''));
+        if ($libelle === '') {
+            return $this->json([
+                'success' => false,
+                'message' => 'La designation est obligatoire.',
+            ], 422);
+        }
+
+        $uniteId = trim((string) $request->request->get('uniteId', ''));
+        if ($uniteId === '' || !ctype_digit($uniteId)) {
+            return $this->json([
+                'success' => false,
+                'message' => 'L unite est obligatoire.',
+            ], 422);
+        }
+
+        $unite = $uniteRepository->find((int) $uniteId);
+        if (!$unite instanceof Unite) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Unité introuvable.',
+            ], 404);
+        }
+
+        $article = new Article();
+        $article->setDossier($currentDossier);
+        $article->setLibelle($libelle);
+        $article->setUnite($unite);
+        $article->setDoctrine($doctrine);
+        if ($user instanceof User) {
+            $article->setUser($user);
+        }
+
+        $entityManager = $doctrine->getManager();
+        $entityManager->persist($article);
+        $entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Article créé avec succès.',
+            'article' => [
+                'id' => $article->getId(),
+                'libelle' => (string) $article->getLibelle(),
+                'uniteId' => $article->getUnite()?->getId(),
+                'uniteLabel' => $article->getUnite()?->getLibelle() ?? '',
+                'tarifId' => null,
+                'tarifLabel' => '',
+                'inlineUpdateUrl' => $this->generateUrl('article.inline_update', ['id' => $article->getId()]),
+                'detailUrl' => $this->generateUrl('article.detail', ['id' => $article->getId()]),
+                'deleteUrl' => $this->generateUrl('article.delete', ['id' => $article->getId()]),
+            ],
+        ]);
+    }
+
     #[Route('/import', name: 'article.import', methods: ['POST'])]
     public function importArticles(
         Request $request,
@@ -118,7 +165,7 @@ class ArticleController extends AbstractController
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
         if ($currentDossier === null) {
-            $this->addFlash('error', 'Aucun dossier courant selectionne.');
+            $this->addFlash('error', 'Aucun dossier courant sélectionné.');
             return $this->redirectToRoute('article.list');
         }
 
@@ -155,7 +202,7 @@ class ArticleController extends AbstractController
         $dataSheet = $spreadsheet->getSheetByName('Export') ?? $spreadsheet->getSheet(0);
         $headerConfig = $this->resolveArticleHeaderConfig($dataSheet);
         if ($headerConfig === null) {
-            $this->addFlash('error', 'Entetes introuvables. Le fichier doit contenir au minimum les colonnes ID et Designation.');
+            $this->addFlash('error', 'En-têtes introuvables. Le fichier doit contenir au minimum les colonnes ID et Désignation.');
             return $this->redirectToRoute('article.list');
         }
 
@@ -201,7 +248,7 @@ class ArticleController extends AbstractController
                     $resolvedUnite = $this->resolveUniteForImport($uniteRepository, $uniteRaw);
                     if ($resolvedUnite === null) {
                         $ignored++;
-                        $errors[] = sprintf('Ligne %d: unite "%s" invalide ou introuvable.', $rowIndex, $uniteRaw);
+                        $errors[] = sprintf('Ligne %d : unité "%s" invalide ou introuvable.', $rowIndex, $uniteRaw);
                         continue;
                     }
                 }
@@ -211,7 +258,7 @@ class ArticleController extends AbstractController
                     $resolvedTarif = $this->resolveTarifForImport($tarifsRepository, $currentDossier, $tarifRaw);
                     if ($resolvedTarif === null) {
                         $ignored++;
-                        $errors[] = sprintf('Ligne %d: tarif "%s" invalide ou introuvable.', $rowIndex, $tarifRaw);
+                        $errors[] = sprintf('Ligne %d : tarif "%s" invalide ou introuvable.', $rowIndex, $tarifRaw);
                         continue;
                     }
                 }
@@ -233,7 +280,7 @@ class ArticleController extends AbstractController
 
             if ($designation === '') {
                 $ignored++;
-                $errors[] = sprintf('Ligne %d: la designation est obligatoire pour creer un article.', $rowIndex);
+                $errors[] = sprintf('Ligne %d : la désignation est obligatoire pour créer un article.', $rowIndex);
                 continue;
             }
 
@@ -245,7 +292,7 @@ class ArticleController extends AbstractController
                 $unite = $this->resolveUniteForImport($uniteRepository, $uniteRaw);
                 if ($unite === null) {
                     $ignored++;
-                    $errors[] = sprintf('Ligne %d: unite "%s" invalide ou introuvable.', $rowIndex, $uniteRaw);
+                    $errors[] = sprintf('Ligne %d : unité "%s" invalide ou introuvable.', $rowIndex, $uniteRaw);
                     continue;
                 }
                 $article->setUnite($unite);
@@ -255,7 +302,7 @@ class ArticleController extends AbstractController
                 $tarif = $this->resolveTarifForImport($tarifsRepository, $currentDossier, $tarifRaw);
                 if ($tarif === null) {
                     $ignored++;
-                    $errors[] = sprintf('Ligne %d: tarif "%s" invalide ou introuvable.', $rowIndex, $tarifRaw);
+                    $errors[] = sprintf('Ligne %d : tarif "%s" invalide ou introuvable.', $rowIndex, $tarifRaw);
                     continue;
                 }
                 $article->setTarif($tarif);
@@ -272,7 +319,7 @@ class ArticleController extends AbstractController
         if (($created + $updated) > 0) {
             $this->addFlash(
                 'success',
-                sprintf('Import termine: %d creation(s), %d mise(s) a jour.', $created, $updated)
+                sprintf('Import terminé : %d création(s), %d mise(s) à jour.', $created, $updated)
             );
         } else {
             $this->addFlash('warning', 'Aucune ligne importee.');
@@ -306,14 +353,14 @@ class ArticleController extends AbstractController
         if ($currentDossier === null) {
             return $this->json([
                 'success' => false,
-                'message' => 'Aucun dossier courant selectionne.',
+                'message' => 'Aucun dossier courant sélectionné.',
             ], 403);
         }
 
         if (!$this->isCsrfTokenValid('article_inline_update', (string) $request->request->get('_token'))) {
             return $this->json([
                 'success' => false,
-                'message' => 'Jeton de securite invalide.',
+                'message' => 'Jeton de sécurité invalide.',
             ], 403);
         }
 
@@ -352,7 +399,7 @@ class ArticleController extends AbstractController
             if (!$unite instanceof Unite) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Unite introuvable.',
+                    'message' => 'Unité introuvable.',
                 ], 404);
             }
         }
@@ -393,7 +440,7 @@ class ArticleController extends AbstractController
 
         return $this->json([
             'success' => true,
-            'message' => 'Article mis a jour avec succes.',
+            'message' => 'Article mis à jour avec succès.',
             'article' => [
                 'id' => $article->getId(),
                 'libelle' => (string) $article->getLibelle(),

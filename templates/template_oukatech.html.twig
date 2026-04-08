@@ -41,6 +41,17 @@
             opacity: 1;
             transition: opacity 0.15s ease-in-out;
         }
+        .js-loading #loadingOverlay {
+            display: flex;
+        }
+        .js-loading #loadingOverlay,
+        .js-loading #loadingOverlay * {
+            animation-duration: initial !important;
+            transition-duration: initial !important;
+        }
+        .js-loading #loadingOverlay .spinner-circle {
+            animation: spin 0.8s linear infinite !important;
+        }
 
         /* ===== FIXED LAYOUT STRUCTURE ===== */
         html, body {
@@ -573,6 +584,10 @@
             background: rgba(231, 74, 59, 0.12);
             color: #c82333;
             transform: translateY(-1px);
+        }
+        .table .btn-delete .fa-trash:before,
+        .table .btn-action.btn-delete .fa-trash:before {
+            content: "\f2ed";
         }
         .btn-einvoicing {
             color: #0891b2;
@@ -3004,8 +3019,38 @@
     <!-- Global ERP Scripts -->
     <script>
         $(document).ready(function() {
-            // ===== FOUC Prevention - Show content after JS loaded =====
-            $('body').removeClass('js-loading').addClass('js-loaded');
+            function finalizePageLoadedState() {
+                $('body').removeClass('js-loading').addClass('js-loaded');
+                if (typeof window.hideLoading === 'function') {
+                    window.hideLoading();
+                }
+            }
+
+            function isHistoryRestoreNavigation(nativeEvent) {
+                if (nativeEvent && nativeEvent.persisted) {
+                    return true;
+                }
+
+                if (window.performance && typeof window.performance.getEntriesByType === 'function') {
+                    var navEntries = window.performance.getEntriesByType('navigation');
+                    if (navEntries && navEntries.length > 0) {
+                        return navEntries[0].type === 'back_forward';
+                    }
+                }
+
+                return false;
+            }
+
+            // ===== FOUC Prevention - mark loaded only after full page load =====
+            if (!window.__pageLoadClassHookBound) {
+                window.__pageLoadClassHookBound = true;
+                $(window).one('load', function() {
+                    finalizePageLoadedState();
+                });
+            }
+            if (document.readyState === 'complete') {
+                finalizePageLoadedState();
+            }
 
             // ===== ENSURE BOOTSTRAP DROPDOWNS WORK CONSISTENTLY =====
             // Force reinitialize all Bootstrap 4 dropdowns
@@ -3289,11 +3334,45 @@
             }
 
             // Loading Spinner Functions
+            var loadingShownAt = 0;
+            var loadingMinVisibleMs = 800;
+            var loadingHideTimer = null;
+
             window.showLoading = function() {
+                if (loadingHideTimer) {
+                    window.clearTimeout(loadingHideTimer);
+                    loadingHideTimer = null;
+                }
+                loadingShownAt = Date.now();
                 $('#loadingOverlay').addClass('active');
             };
-            window.hideLoading = function() {
-                $('#loadingOverlay').removeClass('active');
+            window.hideLoading = function(force) {
+                var hideNow = function() {
+                    $('#loadingOverlay').removeClass('active');
+                    loadingHideTimer = null;
+                };
+
+                if (force === true) {
+                    hideNow();
+                    return;
+                }
+
+                if (!loadingShownAt) {
+                    hideNow();
+                    return;
+                }
+
+                var elapsed = Date.now() - loadingShownAt;
+                var remaining = Math.max(loadingMinVisibleMs - elapsed, 0);
+                if (remaining <= 0) {
+                    hideNow();
+                    return;
+                }
+
+                if (loadingHideTimer) {
+                    window.clearTimeout(loadingHideTimer);
+                }
+                loadingHideTimer = window.setTimeout(hideNow, remaining);
             };
 
             // ===== SHOW LOADING ON ALL NAVIGATION =====
@@ -3356,19 +3435,49 @@
                 showLoading();
             });
 
+            // Show loading on explicit browser refresh shortcuts (F5, Ctrl/Cmd+R)
+            $(document).on('keydown', function(event) {
+                var key = String(event.key || '').toLowerCase();
+                var isRefreshShortcut = key === 'f5' || ((event.ctrlKey || event.metaKey) && key === 'r');
+                if (isRefreshShortcut) {
+                    showLoading();
+                }
+            });
+
+            // Show loading when the page is unloading (refresh/navigation/back)
+            $(window).on('beforeunload', function() {
+                showLoading();
+            });
+
+            // Show loading when navigating with browser back/forward controls
+            if (!window.__loadingOverlayHistoryHookBound) {
+                window.__loadingOverlayHistoryHookBound = true;
+                window.addEventListener('popstate', function() {
+                    showLoading();
+                });
+            }
+
             // Hide loading when page fully loads (for browser back button)
             $(window).on('pageshow', function(event) {
                 var nativeEvent = event.originalEvent || event;
-                if ((nativeEvent && nativeEvent.persisted) || document.documentElement.hasAttribute('data-turbo-preview')) {
+                if (isHistoryRestoreNavigation(nativeEvent)) {
                     showLoading();
-                    return;
                 }
-                hideLoading();
+
+                finalizePageLoadedState();
             });
 
             // Turbo can render without triggering pageshow, so make sure overlay is always reset.
             if (!window.__loadingOverlayTurboHooksBound) {
                 window.__loadingOverlayTurboHooksBound = true;
+
+                document.addEventListener('turbo:before-visit', function() {
+                    showLoading();
+                });
+
+                document.addEventListener('turbo:visit', function() {
+                    showLoading();
+                });
 
                 document.addEventListener('turbo:before-render', function() {
                     showLoading();
@@ -3505,6 +3614,32 @@
                 $('#deleteConfirmModal').modal('show');
             });
 
+            // Keep backdrop visible until delete modal fully closes, then navigate.
+            $(document).on('click', '#confirmDeleteBtn', function(e) {
+                e.preventDefault();
+
+                var deleteUrl = $(this).attr('href');
+                if (!deleteUrl || deleteUrl === '#') {
+                    return;
+                }
+
+                var navigateToDelete = function() {
+                    showLoading();
+                    window.location.href = deleteUrl;
+                };
+
+                var $deleteModal = $('#deleteConfirmModal');
+                if ($deleteModal.length && $deleteModal.hasClass('show')) {
+                    $deleteModal.one('hidden.bs.modal.deleteNavigate', function() {
+                        navigateToDelete();
+                    });
+                    $deleteModal.modal('hide');
+                    return;
+                }
+
+                navigateToDelete();
+            });
+
             // ===== TOAST NOTIFICATIONS =====
             function getOrCreateToastContainer() {
                 var container = $('.toast-container').first();
@@ -3523,6 +3658,10 @@
             }
 
             function dismissToast(toast) {
+                if (!toast || !toast.length || toast.data('toastDismissing') === 1) {
+                    return;
+                }
+                toast.data('toastDismissing', 1);
                 toast.addClass('toast-hiding');
                 setTimeout(function() {
                     toast.remove();
@@ -3546,6 +3685,10 @@
                 var timer = setTimeout(function() {
                     dismissToast(toast);
                 }, 5000);
+                // Failsafe: always dismiss eventually, even if hover paused the main timer.
+                var hardTimer = setTimeout(function() {
+                    dismissToast(toast);
+                }, 9000);
 
                 toast.on('mouseenter', function() {
                     clearTimeout(timer);
@@ -3561,6 +3704,7 @@
 
                 toast.find('.toast-close').on('click', function() {
                     clearTimeout(timer);
+                    clearTimeout(hardTimer);
                     dismissToast(toast);
                 });
             }

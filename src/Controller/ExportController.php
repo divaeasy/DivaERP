@@ -100,12 +100,12 @@ class ExportController extends AbstractController
             $headers,
             $rows,
             [
-                ['title' => 'ID', 'value' => 'Ne pas modifier. Colonne protegee. Presence d un ID existant = mise a jour.'],
-                ['title' => 'Designation', 'value' => 'Obligatoire pour creation (ID vide).'],
-                ['title' => 'Unite', 'value' => 'Optionnel. Saisir un ID unite numerique ou laisser vide.'],
+                ['title' => 'ID', 'value' => 'Ne pas modifier. Colonne protégée. Présence d un ID existant = mise à jour.'],
+                ['title' => 'Désignation', 'value' => 'Obligatoire pour création (ID vide).'],
+                ['title' => 'Unité', 'value' => 'Optionnel. Saisir un ID unité numérique ou laisser vide.'],
                 ['title' => 'Tarif', 'value' => 'Optionnel. Saisir un ID tarif numerique ou laisser vide.'],
-                ['title' => 'Mode import', 'value' => 'Ligne sans ID = creation. Ligne avec ID = mise a jour.'],
-                ['title' => 'Feuille a importer', 'value' => 'Ne modifiez que la feuille Export. La feuille Notices est informative.'],
+                ['title' => 'Mode import', 'value' => 'Ligne sans ID = création. Ligne avec ID = mise à jour.'],
+                ['title' => 'Feuille à importer', 'value' => 'Ne modifiez que la feuille Export. La feuille Notices est informative.'],
             ],
             [
                 'template' => 'articles_import',
@@ -321,13 +321,13 @@ class ExportController extends AbstractController
 
         $kpiData = [
             'Chiffre d\'affaires' => [
-                'value' => '� ' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
+                'value' => '€ ' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
                 'period' => 'Jan - ' . date('M Y'),
                 'comparison' => ($dashboardService->getTotalRevenue($currentYear, $currentMonth) > $dashboardService->getTotalRevenue($previousYear, $currentMonth) ? '+' : '') . round((($dashboardService->getTotalRevenue($currentYear, $currentMonth) - $dashboardService->getTotalRevenue($previousYear, $currentMonth)) / (($dashboardService->getTotalRevenue($previousYear, $currentMonth) ?: 1)) * 100), 1) . '%'
             ],
-            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'Ann�e ' . $currentYear, 'comparison' => '+0'],
+            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
             'Nouveaux clients' => ['value' => (string)$dashboardService->getNewCustomersThisMonth(), 'period' => date('F Y'), 'comparison' => '+0'],
-            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'Ann�e ' . $currentYear, 'comparison' => '+0'],
+            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
             'Factures en retard' => [
                 'value' => sprintf('%d factures | %s EUR', $overdue['count'] ?? 0, number_format((float)($overdue['amount'] ?? 0), 2, '.', ',')),
                 'period' => 'Actuel',
@@ -340,3 +340,5 @@ class ExportController extends AbstractController
         return $this->exportService->exportDashboardToPdf($kpiData, is_array($top5Products) ? $top5Products : [], 'tableau_de_bord_' . date('Y-m-d') . '.pdf');
     }
 }
+
+
