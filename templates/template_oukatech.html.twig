@@ -2401,47 +2401,73 @@
         #accordionSidebar.double-sidebar .sidebar-panel-recent__item {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            border-radius: 9px;
-            padding: 0.36rem 0.42rem;
-            color: #475569 !important;
+            gap: 0.56rem;
+            padding: 0.52rem 0.56rem;
+            border-radius: 11px;
             border: 1px solid transparent;
-            transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease, color 0.16s ease;
+            color: #52637f !important;
+            font-size: 0.8rem;
+            font-weight: 600;
+            line-height: 1.25;
+            background: transparent;
+            transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+            --sidebar-link-accent: #94a3b8;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-recent__item:hover,
         #accordionSidebar.double-sidebar .sidebar-panel-recent__item:focus {
             text-decoration: none;
-            border-color: rgba(148, 163, 184, 0.24);
             background: #f8fafc;
+            border-color: rgba(148, 163, 184, 0.18);
+            color: #334155 !important;
             transform: translateX(1px);
-            color: #1e293b !important;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-recent__icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 6px;
-            border: 1px solid rgba(148, 163, 184, 0.22);
-            background: #fff;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
+            width: 16px;
+            text-align: center;
+            color: var(--sidebar-link-accent);
+            font-size: 0.82rem;
             flex-shrink: 0;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-recent__icon i,
         #accordionSidebar.double-sidebar .sidebar-panel-recent__icon .lucide {
-            width: 12px;
-            height: 12px;
+            width: 16px;
+            height: 16px;
             stroke-width: 1.95;
         }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__item:hover .sidebar-panel-recent__icon,
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__item:focus .sidebar-panel-recent__icon {
+            color: var(--sidebar-link-accent);
+        }
         #accordionSidebar.double-sidebar .sidebar-panel-recent__name {
+            flex: 1;
             min-width: 0;
-            font-size: 0.74rem;
-            font-weight: 600;
-            line-height: 1.2;
-            white-space: nowrap;
+            font-size: 0.8rem;
+            color: inherit;
             overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__chevron {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            margin-left: 0.36rem;
+            flex-shrink: 0;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__chevron i,
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__chevron .lucide {
+            width: 14px;
+            height: 14px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            stroke-width: 2;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__item:hover .sidebar-panel-recent__chevron,
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__item:focus .sidebar-panel-recent__chevron {
+            opacity: 1;
+            transform: translateX(2px);
         }
         #accordionSidebar.double-sidebar .sidebar-panel-content {
             display: block;
@@ -4771,8 +4797,9 @@
                     });
                     var $icon = $('<span/>', { 'class': 'sidebar-panel-recent__icon' }).append($('<i/>', { 'data-lucide': item.icon }));
                     var $name = $('<span/>', { 'class': 'sidebar-panel-recent__name', text: item.name });
+                    var $chevron = $('<span/>', { 'class': 'sidebar-panel-recent__chevron' }).append($('<i/>', { 'data-lucide': 'chevron-right' }));
 
-                    $item.append($icon).append($name);
+                    $item.append($icon).append($name).append($chevron);
                     $sidebarRecentList.append($item);
                 });
 
@@ -5653,23 +5680,63 @@
                 var pressedKey = String(event.key || '').toLowerCase();
                 var hasModifier = event.ctrlKey || event.metaKey;
 
-                if (!hasModifier || pressedKey !== 'k') {
+                if (!hasModifier) {
                     return;
                 }
 
-                if (!$navSearchInput.length) {
+                // Ctrl+K: Focus search
+                if (pressedKey === 'k') {
+                    if (!$navSearchInput.length) {
+                        return;
+                    }
+
+                    if (isTypingTarget(event.target) && event.target.id === 'navSearchInput') {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    $navSearchInput.trigger('focus');
+                    $navSearchInput.select();
+                    if ($navSearchInput.val().trim().length > 0) {
+                        $navSearchInput.trigger('input');
+                    }
                     return;
                 }
 
-                if (isTypingTarget(event.target) && event.target.id === 'navSearchInput') {
+                // Ctrl+1-4: Navigate sidebar panels
+                var shortcutKey = pressedKey;
+                if (!/^[1-4]$/.test(shortcutKey)) {
+                    return; // Only handle 1-4
+                }
+
+                // Don't interfere with text input
+                if (isTypingTarget(event.target)) {
                     return;
                 }
 
                 event.preventDefault();
-                $navSearchInput.trigger('focus');
-                $navSearchInput.select();
-                if ($navSearchInput.val().trim().length > 0) {
-                    $navSearchInput.trigger('input');
+
+                // Find and click the nav link with matching shortcut key
+                var $targetLink = $('[data-nav-shortcut-key="' + shortcutKey + '"]').first();
+                if (!$targetLink.length) {
+                    return;
+                }
+
+                // Check if link is disabled
+                if ($targetLink.hasClass('nav-disabled')) {
+                    return;
+                }
+
+                // Trigger click or navigation
+                if ($targetLink.is('a')) {
+                    // For links, navigate to href
+                    var href = $targetLink.attr('href');
+                    if (href && href !== '#' && !href.startsWith('javascript')) {
+                        window.location.href = href;
+                    }
+                } else if ($targetLink.is('button')) {
+                    // For buttons, trigger click (sidebar panel toggle)
+                    $targetLink.click();
                 }
             });
 
