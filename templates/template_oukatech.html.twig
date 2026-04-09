@@ -2261,12 +2261,13 @@
             transform: rotate(180deg);
         }
         #accordionSidebar.double-sidebar .sidebar-dossier-switcher .dropdown-menu {
+            position: absolute !important;
             left: 0 !important;
             right: auto !important;
-            top: calc(100% + 0.48rem) !important;
+            top: calc(100% + 8px) !important;
+            bottom: auto !important;
             min-width: 0;
-            max-width: 100%;
-            width: 100%;
+            width: 160px;
             max-height: 268px;
             overflow-y: auto;
             padding: 0.34rem;
@@ -2276,7 +2277,6 @@
             box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
             z-index: 1080;
             transform: none !important;
-            inset: auto auto auto 0 !important;
         }
         #accordionSidebar.double-sidebar .sidebar-dossier-switcher .dropdown-menu.animated--grow-in {
             animation: none !important;
@@ -2379,24 +2379,26 @@
         #accordionSidebar.double-sidebar .sidebar-panel-recent__title {
             display: flex;
             align-items: center;
-            gap: 0.35rem;
-            font-size: 0.64rem;
+            gap: 0.42rem;
+            font-size: 0.68rem;
             font-weight: 700;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: #64748b;
-            margin-bottom: 0.36rem;
+            color: #475569;
+            margin-bottom: 0.56rem;
+            padding: 0 0.08rem;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-recent__title i,
         #accordionSidebar.double-sidebar .sidebar-panel-recent__title .lucide {
-            width: 12px;
-            height: 12px;
-            color: #94a3b8;
+            width: 14px;
+            height: 14px;
+            color: #64748b;
+            stroke-width: 1.95;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-recent__list {
             display: flex;
             flex-direction: column;
-            gap: 0.22rem;
+            gap: 0.26rem;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-recent__item {
             display: flex;
@@ -2778,12 +2780,26 @@
             padding-right: 0.42rem;
         }
         .navbar-search .btn {
-            border-radius: 0;
+            border-radius: 8px 8px 8px 8px !important;
             min-width: 44px;
+            height: 27px;
+            margin: 0;
+            padding: 0 10px;
             box-shadow: none !important;
             background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%) !important;
             border: 0 !important;
-            transition: filter 0.18s ease, transform 0.18s ease;
+            color: #ffffff !important;
+            transition: filter 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .navbar-search .btn i,
+        .navbar-search .btn .fa {
+            font-size: 16px !important;
+            width: 16px;
+            height: 16px;
+            margin: 0;
         }
         .navbar-search-shortcut {
             display: inline-flex;
@@ -2791,7 +2807,7 @@
             justify-content: center;
             height: 24px;
             min-width: 46px;
-            border-radius: 7px;
+            border-radius: 8px;
             border: 1px solid rgba(148, 163, 184, 0.35);
             background: #ffffff;
             color: #64748b;
@@ -2803,7 +2819,8 @@
         }
         .navbar-search .btn:hover,
         .navbar-search .btn:focus {
-            filter: brightness(1.05);
+            filter: brightness(1.08);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2) !important;
         }
         .topbar .nav-item .nav-link {
             min-height: 34px;
@@ -3596,7 +3613,7 @@
                                 {% endif %}
                             </div>
                         {% endif %}
-                        <div class="sidebar-panel-header__subtitle">Accès rapide par module</div>
+                        {# <div class="sidebar-panel-header__subtitle">Accès rapide par module</div> #}
                         <div class="sidebar-panel-header__breadcrumb"
                              id="sidebarPanelBreadcrumb"
                              data-route-panel="{{ initialSidebarPanel }}"
@@ -3765,10 +3782,10 @@
                             <input type="text" id="navSearchInput" class="form-control bg-light border-0 small" 
                                 placeholder="Rechercher une interface..." aria-label="Search" autocomplete="off">
                             <div class="input-group-append align-items-center">
-                                <button class="btn btn-primary" type="button">
-                                    <i class="fas fa-search fa-sm"></i>
-                                </button>
                                 <span class="navbar-search-shortcut" data-search-shortcut-hint>Ctrl+K</span>
+                                <button class="btn btn-primary " type="button">
+                                    <i class="fas fa-search fa-md"></i>
+                                </button>
                             </div>
                         </div>
                         <!-- Search Results Dropdown -->
@@ -5801,7 +5818,7 @@
                         card.appendChild(shortcutNode);
                     }
 
-                    card.style.left = Math.round(sidebarRect.right + 12) + 'px';
+                    card.style.left = Math.round(linkRect.right + 6) + 'px';
                     card.style.top = Math.round(linkRect.top + (linkRect.height / 2)) + 'px';
                 };
 
