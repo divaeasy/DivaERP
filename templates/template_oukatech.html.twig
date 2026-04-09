@@ -668,6 +668,17 @@
             text-decoration: none;
             white-space: nowrap;
         }
+        .action-bar .btn-add i,
+        .action-bar .action-buttons .btn i,
+        .action-bar .btn-search i {
+            font-size: 0.8rem;
+            width: 0.95rem;
+            height: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
         .action-bar .btn-add:hover {
             background: linear-gradient(180deg, var(--theme-secondary) 10%, var(--theme-primary) 100%);
             color: white;
@@ -684,6 +695,11 @@
             display: flex;
             align-items: center;
             gap: 0;
+        }
+        .action-bar .action-buttons .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.42rem;
         }
 
         /* ===== NAVIGATION SEARCH DROPDOWN ===== */
@@ -1808,14 +1824,33 @@
             pointer-events: none;
             background: var(--sidebar-tooltip-bg);
             color: #f8fafc;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.2px;
-            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             padding: 8px 12px;
-            border-radius: 10px;
+            border-radius: 11px;
             box-shadow: 0 14px 30px rgba(2, 6, 23, 0.32);
             transition: opacity 0.18s ease, transform 0.18s ease;
+            white-space: nowrap;
+        }
+        .sidebar-hover-card__label {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.18px;
+        }
+        .sidebar-hover-card__shortcut {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 20px;
+            padding: 0 7px;
+            border-radius: 6px;
+            border: 1px solid rgba(226, 232, 240, 0.28);
+            background: rgba(148, 163, 184, 0.2);
+            color: #e2e8f0;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
         }
         .sidebar-hover-card::before {
             content: '';
@@ -2087,6 +2122,29 @@
             margin-top: 0.26rem;
             line-height: 1.35;
         }
+        #accordionSidebar.double-sidebar .sidebar-panel-header__breadcrumb {
+            margin-top: 0.44rem;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.26rem;
+            min-height: 1.05rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-header__crumb {
+            font-size: 0.62rem;
+            font-weight: 600;
+            color: #64748b;
+            line-height: 1.2;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-header__crumb--active {
+            color: #1e293b;
+            font-weight: 700;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-header__crumb-divider {
+            color: #94a3b8;
+            font-size: 0.6rem;
+            line-height: 1;
+        }
         #accordionSidebar.double-sidebar .sidebar-panel-header__meta {
             display: flex;
             flex-wrap: wrap;
@@ -2311,11 +2369,95 @@
             overflow-x: hidden;
             padding: 0.72rem 0.58rem 0.82rem;
         }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent {
+            margin-bottom: 0.62rem;
+            padding: 0.48rem 0.5rem;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 12px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__title {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.64rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 0.36rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__title i,
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__title .lucide {
+            width: 12px;
+            height: 12px;
+            color: #94a3b8;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.22rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-radius: 9px;
+            padding: 0.36rem 0.42rem;
+            color: #475569 !important;
+            border: 1px solid transparent;
+            transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease, color 0.16s ease;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__item:hover,
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__item:focus {
+            text-decoration: none;
+            border-color: rgba(148, 163, 184, 0.24);
+            background: #f8fafc;
+            transform: translateX(1px);
+            color: #1e293b !important;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            flex-shrink: 0;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__icon i,
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__icon .lucide {
+            width: 12px;
+            height: 12px;
+            stroke-width: 1.95;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__name {
+            min-width: 0;
+            font-size: 0.74rem;
+            font-weight: 600;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         #accordionSidebar.double-sidebar .sidebar-panel-content {
-            display: none;
+            display: block;
+            opacity: 0;
+            transform: translate3d(14px, 0, 0);
+            max-height: 0;
+            overflow: hidden;
+            pointer-events: none;
+            transition: opacity 0.24s ease, transform 0.24s ease, max-height 0.24s ease;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-content.is-active {
-            display: block;
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+            max-height: 4000px;
+            overflow: visible;
+            pointer-events: auto;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-title {
             display: flex;
@@ -2346,13 +2488,56 @@
         #accordionSidebar.double-sidebar .sidebar-panel-section + .sidebar-panel-section {
             margin-top: 0.78rem;
         }
-        #accordionSidebar.double-sidebar .sidebar-panel-section-label {
-            padding: 0 0.26rem 0.28rem;
+        #accordionSidebar.double-sidebar .sidebar-panel-section-toggle {
+            width: 100%;
+            appearance: none;
+            border: 0;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.42rem;
+            padding: 0 0.26rem 0.24rem;
+            cursor: pointer;
+            text-align: left;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-section-toggle__label {
             font-size: 0.6rem;
             font-weight: 700;
             letter-spacing: 0.12em;
             text-transform: uppercase;
             color: #94a3b8;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-section-toggle i,
+        #accordionSidebar.double-sidebar .sidebar-panel-section-toggle .lucide {
+            width: 11px;
+            height: 11px;
+            color: #94a3b8;
+            transition: transform 0.16s ease, color 0.16s ease;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-section-toggle:hover .sidebar-panel-section-toggle__label,
+        #accordionSidebar.double-sidebar .sidebar-panel-section-toggle:focus .sidebar-panel-section-toggle__label {
+            color: #64748b;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-section-toggle:hover i,
+        #accordionSidebar.double-sidebar .sidebar-panel-section-toggle:focus i,
+        #accordionSidebar.double-sidebar .sidebar-panel-section-toggle:hover .lucide,
+        #accordionSidebar.double-sidebar .sidebar-panel-section-toggle:focus .lucide {
+            color: #64748b;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-section-body {
+            max-height: 560px;
+            overflow: hidden;
+            opacity: 1;
+            transition: max-height 0.2s ease, opacity 0.18s ease;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-section:not(.is-open) .sidebar-panel-section-body {
+            max-height: 0;
+            opacity: 0;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-section:not(.is-open) .sidebar-panel-section-toggle i,
+        #accordionSidebar.double-sidebar .sidebar-panel-section:not(.is-open) .sidebar-panel-section-toggle .lucide {
+            transform: rotate(-90deg);
         }
         #accordionSidebar.double-sidebar .sidebar-panel-links {
             display: flex;
@@ -2560,6 +2745,12 @@
         .navbar-search .form-control:focus {
             box-shadow: none !important;
         }
+        .navbar-search .input-group-append {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.36rem;
+            padding-right: 0.42rem;
+        }
         .navbar-search .btn {
             border-radius: 0;
             min-width: 44px;
@@ -2567,6 +2758,22 @@
             background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%) !important;
             border: 0 !important;
             transition: filter 0.18s ease, transform 0.18s ease;
+        }
+        .navbar-search-shortcut {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 24px;
+            min-width: 46px;
+            border-radius: 7px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: #ffffff;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            line-height: 1;
+            padding: 0 8px;
         }
         .navbar-search .btn:hover,
         .navbar-search .btn:focus {
@@ -2745,6 +2952,13 @@
             border-radius: var(--compact-radius);
             gap: 0.4rem;
             line-height: 1.2;
+        }
+        #content > .container-fluid .action-bar .btn-add i,
+        #content > .container-fluid .action-bar .action-buttons .btn i,
+        #content > .container-fluid .btn-search i {
+            font-size: 0.74rem;
+            width: 0.88rem;
+            height: 0.88rem;
         }
         #content > .container-fluid .search-form-row {
             gap: 0.42rem;
@@ -3107,6 +3321,9 @@
                 font-size: 10px;
                 border-radius: 7px;
             }
+            .navbar-search-shortcut {
+                display: none;
+            }
         }
     </style>
 
@@ -3128,6 +3345,38 @@
         {% elseif currentRoute in administrationRoutes %}
             {% set initialSidebarPanel = 'administration' %}
         {% endif %}
+        {% set sidebarContextMap = {
+            'app_dash_bord': {'module': 'Tableau de bord', 'section': 'Accueil', 'page': 'Dashboard'},
+            'client.list': {'module': 'Commercial', 'section': 'Clients', 'page': 'Liste des clients'},
+            'client.edit': {'module': 'Commercial', 'section': 'Clients', 'page': 'Fiche client'},
+            'client.detail': {'module': 'Commercial', 'section': 'Clients', 'page': 'Détails client'},
+            'prospect.list': {'module': 'Commercial', 'section': 'Prospects', 'page': 'Liste des prospects'},
+            'prospect.edit': {'module': 'Commercial', 'section': 'Prospects', 'page': 'Fiche prospect'},
+            'prospect.detail': {'module': 'Commercial', 'section': 'Prospects', 'page': 'Détails prospect'},
+            'article.list': {'module': 'Commercial', 'section': 'Articles', 'page': 'Liste des articles'},
+            'article.edit': {'module': 'Commercial', 'section': 'Articles', 'page': 'Fiche article'},
+            'article.detail': {'module': 'Commercial', 'section': 'Articles', 'page': 'Détails article'},
+            'tarif.list': {'module': 'Commercial', 'section': 'Tarifs', 'page': 'Liste des tarifs'},
+            'tarif.edit': {'module': 'Commercial', 'section': 'Tarifs', 'page': 'Fiche tarif'},
+            'tarifvente.list': {'module': 'Commercial', 'section': 'Tarifs vente', 'page': 'Liste des tarifs vente'},
+            'tarifvente.edit': {'module': 'Commercial', 'section': 'Tarifs vente', 'page': 'Fiche tarif vente'},
+            'entetepiece.list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Liste des pièces'},
+            'entetepiece.edit': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Fiche pièce'},
+            'entetepiece.add': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Nouvelle pièce'},
+            'reglement.list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Liste des règlements'},
+            'reglement.edit': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Fiche règlement'},
+            'devise.list': {'module': 'Comptabilité', 'section': 'Référentiels', 'page': 'Liste des devises'},
+            'devise.edit': {'module': 'Comptabilité', 'section': 'Référentiels', 'page': 'Fiche devise'},
+            'unite.list': {'module': 'Comptabilité', 'section': 'Référentiels', 'page': 'Liste des unités'},
+            'unite.edit': {'module': 'Comptabilité', 'section': 'Référentiels', 'page': 'Fiche unité'},
+            'dossier.list': {'module': 'Administration', 'section': 'Organisation', 'page': 'Liste des dossiers'},
+            'dossier.edit': {'module': 'Administration', 'section': 'Organisation', 'page': 'Fiche dossier'},
+            'pays.list': {'module': 'Administration', 'section': 'Localisation', 'page': 'Liste des pays'},
+            'pays.edit': {'module': 'Administration', 'section': 'Localisation', 'page': 'Fiche pays'},
+            'ville.list': {'module': 'Administration', 'section': 'Localisation', 'page': 'Liste des villes'},
+            'ville.edit': {'module': 'Administration', 'section': 'Localisation', 'page': 'Fiche ville'}
+        } %}
+        {% set sidebarContext = sidebarContextMap[currentRoute]|default({'module': 'Navigation', 'section': 'Accès rapide', 'page': 'Page active'}) %}
         {% if currentDossier %}
             {% if currentDossier.ville %}
                 {% set currentDossierLocation = currentDossier.ville %}
@@ -3166,8 +3415,9 @@
                             <a class="nav-link nav-loading sidebar-icon-link {% if currentRoute == 'app_dash_bord' %}active{% endif %}"
                                href="{{ path('app_dash_bord') }}"
                                data-nav-label="Dashboard"
+                               data-nav-shortcut-key="1"
                                aria-label="Dashboard">
-                                <i data-lucide="chart-line"></i>
+                                <i data-lucide="layout-dashboard"></i>
                                 <span class="sidebar-link-text">Dashboard</span>
                             </a>
                         </li>
@@ -3177,6 +3427,7 @@
                                     type="button"
                                     data-sidebar-panel="commercial"
                                     data-nav-label="Commercial"
+                                    data-nav-shortcut-key="2"
                                     aria-label="Commercial"
                                     aria-pressed="{% if initialSidebarPanel == 'commercial' %}true{% else %}false{% endif %}">
                                 <i data-lucide="handshake"></i>
@@ -3189,6 +3440,7 @@
                                     type="button"
                                     data-sidebar-panel="accounting"
                                     data-nav-label="Comptabilité"
+                                    data-nav-shortcut-key="3"
                                     aria-label="Comptabilité"
                                     aria-pressed="{% if initialSidebarPanel == 'accounting' %}true{% else %}false{% endif %}">
                                 <i data-lucide="calculator"></i>
@@ -3201,6 +3453,7 @@
                                     type="button"
                                     data-sidebar-panel="administration"
                                     data-nav-label="Administration"
+                                    data-nav-shortcut-key="4"
                                     aria-label="Administration"
                                     aria-pressed="{% if initialSidebarPanel == 'administration' %}true{% else %}false{% endif %}">
                                 <i data-lucide="network"></i>
@@ -3318,27 +3571,51 @@
                             </div>
                         {% endif %}
                         <div class="sidebar-panel-header__subtitle">Accès rapide par module</div>
+                        <div class="sidebar-panel-header__breadcrumb"
+                             id="sidebarPanelBreadcrumb"
+                             data-route-panel="{{ initialSidebarPanel }}"
+                             data-route-module="{{ sidebarContext.module }}"
+                             data-route-section="{{ sidebarContext.section }}"
+                             data-route-page="{{ sidebarContext.page }}">
+                            <span class="sidebar-panel-header__crumb" data-breadcrumb-module>{{ sidebarContext.module }}</span>
+                            <span class="sidebar-panel-header__crumb-divider" aria-hidden="true">></span>
+                            <span class="sidebar-panel-header__crumb" data-breadcrumb-section>{{ sidebarContext.section }}</span>
+                            <span class="sidebar-panel-header__crumb-divider" aria-hidden="true">></span>
+                            <span class="sidebar-panel-header__crumb sidebar-panel-header__crumb--active" data-breadcrumb-page>{{ sidebarContext.page }}</span>
+                        </div>
                     </div>
 
                     <div class="sidebar-panel-scroll">
+                        <div class="sidebar-panel-recent" id="sidebarRecentSection" hidden>
+                            <div class="sidebar-panel-recent__title">
+                                <i data-lucide="history"></i>
+                                <span>Récents</span>
+                            </div>
+                            <div class="sidebar-panel-recent__list" id="sidebarRecentList"></div>
+                        </div>
                         <div class="sidebar-panel-content {% if initialSidebarPanel == 'commercial' %}is-active{% endif %}" data-sidebar-panel="commercial">
                             <div class="sidebar-panel-title sidebar-panel-title--commercial">
                                 <i data-lucide="handshake"></i>
                                 <span>Commercial</span>
                             </div>
-                            <div class="sidebar-panel-section">
-                                <div class="sidebar-panel-links">
-                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--clients {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['client.list', 'client.edit'] %}active{% endif %}"
+                            <div class="sidebar-panel-section is-open" data-section-key="commercial-core">
+                                <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
+                                    <span class="sidebar-panel-section-toggle__label">Navigation</span>
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                                <div class="sidebar-panel-section-body">
+                                    <div class="sidebar-panel-links">
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--clients {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['client.list', 'client.edit', 'client.detail'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('client.list') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="users"></i>
                                         <span>Clients</span>
                                     </a>
-                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--prospects {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['prospect.list', 'prospect.edit'] %}active{% endif %}"
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--prospects {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['prospect.list', 'prospect.edit', 'prospect.detail'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('prospect.list') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="user-plus"></i>
                                         <span>Prospects</span>
                                     </a>
-                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--articles {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['article.list', 'article.edit'] %}active{% endif %}"
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--articles {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['article.list', 'article.edit', 'article.detail'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('article.list') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="package"></i>
                                         <span>Articles</span>
@@ -3354,6 +3631,7 @@
                                         <span>Tarifs vente</span>
                                     </a>
                                 </div>
+                                </div>
                             </div>
                         </div>
 
@@ -3362,8 +3640,12 @@
                                 <i data-lucide="calculator"></i>
                                 <span>Comptabilité</span>
                             </div>
-                            <div class="sidebar-panel-section">
-                                <div class="sidebar-panel-section-label">Documents</div>
+                            <div class="sidebar-panel-section is-open" data-section-key="accounting-documents">
+                                <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
+                                    <span class="sidebar-panel-section-toggle__label">Documents</span>
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                                <div class="sidebar-panel-section-body">
                                 <div class="sidebar-panel-links">
                                     <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute in ['entetepiece.list', 'entetepiece.edit'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('entetepiece.list') }}{% else %}javascript:void(0){% endif %}">
@@ -3376,9 +3658,14 @@
                                         <span>Règlements</span>
                                     </a>
                                 </div>
+                                </div>
                             </div>
-                            <div class="sidebar-panel-section">
-                                <div class="sidebar-panel-section-label">Référentiels</div>
+                            <div class="sidebar-panel-section is-open" data-section-key="accounting-reference">
+                                <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
+                                    <span class="sidebar-panel-section-toggle__label">Référentiels</span>
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                                <div class="sidebar-panel-section-body">
                                 <div class="sidebar-panel-links">
                                     <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--devises {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute in ['devise.list', 'devise.edit'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('devise.list') }}{% else %}javascript:void(0){% endif %}">
@@ -3391,6 +3678,7 @@
                                         <span>Unités</span>
                                     </a>
                                 </div>
+                                </div>
                             </div>
                         </div>
 
@@ -3399,7 +3687,12 @@
                                 <i data-lucide="network"></i>
                                 <span>Administration</span>
                             </div>
-                            <div class="sidebar-panel-section">
+                            <div class="sidebar-panel-section is-open" data-section-key="administration-core">
+                                <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
+                                    <span class="sidebar-panel-section-toggle__label">Organisation</span>
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                                <div class="sidebar-panel-section-body">
                                 <div class="sidebar-panel-links">
                                     <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--dossiers {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if currentRoute in ['dossier.list', 'dossier.edit'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_ADMIN') %}{{ path('dossier.list') }}{% else %}javascript:void(0){% endif %}">
@@ -3416,6 +3709,7 @@
                                         <i data-lucide="building-2"></i>
                                         <span>Villes</span>
                                     </a>
+                                </div>
                                 </div>
                             </div>
                         </div>
@@ -3444,10 +3738,11 @@
                         <div class="input-group">
                             <input type="text" id="navSearchInput" class="form-control bg-light border-0 small" 
                                 placeholder="Rechercher une interface..." aria-label="Search" autocomplete="off">
-                            <div class="input-group-append">
+                            <div class="input-group-append align-items-center">
                                 <button class="btn btn-primary" type="button">
                                     <i class="fas fa-search fa-sm"></i>
                                 </button>
+                                <span class="navbar-search-shortcut" data-search-shortcut-hint>Ctrl+K</span>
                             </div>
                         </div>
                         <!-- Search Results Dropdown -->
@@ -3961,6 +4256,20 @@
                 $(this).dropdown();
             });
 
+            var isApplePlatform = /(Mac|iPhone|iPad|iPod)/i.test((navigator.platform || '') + ' ' + (navigator.userAgent || ''));
+            var shortcutModifierLabel = isApplePlatform ? '⌘' : 'Ctrl';
+            var formatShortcut = function(keyLabel) {
+                return shortcutModifierLabel + '+' + keyLabel;
+            };
+
+            $('[data-search-shortcut-hint]').text(formatShortcut('K'));
+            $('[data-nav-shortcut-key]').each(function() {
+                var keyLabel = String($(this).data('navShortcutKey') || '').trim();
+                if (keyLabel !== '') {
+                    $(this).attr('data-nav-shortcut', formatShortcut(keyLabel));
+                }
+            });
+
             var faToLucideMap = {
                 'fa-address-book': 'user',
                 'fa-angle-up': 'chevron-up',
@@ -4276,18 +4585,283 @@
             };
 
             if ($sidebar.length && $sidebarCollapseToggle.length) {
+                var getStoredSidebarState = function() {
+                    try {
+                        var storedValue = window.localStorage.getItem(sidebarStateStorageKey);
+                        if (storedValue === '1') {
+                            return true;
+                        }
+                        if (storedValue === '0') {
+                            return false;
+                        }
+                    } catch (storageReadError) {
+                        // Ignore storage read failures.
+                    }
+                    return null;
+                };
+
                 var syncSidebarState = function() {
                     var isMobileViewport = window.matchMedia('(max-width: 768px)').matches;
-                    setSidebarExpanded(!isMobileViewport, false);
+                    if (isMobileViewport) {
+                        setSidebarExpanded(false, false);
+                        return;
+                    }
+
+                    var storedState = getStoredSidebarState();
+                    setSidebarExpanded(storedState === null ? true : storedState, false);
                 };
 
                 syncSidebarState();
                 $(window).on('resize.sidebarState', syncSidebarState);
+
+                $sidebarCollapseToggle.on('click', function(e) {
+                    e.preventDefault();
+                    var currentlyExpanded = $body.hasClass('sidebar-expanded');
+                    setSidebarExpanded(!currentlyExpanded, true);
+                });
             }
 
             var $sidebarPanelToggles = $('.sidebar-panel-toggle');
             var $sidebarPanelContents = $('.sidebar-panel-content');
             var sidebarPanelStorageKey = 'diva_erp.sidebar.panel';
+            var $sidebarPanelBreadcrumb = $('#sidebarPanelBreadcrumb');
+            var $breadcrumbModule = $sidebarPanelBreadcrumb.find('[data-breadcrumb-module]');
+            var $breadcrumbSection = $sidebarPanelBreadcrumb.find('[data-breadcrumb-section]');
+            var $breadcrumbPage = $sidebarPanelBreadcrumb.find('[data-breadcrumb-page]');
+            var $sidebarRecentSection = $('#sidebarRecentSection');
+            var $sidebarRecentList = $('#sidebarRecentList');
+            var sidebarRecentStorageKey = 'diva_erp.sidebar.recent';
+            var sidebarSectionStateStorageKey = 'diva_erp.sidebar.sections';
+            var routePanelId = String($sidebarPanelBreadcrumb.data('routePanel') || '').trim();
+            var routeModuleLabel = String($sidebarPanelBreadcrumb.data('routeModule') || '').trim();
+            var routeSectionLabel = String($sidebarPanelBreadcrumb.data('routeSection') || '').trim();
+            var routePageLabel = String($sidebarPanelBreadcrumb.data('routePage') || '').trim();
+
+            var getPanelLabel = function(panelId) {
+                var $panelToggle = $sidebarPanelToggles.filter('[data-sidebar-panel="' + panelId + '"]').first();
+                var panelLabel = String($panelToggle.data('navLabel') || '').trim();
+                return panelLabel || 'Navigation';
+            };
+
+            var getPrimaryPanelLink = function(panelId) {
+                var $panel = $sidebarPanelContents.filter('[data-sidebar-panel="' + panelId + '"]').first();
+                if (!$panel.length) {
+                    return $();
+                }
+
+                var $activeLink = $panel.find('.sidebar-panel-link.active').not('.nav-disabled').first();
+                if ($activeLink.length) {
+                    return $activeLink;
+                }
+
+                return $panel.find('.sidebar-panel-link').not('.nav-disabled').first();
+            };
+
+            var getSectionLabelFromLink = function($link) {
+                if (!$link || !$link.length) {
+                    return '';
+                }
+
+                var $section = $link.closest('.sidebar-panel-section');
+                if (!$section.length) {
+                    return '';
+                }
+
+                var sectionLabel = String($section.find('.sidebar-panel-section-toggle__label').first().text() || '').trim();
+                return sectionLabel;
+            };
+
+            var updateSidebarBreadcrumb = function(panelId) {
+                if (!$sidebarPanelBreadcrumb.length) {
+                    return;
+                }
+
+                var panelLabel = getPanelLabel(panelId);
+                var $primaryLink = getPrimaryPanelLink(panelId);
+                var sectionLabel = getSectionLabelFromLink($primaryLink) || panelLabel;
+                var pageLabel = '';
+                var moduleLabel = panelLabel;
+
+                if (routePanelId !== '' && panelId === routePanelId) {
+                    if (routeModuleLabel !== '') {
+                        moduleLabel = routeModuleLabel;
+                    }
+                    if (routeSectionLabel !== '') {
+                        sectionLabel = routeSectionLabel;
+                    }
+                    if (routePageLabel !== '') {
+                        pageLabel = routePageLabel;
+                    }
+                }
+
+                if (pageLabel === '' && $primaryLink.length) {
+                    pageLabel = String($primaryLink.find('span').last().text() || '').trim();
+                }
+                if (pageLabel === '') {
+                    pageLabel = String($('.page-header h1').first().text() || '').trim() || 'Page active';
+                }
+
+                $breadcrumbModule.text(moduleLabel);
+                $breadcrumbSection.text(sectionLabel);
+                $breadcrumbPage.text(pageLabel);
+            };
+
+            var normalizeRecentItems = function(rawItems) {
+                if (!Array.isArray(rawItems)) {
+                    return [];
+                }
+
+                return rawItems
+                    .filter(function(item) {
+                        return item && item.url && item.name;
+                    })
+                    .map(function(item) {
+                        return {
+                            name: String(item.name),
+                            url: String(item.url),
+                            panel: String(item.panel || ''),
+                            icon: String(item.icon || 'circle')
+                        };
+                    });
+            };
+
+            var readRecentItems = function() {
+                try {
+                    return normalizeRecentItems(JSON.parse(window.localStorage.getItem(sidebarRecentStorageKey) || '[]'));
+                } catch (storageParseError) {
+                    return [];
+                }
+            };
+
+            var writeRecentItems = function(items) {
+                try {
+                    window.localStorage.setItem(sidebarRecentStorageKey, JSON.stringify(items));
+                } catch (storageWriteError) {
+                    // Ignore storage write failures.
+                }
+            };
+
+            var renderRecentItems = function(activePanelId) {
+                if (!$sidebarRecentSection.length || !$sidebarRecentList.length) {
+                    return;
+                }
+
+                var allItems = readRecentItems();
+                var filteredItems = activePanelId
+                    ? allItems.filter(function(item) { return item.panel === activePanelId; })
+                    : [];
+
+                if (filteredItems.length === 0) {
+                    filteredItems = allItems;
+                }
+
+                filteredItems = filteredItems.slice(0, 4);
+                $sidebarRecentList.empty();
+
+                if (filteredItems.length === 0) {
+                    $sidebarRecentSection.attr('hidden', 'hidden');
+                    return;
+                }
+
+                filteredItems.forEach(function(item) {
+                    var $item = $('<a/>', {
+                        'class': 'sidebar-panel-recent__item nav-loading',
+                        href: item.url,
+                        title: item.name
+                    });
+                    var $icon = $('<span/>', { 'class': 'sidebar-panel-recent__icon' }).append($('<i/>', { 'data-lucide': item.icon }));
+                    var $name = $('<span/>', { 'class': 'sidebar-panel-recent__name', text: item.name });
+
+                    $item.append($icon).append($name);
+                    $sidebarRecentList.append($item);
+                });
+
+                $sidebarRecentSection.removeAttr('hidden');
+
+                if (typeof window.renderProjectOutlineIcons === 'function') {
+                    window.renderProjectOutlineIcons($sidebarRecentList[0]);
+                }
+            };
+
+            var recordCurrentPageAsRecent = function(panelId) {
+                var normalizedPanelId = String(panelId || '').trim();
+                if (normalizedPanelId === '') {
+                    return;
+                }
+
+                var $primaryLink = getPrimaryPanelLink(normalizedPanelId);
+                var pageName = '';
+                var pageIcon = 'circle';
+
+                if ($primaryLink.length) {
+                    pageName = String($primaryLink.find('span').last().text() || '').trim();
+                    pageIcon = String($primaryLink.find('i[data-lucide]').first().attr('data-lucide') || pageIcon).trim() || pageIcon;
+                }
+
+                if (routePanelId !== '' && normalizedPanelId === routePanelId && routePageLabel !== '') {
+                    pageName = routePageLabel;
+                }
+
+                if (pageName === '') {
+                    pageName = String($('.page-header h1').first().text() || '').trim() || String(document.title || '').trim();
+                }
+                if (pageName === '') {
+                    return;
+                }
+
+                var currentUrl = window.location.pathname + window.location.search;
+                var recentItems = readRecentItems().filter(function(item) {
+                    return item.url !== currentUrl;
+                });
+
+                recentItems.unshift({
+                    name: pageName,
+                    url: currentUrl,
+                    panel: normalizedPanelId,
+                    icon: pageIcon
+                });
+
+                writeRecentItems(recentItems.slice(0, 12));
+            };
+
+            var readSectionState = function() {
+                try {
+                    return JSON.parse(window.localStorage.getItem(sidebarSectionStateStorageKey) || '{}') || {};
+                } catch (storageReadError) {
+                    return {};
+                }
+            };
+
+            var writeSectionState = function(state) {
+                try {
+                    window.localStorage.setItem(sidebarSectionStateStorageKey, JSON.stringify(state));
+                } catch (storageWriteError) {
+                    // Ignore storage write failures.
+                }
+            };
+
+            var setSidebarSectionOpen = function($section, isOpen, persistState) {
+                if (!$section || !$section.length) {
+                    return;
+                }
+
+                $section.toggleClass('is-open', isOpen);
+                $section.find('.sidebar-panel-section-toggle').first().attr('aria-expanded', isOpen ? 'true' : 'false');
+
+                if (persistState === false) {
+                    return;
+                }
+
+                var panelId = String($section.closest('.sidebar-panel-content').data('sidebarPanel') || '').trim();
+                var sectionKey = String($section.data('sectionKey') || '').trim();
+                if (panelId === '' || sectionKey === '') {
+                    return;
+                }
+
+                var savedState = readSectionState();
+                savedState[panelId + ':' + sectionKey] = isOpen ? 1 : 0;
+                writeSectionState(savedState);
+            };
 
             var setSidebarPanel = function(panelId, persistState) {
                 if (!panelId) {
@@ -4306,6 +4880,8 @@
 
                 $targetToggle.addClass('active').attr('aria-pressed', 'true');
                 $targetPanel.addClass('is-active');
+                updateSidebarBreadcrumb(panelId);
+                renderRecentItems(panelId);
 
                 if (persistState !== false) {
                     try {
@@ -4334,6 +4910,8 @@
                 }
 
                 setSidebarPanel(preferredPanel, false);
+                recordCurrentPageAsRecent(preferredPanel);
+                renderRecentItems(preferredPanel);
 
                 $sidebarPanelToggles.on('click', function(e) {
                     e.preventDefault();
@@ -4346,6 +4924,24 @@
                     setSidebarPanel(String($toggle.data('sidebarPanel') || '').trim(), true);
                 });
             }
+
+            $('.sidebar-panel-section').each(function() {
+                var $section = $(this);
+                var panelId = String($section.closest('.sidebar-panel-content').data('sidebarPanel') || '').trim();
+                var sectionKey = String($section.data('sectionKey') || '').trim();
+                var stateKey = panelId + ':' + sectionKey;
+                var savedState = readSectionState();
+                var isOpenByDefault = $section.hasClass('is-open');
+                var shouldOpen = typeof savedState[stateKey] === 'undefined' ? isOpenByDefault : savedState[stateKey] === 1;
+                setSidebarSectionOpen($section, shouldOpen, false);
+            });
+
+            $('.sidebar-panel-section-toggle').on('click', function(e) {
+                e.preventDefault();
+                var $section = $(this).closest('.sidebar-panel-section');
+                var isOpen = $section.hasClass('is-open');
+                setSidebarSectionOpen($section, !isOpen, true);
+            });
             
             // Close dropdown when clicking outside
             $(document).on('click', function(e) {
@@ -5004,6 +5600,18 @@
 
             var $navSearchInput = $('#navSearchInput');
             var $navSearchResults = $('#navSearchResults');
+            var isTypingTarget = function(target) {
+                if (!target) {
+                    return false;
+                }
+
+                if (target.isContentEditable) {
+                    return true;
+                }
+
+                var tagName = String(target.tagName || '').toLowerCase();
+                return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
+            };
 
             $navSearchInput.on('input', function() {
                 var query = $(this).val().toLowerCase().trim();
@@ -5037,6 +5645,30 @@
 
             $navSearchInput.on('focus', function() {
                 if ($(this).val().trim().length > 0) {
+                    $navSearchInput.trigger('input');
+                }
+            });
+
+            $(document).on('keydown.navSearchShortcut', function(event) {
+                var pressedKey = String(event.key || '').toLowerCase();
+                var hasModifier = event.ctrlKey || event.metaKey;
+
+                if (!hasModifier || pressedKey !== 'k') {
+                    return;
+                }
+
+                if (!$navSearchInput.length) {
+                    return;
+                }
+
+                if (isTypingTarget(event.target) && event.target.id === 'navSearchInput') {
+                    return;
+                }
+
+                event.preventDefault();
+                $navSearchInput.trigger('focus');
+                $navSearchInput.select();
+                if ($navSearchInput.val().trim().length > 0) {
                     $navSearchInput.trigger('input');
                 }
             });
@@ -5087,7 +5719,21 @@
                     var linkRect = link.getBoundingClientRect();
                     var sidebarRect = sidebar.getBoundingClientRect();
                     var label = link.getAttribute('data-nav-label') || link.getAttribute('aria-label') || '';
-                    card.textContent = label;
+                    var shortcut = link.getAttribute('data-nav-shortcut') || '';
+
+                    card.innerHTML = '';
+                    var labelNode = document.createElement('span');
+                    labelNode.className = 'sidebar-hover-card__label';
+                    labelNode.textContent = label;
+                    card.appendChild(labelNode);
+
+                    if (shortcut) {
+                        var shortcutNode = document.createElement('span');
+                        shortcutNode.className = 'sidebar-hover-card__shortcut';
+                        shortcutNode.textContent = shortcut;
+                        card.appendChild(shortcutNode);
+                    }
+
                     card.style.left = Math.round(sidebarRect.right + 12) + 'px';
                     card.style.top = Math.round(linkRect.top + (linkRect.height / 2)) + 'px';
                 };
