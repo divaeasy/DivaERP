@@ -5094,8 +5094,21 @@
             var loadingShownAt = 0;
             var loadingMinVisibleMs = 800;
             var loadingHideTimer = null;
+            var loadingSuppressedUntil = 0;
+
+            window.suppressLoadingOverlay = function(durationMs) {
+                var delay = parseInt(durationMs, 10);
+                if (!delay || delay < 0) {
+                    delay = 2500;
+                }
+                loadingSuppressedUntil = Date.now() + delay;
+                window.hideLoading(true);
+            };
 
             window.showLoading = function() {
+                if (Date.now() < loadingSuppressedUntil) {
+                    return;
+                }
                 if (loadingHideTimer) {
                     window.clearTimeout(loadingHideTimer);
                     loadingHideTimer = null;
@@ -5137,6 +5150,10 @@
             $(document).on('click', 'a', function(e) {
                 var $link = $(this);
                 var href = $link.attr('href');
+                var isDownloadLikeAction = $link.attr('download') !== undefined ||
+                    $link.hasClass('einv-download-card') ||
+                    $link.hasClass('no-loading') ||
+                    (href && (href.match(/download[-_]?(pdf|xml|file)/i) || href.match(/\/export[\.\/]/i)));
                 
                 // Skip if: no href, hash link, external link, data-toggle (dropdowns/modals), or delete button
                 if (!href || 
@@ -5148,13 +5165,12 @@
                     $link.attr('data-toggle') ||
                     $link.attr('target') === '_blank' ||
                     $link.hasClass('delete-btn') ||
-                    $link.attr('download') !== undefined ||
-                    $link.hasClass('einv-download-card') ||
-                    $link.hasClass('no-loading') ||
+                    isDownloadLikeAction ||
                     $link.hasClass('convert-prospect-btn') ||
-                    href.match(/download[-_]?(pdf|xml|file)/i) ||
-                    href.match(/\/export[\.\/]/i) ||
                     $link.closest('.modal').length) {
+                    if (isDownloadLikeAction) {
+                        suppressLoadingOverlay(3000);
+                    }
                     return; // Let the default behavior happen
                 }
                 

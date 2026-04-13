@@ -631,8 +631,8 @@ class ArticleController extends AbstractController
 
         return match ($normalized) {
             'id' => 'id',
-            'designation', 'libelle', 'libellearticle' => 'libelle',
-            'unite', 'unitearticle', 'codeunite' => 'unite',
+            'designation', 'dsignation', 'libelle', 'libellearticle' => 'libelle',
+            'unite', 'unit', 'unitearticle', 'unitarticle', 'codeunite' => 'unite',
             'tarif', 'tarifs', 'tarifvente' => 'tarif',
             default => null,
         };
@@ -645,13 +645,34 @@ class ArticleController extends AbstractController
             return null;
         }
 
-        if (!ctype_digit($input)) {
+        if (ctype_digit($input)) {
+            $unite = $uniteRepository->find((int) $input);
+            if ($unite instanceof Unite) {
+                return $unite;
+            }
+        }
+
+        $normalizedInput = $this->normalizeImportLookupValue($input);
+        if ($normalizedInput === '') {
             return null;
         }
 
-        $unite = $uniteRepository->find((int) $input);
+        foreach ($uniteRepository->findBy([], ['libelle' => 'ASC']) as $unite) {
+            if (!$unite instanceof Unite) {
+                continue;
+            }
 
-        return $unite instanceof Unite ? $unite : null;
+            if ($this->normalizeImportLookupValue((string) $unite->getLibelle()) === $normalizedInput) {
+                return $unite;
+            }
+
+            $code = (string) $unite->getCode();
+            if ($code !== '' && $this->normalizeImportLookupValue($code) === $normalizedInput) {
+                return $unite;
+            }
+        }
+
+        return null;
     }
 
     private function resolveTarifForImport(TarifsRepository $tarifsRepository, Dossier $dossier, string $value): ?Tarifs
@@ -661,12 +682,42 @@ class ArticleController extends AbstractController
             return null;
         }
 
-        if (!ctype_digit($input)) {
+        if (ctype_digit($input)) {
+            $tarif = $tarifsRepository->findOneBy(['id' => (int) $input, 'dossier' => $dossier]);
+            if ($tarif instanceof Tarifs) {
+                return $tarif;
+            }
+        }
+
+        $normalizedInput = $this->normalizeImportLookupValue($input);
+        if ($normalizedInput === '') {
             return null;
         }
 
-        $tarif = $tarifsRepository->findOneBy(['id' => (int) $input, 'dossier' => $dossier]);
+        foreach ($tarifsRepository->findBy(['dossier' => $dossier], ['libelle' => 'ASC']) as $tarif) {
+            if (!$tarif instanceof Tarifs) {
+                continue;
+            }
 
-        return $tarif instanceof Tarifs ? $tarif : null;
+            if ($this->normalizeImportLookupValue((string) $tarif->getLibelle()) === $normalizedInput) {
+                return $tarif;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeImportLookupValue(string $value): string
+    {
+        $normalized = trim($value);
+        if ($normalized === '') {
+            return '';
+        }
+
+        $translit = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $normalized);
+        $normalized = $translit === false ? $normalized : $translit;
+        $normalized = strtolower($normalized);
+
+        return preg_replace('/[^a-z0-9]+/', '', $normalized) ?? '';
     }
 }

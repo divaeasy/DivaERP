@@ -19,7 +19,7 @@
         <button type="button" class="btn-add no-loading" data-toggle="modal" data-target="#articleQuickCreateModal">
             <i class="fas fa-plus"></i> Nouvelle Article
         </button>
-        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.articles') }}" title="Exporter Excel">
+        <a id="articleExportLink" class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.articles') }}" title="Exporter Excel">
             <i class="fas fa-file-excel mr-1"></i> Exporter
         </a>
         <button type="button" class="btn btn-sm btn-outline-primary ml-2 no-loading" data-toggle="modal" data-target="#articleImportModal">
@@ -1002,6 +1002,7 @@
         var bulkDeleteUrl = '{{ path('api.bulk_delete_articles') }}';
         var bulkDeleteToken = '{{ csrf_token('article_bulk_delete') }}';
         var $articlesTable = $('#articlesTable');
+        var $articleExportLink = $('#articleExportLink');
         var $articlesTableBody = $('#articlesTableBody');
         var $emptyState = $('#articlesEmptyState');
         var $quickCreateModal = $('#articleQuickCreateModal');
@@ -1849,6 +1850,43 @@
                     }
                     showToast('error', message);
                 });
+            });
+        }
+
+        if ($articleExportLink.length) {
+            $articleExportLink.on('click', function(event) {
+                event.preventDefault();
+
+                if (window.hideLoading) {
+                    window.hideLoading(true);
+                }
+                if (window.suppressLoadingOverlay) {
+                    window.suppressLoadingOverlay(15000);
+                }
+
+                var frameId = 'articleExportDownloadFrame';
+                var iframe = document.getElementById(frameId);
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = frameId;
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+
+                var separator = this.href.indexOf('?') === -1 ? '?' : '&';
+                iframe.src = this.href + separator + '_download=' + Date.now();
+
+                window.setTimeout(function() {
+                    if (window.hideLoading) {
+                        window.hideLoading(true);
+                    }
+                }, 200);
+
+                window.setTimeout(function() {
+                    if (window.hideLoading) {
+                        window.hideLoading(true);
+                    }
+                }, 1500);
             });
         }
 

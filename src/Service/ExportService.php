@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use Mpdf\Mpdf;
+use PhpOffice\PhpSpreadsheet\NamedRange;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Style\Color;
@@ -307,7 +308,13 @@ class ExportService
         }
 
         if ((string) ($options['template'] ?? '') === 'articles_import') {
-            $this->applyArticlesImportTemplate($sheet, $headerRow + 1, max($dataRow - 1, $headerRow + 1));
+            $this->applyArticlesImportTemplate(
+                $spreadsheet,
+                $sheet,
+                $headerRow + 1,
+                max($dataRow - 1, $headerRow + 1),
+                $options
+            );
         }
 
         // ========== FOOTER SECTION ==========
@@ -386,9 +393,20 @@ class ExportService
         $sheet->getColumnDimension('B')->setWidth(90);
     }
 
-    private function applyArticlesImportTemplate(Worksheet $sheet, int $dataStartRow, int $lastDataRow): void
+    private function applyArticlesImportTemplate(
+        Spreadsheet $spreadsheet,
+        Worksheet $sheet,
+        int $dataStartRow,
+        int $lastDataRow,
+        array $options = []
+    ): void
     {
         $maxRow = max($lastDataRow + 500, 2000);
+        $validationRanges = $this->createArticlesValidationSheet(
+            $spreadsheet,
+            $options['article_unite_options'] ?? [],
+            $options['article_tarif_options'] ?? []
+        );
 
         // Excel validations only (no full sheet lock), so users can type freely
         // and only get an error when value is invalid.
@@ -423,27 +441,98 @@ class ExportService
             $sheet->getCell('B' . $row)->setDataValidation($validation);
 
             $uniteValidation = new DataValidation();
-            $uniteValidation->setType(DataValidation::TYPE_CUSTOM);
+            $uniteValidation->setType($validationRanges['unites'] !== null ? DataValidation::TYPE_LIST : DataValidation::TYPE_CUSTOM);
             $uniteValidation->setErrorStyle(DataValidation::STYLE_STOP);
             $uniteValidation->setAllowBlank(true);
             $uniteValidation->setShowInputMessage(false);
             $uniteValidation->setShowErrorMessage(true);
-            $uniteValidation->setErrorTitle('Type invalide');
-            $uniteValidation->setError('La colonne Unite accepte uniquement un nombre (ID) ou vide.');
-            $uniteValidation->setFormula1('OR($C' . $row . '="",ISNUMBER($C' . $row . '))');
+            $uniteValidation->setErrorTitle('Unite invalide');
+            $uniteValidation->setError('Choisissez une unite existante dans la liste ou laissez la cellule vide.');
+            $uniteValidation->setFormula1($validationRanges['unites'] ?? 'TRUE');
             $sheet->getCell('C' . $row)->setDataValidation($uniteValidation);
 
             $tarifValidation = new DataValidation();
-            $tarifValidation->setType(DataValidation::TYPE_CUSTOM);
+            $tarifValidation->setType($validationRanges['tarifs'] !== null ? DataValidation::TYPE_LIST : DataValidation::TYPE_CUSTOM);
             $tarifValidation->setErrorStyle(DataValidation::STYLE_STOP);
             $tarifValidation->setAllowBlank(true);
             $tarifValidation->setShowInputMessage(false);
             $tarifValidation->setShowErrorMessage(true);
-            $tarifValidation->setErrorTitle('Type invalide');
-            $tarifValidation->setError('La colonne Tarif accepte uniquement un nombre (ID) ou vide.');
-            $tarifValidation->setFormula1('OR($D' . $row . '="",ISNUMBER($D' . $row . '))');
+            $tarifValidation->setErrorTitle('Tarif invalide');
+            $tarifValidation->setError('Choisissez un tarif existant dans la liste ou laissez la cellule vide.');
+            $tarifValidation->setFormula1($validationRanges['tarifs'] ?? 'TRUE');
             $sheet->getCell('D' . $row)->setDataValidation($tarifValidation);
         }
+    }
+
+    /**
+     * @param array<int, string> $uniteOptions
+     * @param array<int, string> $tarifOptions
+     *
+     * @return array{unites: ?string, tarifs: ?string}
+     */
+    private function createArticlesValidationSheet(Spreadsheet $spreadsheet, array $uniteOptions, array $tarifOptions): array
+    {
+        $uniteOptions = $this->normalizeValidationOptions($uniteOptions);
+        $tarifOptions = $this->normalizeValidationOptions($tarifOptions);
+
+        if ($uniteOptions === [] && $tarifOptions === []) {
+            return ['unites' => null, 'tarifs' => null];
+        }
+
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('DivaLists');
+        $sheet->setCellValue('A1', 'Unites');
+        $sheet->setCellValue('B1', 'Tarifs');
+
+        $row = 2;
+        foreach ($uniteOptions as $option) {
+            $sheet->setCellValue('A' . $row, $option);
+            $row++;
+        }
+
+        $row = 2;
+        foreach ($tarifOptions as $option) {
+            $sheet->setCellValue('B' . $row, $option);
+            $row++;
+        }
+
+        $sheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
+        if ($uniteOptions !== []) {
+            $spreadsheet->addNamedRange(new NamedRange('ArticleUniteOptions', $sheet, '$A$2:$A$' . (count($uniteOptions) + 1)));
+        }
+        if ($tarifOptions !== []) {
+            $spreadsheet->addNamedRange(new NamedRange('ArticleTarifOptions', $sheet, '$B$2:$B$' . (count($tarifOptions) + 1)));
+        }
+
+        return [
+            'unites' => $uniteOptions !== []
+                ? '=ArticleUniteOptions'
+                : null,
+            'tarifs' => $tarifOptions !== []
+                ? '=ArticleTarifOptions'
+                : null,
+        ];
+    }
+
+    /**
+     * @param array<int, string> $options
+     *
+     * @return array<int, string>
+     */
+    private function normalizeValidationOptions(array $options): array
+    {
+        $normalized = [];
+
+        foreach ($options as $option) {
+            $value = trim((string) $option);
+            if ($value === '') {
+                continue;
+            }
+
+            $normalized[$value] = $value;
+        }
+
+        return array_values($normalized);
     }
 
     /**

@@ -81,10 +81,16 @@ class ExportController extends AbstractController
     }
 
     #[Route('/articles', name: 'export.articles')]
-    public function exportArticles(ArticleRepository $repo): BinaryFileResponse
+    public function exportArticles(
+        ArticleRepository $repo,
+        UniteRepository $uniteRepository,
+        TarifsRepository $tarifsRepository
+    ): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'Désignation', 'Unité', 'Tarif'];
+        $unites = $uniteRepository->findBy([], ['libelle' => 'ASC']);
+        $tarifs = $tarifsRepository->getSearchQueryBuilder()->getQuery()->getResult();
+        $headers = ['ID', "D\u{00E9}signation", "Unit\u{00E9}", 'Tarif'];
         $rows = array_map(
             fn($a) => [
                 $a->getId(),
@@ -100,17 +106,25 @@ class ExportController extends AbstractController
             $headers,
             $rows,
             [
-                ['title' => 'ID', 'value' => 'Ne pas modifier. Colonne protégée. Présence d un ID existant = mise à jour.'],
-                ['title' => 'Désignation', 'value' => 'Obligatoire pour création (ID vide).'],
-                ['title' => 'Unité', 'value' => 'Optionnel. Saisir un ID unité numérique ou laisser vide.'],
-                ['title' => 'Tarif', 'value' => 'Optionnel. Saisir un ID tarif numerique ou laisser vide.'],
-                ['title' => 'Mode import', 'value' => 'Ligne sans ID = création. Ligne avec ID = mise à jour.'],
-                ['title' => 'Feuille à importer', 'value' => 'Ne modifiez que la feuille Export. La feuille Notices est informative.'],
+                ['title' => 'ID', 'value' => "Ne pas modifier. Colonne prot\u{00E9}g\u{00E9}e. Pr\u{00E9}sence d un ID existant = mise \u{00E0} jour."],
+                ['title' => "D\u{00E9}signation", 'value' => "Obligatoire pour cr\u{00E9}ation (ID vide)."],
+                ['title' => "Unit\u{00E9}", 'value' => "Optionnel. Choisissez une valeur de la liste Excel ou saisissez le libell\u{00E9} ou code exact de l unit\u{00E9}."],
+                ['title' => 'Tarif', 'value' => "Optionnel. Choisissez une valeur de la liste Excel ou saisissez le libell\u{00E9} exact du tarif."],
+                ['title' => 'Mode import', 'value' => "Ligne sans ID = cr\u{00E9}ation. Ligne avec ID = mise \u{00E0} jour."],
+                ['title' => "Feuille \u{00E0} importer", 'value' => 'Ne modifiez que la feuille Export. La feuille Notices est informative.'],
             ],
             [
                 'template' => 'articles_import',
                 'include_footer' => false,
                 'format' => 'xls',
+                'article_unite_options' => array_values(array_filter(array_map(
+                    static fn($unite) => trim((string) $unite),
+                    $unites
+                ))),
+                'article_tarif_options' => array_values(array_filter(array_map(
+                    static fn($tarif) => trim((string) $tarif),
+                    $tarifs
+                ))),
             ]
         );
     }
@@ -119,7 +133,7 @@ class ExportController extends AbstractController
     public function exportFactures(EntetepieceRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'Référence', 'Client', 'Date', 'Montant', 'Statut', 'Échéance'];
+        $headers = ['ID', 'RÃ©fÃ©rence', 'Client', 'Date', 'Montant', 'Statut', 'Ã‰chÃ©ance'];
         $rows = array_map(
             fn($e) => [
                 $e->getId(),
@@ -144,7 +158,7 @@ class ExportController extends AbstractController
     public function exportDevises(DevisesRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'Code', 'Libellé'];
+        $headers = ['ID', 'Code', 'LibellÃ©'];
         $rows = array_map(
             fn($d) => [$d->getId(), $d->getCode(), $d->getLibelle()],
             $items
@@ -161,7 +175,7 @@ class ExportController extends AbstractController
     public function exportPays(PaysRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'Libellé'];
+        $headers = ['ID', 'LibellÃ©'];
         $rows = array_map(
             fn($p) => [$p->getId(), $p->getLibelle()],
             $items
@@ -178,7 +192,7 @@ class ExportController extends AbstractController
     public function exportVilles(VilleRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'Libellé'];
+        $headers = ['ID', 'LibellÃ©'];
         $rows = array_map(
             fn($v) => [$v->getId(), $v->getLibelle()],
             $items
@@ -195,14 +209,14 @@ class ExportController extends AbstractController
     public function exportUnites(UniteRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'Code', 'Libellé'];
+        $headers = ['ID', 'Code', 'LibellÃ©'];
         $rows = array_map(
             fn($u) => [$u->getId(), $u->getCode(), $u->getLibelle()],
             $items
         );
         return $this->exportService->exportListToExcel(
             'unites_' . date('Y-m-d_His') . '.xlsx',
-            'Unités',
+            'UnitÃ©s',
             $headers,
             $rows
         );
@@ -212,7 +226,7 @@ class ExportController extends AbstractController
     public function exportTarifs(TarifsRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'Libellé'];
+        $headers = ['ID', 'LibellÃ©'];
         $rows = array_map(
             fn($t) => [$t->getId(), $t->getLibelle()],
             $items
@@ -229,14 +243,14 @@ class ExportController extends AbstractController
     public function exportReglements(ReglementRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'Libellé'];
+        $headers = ['ID', 'LibellÃ©'];
         $rows = array_map(
             fn($r) => [$r->getId(), $r->getLibelle()],
             $items
         );
         return $this->exportService->exportListToExcel(
             'reglements_' . date('Y-m-d_His') . '.xlsx',
-            'Règlements',
+            'RÃ¨glements',
             $headers,
             $rows
         );
@@ -286,7 +300,7 @@ class ExportController extends AbstractController
             ],
             'Nombre de factures' => [
                 'value' => (string)$dashboardService->getTotalInvoiceCount($currentYear),
-                'period' => 'Année ' . $currentYear,
+                'period' => 'AnnÃ©e ' . $currentYear,
                 'comparison' => '+0'
             ],
             'Nouveaux clients' => [
@@ -295,13 +309,13 @@ class ExportController extends AbstractController
                 'comparison' => '+0'
             ],
             'Produits vendus' => [
-                'value' => (string)$dashboardService->getTotalProductsSold($currentYear) . ' unités',
-                'period' => 'Année ' . $currentYear,
+                'value' => (string)$dashboardService->getTotalProductsSold($currentYear) . ' unitÃ©s',
+                'period' => 'AnnÃ©e ' . $currentYear,
                 'comparison' => '+0'
             ],
             'Factures en retard' => [
                 'value' => ($overdue['count'] ?? 0) . ' factures - ' . number_format($overdueAmount, 2, ',', ' ') . ' EUR',
-                'period' => 'État actuel',
+                'period' => 'Ã‰tat actuel',
                 'comparison' => ($overdueAmount > 0 ? '-' : '+') . '0'
             ],
         ];
@@ -321,13 +335,13 @@ class ExportController extends AbstractController
 
         $kpiData = [
             'Chiffre d\'affaires' => [
-                'value' => '€ ' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
+                'value' => 'â‚¬ ' . number_format((float)$dashboardService->getTotalRevenue($currentYear, $currentMonth), 2, '.', ','),
                 'period' => 'Jan - ' . date('M Y'),
                 'comparison' => ($dashboardService->getTotalRevenue($currentYear, $currentMonth) > $dashboardService->getTotalRevenue($previousYear, $currentMonth) ? '+' : '') . round((($dashboardService->getTotalRevenue($currentYear, $currentMonth) - $dashboardService->getTotalRevenue($previousYear, $currentMonth)) / (($dashboardService->getTotalRevenue($previousYear, $currentMonth) ?: 1)) * 100), 1) . '%'
             ],
-            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
+            'Nombre de factures' => ['value' => (string)$dashboardService->getTotalInvoiceCount($currentYear), 'period' => 'AnnÃ©e ' . $currentYear, 'comparison' => '+0'],
             'Nouveaux clients' => ['value' => (string)$dashboardService->getNewCustomersThisMonth(), 'period' => date('F Y'), 'comparison' => '+0'],
-            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'Année ' . $currentYear, 'comparison' => '+0'],
+            'Produits vendus' => ['value' => (string)$dashboardService->getTotalProductsSold($currentYear), 'period' => 'AnnÃ©e ' . $currentYear, 'comparison' => '+0'],
             'Factures en retard' => [
                 'value' => sprintf('%d factures | %s EUR', $overdue['count'] ?? 0, number_format((float)($overdue['amount'] ?? 0), 2, '.', ',')),
                 'period' => 'Actuel',
