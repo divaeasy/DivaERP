@@ -54,7 +54,7 @@ class EntetepieceRepository extends ServiceEntityRepository
         return $result->fetchAllAssociative();
     }
 
-    public function getSearchQueryBuilder(?SearchPiece $searchData = null): QueryBuilder
+    public function getSearchQueryBuilder(?SearchPiece $searchData = null, ?string $forcedTierType = null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('e')
             ->orderBy('e.id', 'DESC');
@@ -71,17 +71,23 @@ class EntetepieceRepository extends ServiceEntityRepository
                ->setParameter('statut', "%{$searchData->statut}%");
         }
 
+        $tierType = trim((string) ($forcedTierType ?? ($searchData->typet ?? '')));
+        if ($tierType !== '') {
+            $qb->andWhere('e.typet = :tierType')
+                ->setParameter('tierType', $tierType);
+        }
+
         return $qb;
     }
 
-    public function findBySearch(SearchPiece $searchData): array
+    public function findBySearch(SearchPiece $searchData, ?string $forcedTierType = null): array
     {
-        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+        return $this->getSearchQueryBuilder($searchData, $forcedTierType)->getQuery()->getResult();
     }
 
-    public function findPaginated(?SearchPiece $searchData = null, int $page = 1): array
+    public function findPaginated(?SearchPiece $searchData = null, int $page = 1, ?string $forcedTierType = null): array
     {
-        $qb = $this->getSearchQueryBuilder($searchData);
+        $qb = $this->getSearchQueryBuilder($searchData, $forcedTierType);
         return PaginationHelper::paginate($qb, $page);
     }
 

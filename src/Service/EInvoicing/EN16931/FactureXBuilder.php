@@ -40,18 +40,18 @@ class FactureXBuilder
         $sellerStreet = $sellerAddressRaw !== '' ? $sellerAddressRaw : 'Unknown seller address';
         $sellerCountry = ZugferdCountryCodes::FRANCE;
 
-        $buyer = $invoice->getClient();
-        $buyerName = $buyer?->getRaisonSociale() ?? $buyer?->getNom() ?? 'Client';
-        $buyerStreet = $buyer?->getAdresse() ?? '';
-        $buyerPostCode = trim((string) ($buyer?->getCodepostal() ?? ''));
-        $buyerCity = trim((string) ($buyer?->getVille()?->getLibelle() ?? ''));
-        $buyerCountry = $this->resolveCountryCode($buyer?->getPays()?->getLibelle());
+        $buyer = $invoice->getTier();
+        $buyerName = $this->extractTierName($buyer);
+        $buyerStreet = $this->extractTierAddress($buyer);
+        $buyerPostCode = trim((string) $this->extractTierCodepostal($buyer));
+        $buyerCity = trim((string) $this->extractTierCity($buyer));
+        $buyerCountry = $this->resolveCountryCode($this->extractTierCountry($buyer));
         $sellerId = $this->resolveSellerSiren($invoice);
         $buyerId = $this->resolvePartyIdentifier([
             $invoice->getBuyerSiren(),
             $invoice->getBuyerSiret(),
             $invoice->getBuyerVatNumber(),
-            'CLIENT-' . ($buyer?->getId() ?? $invoice->getId()),
+            'CLIENT-' . ($this->extractTierId($buyer) ?? $invoice->getId()),
         ]);
         if ($buyerPostCode === '' || $buyerCity === '') {
             [$parsedPostCode, $parsedCity] = $this->extractPostalData($buyerStreet);
@@ -108,7 +108,7 @@ class FactureXBuilder
             $buyerId
         );
         $descriptor->doSetBuyerElectronicCommunication(
-            $this->buildElectronicAddress($buyer?->getEmail(), $invoiceRef, 'buyer')
+            $this->buildElectronicAddress($this->extractTierEmail($buyer), $invoiceRef, 'buyer')
         );
 
         $buyerVat = $this->normalizeVatNumber($invoice->getBuyerVatNumber(), $buyerCountry);
@@ -364,6 +364,93 @@ class FactureXBuilder
 
         $safeRef = preg_replace('/[^A-Za-z0-9]/', '', $invoiceRef) ?? 'INV';
         return sprintf('%s.%s@local.invalid', strtolower($prefix), strtolower($safeRef));
+    }
+
+    private function extractTierName(?object $tier): string
+    {
+        if ($tier !== null && method_exists($tier, 'getRaisonSociale')) {
+            $name = trim((string) $tier->getRaisonSociale());
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        if ($tier !== null && method_exists($tier, 'getNom')) {
+            $name = trim((string) $tier->getNom());
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        return 'Client';
+    }
+
+    private function extractTierAddress(?object $tier): string
+    {
+        if ($tier !== null && method_exists($tier, 'getAdresse')) {
+            return (string) ($tier->getAdresse() ?? '');
+        }
+
+        return '';
+    }
+
+    private function extractTierCodepostal(?object $tier): string
+    {
+        if ($tier !== null && method_exists($tier, 'getCodepostal')) {
+            return (string) ($tier->getCodepostal() ?? '');
+        }
+
+        return '';
+    }
+
+    private function extractTierCity(?object $tier): string
+    {
+        if ($tier !== null && method_exists($tier, 'getVille')) {
+            $ville = $tier->getVille();
+            if ($ville !== null && method_exists($ville, 'getLibelle')) {
+                return (string) ($ville->getLibelle() ?? '');
+            }
+
+            return trim((string) $ville);
+        }
+
+        return '';
+    }
+
+    private function extractTierCountry(?object $tier): ?string
+    {
+        if ($tier !== null && method_exists($tier, 'getPays')) {
+            $pays = $tier->getPays();
+            if ($pays !== null && method_exists($pays, 'getLibelle')) {
+                return (string) ($pays->getLibelle() ?? '');
+            }
+
+            return trim((string) $pays);
+        }
+
+        return null;
+    }
+
+    private function extractTierId(?object $tier): ?int
+    {
+        if ($tier !== null && method_exists($tier, 'getId')) {
+            $id = $tier->getId();
+            if (is_int($id) || ctype_digit((string) $id)) {
+                return (int) $id;
+            }
+        }
+
+        return null;
+    }
+
+    private function extractTierEmail(?object $tier): ?string
+    {
+        if ($tier !== null && method_exists($tier, 'getEmail')) {
+            $email = trim((string) ($tier->getEmail() ?? ''));
+            return $email !== '' ? $email : null;
+        }
+
+        return null;
     }
 
     private function validateXml(string $xmlContent): bool

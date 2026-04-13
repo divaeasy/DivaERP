@@ -8,6 +8,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Persistence\ManagerRegistry;
 
 #[ORM\Entity(repositoryClass: EntetepieceRepository::class)]
 #[ORM\HasLifecycleCallbacks()]
@@ -28,9 +29,10 @@ class Entetepiece
     #[ORM\Column(length: 20)]
     private ?string $typet = null;
 
-    #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Clients $client = null;
+    #[ORM\Column(nullable: true)]
+    private ?int $tierId = null;
+
+    private ?string $resolvedTierName = null;
 
     #[ORM\Column]
     private ?int $pieceno = null;
@@ -171,14 +173,70 @@ class Entetepiece
         return $this;
     }
 
-    public function getClient(): ?Clients
+    public function getTierId(): ?int
     {
-        return $this->client;
+        return $this->tierId;
     }
 
-    public function setClient(?Clients $client): static
+    public function setTierId(?int $tierId): static
     {
-        $this->client = $client;
+        $this->tierId = $tierId;
+
+        return $this;
+    }
+
+    public function getTier(?ManagerRegistry $doctrine = null): object|null
+    {
+        if ($this->tierId === null) {
+            return null;
+        }
+
+        $registry = $doctrine ?? $this->doctrine;
+        if (!$registry instanceof ManagerRegistry) {
+            return null;
+        }
+
+        $tierClass = match ($this->normalizeTierToken($this->typet)) {
+            'client' => Clients::class,
+            'prospect' => Prospects::class,
+            'fournisseur' => Fournisseur::class,
+            default => null,
+        };
+
+        if ($tierClass === null) {
+            return null;
+        }
+
+        return $registry->getRepository($tierClass)->find($this->tierId);
+    }
+
+    public function getTierName(?ManagerRegistry $doctrine = null): string
+    {
+        if ($this->resolvedTierName !== null && trim($this->resolvedTierName) !== '') {
+            return $this->resolvedTierName;
+        }
+
+        $tier = $this->getTier($doctrine);
+        if ($tier !== null && method_exists($tier, 'getNom')) {
+            $name = trim((string) $tier->getNom());
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        if ($tier !== null && method_exists($tier, '__toString')) {
+            $name = trim((string) $tier);
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        return 'N/A';
+    }
+
+    public function setResolvedTierName(?string $resolvedTierName): static
+    {
+        $this->resolvedTierName = $resolvedTierName;
 
         return $this;
     }
@@ -545,5 +603,23 @@ class Entetepiece
             }
         }
         return $this;
+    }
+
+    private function normalizeTierToken(?string $value): string
+    {
+        $normalized = mb_strtolower(trim((string) $value), 'UTF-8');
+        $normalized = strtr($normalized, [
+            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ä' => 'a', 'ã' => 'a', 'å' => 'a',
+            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o',
+            'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ý' => 'y', 'ÿ' => 'y',
+            'ç' => 'c',
+            'œ' => 'oe',
+            'æ' => 'ae',
+        ]);
+
+        return (string) preg_replace('/[^a-z0-9]/', '', $normalized);
     }
 }

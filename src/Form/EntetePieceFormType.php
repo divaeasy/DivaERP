@@ -5,20 +5,27 @@ namespace App\Form;
 use App\Entity\Clients;
 use App\Entity\Devises;
 use App\Entity\Entetepiece;
+use App\Entity\Fournisseur;
+use App\Entity\Prospects;
 use App\Entity\Reglement;
 use App\Entity\User;
-use App\Repository\ClientsRepository;
-use Symfony\Bundle\SecurityBundle\Security;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class EntetePieceFormType extends AbstractType
 {
-    public function __construct(private Security $security)
-    {
+    public function __construct(
+        private Security $security,
+        private ManagerRegistry $doctrine,
+    ) {
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -27,6 +34,11 @@ class EntetePieceFormType extends AbstractType
         $isEdit = $piece instanceof Entetepiece && null !== $piece->getId();
         $readOnly = (bool) ($options['read_only'] ?? false);
         $currentDossier = $this->getCurrentDossier();
+        $initialTierType = $piece instanceof Entetepiece ? $piece->getTypet() : null;
+        $initialTiers = $this->getTierChoices($currentDossier, $initialTierType);
+        $initialTierId = $piece instanceof Entetepiece && $piece->getTierId() !== null
+            ? (string) $piece->getTierId()
+            : null;
 
         $builder
             ->add('type', ChoiceType::class, [
@@ -52,6 +64,28 @@ class EntetePieceFormType extends AbstractType
                 'required' => true,
                 'label' => 'Type de tiers',
                 'disabled' => $readOnly,
+                'attr' => [
+                    'class' => 'js-tier-type',
+                ],
+            ])
+            ->add('tierId', HiddenType::class, [
+                'required' => false,
+                'attr' => [
+                    'class' => 'js-tier-id-field',
+                ],
+            ])
+            ->add('tierSelector', ChoiceType::class, [
+                'mapped' => false,
+                'choices' => $this->toChoiceMap($initialTiers),
+                'data' => $initialTierId,
+                'required' => false,
+                'placeholder' => $isEdit ? false : 'Selectionner un tiers',
+                'label' => 'Tiers',
+                'disabled' => $readOnly,
+                'attr' => [
+                    'class' => 'form-control js-example-basic-single js-tier-selector',
+                    'data-tier-reglements' => json_encode($this->buildTierReglementMap($initialTiers)),
+                ],
             ])
             ->add('pieceno', null, [
                 'disabled' => $readOnly,
@@ -83,29 +117,6 @@ class EntetePieceFormType extends AbstractType
             ->add('rapport', null, [
                 'disabled' => $readOnly,
             ])
-            ->add('client', EntityType::class, [
-                'class' => Clients::class,
-                'choice_label' => 'nom',
-                'placeholder' => $isEdit ? false : 'Selectionner un client',
-                'choice_attr' => static function (?Clients $client): array {
-                    return [
-                        'data-reglement-id' => (string) ($client?->getReglement()?->getId() ?? ''),
-                    ];
-                },
-                'query_builder' => function (ClientsRepository $repository) use ($currentDossier) {
-                    $qb = $repository->createQueryBuilder('c')
-                        ->orderBy('c.nom', 'ASC');
-                    if ($currentDossier !== null) {
-                        $qb->andWhere('c.dossier = :dossier')
-                            ->setParameter('dossier', $currentDossier);
-                    } else {
-                        $qb->andWhere('1 = 0');
-                    }
-
-                    return $qb;
-                },
-                'disabled' => $readOnly,
-            ])
             ->add('devise', EntityType::class, [
                 'class' => Devises::class,
                 'choice_label' => 'libelle',
@@ -126,6 +137,60 @@ class EntetePieceFormType extends AbstractType
                 'label' => 'Date piece',
                 'disabled' => $readOnly,
             ]);
+
+        $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) use ($currentDossier, $isEdit, $readOnly): void {
+            $data = $event->getData();
+            if (!$data instanceof Entetepiece) {
+                return;
+            }
+
+            $tierChoices = $this->getTierChoices($currentDossier, $data->getTypet());
+            $tierId = $data->getTierId();
+            $event->getForm()->add('tierSelector', ChoiceType::class, [
+                'mapped' => false,
+                'choices' => $this->toChoiceMap($tierChoices),
+                'data' => $tierId !== null ? (string) $tierId : null,
+                'required' => false,
+                'placeholder' => $isEdit ? false : 'Selectionner un tiers',
+                'label' => 'Tiers',
+                'disabled' => $readOnly,
+                'attr' => [
+                    'class' => 'form-control js-example-basic-single js-tier-selector',
+                    'data-tier-reglements' => json_encode($this->buildTierReglementMap($tierChoices)),
+                ],
+            ]);
+        });
+
+        $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) use ($currentDossier, $isEdit, $readOnly): void {
+            $data = $event->getData();
+            if (!is_array($data)) {
+                return;
+            }
+
+            $typet = (string) ($data['typet'] ?? '');
+            $tierChoices = $this->getTierChoices($currentDossier, $typet);
+            $selectedTier = trim((string) ($data['tierSelector'] ?? $data['tierId'] ?? ''));
+
+            $event->getForm()->add('tierSelector', ChoiceType::class, [
+                'mapped' => false,
+                'choices' => $this->toChoiceMap($tierChoices),
+                'data' => $selectedTier !== '' ? $selectedTier : null,
+                'required' => false,
+                'placeholder' => $isEdit ? false : 'Selectionner un tiers',
+                'label' => 'Tiers',
+                'disabled' => $readOnly,
+                'attr' => [
+                    'class' => 'form-control js-example-basic-single js-tier-selector',
+                    'data-tier-reglements' => json_encode($this->buildTierReglementMap($tierChoices)),
+                ],
+            ]);
+
+            $data['tierId'] = $selectedTier !== '' && ctype_digit($selectedTier)
+                ? (int) $selectedTier
+                : null;
+
+            $event->setData($data);
+        });
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -143,5 +208,127 @@ class EntetePieceFormType extends AbstractType
 
         return $user instanceof User ? $user->getCurrentDossier() : null;
     }
-}
 
+    /**
+     * @return array<int, array{id: string, label: string, reglementId: string}>
+     */
+    private function getTierChoices(?\App\Entity\Dossier $dossier, ?string $typet): array
+    {
+        if ($dossier === null) {
+            return [];
+        }
+
+        $normalizedType = $this->normalizeTierType($typet);
+        if (!in_array($normalizedType, ['client', 'prospect', 'fournisseur'], true)) {
+            return [];
+        }
+
+        $entityClass = match ($normalizedType) {
+            'client' => Clients::class,
+            'prospect' => Prospects::class,
+            'fournisseur' => Fournisseur::class,
+            default => null,
+        };
+
+        if ($entityClass === null) {
+            return [];
+        }
+
+        $items = $this->doctrine->getRepository($entityClass)->createQueryBuilder('t')
+            ->where('t.dossier = :dossier')
+            ->setParameter('dossier', $dossier)
+            ->orderBy('t.nom', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $choices = [];
+        foreach ($items as $item) {
+            $id = method_exists($item, 'getId') ? (int) $item->getId() : 0;
+            if ($id <= 0) {
+                continue;
+            }
+
+            $label = method_exists($item, 'getNom') ? trim((string) $item->getNom()) : '';
+            if ($label === '') {
+                $label = sprintf('Tiers #%d', $id);
+            }
+
+            $reglementId = '';
+            if (method_exists($item, 'getReglement')) {
+                $reglement = $item->getReglement();
+                if ($reglement !== null && method_exists($reglement, 'getId')) {
+                    $reglementId = (string) ($reglement->getId() ?? '');
+                }
+            }
+
+            $choices[] = [
+                'id' => (string) $id,
+                'label' => $label,
+                'reglementId' => $reglementId,
+            ];
+        }
+
+        return $choices;
+    }
+
+    /**
+     * @param array<int, array{id: string, label: string, reglementId: string}> $tierChoices
+     * @return array<string, string>
+     */
+    private function toChoiceMap(array $tierChoices): array
+    {
+        $map = [];
+        foreach ($tierChoices as $tierChoice) {
+            $label = trim((string) ($tierChoice['label'] ?? ''));
+            $id = trim((string) ($tierChoice['id'] ?? ''));
+            if ($label === '' || $id === '') {
+                continue;
+            }
+
+            if (array_key_exists($label, $map)) {
+                $label = sprintf('%s (#%s)', $label, $id);
+            }
+
+            $map[$label] = $id;
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param array<int, array{id: string, label: string, reglementId: string}> $tierChoices
+     * @return array<string, string>
+     */
+    private function buildTierReglementMap(array $tierChoices): array
+    {
+        $map = [];
+        foreach ($tierChoices as $tierChoice) {
+            $id = (string) ($tierChoice['id'] ?? '');
+            if ($id === '') {
+                continue;
+            }
+
+            $map[$id] = (string) ($tierChoice['reglementId'] ?? '');
+        }
+
+        return $map;
+    }
+
+    private function normalizeTierType(?string $value): string
+    {
+        $normalized = mb_strtolower(trim((string) $value), 'UTF-8');
+        $normalized = strtr($normalized, [
+            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ä' => 'a', 'ã' => 'a', 'å' => 'a',
+            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o',
+            'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ý' => 'y', 'ÿ' => 'y',
+            'ç' => 'c',
+            'œ' => 'oe',
+            'æ' => 'ae',
+        ]);
+
+        return (string) preg_replace('/[^a-z0-9]/', '', $normalized);
+    }
+}

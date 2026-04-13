@@ -7,6 +7,7 @@ use App\Service\EInvoicing\FactureX\FactureXGenerator;
 use App\Service\EInvoicing\FileStorageService;
 use App\Service\EInvoicing\InvoiceService;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,11 +20,13 @@ class EInvoicingController extends AbstractController
         private InvoiceService $invoiceService,
         private FileStorageService $fileStorage,
         private EntityManagerInterface $entityManager,
+        private ManagerRegistry $doctrine,
     ) {}
 
     #[Route('/{id}/test', name: 'test', methods: ['GET'])]
     public function testPage(Entetepiece $invoice): Response
     {
+        $this->prepareInvoiceContext($invoice);
         $nonInvoiceResponse = $this->redirectIfNotEligibleForEinvoicing($invoice);
         if ($nonInvoiceResponse !== null) {
             return $nonInvoiceResponse;
@@ -44,6 +47,7 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/generate-facturex', name: 'generate_facturex', methods: ['GET', 'POST'])]
     public function generateFactureX(Request $request, Entetepiece $invoice): Response
     {
+        $this->prepareInvoiceContext($invoice);
         $nonInvoiceResponse = $this->redirectIfNotEligibleForEinvoicing($invoice);
         if ($nonInvoiceResponse !== null) {
             return $nonInvoiceResponse;
@@ -88,6 +92,7 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/submit-tiime', name: 'submit_tiime', methods: ['GET', 'POST'])]
     public function submitToTiime(Entetepiece $invoice): Response
     {
+        $this->prepareInvoiceContext($invoice);
         $nonInvoiceResponse = $this->redirectIfNotEligibleForEinvoicing($invoice);
         if ($nonInvoiceResponse !== null) {
             return $nonInvoiceResponse;
@@ -227,6 +232,7 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/check-tiime-status', name: 'check_tiime_status', methods: ['GET'])]
     public function checkTiimeStatus(Entetepiece $invoice): Response
     {
+        $this->prepareInvoiceContext($invoice);
         $status = $this->invoiceService->checkTiimeStatus($invoice);
 
         return $this->json([
@@ -238,6 +244,7 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/history', name: 'history', methods: ['GET'])]
     public function viewHistory(Entetepiece $invoice): Response
     {
+        $this->prepareInvoiceContext($invoice);
         $history = $this->invoiceService->getInvoiceHistory($invoice);
 
         return $this->json([
@@ -249,6 +256,7 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/download-pdf', name: 'download_pdf', methods: ['GET'])]
     public function downloadPdf(Request $request, Entetepiece $invoice): Response
     {
+        $this->prepareInvoiceContext($invoice);
         $model = strtolower(trim((string) $request->query->get('model', '')));
 
         if ($model !== '') {
@@ -295,6 +303,7 @@ class EInvoicingController extends AbstractController
     #[Route('/{id}/download-xml', name: 'download_xml', methods: ['GET'])]
     public function downloadXml(Entetepiece $invoice): Response
     {
+        $this->prepareInvoiceContext($invoice);
         if (!$invoice->getFactureXXmlFilename()) {
             throw $this->createNotFoundException('XML file not found. Generate Facture-X first.');
         }
@@ -336,6 +345,12 @@ class EInvoicingController extends AbstractController
         }
 
         return $this->json(['status' => 'received']);
+    }
+
+    private function prepareInvoiceContext(Entetepiece $invoice): void
+    {
+        $invoice->setDoctrine($this->doctrine);
+        $invoice->setResolvedTierName($invoice->getTierName($this->doctrine));
     }
 }
 

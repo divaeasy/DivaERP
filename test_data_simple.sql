@@ -1,6 +1,6 @@
--- Insert Dossiers (Categories)
+﻿-- Insert Dossiers (Categories)
 INSERT IGNORE INTO dossier (id, nom, adresse, logo, rc, devise_id, factureno) VALUES
-(1, 'Électronique', '123 Rue de l''Électronique', NULL, 'RC1001', NULL, 100),
+(1, 'Ã‰lectronique', '123 Rue de l''Ã‰lectronique', NULL, 'RC1001', NULL, 100),
 (2, 'Mobilier', '456 Avenue du Mobilier', NULL, 'RC1002', NULL, 101),
 (3, 'Services', '789 Boulevard des Services', NULL, 'RC1003', NULL, 102),
 (4, 'Logiciels', '321 Chemin Logiciels', NULL, 'RC1004', NULL, 103),
@@ -37,47 +37,47 @@ INSERT IGNORE INTO reglement (id, libelle, echeance, created_at, updated_at) VAL
 (1, 'Virement', 30, NOW(), NOW());
 
 -- Insert Invoices for 2025
-INSERT IGNORE INTO entetepiece (id, type, typet, client_id, pieceno, pieceref, devise_id, remise, delai, reglement_id, statut, edition, rapport, montant, dossier_id, datep, created_at, updated_at) VALUES
-(1, 'Facture', 'VAT', 1, 1001, 'INV-2025-1001', NULL, NULL, '2025-02-05', 1, 'Validée', NULL, NULL, 1200.50, 1, '2025-01-06', NOW(), NOW()),
-(2, 'Facture', 'VAT', 2, 1002, 'INV-2025-1002', NULL, NULL, '2025-02-10', 1, 'Validée', NULL, NULL, 1850.75, 2, '2025-01-11', NOW(), NOW()),
-(3, 'Facture', 'VAT', 3, 1003, 'INV-2025-1003', NULL, NULL, '2025-02-15', 1, 'Validée', NULL, NULL, 950.30, 3, '2025-01-16', NOW(), NOW()),
-(4, 'Facture', 'VAT', 4, 1004, 'INV-2025-1004', NULL, NULL, '2025-03-05', 1, 'Validée', NULL, NULL, 2100.00, 1, '2025-02-03', NOW(), NOW()),
-(5, 'Facture', 'VAT', 5, 1005, 'INV-2025-1005', NULL, NULL, '2025-03-12', 1, 'Validée', NULL, NULL, 1500.50, 2, '2025-02-10', NOW(), NOW()),
-(6, 'Facture', 'VAT', 6, 1006, 'INV-2025-1006', NULL, NULL, '2025-03-20', 1, 'Validée', NULL, NULL, 1200.00, 3, '2025-02-18', NOW(), NOW()),
-(7, 'Facture', 'VAT', 7, 1007, 'INV-2025-1007', NULL, NULL, '2025-04-05', 1, 'Validée', NULL, NULL, 3200.75, 1, '2025-03-06', NOW(), NOW()),
-(8, 'Facture', 'VAT', 8, 1008, 'INV-2025-1008', NULL, NULL, '2025-04-12', 1, 'Validée', NULL, NULL, 2100.30, 2, '2025-03-13', NOW(), NOW()),
-(9, 'Facture', 'VAT', 9, 1009, 'INV-2025-1009', NULL, NULL, '2025-04-20', 1, 'Validée', NULL, NULL, 1800.00, 3, '2025-03-21', NOW(), NOW()),
-(10, 'Facture', 'VAT', 10, 1010, 'INV-2025-1010', NULL, NULL, '2025-05-10', 1, 'Validée', NULL, NULL, 2500.50, 4, '2025-04-10', NOW(), NOW()),
-(11, 'Facture', 'VAT', 1, 1011, 'INV-2025-1011', NULL, NULL, '2025-05-18', 1, 'Validée', NULL, NULL, 1900.75, 1, '2025-04-18', NOW(), NOW()),
-(12, 'Facture', 'VAT', 2, 1012, 'INV-2025-1012', NULL, NULL, '2025-05-25', 1, 'Validée', NULL, NULL, 2200.00, 2, '2025-04-25', NOW(), NOW()),
-(13, 'Facture', 'VAT', 3, 1013, 'INV-2025-1013', NULL, NULL, '2025-06-08', 1, 'Validée', NULL, NULL, 1650.30, 3, '2025-05-09', NOW(), NOW()),
-(14, 'Facture', 'VAT', 4, 1014, 'INV-2025-1014', NULL, NULL, '2025-06-15', 1, 'Validée', NULL, NULL, 2800.50, 1, '2025-05-16', NOW(), NOW()),
-(15, 'Facture', 'VAT', 5, 1015, 'INV-2025-1015', NULL, NULL, '2025-06-22', 1, 'Validée', NULL, NULL, 2100.00, 2, '2025-05-23', NOW(), NOW()),
-(16, 'Facture', 'VAT', 6, 1016, 'INV-2025-1016', NULL, NULL, '2025-07-05', 1, 'Validée', NULL, NULL, 1750.75, 3, '2025-06-05', NOW(), NOW()),
-(17, 'Facture', 'VAT', 7, 1017, 'INV-2025-1017', NULL, NULL, '2025-07-12', 1, 'Validée', NULL, NULL, 2950.30, 4, '2025-06-12', NOW(), NOW()),
-(18, 'Facture', 'VAT', 8, 1018, 'INV-2025-1018', NULL, NULL, '2025-07-20', 1, 'Validée', NULL, NULL, 1900.50, 1, '2025-06-20', NOW(), NOW()),
-(19, 'Facture', 'VAT', 9, 1019, 'INV-2025-1019', NULL, NULL, '2025-08-08', 1, 'Validée', NULL, NULL, 2400.00, 2, '2025-07-09', NOW(), NOW()),
-(20, 'Facture', 'VAT', 10, 1020, 'INV-2025-1020', NULL, NULL, '2025-08-15', 1, 'Validée', NULL, NULL, 2100.75, 3, '2025-07-16', NOW(), NOW()),
-(21, 'Facture', 'VAT', 1, 1021, 'INV-2025-1021', NULL, NULL, '2025-08-22', 1, 'Validée', NULL, NULL, 1850.30, 1, '2025-07-23', NOW(), NOW()),
-(22, 'Facture', 'VAT', 2, 1022, 'INV-2025-1022', NULL, NULL, '2025-09-05', 1, 'Validée', NULL, NULL, 2650.50, 2, '2025-08-06', NOW(), NOW()),
-(23, 'Facture', 'VAT', 3, 1023, 'INV-2025-1023', NULL, NULL, '2025-09-12', 1, 'Validée', NULL, NULL, 2200.00, 3, '2025-08-13', NOW(), NOW()),
-(24, 'Facture', 'VAT', 4, 1024, 'INV-2025-1024', NULL, NULL, '2025-09-20', 1, 'Validée', NULL, NULL, 1900.75, 4, '2025-08-21', NOW(), NOW()),
-(25, 'Facture', 'VAT', 5, 1025, 'INV-2025-1025', NULL, NULL, '2025-10-08', 1, 'Validée', NULL, NULL, 2550.30, 1, '2025-09-08', NOW(), NOW()),
-(26, 'Facture', 'VAT', 6, 1026, 'INV-2025-1026', NULL, NULL, '2025-10-15', 1, 'Validée', NULL, NULL, 2100.50, 2, '2025-09-15', NOW(), NOW()),
-(27, 'Facture', 'VAT', 7, 1027, 'INV-2025-1027', NULL, NULL, '2025-10-22', 1, 'Validée', NULL, NULL, 1800.00, 3, '2025-09-22', NOW(), NOW()),
-(28, 'Facture', 'VAT', 8, 1028, 'INV-2025-1028', NULL, NULL, '2025-11-05', 1, 'Validée', NULL, NULL, 2750.75, 1, '2025-10-06', NOW(), NOW()),
-(29, 'Facture', 'VAT', 9, 1029, 'INV-2025-1029', NULL, NULL, '2025-11-12', 1, 'Validée', NULL, NULL, 2150.30, 2, '2025-10-13', NOW(), NOW()),
-(30, 'Facture', 'VAT', 10, 1030, 'INV-2025-1030', NULL, NULL, '2025-11-20', 1, 'Validée', NULL, NULL, 1950.50, 3, '2025-10-21', NOW(), NOW()),
-(31, 'Facture', 'VAT', 1, 1031, 'INV-2025-1031', NULL, NULL, '2025-12-08', 1, 'Validée', NULL, NULL, 2800.00, 4, '2025-11-08', NOW(), NOW()),
-(32, 'Facture', 'VAT', 2, 1032, 'INV-2025-1032', NULL, NULL, '2025-12-15', 1, 'Validée', NULL, NULL, 2350.75, 1, '2025-11-15', NOW(), NOW());
+INSERT IGNORE INTO entetepiece (id, type, typet, tier_id, pieceno, pieceref, devise_id, remise, delai, reglement_id, statut, edition, rapport, montant, dossier_id, datep, created_at, updated_at) VALUES
+(1, 'Facture', 'VAT', 1, 1001, 'INV-2025-1001', NULL, NULL, '2025-02-05', 1, 'ValidÃ©e', NULL, NULL, 1200.50, 1, '2025-01-06', NOW(), NOW()),
+(2, 'Facture', 'VAT', 2, 1002, 'INV-2025-1002', NULL, NULL, '2025-02-10', 1, 'ValidÃ©e', NULL, NULL, 1850.75, 2, '2025-01-11', NOW(), NOW()),
+(3, 'Facture', 'VAT', 3, 1003, 'INV-2025-1003', NULL, NULL, '2025-02-15', 1, 'ValidÃ©e', NULL, NULL, 950.30, 3, '2025-01-16', NOW(), NOW()),
+(4, 'Facture', 'VAT', 4, 1004, 'INV-2025-1004', NULL, NULL, '2025-03-05', 1, 'ValidÃ©e', NULL, NULL, 2100.00, 1, '2025-02-03', NOW(), NOW()),
+(5, 'Facture', 'VAT', 5, 1005, 'INV-2025-1005', NULL, NULL, '2025-03-12', 1, 'ValidÃ©e', NULL, NULL, 1500.50, 2, '2025-02-10', NOW(), NOW()),
+(6, 'Facture', 'VAT', 6, 1006, 'INV-2025-1006', NULL, NULL, '2025-03-20', 1, 'ValidÃ©e', NULL, NULL, 1200.00, 3, '2025-02-18', NOW(), NOW()),
+(7, 'Facture', 'VAT', 7, 1007, 'INV-2025-1007', NULL, NULL, '2025-04-05', 1, 'ValidÃ©e', NULL, NULL, 3200.75, 1, '2025-03-06', NOW(), NOW()),
+(8, 'Facture', 'VAT', 8, 1008, 'INV-2025-1008', NULL, NULL, '2025-04-12', 1, 'ValidÃ©e', NULL, NULL, 2100.30, 2, '2025-03-13', NOW(), NOW()),
+(9, 'Facture', 'VAT', 9, 1009, 'INV-2025-1009', NULL, NULL, '2025-04-20', 1, 'ValidÃ©e', NULL, NULL, 1800.00, 3, '2025-03-21', NOW(), NOW()),
+(10, 'Facture', 'VAT', 10, 1010, 'INV-2025-1010', NULL, NULL, '2025-05-10', 1, 'ValidÃ©e', NULL, NULL, 2500.50, 4, '2025-04-10', NOW(), NOW()),
+(11, 'Facture', 'VAT', 1, 1011, 'INV-2025-1011', NULL, NULL, '2025-05-18', 1, 'ValidÃ©e', NULL, NULL, 1900.75, 1, '2025-04-18', NOW(), NOW()),
+(12, 'Facture', 'VAT', 2, 1012, 'INV-2025-1012', NULL, NULL, '2025-05-25', 1, 'ValidÃ©e', NULL, NULL, 2200.00, 2, '2025-04-25', NOW(), NOW()),
+(13, 'Facture', 'VAT', 3, 1013, 'INV-2025-1013', NULL, NULL, '2025-06-08', 1, 'ValidÃ©e', NULL, NULL, 1650.30, 3, '2025-05-09', NOW(), NOW()),
+(14, 'Facture', 'VAT', 4, 1014, 'INV-2025-1014', NULL, NULL, '2025-06-15', 1, 'ValidÃ©e', NULL, NULL, 2800.50, 1, '2025-05-16', NOW(), NOW()),
+(15, 'Facture', 'VAT', 5, 1015, 'INV-2025-1015', NULL, NULL, '2025-06-22', 1, 'ValidÃ©e', NULL, NULL, 2100.00, 2, '2025-05-23', NOW(), NOW()),
+(16, 'Facture', 'VAT', 6, 1016, 'INV-2025-1016', NULL, NULL, '2025-07-05', 1, 'ValidÃ©e', NULL, NULL, 1750.75, 3, '2025-06-05', NOW(), NOW()),
+(17, 'Facture', 'VAT', 7, 1017, 'INV-2025-1017', NULL, NULL, '2025-07-12', 1, 'ValidÃ©e', NULL, NULL, 2950.30, 4, '2025-06-12', NOW(), NOW()),
+(18, 'Facture', 'VAT', 8, 1018, 'INV-2025-1018', NULL, NULL, '2025-07-20', 1, 'ValidÃ©e', NULL, NULL, 1900.50, 1, '2025-06-20', NOW(), NOW()),
+(19, 'Facture', 'VAT', 9, 1019, 'INV-2025-1019', NULL, NULL, '2025-08-08', 1, 'ValidÃ©e', NULL, NULL, 2400.00, 2, '2025-07-09', NOW(), NOW()),
+(20, 'Facture', 'VAT', 10, 1020, 'INV-2025-1020', NULL, NULL, '2025-08-15', 1, 'ValidÃ©e', NULL, NULL, 2100.75, 3, '2025-07-16', NOW(), NOW()),
+(21, 'Facture', 'VAT', 1, 1021, 'INV-2025-1021', NULL, NULL, '2025-08-22', 1, 'ValidÃ©e', NULL, NULL, 1850.30, 1, '2025-07-23', NOW(), NOW()),
+(22, 'Facture', 'VAT', 2, 1022, 'INV-2025-1022', NULL, NULL, '2025-09-05', 1, 'ValidÃ©e', NULL, NULL, 2650.50, 2, '2025-08-06', NOW(), NOW()),
+(23, 'Facture', 'VAT', 3, 1023, 'INV-2025-1023', NULL, NULL, '2025-09-12', 1, 'ValidÃ©e', NULL, NULL, 2200.00, 3, '2025-08-13', NOW(), NOW()),
+(24, 'Facture', 'VAT', 4, 1024, 'INV-2025-1024', NULL, NULL, '2025-09-20', 1, 'ValidÃ©e', NULL, NULL, 1900.75, 4, '2025-08-21', NOW(), NOW()),
+(25, 'Facture', 'VAT', 5, 1025, 'INV-2025-1025', NULL, NULL, '2025-10-08', 1, 'ValidÃ©e', NULL, NULL, 2550.30, 1, '2025-09-08', NOW(), NOW()),
+(26, 'Facture', 'VAT', 6, 1026, 'INV-2025-1026', NULL, NULL, '2025-10-15', 1, 'ValidÃ©e', NULL, NULL, 2100.50, 2, '2025-09-15', NOW(), NOW()),
+(27, 'Facture', 'VAT', 7, 1027, 'INV-2025-1027', NULL, NULL, '2025-10-22', 1, 'ValidÃ©e', NULL, NULL, 1800.00, 3, '2025-09-22', NOW(), NOW()),
+(28, 'Facture', 'VAT', 8, 1028, 'INV-2025-1028', NULL, NULL, '2025-11-05', 1, 'ValidÃ©e', NULL, NULL, 2750.75, 1, '2025-10-06', NOW(), NOW()),
+(29, 'Facture', 'VAT', 9, 1029, 'INV-2025-1029', NULL, NULL, '2025-11-12', 1, 'ValidÃ©e', NULL, NULL, 2150.30, 2, '2025-10-13', NOW(), NOW()),
+(30, 'Facture', 'VAT', 10, 1030, 'INV-2025-1030', NULL, NULL, '2025-11-20', 1, 'ValidÃ©e', NULL, NULL, 1950.50, 3, '2025-10-21', NOW(), NOW()),
+(31, 'Facture', 'VAT', 1, 1031, 'INV-2025-1031', NULL, NULL, '2025-12-08', 1, 'ValidÃ©e', NULL, NULL, 2800.00, 4, '2025-11-08', NOW(), NOW()),
+(32, 'Facture', 'VAT', 2, 1032, 'INV-2025-1032', NULL, NULL, '2025-12-15', 1, 'ValidÃ©e', NULL, NULL, 2350.75, 1, '2025-11-15', NOW(), NOW());
 
 -- Insert Invoices for 2026 (January and February)
-INSERT IGNORE INTO entetepiece (id, type, typet, client_id, pieceno, pieceref, devise_id, remise, delai, reglement_id, statut, edition, rapport, montant, dossier_id, datep, created_at, updated_at) VALUES
-(33, 'Facture', 'VAT', 3, 2001, 'INV-2026-2001', NULL, NULL, '2026-02-05', 1, 'Validée', NULL, NULL, 2100.30, 2, '2026-01-06', NOW(), NOW()),
-(34, 'Facture', 'VAT', 4, 2002, 'INV-2026-2002', NULL, NULL, '2026-02-12', 1, 'Validée', NULL, NULL, 2650.50, 3, '2026-01-13', NOW(), NOW()),
-(35, 'Facture', 'VAT', 5, 2003, 'INV-2026-2003', NULL, NULL, '2026-02-20', 1, 'Validée', NULL, NULL, 2200.00, 1, '2026-01-21', NOW(), NOW()),
-(36, 'Facture', 'VAT', 6, 2004, 'INV-2026-2004', NULL, NULL, '2026-03-08', 1, 'Validée', NULL, NULL, 1900.75, 2, '2026-02-06', NOW(), NOW()),
-(37, 'Facture', 'VAT', 7, 2005, 'INV-2026-2005', NULL, NULL, '2026-03-15', 1, 'Validée', NULL, NULL, 2550.30, 3, '2026-02-13', NOW(), NOW());
+INSERT IGNORE INTO entetepiece (id, type, typet, tier_id, pieceno, pieceref, devise_id, remise, delai, reglement_id, statut, edition, rapport, montant, dossier_id, datep, created_at, updated_at) VALUES
+(33, 'Facture', 'VAT', 3, 2001, 'INV-2026-2001', NULL, NULL, '2026-02-05', 1, 'ValidÃ©e', NULL, NULL, 2100.30, 2, '2026-01-06', NOW(), NOW()),
+(34, 'Facture', 'VAT', 4, 2002, 'INV-2026-2002', NULL, NULL, '2026-02-12', 1, 'ValidÃ©e', NULL, NULL, 2650.50, 3, '2026-01-13', NOW(), NOW()),
+(35, 'Facture', 'VAT', 5, 2003, 'INV-2026-2003', NULL, NULL, '2026-02-20', 1, 'ValidÃ©e', NULL, NULL, 2200.00, 1, '2026-01-21', NOW(), NOW()),
+(36, 'Facture', 'VAT', 6, 2004, 'INV-2026-2004', NULL, NULL, '2026-03-08', 1, 'ValidÃ©e', NULL, NULL, 1900.75, 2, '2026-02-06', NOW(), NOW()),
+(37, 'Facture', 'VAT', 7, 2005, 'INV-2026-2005', NULL, NULL, '2026-03-15', 1, 'ValidÃ©e', NULL, NULL, 2550.30, 3, '2026-02-13', NOW(), NOW());
 
 -- Insert Line Items for invoices
 INSERT IGNORE INTO lignepiece (id, piece_id, article_id, qte, pub, montant, remise, dossier_id, created_at, updated_at) VALUES
@@ -118,3 +118,4 @@ INSERT IGNORE INTO lignepiece (id, piece_id, article_id, qte, pub, montant, remi
 (35, 35, 2, 2, 1100.00, 2200.00, NULL, 1, NOW(), NOW()),
 (36, 36, 10, 1, 1900.75, 1900.75, NULL, 2, NOW(), NOW()),
 (37, 37, 3, 2, 1275.15, 2550.30, NULL, 3, NOW(), NOW());
+

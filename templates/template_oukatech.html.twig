@@ -3375,7 +3375,7 @@
 
         <!-- Sidebar -->
         {% set currentRoute = app.request.attributes.get('_route') %}
-        {% set commercialRoutes = ['client.list', 'client.edit', 'prospect.list', 'prospect.edit', 'article.list', 'article.edit', 'tarif.list', 'tarif.edit', 'tarifvente.list', 'tarifvente.edit'] %}
+        {% set commercialRoutes = ['client.list', 'client.edit', 'prospect.list', 'prospect.edit', 'fournisseur.list', 'fournisseur.edit', 'article.list', 'article.edit', 'tarif.list', 'tarif.edit', 'tarifvente.list', 'tarifvente.edit'] %}
         {% set accountingRoutes = ['entetepiece.list', 'entetepiece.edit', 'reglement.list', 'reglement.edit', 'devise.list', 'devise.edit', 'unite.list', 'unite.edit'] %}
         {% set administrationRoutes = ['dossier.list', 'dossier.edit', 'pays.list', 'pays.edit', 'ville.list', 'ville.edit'] %}
         {% set initialSidebarPanel = '' %}
@@ -3396,6 +3396,9 @@
             'prospect.list': {'module': 'Commercial', 'section': 'Prospects', 'page': 'Liste des prospects'},
             'prospect.edit': {'module': 'Commercial', 'section': 'Prospects', 'page': 'Fiche prospect'},
             'prospect.detail': {'module': 'Commercial', 'section': 'Prospects', 'page': 'Détails prospect'},
+            'fournisseur.list': {'module': 'Commercial', 'section': 'Fournisseurs', 'page': 'Liste des fournisseurs'},
+            'fournisseur.edit': {'module': 'Commercial', 'section': 'Fournisseurs', 'page': 'Fiche fournisseur'},
+            'fournisseur.detail': {'module': 'Commercial', 'section': 'Fournisseurs', 'page': 'Détails fournisseur'},
             'article.list': {'module': 'Commercial', 'section': 'Articles', 'page': 'Liste des articles'},
             'article.edit': {'module': 'Commercial', 'section': 'Articles', 'page': 'Fiche article'},
             'article.detail': {'module': 'Commercial', 'section': 'Articles', 'page': 'Détails article'},
@@ -3657,6 +3660,11 @@
                                        href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('prospect.list') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="user-plus"></i>
                                         <span>Prospects</span>
+                                    </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--fournisseurs {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['fournisseur.list', 'fournisseur.edit', 'fournisseur.detail'] %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('fournisseur.list') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="truck"></i>
+                                        <span>Fournisseurs</span>
                                     </a>
                                     <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--articles {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['article.list', 'article.edit', 'article.detail'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('article.list') }}{% else %}javascript:void(0){% endif %}">
@@ -5634,6 +5642,8 @@
                 { name: 'Clients - Nouveau', url: '{{ path('client.edit') }}', icon: 'fas fa-user-plus' },
                 { name: 'Prospects - Liste', url: '{{ path('prospect.list') }}', icon: 'fas fa-user-plus' },
                 { name: 'Prospects - Nouveau', url: '{{ path('prospect.edit') }}', icon: 'fas fa-user-plus' },
+                { name: 'Fournisseurs - Liste', url: '{{ path('fournisseur.list') }}', icon: 'fas fa-truck' },
+                { name: 'Fournisseurs - Nouveau', url: '{{ path('fournisseur.edit') }}', icon: 'fas fa-truck-loading' },
                 { name: 'Articles - Liste', url: '{{ path('article.list') }}', icon: 'fas fa-boxes' },
                 { name: 'Articles - Nouveau', url: '{{ path('article.edit') }}', icon: 'fas fa-box' },
                 { name: 'Pièces - Liste', url: '{{ path('entetepiece.list') }}', icon: 'fas fa-file-invoice' },

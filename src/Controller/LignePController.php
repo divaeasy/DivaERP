@@ -101,7 +101,8 @@ class LignePController extends AbstractController
             'lignepiece' => $form->createView(),
             'id' => $id,
             'pceId' => $pceId,
-            'pieceClientId' => $lignepiece->getPiece()?->getClient()?->getId() ?? 0,
+            'pieceTierId' => $lignepiece->getPiece()?->getTierId() ?? 0,
+            'pieceTierType' => (string) ($lignepiece->getPiece()?->getTypet() ?? ''),
         ]);
     }
 
@@ -151,7 +152,8 @@ class LignePController extends AbstractController
             'lignepiece' => $form->createView(),
             'id' => 0,
             'pceId' => $pceId,
-            'pieceClientId' => $entetePiece->getClient()?->getId() ?? 0,
+            'pieceTierId' => $entetePiece->getTierId() ?? 0,
+            'pieceTierType' => (string) ($entetePiece->getTypet() ?? ''),
         ]);
     }
 
@@ -205,7 +207,7 @@ class LignePController extends AbstractController
     }
 
     /**
-     * Retourne le prix de vente d'un article en fonction du client de la piece en cours.
+     * Retourne le prix de vente d'un article en fonction du tiers de la piece en cours.
      */
     #[Route('/price', name: 'lignepiece.price', methods: ['GET'])]
     public function getTarifventePrice(Request $request, ManagerRegistry $doctrine): JsonResponse
@@ -239,10 +241,29 @@ class LignePController extends AbstractController
             return $this->json(['error' => 'Article introuvable'], 404);
         }
 
-        $client = $piece?->getClient();
+        $client = null;
+        $pieceTierType = $this->normalizeToken($piece?->getTypet());
+        $pieceTierId = (int) ($piece?->getTierId() ?? 0);
+
+        if ($pieceTierType === 'client' && $pieceTierId > 0) {
+            $client = $doctrine->getRepository(Clients::class)->findOneBy([
+                'id' => $pieceTierId,
+                'dossier' => $currentDossier,
+            ]);
+        }
+
         if ($client === null) {
+            $requestTierType = $this->normalizeToken((string) $request->query->get('tierType', ''));
+            $requestTierId = $request->query->getInt('tierId', 0);
             $requestClientId = $request->query->getInt('clientId', 0);
-            if ($requestClientId > 0) {
+
+            if ($requestTierType === 'client' && $requestTierId > 0) {
+                $client = $doctrine->getRepository(Clients::class)->findOneBy([
+                    'id' => $requestTierId,
+                    'dossier' => $currentDossier,
+                ]);
+            } elseif ($requestClientId > 0) {
+                // Backward compatibility with old front-end payloads.
                 $client = $doctrine->getRepository(Clients::class)->findOneBy([
                     'id' => $requestClientId,
                     'dossier' => $currentDossier,
@@ -311,11 +332,13 @@ class LignePController extends AbstractController
                 ->select('lp.pub AS price')
                 ->join('lp.piece', 'ep')
                 ->where('lp.article = :article')
-                ->andWhere('ep.client = :client')
+                ->andWhere('ep.tierId = :tierId')
+                ->andWhere('ep.typet = :tierType')
                 ->andWhere('lp.dossier = :dossier')
                 ->andWhere('lp.pub IS NOT NULL')
                 ->setParameter('article', $article)
-                ->setParameter('client', $client)
+                ->setParameter('tierId', (int) $client->getId())
+                ->setParameter('tierType', 'Client')
                 ->setParameter('dossier', $currentDossier)
                 ->orderBy('lp.id', 'DESC')
                 ->setMaxResults(1)

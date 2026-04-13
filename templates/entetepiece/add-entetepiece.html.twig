@@ -66,17 +66,17 @@
     </div>
 
     <div class="card-header-custom mt-4">
-        <h5><i class="fas fa-user mr-2"></i>Informations client</h5>
+        <h5><i class="fas fa-users mr-2"></i>Informations tiers</h5>
     </div>
 
     <div class="row">
         <div class="col-md-6">
             <div class="form-group">
-                {{ form_label(entetepiece.client, 'Client', {'label_attr': {'class': 'required'}}) }}
-                {{ form_widget(entetepiece.client, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_label(entetepiece.tierSelector, 'Tiers', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(entetepiece.tierSelector, {'attr': {'class': 'form-control js-example-basic-single js-tier-selector'}}) }}
                 {% if not isReadOnly|default(false) %}
-                    <div class="invalid-feedback">Le client est obligatoire</div>
-                    {{ form_errors(entetepiece.client) }}
+                    <div class="invalid-feedback">Le tiers est obligatoire</div>
+                    {{ form_errors(entetepiece.tierSelector) }}
                 {% endif %}
             </div>
         </div>
@@ -454,13 +454,153 @@
             }
 
             var $status = $('#{{ entetepiece.statut.vars.id }}');
-            var $client = $('#{{ entetepiece.client.vars.id }}');
+            var $tierType = $('#{{ entetepiece.typet.vars.id }}');
+            var $tierSelector = $('#{{ entetepiece.tierSelector.vars.id }}');
+            var $tierId = $('#{{ entetepiece.tierId.vars.id }}');
             var $devise = $('#{{ entetepiece.devise.vars.id }}');
             var $reglement = $('#{{ entetepiece.reglement.vars.id }}');
             var $statusChecklist = $('#statusEligibilityChecklist');
             var $statusSummary = $('#statusEligibilitySummary');
             var $statusBadge = $('#statusEligibilityBadge');
             var $submitButtons = $(form).find('button[type="submit"]');
+            var tierEndpointTemplate = '{{ path('entetepiece.tier_autocomplete', {tierType: '__TYPE__'}) }}';
+            var tierReglementMap = {};
+
+            function normalizeTierType(value) {
+                var normalized = String(value || '').toLowerCase();
+                if (typeof normalized.normalize === 'function') {
+                    normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                }
+                return normalized.replace(/[^a-z0-9]/g, '');
+            }
+
+            function typeRequiresTierSelection() {
+                var normalizedType = normalizeTierType($tierType.val());
+                return normalizedType === 'client' || normalizedType === 'prospect' || normalizedType === 'fournisseur';
+            }
+
+            function syncTierIdField() {
+                if (!$tierId.length || !$tierSelector.length) {
+                    return;
+                }
+                var selectedTierId = String($tierSelector.val() || '').trim();
+                $tierId.val(selectedTierId);
+            }
+
+            function buildTierEndpoint() {
+                var selectedType = String($tierType.val() || '').trim();
+                if (selectedType === '') {
+                    return '';
+                }
+                return tierEndpointTemplate.replace('__TYPE__', encodeURIComponent(selectedType));
+            }
+
+            function resetTierSelector() {
+                if (!$tierSelector.length) {
+                    return;
+                }
+
+                var placeholderLabel = 'Selectionner un tiers';
+                var $emptyOption = $tierSelector.find('option[value=""]').first().clone();
+                $tierSelector.empty();
+                if ($emptyOption.length) {
+                    $tierSelector.append($emptyOption);
+                } else {
+                    $tierSelector.append($('<option></option>').attr('value', '').text(placeholderLabel));
+                }
+                tierReglementMap = {};
+                syncTierIdField();
+                if ($tierSelector.hasClass('select2-hidden-accessible')) {
+                    $tierSelector.trigger('change.select2');
+                }
+            }
+
+            function applyTierReglementIfEmpty() {
+                if (!$tierSelector.length || !$reglement.length) {
+                    return;
+                }
+
+                var selectedTierId = String($tierSelector.val() || '').trim();
+                if (selectedTierId === '') {
+                    return;
+                }
+
+                var currentReglementId = String($reglement.val() || '').trim();
+                if (currentReglementId !== '') {
+                    return;
+                }
+
+                var reglementId = String(tierReglementMap[selectedTierId] || '').trim();
+                if (reglementId !== '') {
+                    $reglement.val(reglementId).trigger('change');
+                }
+            }
+
+            function populateTierSelector(items, selectedTierId) {
+                if (!$tierSelector.length) {
+                    return;
+                }
+
+                resetTierSelector();
+                tierReglementMap = {};
+
+                (items || []).forEach(function(item) {
+                    var id = String(item.id || '').trim();
+                    var name = String(item.name || '').trim();
+                    if (id === '' || name === '') {
+                        return;
+                    }
+
+                    tierReglementMap[id] = String(item.reglementId || '');
+                    var $option = $('<option></option>')
+                        .attr('value', id)
+                        .text(name)
+                        .attr('data-reglement-id', String(item.reglementId || ''));
+                    $tierSelector.append($option);
+                });
+
+                if (selectedTierId && tierReglementMap.hasOwnProperty(String(selectedTierId))) {
+                    $tierSelector.val(String(selectedTierId));
+                } else {
+                    $tierSelector.val('');
+                }
+
+                syncTierIdField();
+                if ($tierSelector.hasClass('select2-hidden-accessible')) {
+                    $tierSelector.trigger('change.select2');
+                }
+                applyTierReglementIfEmpty();
+            }
+
+            function loadTiers(selectedTierId) {
+                if (!typeRequiresTierSelection()) {
+                    resetTierSelector();
+                    return Promise.resolve();
+                }
+
+                var endpoint = buildTierEndpoint();
+                if (endpoint === '') {
+                    resetTierSelector();
+                    return Promise.resolve();
+                }
+
+                return fetch(endpoint, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    cache: 'no-store'
+                })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Tier fetch failed');
+                    }
+                    return response.json();
+                })
+                .then(function(items) {
+                    populateTierSelector(items, selectedTierId);
+                })
+                .catch(function() {
+                    resetTierSelector();
+                });
+            }
 
             function normalizeStatus(rawValue) {
                 var normalized = String(rawValue || '').toLowerCase();
@@ -618,7 +758,7 @@
                 var invalidLineCount = lineStats.invalidLineCount;
                 var hasAtLeastOneLine = lineCount > 0;
                 var hasCompleteLines = hasAtLeastOneLine && invalidLineCount === 0;
-                var hasClient = hasFieldValue($client);
+                var hasTier = hasFieldValue($tierSelector);
                 var hasDevise = hasFieldValue($devise);
                 var hasReglement = hasFieldValue($reglement);
 
@@ -634,7 +774,7 @@
                 var checks = [
                     { ok: hasAtLeastOneLine, label: 'Au moins une ligne ajoutee (' + lineCount + ')', required: requiresLineCount },
                     { ok: hasCompleteLines, label: lineCompletenessLabel, required: requiresLineCompleteness },
-                    { ok: hasClient, label: 'Client renseigne', required: false },
+                    { ok: hasTier, label: 'Tiers renseigne', required: false },
                     { ok: hasDevise, label: 'Devise renseignee', required: false },
                     { ok: hasReglement, label: 'Reglement renseigne', required: false }
                 ];
@@ -713,10 +853,10 @@
                             .text('Pour passer en Validee, completez les ' + invalidLineCount + ' ligne(s) incomplete(s) (article, quantite, prix).');
                         return;
                     }
-                    if (!hasClient || !hasDevise || !hasReglement) {
+                    if (!hasTier || !hasDevise || !hasReglement) {
                         var missingFields = [];
-                        if (!hasClient) {
-                            missingFields.push('client');
+                        if (!hasTier) {
+                            missingFields.push('tiers');
                         }
                         if (!hasDevise) {
                             missingFields.push('devise');
@@ -764,19 +904,21 @@
                 $status.off('change.statusEligibility').on('change.statusEligibility', refreshStatusEligibilityUI);
             }
 
-            if ($client.length && $reglement.length) {
-                function applyClientReglementIfEmpty() {
-                    var selectedOption = $client.find('option:selected');
-                    var clientReglementId = String(selectedOption.data('reglement-id') || '').trim();
-                    var currentReglementId = String($reglement.val() || '').trim();
-                    if (clientReglementId !== '' && currentReglementId === '') {
-                        $reglement.val(clientReglementId).trigger('change');
-                    }
-                }
+            if ($tierType.length && $tierSelector.length) {
+                var initialTierId = String($tierId.val() || $tierSelector.val() || '').trim();
+                loadTiers(initialTierId).then(function() {
+                    refreshStatusEligibilityUI();
+                });
 
-                applyClientReglementIfEmpty();
-                $client.off('change.pieceReglement').on('change.pieceReglement', function() {
-                    applyClientReglementIfEmpty();
+                $tierType.off('change.tierLoader').on('change.tierLoader', function() {
+                    loadTiers('').then(function() {
+                        refreshStatusEligibilityUI();
+                    });
+                });
+
+                $tierSelector.off('change.tierSelection').on('change.tierSelection', function() {
+                    syncTierIdField();
+                    applyTierReglementIfEmpty();
                     refreshStatusEligibilityUI();
                 });
             }
@@ -786,6 +928,12 @@
             }
             if ($reglement.length) {
                 $reglement.off('change.statusEligibility').on('change.statusEligibility', refreshStatusEligibilityUI);
+            }
+
+            if (form) {
+                $(form).off('submit.tierSync').on('submit.tierSync', function() {
+                    syncTierIdField();
+                });
             }
 
             if (window.__pieceLinesObserver) {

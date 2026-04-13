@@ -10,7 +10,9 @@
         <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
             <i class="fas fa-arrow-left"></i>
         </a>
-        <h1 class="h3 mb-0 text-gray-800">Gestion des Pieces</h1>
+        <h1 class="h3 mb-0 text-gray-800">
+            Gestion des Pieces{% if forcedTierType is defined and forcedTierType %} - {{ forcedTierType }}{% endif %}
+        </h1>
     </div>
 </div>
 
@@ -19,6 +21,9 @@
         <a class="btn-add" href="{{ path('entetepiece.edit') }}">
             <i class="fas fa-plus"></i> Nouvelle Piece
         </a>
+        <a class="btn btn-sm btn-outline-primary ml-2 no-loading" href="{{ path('entetepiece.list') }}">Toutes</a>
+        <a class="btn btn-sm btn-outline-primary ml-1 no-loading" href="{{ path('entetepiece.client_list') }}">Clients</a>
+        <a class="btn btn-sm btn-outline-primary ml-1 no-loading" href="{{ path('entetepiece.fournisseur_list') }}">Fournisseurs</a>
         <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.factures') }}" title="Exporter CSV">
             <i class="fas fa-file-csv mr-1"></i> Exporter
         </a>
@@ -35,7 +40,7 @@
             <tr>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
                 <th data-sort-key="type">Type</th>
-                <th data-sort-key="client">Client</th>
+                <th data-sort-key="tier">Tiers</th>
                 <th data-sort-key="pieceno" data-sort-type="number">No Piece</th>
                 <th data-sort-key="pieceref">Reference</th>
                 <th data-sort-key="remise" data-sort-type="number" class="text-right">Remise</th>
@@ -86,7 +91,7 @@
             <tr>
                 <td><strong>#{{ entetepiece.id }}</strong></td>
                 <td><span class="badge badge-primary badge-lg">{{ entetepiece.type|default('____') }}</span></td>
-                <td>{{ entetepiece.client|default('____') }}</td>
+                <td>{{ entetepiece.tierName|default('____') }}</td>
                 <td><strong>{{ entetepiece.pieceno|default('____') }}</strong></td>
                 <td>{{ entetepiece.pieceref|default('____') }}</td>
                 <td class="text-right">{{ display_remise|number_format(2, ',', ' ') }}%</td>
@@ -200,7 +205,7 @@
             {% endfor %}
         </tbody>
     </table>
-    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'entetepiece.list', routeParams: {}} %}
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: listRoute|default('entetepiece.list'), routeParams: {}} %}
     {% else %}
     <div class="empty-state">
         <div class="empty-state-icon">

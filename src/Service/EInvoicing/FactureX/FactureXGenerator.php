@@ -158,7 +158,7 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         $taxRate = $this->normalizeVatRate($taxRate);
 
         $dossier = $invoice->getDossier();
-        $client = $invoice->getClient();
+        $tier = $invoice->getTier();
         $pieceTypeLabel = $this->getPieceTypeLabel($invoice->getType());
         $pieceNumberLabel = $this->getPieceNumberLabel($pieceTypeLabel);
 
@@ -178,26 +178,34 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
         }
         $sellerAddressLines = $this->compactLines($sellerAddressLines);
 
+        $tierAddressPrimary = $this->extractTierField($tier, 'getAdr1');
+        $tierAddressSecondary = $this->extractTierField($tier, 'getAdr2');
+        $tierAddressStreet = $this->extractTierField($tier, 'getRue');
+        $tierAddressFallback = $this->extractTierField($tier, 'getAdresse');
+        $tierCityLabel = $this->extractTierVilleLabel($tier);
+        $tierCountryLabel = $this->extractTierPaysLabel($tier);
+
         $buyerAddressLines = $this->compactLines([
-            (string) ($client?->getAdr1() ?? ''),
-            (string) ($client?->getAdr2() ?? ''),
-            (string) ($client?->getRue() ?? ''),
+            $tierAddressPrimary,
+            $tierAddressSecondary,
+            $tierAddressStreet,
         ]);
 
         if ($buyerAddressLines === []) {
-            $buyerAddressLines = $this->compactLines(preg_split('/[\r\n,]+/', (string) ($client?->getAdresse() ?? '')) ?: []);
+            $buyerAddressLines = $this->compactLines(preg_split('/[\r\n,]+/', $tierAddressFallback) ?: []);
         }
 
-        $buyerPostcode = trim((string) ($client?->getCodepostal() ?? ''));
-        $buyerCity = trim((string) ($client?->getVille()?->getLibelle() ?? ''));
-        $buyerCountry = trim((string) ($client?->getPays()?->getLibelle() ?? ''));
+        $buyerPostcode = trim($this->extractTierField($tier, 'getCodepostal'));
+        $buyerCity = trim($tierCityLabel);
+        $buyerCountry = trim($tierCountryLabel);
         if ($buyerCountry === '') {
             $buyerCountry = 'France';
         }
 
         $buyerCode = '';
-        if ($client?->getId() !== null) {
-            $buyerCode = sprintf('C%06d', $client->getId());
+        $tierId = $this->extractTierId($tier);
+        if ($tierId !== null) {
+            $buyerCode = sprintf('C%06d', $tierId);
         }
 
         $lineItems = [];
@@ -322,13 +330,13 @@ Code SWIFT: ' . ($data['bank_bic'] !== '' ? $this->e($data['bank_bic']) : '') . 
             'seller_address_lines' => $sellerAddressLines,
             'seller_country' => $sellerCountry,
             'seller_logo' => $this->resolveLogoPath((string) ($dossier?->getLogo() ?? '')),
-            'buyer_name' => (string) ($client?->getRaisonSociale() ?? $client?->getNom() ?? 'Client'),
+            'buyer_name' => $this->extractTierDisplayName($tier),
             'buyer_code' => $buyerCode,
             'buyer_address_lines' => $buyerAddressLines,
             'buyer_postcode' => $buyerPostcode,
             'buyer_city' => $buyerCity,
             'buyer_country' => $buyerCountry,
-            'buyer_email' => (string) ($client?->getEmail() ?? ''),
+            'buyer_email' => $this->extractTierField($tier, 'getEmail'),
             'line_items' => $lineItems,
             'subject_text' => $subjectText,
             'bank_iban' => $bankIban,
@@ -865,6 +873,74 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
             'facture' => 'N de facture',
             default => 'N de piece',
         };
+    }
+
+    private function extractTierDisplayName(?object $tier): string
+    {
+        if ($tier !== null && method_exists($tier, 'getRaisonSociale')) {
+            $name = trim((string) $tier->getRaisonSociale());
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        if ($tier !== null && method_exists($tier, 'getNom')) {
+            $name = trim((string) $tier->getNom());
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        return 'Client';
+    }
+
+    private function extractTierField(?object $tier, string $method): string
+    {
+        if ($tier !== null && method_exists($tier, $method)) {
+            return trim((string) ($tier->$method() ?? ''));
+        }
+
+        return '';
+    }
+
+    private function extractTierVilleLabel(?object $tier): string
+    {
+        if ($tier !== null && method_exists($tier, 'getVille')) {
+            $ville = $tier->getVille();
+            if ($ville !== null && method_exists($ville, 'getLibelle')) {
+                return trim((string) ($ville->getLibelle() ?? ''));
+            }
+
+            return trim((string) $ville);
+        }
+
+        return '';
+    }
+
+    private function extractTierPaysLabel(?object $tier): string
+    {
+        if ($tier !== null && method_exists($tier, 'getPays')) {
+            $pays = $tier->getPays();
+            if ($pays !== null && method_exists($pays, 'getLibelle')) {
+                return trim((string) ($pays->getLibelle() ?? ''));
+            }
+
+            return trim((string) $pays);
+        }
+
+        return '';
+    }
+
+    private function extractTierId(?object $tier): ?int
+    {
+        if ($tier !== null && method_exists($tier, 'getId')) {
+            $id = $tier->getId();
+            if (is_int($id) || ctype_digit((string) $id)) {
+                return (int) $id;
+            }
+        }
+
+        return null;
     }
 
     private function normalizeToken(?string $value): string

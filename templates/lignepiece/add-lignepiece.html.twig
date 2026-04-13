@@ -112,7 +112,8 @@
 
             const priceUrl = '{{ path("lignepiece.price") }}';
             const currentPieceId = '{{ pceId }}';
-            const currentClientId = '{{ pieceClientId|default(0) }}';
+            const currentTierId = '{{ pieceTierId|default(0) }}';
+            const currentTierType = '{{ pieceTierType|default('') }}';
             const $pieceField = $('[id$="_piece"]');
             const $doc = $(document);
             const $form = $article.closest('form');
@@ -309,9 +310,18 @@
                 return '';
             }
 
-            function resolveClientId() {
-                var candidate = String(currentClientId || '').trim();
+            function resolveTierId() {
+                var candidate = String(currentTierId || '').trim();
                 if (candidate !== '' && candidate !== '0') {
+                    return candidate;
+                }
+
+                return '';
+            }
+
+            function resolveTierType() {
+                var candidate = String(currentTierType || '').trim();
+                if (candidate !== '') {
                     return candidate;
                 }
 
@@ -335,9 +345,13 @@
                 if (pieceIdForRequest !== '') {
                     query += '&pieceId=' + encodeURIComponent(pieceIdForRequest);
                 }
-                var clientIdForRequest = resolveClientId();
-                if (clientIdForRequest !== '') {
-                    query += '&clientId=' + encodeURIComponent(clientIdForRequest);
+                var tierIdForRequest = resolveTierId();
+                var tierTypeForRequest = resolveTierType();
+                if (tierIdForRequest !== '') {
+                    query += '&tierId=' + encodeURIComponent(tierIdForRequest);
+                }
+                if (tierTypeForRequest !== '') {
+                    query += '&tierType=' + encodeURIComponent(tierTypeForRequest);
                 }
 
                 fetch(priceUrl + query, {

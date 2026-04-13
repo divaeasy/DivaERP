@@ -100,7 +100,7 @@ class InvoiceService
         try {
             $metadata = [
                 'invoice_date' => $invoice->getDatep()?->format('Y-m-d'),
-                'buyer_name' => $invoice->getClient()?->getRaisonSociale() ?? $invoice->getClient()?->getNom(),
+                'buyer_name' => $invoice->getTierName() !== 'N/A' ? $invoice->getTierName() : null,
                 'invoice_amount' => $this->computeInvoiceAmountFromLines($invoice),
                 'currency' => $invoice->getDevise()?->getCode() ?? 'EUR',
             ];

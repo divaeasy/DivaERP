@@ -16,6 +16,7 @@ use App\Repository\UniteRepository;
 use App\Repository\VilleRepository;
 use App\Service\DashboardService;
 use App\Service\ExportService;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -130,15 +131,15 @@ class ExportController extends AbstractController
     }
 
     #[Route('/factures', name: 'export.factures')]
-    public function exportFactures(EntetepieceRepository $repo): BinaryFileResponse
+    public function exportFactures(EntetepieceRepository $repo, ManagerRegistry $doctrine): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'RÃ©fÃ©rence', 'Client', 'Date', 'Montant', 'Statut', 'Ã‰chÃ©ance'];
+        $headers = ['ID', 'RÃ©fÃ©rence', 'Tiers', 'Date', 'Montant', 'Statut', 'Ã‰chÃ©ance'];
         $rows = array_map(
             fn($e) => [
                 $e->getId(),
                 $e->getPieceref(),
-                (string) $e->getClient(),
+                (string) $e->getTierName($doctrine),
                 $e->getDatep() ? $e->getDatep()->format('d/m/Y') : '',
                 $e->getMontant(),
                 $e->getStatut(),
