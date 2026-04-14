@@ -7,6 +7,43 @@
             {{ form_errors(form.libelle) }}
         </div>
     </div>
+    {% set article = article is defined ? article : form.vars.data %}
+    <div class="col-md-6">
+        <div class="form-group article-image-group">
+            {{ form_label(form.imageFile, "Image de l'article") }}
+            <div class="article-image-field">
+                <div class="article-image-field__preview" id="articleImagePreview">
+                    {% if article and article.image %}
+                        <img src="{{ article.image }}" alt="Image actuelle de l'article" id="articleImagePreviewImage">
+                    {% else %}
+                        <div class="article-image-field__placeholder" id="articleImagePreviewPlaceholder">
+                            <i class="fas fa-image"></i>
+                            <span>Apercu de l'image</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="article-image-field__controls">
+                    <div class="article-image-trigger-wrap">
+                        <button type="button" class="article-image-trigger" id="articleImageUploadButton">
+                            <i class="fas fa-upload mr-2"></i>Choisir une image
+                        </button>
+                        {{ form_widget(form.imageFile, {'attr': {'class': 'article-image-input', 'id': 'articleImageUpload', 'accept': 'image/*'}}) }}
+                    </div>
+                    <span class="article-image-filename" id="articleImageFileName">{% if article and article.image %}Image actuelle chargee{% else %}Aucun fichier selectionne{% endif %}</span>
+                    <small class="text-muted">{{ form.imageFile.vars.help }}</small>
+                    {{ form_errors(form.imageFile) }}
+                    {% if article and article.image %}
+                        <div class="form-check article-remove-check mb-0">
+                            <input class="form-check-input" type="checkbox" value="1" id="articleRemoveImage" name="remove_image">
+                            <label class="form-check-label" for="articleRemoveImage">
+                                Supprimer l'image actuelle
+                            </label>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="col-md-3">
         <div class="form-group">
             {{ form_label(form.unite, 'Unite de mesure') }}

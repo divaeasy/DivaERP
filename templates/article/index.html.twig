@@ -161,6 +161,119 @@
         margin-top: 22px;
     }
 
+    .article-quick-image-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin: 1rem 0 0.55rem;
+    }
+
+    .article-quick-image-title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .article-quick-image-meta {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--theme-primary);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .article-quick-image-grid {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr);
+        gap: 0.75rem;
+        align-items: stretch;
+    }
+
+    .article-quick-image-preview {
+        min-height: 92px;
+        border-radius: 12px;
+        border: 1px dashed rgba(148, 163, 184, 0.28);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 0.55rem;
+    }
+
+    .article-quick-image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+        display: block;
+    }
+
+    .article-quick-image-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.45rem;
+        color: #94a3b8;
+        font-size: 0.8rem;
+        text-align: center;
+    }
+
+    .article-quick-image-placeholder i {
+        font-size: 1rem;
+        color: var(--theme-primary);
+    }
+
+    .article-quick-image-controls {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.55rem;
+        min-width: 0;
+    }
+
+    .article-quick-image-trigger-wrap {
+        position: relative;
+        display: inline-flex;
+        width: 100%;
+    }
+
+    .article-quick-image-trigger {
+        width: 100%;
+        min-height: 40px;
+        border: 0;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        color: #fff;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 20px rgba(30, 64, 175, 0.16);
+    }
+
+    .article-quick-image-input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .article-quick-image-filename {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: #475569;
+        word-break: break-word;
+    }
+
+    .article-quick-image-help {
+        font-size: 0.75rem;
+        color: #64748b;
+        line-height: 1.45;
+    }
+
     .article-quick-cancel,
     .article-quick-submit {
         min-width: 148px;
@@ -440,6 +553,137 @@
         min-width: 180px;
     }
 
+    .articles-table .article-image-cell,
+    .articles-table .article-image-head {
+        width: 76px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .articles-table .article-image-cell {
+        position: relative;
+        min-height: 64px;
+    }
+
+    .article-image-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        cursor: default;
+        border-radius: 12px;
+    }
+
+    .article-image-thumb,
+    .article-image-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        border: 2px solid var(--theme-border);
+        transition: all 0.2s ease;
+        box-shadow: 0 0 0 rgba(15, 23, 42, 0);
+    }
+
+    .article-image-thumb {
+        object-fit: cover;
+        display: block;
+        background: #fff;
+    }
+
+    .article-image-placeholder {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(226, 232, 240, 0.95) 100%);
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+
+    .articles-table .article-row.is-editing .article-image-button {
+        cursor: pointer;
+    }
+
+    .articles-table .article-row.is-editing .article-image-button:hover .article-image-thumb,
+    .articles-table .article-row.is-editing .article-image-button:hover .article-image-placeholder,
+    .articles-table .article-row.is-editing .article-image-button:focus .article-image-thumb,
+    .articles-table .article-row.is-editing .article-image-button:focus .article-image-placeholder {
+        transform: scale(1.05);
+        box-shadow: 0 14px 24px rgba(15, 23, 42, 0.18);
+        border-color: rgba(37, 99, 235, 0.35);
+    }
+
+    .article-image-button:focus {
+        outline: none;
+    }
+
+    .article-image-cell.is-updating {
+        pointer-events: none;
+    }
+
+    .article-image-cell.is-updating .article-image-button,
+    .article-image-cell.is-updating .article-image-editor {
+        opacity: 0.18;
+    }
+
+    .article-image-cell.is-updating::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 24px;
+        height: 24px;
+        margin-top: -12px;
+        margin-left: -12px;
+        border-radius: 50%;
+        border: 3px solid rgba(15, 23, 42, 0.12);
+        border-top-color: var(--theme-primary);
+        animation: articleImageSpinner 0.75s linear infinite;
+        z-index: 2;
+    }
+
+    @keyframes articleImageSpinner {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .article-image-editor {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .article-image-edit-input {
+        display: none;
+    }
+
+    .article-image-remove-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 22px;
+        height: 22px;
+        border: none;
+        border-radius: 999px;
+        background: #ef4444;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.72rem;
+        box-shadow: 0 10px 16px rgba(239, 68, 68, 0.28);
+        cursor: pointer;
+    }
+
+    .article-image-remove-btn:hover {
+        background: #dc2626;
+    }
+
     .article-inline-text {
         display: block;
         min-height: 1.5rem;
@@ -574,6 +818,10 @@
             width: 100%;
         }
 
+        .article-quick-image-grid {
+            grid-template-columns: 1fr;
+        }
+
         .inline-dropdown-menu {
             left: 0;
             right: auto;
@@ -607,6 +855,7 @@
         .table-bulk-actions__label {
             white-space: normal;
         }
+
     }
 </style>
 
@@ -648,19 +897,18 @@
             <button type="button" class="close article-quick-modal-close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
-            <form id="articleQuickCreateForm" class="no-loading" data-no-loading novalidate>
+            <form id="articleQuickCreateForm" class="no-loading" data-no-loading novalidate enctype="multipart/form-data">
                 <input type="hidden" name="_token" value="{{ csrf_token('article_create_minimal') }}">
                 <div class="article-quick-modal-body">
                     <div class="article-quick-modal-badge">
                         <i class="fas fa-box-open"></i>
                     </div>
                     <h3 class="article-quick-modal-title" id="articleQuickCreateModalLabel">Creation rapide d'article</h3>
-                    <p class="article-quick-modal-subtitle">Renseignez uniquement les champs obligatoires, puis finalisez le reste en edition inline dans le tableau.</p>
-                    <div class="article-quick-modal-note">
-                        <i class="fas fa-info-circle mr-1"></i>
+                    {#
                         Désignation + Unité suffisent pour créer l'article.
                     </div>
 
+                    #}
                     <div class="form-group">
                         <label for="quickCreateLibelle">Designation <span class="text-danger">*</span></label>
                         <input type="text" class="form-control article-quick-input" id="quickCreateLibelle" name="libelle" maxlength="255" required>
@@ -673,6 +921,31 @@
                                 <option value="{{ unite.id }}">{{ unite.label }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <div class="article-quick-image-head">
+                            <label for="quickCreateImageFile" class="article-quick-image-title mb-0">Image de l'article</label>
+                            <span class="article-quick-image-meta">Optionnel</span>
+                        </div>
+                        <div class="article-quick-image-grid">
+                            <div class="article-quick-image-preview" id="quickCreateImagePreview">
+                                <div class="article-quick-image-placeholder">
+                                    <i class="fas fa-image"></i>
+                                    <span>Apercu</span>
+                                </div>
+                            </div>
+                            <div class="article-quick-image-controls">
+                                <div class="article-quick-image-trigger-wrap">
+                                    <button type="button" class="article-quick-image-trigger" id="quickCreateImageButton">
+                                        <i class="fas fa-upload mr-2"></i>Ajouter une image
+                                    </button>
+                                    <input type="file" id="quickCreateImageFile" name="imageFile" class="article-quick-image-input" accept="image/*">
+                                </div>
+                                <div class="article-quick-image-filename" id="quickCreateImageFileName">Aucun fichier selectionne</div>
+                                <div class="article-quick-image-help">PNG, JPG, WebP. Max 2 Mo.</div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="article-quick-modal-actions">
@@ -719,6 +992,7 @@
                     </div>
                 </th>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
+                <th class="article-image-head">Image</th>
                 <th data-sort-key="libelle">Designation</th>
                 <th data-sort-key="unite">Unite</th>
                 <th data-sort-key="tarif">Tarif</th>
@@ -731,7 +1005,9 @@
                 data-article-id="{{ article.id }}"
                 data-item-id="{{ article.id }}"
                 data-inline-update-url="{{ path('article.inline_update', {id: article.id}) }}"
+                data-upload-image-url="{{ path('article.upload_image', {id: article.id}) }}"
                 data-libelle="{{ article.libelle|default('') }}"
+                data-image-url="{{ article.image|default('') }}"
                 data-unite-id="{{ article.unite ? article.unite.id : '' }}"
                 data-unite-label="{{ article.unite ? article.unite : '' }}"
                 data-tarif-id="{{ article.tarif ? article.tarif.id : '' }}"
@@ -743,6 +1019,17 @@
                     </div>
                 </td>
                 <td><strong>#{{ article.id }}</strong></td>
+                <td class="article-image-cell" data-field="image">
+                    <div class="article-image-button" data-ignore-row-selection aria-label="Image de l'article {{ article.libelle|default('') }}">
+                        {% if article.image %}
+                            <img src="{{ article.image }}" alt="Image de {{ article.libelle|default('cet article') }}" class="article-image-thumb">
+                        {% else %}
+                            <span class="article-image-placeholder">
+                                <i class="fas fa-image"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </td>
                 <td data-field="libelle">{{ article.libelle|default('____') }}</td>
                 <td data-field="unite">{{ article.unite|default('____') }}</td>
                 <td data-field="tarif">{{ article.tarif|default('____') }}</td>
@@ -998,6 +1285,7 @@
         var inlineUnites = {{ inlineUnites|json_encode|raw }};
         var inlineTarifs = {{ inlineTarifs|json_encode|raw }};
         var inlineUpdateToken = '{{ csrf_token('article_inline_update') }}';
+        var uploadImageToken = '{{ csrf_token('article_upload_image') }}';
         var createMinimalUrl = '{{ path('article.create_minimal') }}';
         var bulkDeleteUrl = '{{ path('api.bulk_delete_articles') }}';
         var bulkDeleteToken = '{{ csrf_token('article_bulk_delete') }}';
@@ -1010,6 +1298,9 @@
         var $quickCreateSubmit = $('#articleQuickCreateSubmit');
         var $quickCreateLibelle = $('#quickCreateLibelle');
         var $quickCreateUniteId = $('#quickCreateUniteId');
+        var $quickCreateImageFile = $('#quickCreateImageFile');
+        var $quickCreateImageFileName = $('#quickCreateImageFileName');
+        var $quickCreateImagePreview = $('#quickCreateImagePreview');
         var $unsavedChangesModal = $('#articleUnsavedChangesModal');
         var $unsavedChangesMessage = $('#articleUnsavedChangesMessage');
         var $unsavedChangesConfirmBtn = $('#articleUnsavedChangesConfirmBtn');
@@ -1056,6 +1347,249 @@
 
         function fallbackDisplay(value) {
             return value && String(value).trim() !== '' ? value : '____';
+        }
+
+        function getArticleImageUrl($row) {
+            return String($row.attr('data-image-url') || '');
+        }
+
+        function buildArticleImageButton(imageUrl, articleLabel) {
+            var safeLabel = String(articleLabel || 'cet article');
+            var $button = $('<div class="article-image-button" data-ignore-row-selection></div>')
+                .attr('aria-label', 'Image de l article ' + safeLabel);
+
+            if (String(imageUrl || '').trim() !== '') {
+                $button.append(
+                    $('<img class="article-image-thumb">')
+                        .attr('src', imageUrl)
+                        .attr('alt', 'Image de ' + safeLabel)
+                );
+                return $button;
+            }
+
+            $button.append('<span class="article-image-placeholder"><i class="fas fa-image"></i></span>');
+            return $button;
+        }
+
+        function buildArticleImageEditor(imageUrl, articleLabel) {
+            var safeLabel = String(articleLabel || 'cet article');
+            var $editor = $('<div class="article-image-editor"></div>');
+            var $trigger = buildArticleImageButton(imageUrl, safeLabel)
+                .removeClass('js-article-image-modal')
+                .addClass('js-inline-image-trigger')
+                .attr('aria-label', 'Choisir une image pour ' + safeLabel);
+            var $input = $('<input type="file" class="article-image-edit-input" accept="image/*">');
+
+            $editor.append($trigger, $input);
+
+            if (String(imageUrl || '').trim() !== '') {
+                $editor.append(
+                    $('<button type="button" class="article-image-remove-btn" title="Supprimer l image"><i class="fas fa-times"></i></button>')
+                );
+            }
+
+            return $editor;
+        }
+
+        function renderRowImageCell($row) {
+            if (!$row || !$row.length) {
+                return;
+            }
+
+            var imageUrl = String($row.attr('data-image-url') || '');
+            var articleName = String($row.attr('data-libelle') || 'cet article');
+            var $imageCell = $row.find('.article-image-cell');
+
+            $imageCell.empty();
+            if ($row.hasClass('is-editing')) {
+                $imageCell.append(buildArticleImageEditor(imageUrl, articleName));
+                return;
+            }
+
+            $imageCell.append(buildArticleImageButton(imageUrl, articleName));
+        }
+
+        function updateRowImageDisplay($row, imageUrl) {
+            if (!$row || !$row.length) {
+                return;
+            }
+
+            $row.attr('data-image-url', String(imageUrl || ''));
+
+            var $imageCell = $row.find('.article-image-cell');
+            $imageCell.addClass('is-updating');
+            renderRowImageCell($row);
+
+            window.setTimeout(function() {
+                $imageCell.removeClass('is-updating');
+            }, 220);
+        }
+
+        function validateArticleImageFile(file) {
+            if (!file) {
+                return 'Aucun fichier selectionne';
+            }
+
+            var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (allowedTypes.indexOf(String(file.type || '')) === -1) {
+                return 'Seuls les fichiers PNG, JPG et WebP sont acceptés';
+            }
+
+            if ((Number(file.size) || 0) > 2 * 1024 * 1024) {
+                return 'Le fichier dépasse 2 Mo';
+            }
+
+            return '';
+        }
+
+        function renderQuickCreateImagePreview(imageUrl) {
+            if (!$quickCreateImagePreview.length) {
+                return;
+            }
+
+            if (String(imageUrl || '').trim() === '') {
+                $quickCreateImagePreview.html(
+                    '<div class="article-quick-image-placeholder">' +
+                        '<i class="fas fa-image"></i>' +
+                        '<span>Apercu</span>' +
+                    '</div>'
+                );
+                return;
+            }
+
+            $quickCreateImagePreview.html(
+                $('<img>', {
+                    src: imageUrl,
+                    alt: 'Apercu de l image'
+                })
+            );
+        }
+
+        function resetQuickCreateImageState() {
+            if ($quickCreateImageFile.length) {
+                $quickCreateImageFile.val('');
+            }
+            if ($quickCreateImageFileName.length) {
+                $quickCreateImageFileName.text('Aucun fichier selectionne');
+            }
+            renderQuickCreateImagePreview('');
+        }
+
+        function syncQuickCreateImagePreview(file) {
+            if (!file) {
+                resetQuickCreateImageState();
+                return true;
+            }
+
+            var validationMessage = validateArticleImageFile(file);
+            if (validationMessage) {
+                resetQuickCreateImageState();
+                showToast('error', validationMessage);
+                return false;
+            }
+
+            if ($quickCreateImageFileName.length) {
+                $quickCreateImageFileName.text(file.name);
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                renderQuickCreateImagePreview(event.target.result);
+            };
+            reader.readAsDataURL(file);
+            return true;
+        }
+
+        function uploadArticleImageForRow($row, file) {
+            if (!$row || !$row.length || !$row.attr('data-upload-image-url')) {
+                return;
+            }
+
+            var validationMessage = validateArticleImageFile(file);
+            if (validationMessage) {
+                showToast('error', validationMessage);
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('_token', uploadImageToken);
+            formData.append('image', file);
+
+            $row.find('.article-image-cell').addClass('is-updating');
+
+            $.ajax({
+                url: String($row.attr('data-upload-image-url') || ''),
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function(response) {
+                if (!response || response.success !== true) {
+                    showToast('error', 'La mise a jour de l image a echoue.');
+                    return;
+                }
+
+                if (response.article) {
+                    $row.attr('data-upload-image-url', response.article.uploadImageUrl || $row.attr('data-upload-image-url'));
+                    $row.attr('data-image-url', response.article.imageUrl || '');
+                    renderRowImageCell($row);
+                } else {
+                    updateRowImageDisplay($row, response.imageUrl || '');
+                }
+
+                showToast('success', response.message || 'Image enregistrée avec succès');
+            }).fail(function(xhr) {
+                var message = 'Erreur de connexion';
+                if (xhr.status !== 0) {
+                    message = xhr.responseJSON && xhr.responseJSON.message
+                        ? xhr.responseJSON.message
+                        : 'La mise a jour de l image a echoue.';
+                }
+                showToast('error', message);
+            }).always(function() {
+                $row.find('.article-image-cell').removeClass('is-updating');
+            });
+        }
+
+        function removeArticleImageForRow($row) {
+            if (!$row || !$row.length || !$row.attr('data-upload-image-url')) {
+                return;
+            }
+
+            $row.find('.article-image-cell').addClass('is-updating');
+
+            $.ajax({
+                url: String($row.attr('data-upload-image-url') || ''),
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    _token: uploadImageToken,
+                    removeImage: 1
+                },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function(response) {
+                if (!response || response.success !== true) {
+                    showToast('error', 'La suppression de l image a echoue.');
+                    return;
+                }
+
+                $row.attr('data-image-url', '');
+                renderRowImageCell($row);
+                showToast('success', response.message || 'Image supprimée avec succès');
+            }).fail(function(xhr) {
+                var message = xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message
+                    : 'La suppression de l image a echoue.';
+                showToast('error', message);
+            }).always(function() {
+                $row.find('.article-image-cell').removeClass('is-updating');
+            });
         }
 
         function refreshTableVisibility() {
@@ -1314,6 +1848,7 @@
         function getRowSnapshot($row) {
             return {
                 libelle: String($row.attr('data-libelle') || ''),
+                imageUrl: String($row.attr('data-image-url') || ''),
                 uniteId: String($row.attr('data-unite-id') || ''),
                 uniteLabel: String($row.attr('data-unite-label') || ''),
                 tarifId: String($row.attr('data-tarif-id') || ''),
@@ -1346,6 +1881,8 @@
             var snapshot = getRowSnapshot($row);
             closeDropdowns();
 
+            $row.removeClass('is-editing is-saving is-edit-focus');
+            renderRowImageCell($row);
             $row.find('td[data-field="libelle"]').html(escapeHtml(fallbackDisplay(snapshot.libelle)));
             $row.find('td[data-field="unite"]').html(escapeHtml(fallbackDisplay(snapshot.uniteLabel)));
             $row.find('td[data-field="tarif"]').html(escapeHtml(fallbackDisplay(snapshot.tarifLabel)));
@@ -1357,7 +1894,6 @@
 
             $row.find('.delete-btn').attr('data-item-name', snapshot.libelle || '');
             $row.find('.article-row-checkbox').attr('aria-label', 'Selectionner l\'article ' + (snapshot.libelle || ''));
-            $row.removeClass('is-editing is-saving is-edit-focus');
 
             if (activeEditRow && activeEditRow.is($row)) {
                 activeEditRow = null;
@@ -1379,6 +1915,11 @@
                 var $shell = $row.find('.inline-dropdown-shell[data-name="' + dropdownName + '"]');
                 openDropdownShell($shell);
                 $shell.find('.inline-dropdown-trigger').trigger('focus');
+                return;
+            }
+
+            if (fieldName === 'image') {
+                $row.find('.article-image-edit-input').trigger('click');
             }
         }
 
@@ -1447,6 +1988,7 @@
             );
 
             $row.addClass('is-editing');
+            renderRowImageCell($row);
             activeEditRow = $row;
             if ($row.hasClass('is-new-unsaved')) {
                 $row.addClass('is-edit-focus');
@@ -1459,6 +2001,8 @@
 
         function applySavedState($row, article) {
             $row.attr('data-libelle', article.libelle || '');
+            $row.attr('data-image-url', article.imageUrl || '');
+            $row.attr('data-upload-image-url', article.uploadImageUrl || '');
             $row.attr('data-unite-id', article.uniteId || '');
             $row.attr('data-unite-label', article.uniteLabel || '');
             $row.attr('data-tarif-id', article.tarifId || '');
@@ -1536,11 +2080,13 @@
         function buildArticleRow(article) {
             var rowArticleId = String(article.id || '');
             var rowLibelle = String(article.libelle || '');
+            var rowImageUrl = String(article.imageUrl || '');
             var rowUniteId = String(article.uniteId || '');
             var rowUniteLabel = String(article.uniteLabel || '');
             var rowTarifId = String(article.tarifId || '');
             var rowTarifLabel = String(article.tarifLabel || '');
             var rowInlineUpdateUrl = String(article.inlineUpdateUrl || '');
+            var rowUploadImageUrl = String(article.uploadImageUrl || '');
             var rowDetailUrl = String(article.detailUrl || '#');
             var rowDeleteUrl = String(article.deleteUrl || '#');
 
@@ -1548,7 +2094,9 @@
                 .attr('data-article-id', rowArticleId)
                 .attr('data-item-id', rowArticleId)
                 .attr('data-inline-update-url', rowInlineUpdateUrl)
+                .attr('data-upload-image-url', rowUploadImageUrl)
                 .attr('data-libelle', rowLibelle)
+                .attr('data-image-url', rowImageUrl)
                 .attr('data-unite-id', rowUniteId)
                 .attr('data-unite-label', rowUniteLabel)
                 .attr('data-tarif-id', rowTarifId)
@@ -1564,6 +2112,7 @@
             $selectorCell.append($selectorWrapper);
 
             var $idCell = $('<td></td>').append($('<strong></strong>').text('#' + rowArticleId));
+            var $imageCell = $('<td class="article-image-cell" data-field="image"></td>').append(buildArticleImageButton(rowImageUrl, rowLibelle));
             var $libelleCell = $('<td data-field="libelle"></td>').text(fallbackDisplay(rowLibelle));
             var $uniteCell = $('<td data-field="unite"></td>').text(fallbackDisplay(rowUniteLabel));
             var $tarifCell = $('<td data-field="tarif"></td>').text(fallbackDisplay(rowTarifLabel));
@@ -1578,8 +2127,9 @@
                 .append('<i class="fas fa-trash-alt"></i>');
 
             $actionsCell.append($viewBtn, $deleteBtn);
-            $row.append($selectorCell, $idCell, $libelleCell, $uniteCell, $tarifCell, $actionsCell);
+            $row.append($selectorCell, $idCell, $imageCell, $libelleCell, $uniteCell, $tarifCell, $actionsCell);
 
+            renderRowImageCell($row);
             return $row;
         }
 
@@ -1621,6 +2171,78 @@
             setBulkDeleteConfirmButtonLoading(false);
             $('#deleteConfirmModal').modal('show');
         }
+
+        function uploadArticleImage() { return; /*
+            if (!imageModalState.row || !imageModalState.row.length || !imageModalState.uploadUrl || !imageModalState.file) {
+                return;
+            }
+
+            var $targetRow = imageModalState.row;
+            var targetUploadUrl = imageModalState.uploadUrl;
+            var formData = new FormData();
+            formData.append('_token', uploadImageToken);
+            formData.append('image', imageModalState.file);
+
+            if ($articleImageSaveBtn.length) {
+                $articleImageSaveBtn
+                    .prop('disabled', true)
+                    .addClass('is-loading')
+                    .html('<i class="fas fa-spinner fa-spin mr-1"></i>Enregistrement...');
+            }
+            if ($articleImageDropzone.length) {
+                $articleImageDropzone.addClass('is-disabled');
+            }
+
+            $.ajax({
+                url: targetUploadUrl,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function(response) {
+                if (!response || response.success !== true) {
+                    if ($articleImageSaveBtn.length) {
+                        $articleImageSaveBtn.prop('disabled', false).removeClass('is-loading').html('<i class="fas fa-save mr-1"></i>Enregistrer');
+                    }
+                    if ($articleImageDropzone.length) {
+                        $articleImageDropzone.removeClass('is-disabled');
+                    }
+                    showToast('error', 'La mise a jour de l image a echoue.');
+                    return;
+                }
+
+                if (response.article) {
+                    $targetRow.attr('data-upload-image-url', response.article.uploadImageUrl || targetUploadUrl);
+                    $targetRow.attr('data-image-url', response.article.imageUrl || '');
+                    updateRowImageDisplay($targetRow, response.article.imageUrl || '');
+                } else {
+                    updateRowImageDisplay($targetRow, response.imageUrl || '');
+                }
+
+                $articleImageModal.modal('hide');
+                showToast('success', response.message || 'Image enregistrée avec succès');
+            }).fail(function(xhr) {
+                var message = 'Erreur de connexion';
+                if (xhr.status !== 0) {
+                    message = 'La mise a jour de l image a echoue.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                }
+
+                if ($articleImageSaveBtn.length) {
+                    $articleImageSaveBtn.prop('disabled', false).removeClass('is-loading').html('<i class="fas fa-save mr-1"></i>Enregistrer');
+                }
+                if ($articleImageDropzone.length) {
+                    $articleImageDropzone.removeClass('is-disabled');
+                }
+                showToast('error', message);
+            });
+        */ }
 
         if ($unsavedChangesConfirmBtn.length) {
             $unsavedChangesConfirmBtn.on('click', function() {
@@ -1669,8 +2291,40 @@
             openDeleteModal($(this));
         });
 
+        $articlesTable.on('click', '.js-inline-image-trigger', function(event) {
+            var $row = $(this).closest('.article-row');
+            if (!$row.hasClass('is-editing')) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            $row.find('.article-image-edit-input').trigger('click');
+        });
+
+        $articlesTable.on('change', '.article-image-edit-input', function() {
+            var file = this.files && this.files[0] ? this.files[0] : null;
+            if (!file) {
+                return;
+            }
+
+            uploadArticleImageForRow($(this).closest('.article-row'), file);
+            $(this).val('');
+        });
+
+        $articlesTable.on('click', '.article-image-remove-btn', function(event) {
+            var $row = $(this).closest('.article-row');
+            if (!$row.hasClass('is-editing')) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            removeArticleImageForRow($row);
+        });
+
         $articlesTable.on('dblclick', '.article-row', function(event) {
-            if ($(event.target).closest('a, button, input, label, .inline-dropdown-menu').length > 0) {
+            if ($(event.target).closest('a, input, label, .inline-dropdown-menu').length > 0) {
                 return;
             }
 
@@ -1777,13 +2431,25 @@
                 }, 120);
             });
 
+            $('#quickCreateImageButton').on('click', function() {
+                $quickCreateImageFile.trigger('click');
+            });
+
             $quickCreateModal.on('hidden.bs.modal', function() {
                 $quickCreateForm.trigger('reset');
                 $quickCreateSubmit.prop('disabled', false);
+                resetQuickCreateImageState();
                 if (window.hideLoading) {
                     window.hideLoading();
                 }
             });
+
+            if ($quickCreateImageFile.length) {
+                $quickCreateImageFile.on('change', function() {
+                    var file = this.files && this.files[0] ? this.files[0] : null;
+                    syncQuickCreateImagePreview(file);
+                });
+            }
 
             $quickCreateForm.on('submit', function(event) {
                 event.preventDefault();
@@ -1807,17 +2473,30 @@
                     return;
                 }
 
+                var imageFile = $quickCreateImageFile.length && $quickCreateImageFile[0].files && $quickCreateImageFile[0].files[0]
+                    ? $quickCreateImageFile[0].files[0]
+                    : null;
+
+                if (imageFile && !syncQuickCreateImagePreview(imageFile)) {
+                    return;
+                }
+
                 $quickCreateSubmit.prop('disabled', true);
+                var formData = new FormData();
+                formData.append('_token', token);
+                formData.append('libelle', libelle);
+                formData.append('uniteId', uniteId);
+                if (imageFile) {
+                    formData.append('imageFile', imageFile);
+                }
 
                 $.ajax({
                     url: createMinimalUrl,
                     method: 'POST',
                     dataType: 'json',
-                    data: {
-                        _token: token,
-                        libelle: libelle,
-                        uniteId: uniteId
-                    },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
                     }

@@ -18,7 +18,9 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -133,24 +135,37 @@ class ArticleController extends AbstractController
             $article->setUser($user);
         }
 
+        $imageFile = $request->files->get('imageFile');
+        if ($imageFile !== null && !$imageFile instanceof UploadedFile) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Aucun fichier image valide n a ete fourni.',
+            ], 422);
+        }
+
+        if ($imageFile instanceof UploadedFile) {
+            $validationError = $this->validateArticleImageFile($imageFile);
+            if ($validationError !== null) {
+                return $this->json([
+                    'success' => false,
+                    'message' => $validationError,
+                ], 422);
+            }
+        }
+
         $entityManager = $doctrine->getManager();
         $entityManager->persist($article);
         $entityManager->flush();
 
+        if ($imageFile instanceof UploadedFile) {
+            $this->replaceArticleImage($article, $imageFile);
+            $entityManager->flush();
+        }
+
         return $this->json([
             'success' => true,
             'message' => 'Article créé avec succès.',
-            'article' => [
-                'id' => $article->getId(),
-                'libelle' => (string) $article->getLibelle(),
-                'uniteId' => $article->getUnite()?->getId(),
-                'uniteLabel' => $article->getUnite()?->getLibelle() ?? '',
-                'tarifId' => null,
-                'tarifLabel' => '',
-                'inlineUpdateUrl' => $this->generateUrl('article.inline_update', ['id' => $article->getId()]),
-                'detailUrl' => $this->generateUrl('article.detail', ['id' => $article->getId()]),
-                'deleteUrl' => $this->generateUrl('article.delete', ['id' => $article->getId()]),
-            ],
+            'article' => $this->serializeArticle($article, true),
         ]);
     }
 
@@ -441,17 +456,111 @@ class ArticleController extends AbstractController
         return $this->json([
             'success' => true,
             'message' => 'Article mis à jour avec succès.',
-            'article' => [
-                'id' => $article->getId(),
-                'libelle' => (string) $article->getLibelle(),
-                'uniteId' => $article->getUnite()?->getId(),
-                'uniteLabel' => $article->getUnite()?->getLibelle() ?? '',
-                'tarifId' => $article->getTarif()?->getId(),
-                'tarifLabel' => $article->getTarif()?->getLibelle() ?? '',
-            ],
+            'article' => $this->serializeArticle($article),
         ]);
     }
    
+
+    #[Route('/{id<\d+>}/upload-image', name: 'article.upload_image', methods: ['POST'])]
+    public function uploadImage(
+        Request $request,
+        ManagerRegistry $doctrine,
+        int $id
+    ): JsonResponse {
+        if (!$request->isXmlHttpRequest()) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'RequÃªte invalide.',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if ($currentDossier === null) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Aucun dossier courant sÃ©lectionnÃ©.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        if (!$this->isCsrfTokenValid('article_upload_image', (string) $request->request->get('_token'))) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Jeton de sÃ©curitÃ© invalide.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        $repository = $doctrine->getRepository(Article::class);
+        $article = $repository->findOneBy([
+            'id' => $id,
+            'dossier' => $currentDossier,
+        ]);
+
+        if (!$article instanceof Article) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Article introuvable.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($request->request->getBoolean('removeImage')) {
+            try {
+                $this->removeArticleImage($article);
+
+                $entityManager = $doctrine->getManager();
+                $entityManager->persist($article);
+                $entityManager->flush();
+            } catch (Throwable $exception) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Impossible de supprimer l image de l article.',
+                ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'imageUrl' => '',
+                'message' => 'Image supprimée avec succès',
+                'article' => $this->serializeArticle($article),
+            ]);
+        }
+
+        $imageFile = $request->files->get('image');
+        if (!$imageFile instanceof UploadedFile) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Aucun fichier image n a ete fourni.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $validationError = $this->validateArticleImageFile($imageFile);
+        if ($validationError !== null) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $validationError,
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        try {
+            $this->replaceArticleImage($article, $imageFile);
+
+            $entityManager = $doctrine->getManager();
+            $entityManager->persist($article);
+            $entityManager->flush();
+        } catch (Throwable $exception) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Impossible d enregistrer l image de l article.',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        return new JsonResponse([
+            'success' => true,
+            'imageUrl' => $article->getImage() ?? '',
+            'message' => 'Image enregistrée avec succès',
+            'article' => $this->serializeArticle($article),
+        ]);
+    }
 
     #[Route('/{id<\d+>}', name: 'article.detail')]
     public function detail(ManagerRegistry $doctrine,$id): Response
@@ -485,15 +594,19 @@ class ArticleController extends AbstractController
         $new = false;
         if(!$article){
             $article = new Article();
-            $new = true;  
+            $new = true;
+            if ($currentDossier instanceof Dossier) {
+                $article->setDossier($currentDossier);
+            }
         }
         $article->doctrine=$doctrine;
         $article->user=$this->getUser();
 
        $form = $this->createForm(ArticleFormType::class, $article);
        $form->handleRequest($request);
-       $newFilename = '';
        if($form->isSubmitted() && $form->isValid()){
+        $imageFile = $form->get('imageFile')->getData();
+        $removeImage = $request->request->getBoolean('remove_image');
 
         If ($new){
             $message = "Le article est ajouté avec succès";
@@ -506,6 +619,16 @@ class ArticleController extends AbstractController
         }
         $entityManager = $doctrine->getManager();
         $entityManager->persist($article);
+        if ($new && $imageFile instanceof UploadedFile) {
+            $entityManager->flush();
+        }
+
+        if ($imageFile instanceof UploadedFile) {
+            $this->replaceArticleImage($article, $imageFile);
+        } elseif ($removeImage) {
+            $this->removeArticleImage($article);
+        }
+
         $entityManager->flush();
         
         $this->addFlash(
@@ -518,6 +641,7 @@ class ArticleController extends AbstractController
             return $this->render('article/add-article.html.twig', [
                 //'article' => $article,
                 'form' => $form->createView(),
+                'articleEntity' => $article,
                 /*'eleves' => $eleves,
                 'cotisations' => $cotisations,*/
                 'id' => $id
@@ -535,6 +659,7 @@ class ArticleController extends AbstractController
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
         $article = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         if($article){
+            $this->removeArticleImage($article);
             $manager = $doctrine->getManager();
             $manager->remove($article);
             $manager->flush();
@@ -549,6 +674,132 @@ class ArticleController extends AbstractController
              );
         }
         return $this->redirectToRoute('article.list');
+    }
+
+    /**
+     * @return array{
+     *     id: int|null,
+     *     libelle: string,
+     *     uniteId: int|null,
+     *     uniteLabel: string,
+     *     tarifId: int|null,
+     *     tarifLabel: string,
+     *     imageUrl: string,
+     *     uploadImageUrl: string,
+     *     inlineUpdateUrl?: string,
+     *     detailUrl?: string,
+     *     deleteUrl?: string
+     * }
+     */
+    private function serializeArticle(Article $article, bool $includeRowUrls = false): array
+    {
+        $data = [
+            'id' => $article->getId(),
+            'libelle' => (string) $article->getLibelle(),
+            'uniteId' => $article->getUnite()?->getId(),
+            'uniteLabel' => $article->getUnite()?->getLibelle() ?? '',
+            'tarifId' => $article->getTarif()?->getId(),
+            'tarifLabel' => $article->getTarif()?->getLibelle() ?? '',
+            'imageUrl' => $article->getImage() ?? '',
+            'uploadImageUrl' => $this->generateUrl('article.upload_image', ['id' => $article->getId()]),
+        ];
+
+        if ($includeRowUrls) {
+            $data['inlineUpdateUrl'] = $this->generateUrl('article.inline_update', ['id' => $article->getId()]);
+            $data['detailUrl'] = $this->generateUrl('article.detail', ['id' => $article->getId()]);
+            $data['deleteUrl'] = $this->generateUrl('article.delete', ['id' => $article->getId()]);
+        }
+
+        return $data;
+    }
+
+    private function validateArticleImageFile(UploadedFile $imageFile): ?string
+    {
+        $allowedMimeTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+        ];
+
+        if ($imageFile->getSize() > 2 * 1024 * 1024) {
+            return 'Le fichier dépasse 2 Mo';
+        }
+
+        if (!in_array((string) $imageFile->getMimeType(), $allowedMimeTypes, true)) {
+            return 'Seuls les fichiers PNG, JPG et WebP sont acceptés';
+        }
+
+        return null;
+    }
+
+    private function replaceArticleImage(Article $article, UploadedFile $imageFile): void
+    {
+        $validationError = $this->validateArticleImageFile($imageFile);
+        if ($validationError !== null) {
+            throw new \RuntimeException($validationError);
+        }
+
+        $articleId = $article->getId();
+        if ($articleId === null) {
+            throw new \RuntimeException('L article doit exister avant l upload de son image.');
+        }
+
+        $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/articles';
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+            throw new \RuntimeException('Impossible de creer le dossier de stockage des images.');
+        }
+
+        $newFilename = sprintf('article-%d-%s.%s', $articleId, time(), $this->resolveArticleImageExtension($imageFile));
+        $oldImage = $article->getImage();
+
+        try {
+            $imageFile->move($uploadDir, $newFilename);
+        } catch (FileException $exception) {
+            throw new \RuntimeException('Impossible d enregistrer l image de l article.', 0, $exception);
+        }
+
+        $article->setImage('/uploads/articles/' . $newFilename);
+        $this->deleteArticleImageFile($oldImage);
+    }
+
+    private function removeArticleImage(Article $article): void
+    {
+        $currentImage = trim((string) $article->getImage());
+        if ($currentImage === '') {
+            return;
+        }
+
+        $this->deleteArticleImageFile($currentImage);
+        $article->setImage(null);
+    }
+
+    private function deleteArticleImageFile(?string $imagePath): void
+    {
+        $relativePath = trim((string) $imagePath);
+        if ($relativePath === '') {
+            return;
+        }
+
+        $projectDir = (string) $this->getParameter('kernel.project_dir');
+        $uploadsRoot = str_replace('\\', '/', $projectDir . '/public/uploads/articles/');
+        $absolutePath = str_replace('\\', '/', $projectDir . '/public/' . ltrim($relativePath, '/'));
+
+        if (!str_starts_with($absolutePath, $uploadsRoot)) {
+            return;
+        }
+
+        if (is_file($absolutePath)) {
+            @unlink($absolutePath);
+        }
+    }
+
+    private function resolveArticleImageExtension(UploadedFile $imageFile): string
+    {
+        return match ((string) $imageFile->getMimeType()) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'jpg',
+        };
     }
 
     /**
