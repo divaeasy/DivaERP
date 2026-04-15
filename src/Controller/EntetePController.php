@@ -32,21 +32,33 @@ class EntetePController extends AbstractController
     }
 
     #[Route('/', name: 'entetepiece.list')]
-    public function index(Request $request, EntetepieceRepository $entetepieceRepository): Response
+    public function index(): Response
     {
-        return $this->renderPieceList($request, $entetepieceRepository, null, 'entetepiece.list');
+        return $this->redirectToRoute('entetepiece.client_list');
     }
 
     #[Route('/client', name: 'entetepiece.client_list')]
     public function clientPieces(Request $request, EntetepieceRepository $entetepieceRepository): Response
     {
-        return $this->renderPieceList($request, $entetepieceRepository, 'Client', 'entetepiece.client_list');
+        return $this->renderPieceList(
+            $request,
+            $entetepieceRepository,
+            ['Client', 'Prospect'],
+            'entetepiece.client_list',
+            'Client & Prospect'
+        );
     }
 
     #[Route('/fournisseur', name: 'entetepiece.fournisseur_list')]
     public function fournisseurPieces(Request $request, EntetepieceRepository $entetepieceRepository): Response
     {
-        return $this->renderPieceList($request, $entetepieceRepository, 'Fournisseur', 'entetepiece.fournisseur_list');
+        return $this->renderPieceList(
+            $request,
+            $entetepieceRepository,
+            'Fournisseur',
+            'entetepiece.fournisseur_list',
+            'Fournisseur'
+        );
     }
 
     #[Route('/tiers/{tierType}', name: 'entetepiece.tier_autocomplete', methods: ['GET'])]
@@ -92,6 +104,9 @@ class EntetePController extends AbstractController
     #[Route('/edit/{id?0}', name: 'entetepiece.edit')]
     public function addEntetePiece(ManagerRegistry $doctrine, Request $request, int $id): Response
     {
+        $origin = $this->resolvePieceOriginToken((string) $request->query->get('origin', ''));
+        $backRoute = $this->resolvePieceListRoute($origin);
+
         $repository = $doctrine->getRepository(Entetepiece::class);
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -110,6 +125,9 @@ class EntetePController extends AbstractController
             $new = true;
             $id = 0;
             $entetepiece->setStatut('Brouillon');
+            if ($origin === 'fournisseur') {
+                $entetepiece->setTypet('Fournisseur');
+            }
             if ($currentDossier !== null) {
                 $entetepiece->setDossier($currentDossier);
                 if ($entetepiece->getDevise() === null) {
@@ -131,7 +149,10 @@ class EntetePController extends AbstractController
         if ($isReadOnly && $request->isMethod('POST')) {
             $this->addFlash('warning', 'Cette piece est perimee et ne peut plus etre modifiee.');
 
-            return $this->redirectToRoute('entetepiece.edit', ['id' => $entetepiece->getId()]);
+            return $this->redirectToRoute('entetepiece.edit', array_merge(
+                ['id' => $entetepiece->getId()],
+                $this->buildPieceOriginQueryParams($origin)
+            ));
         }
 
         $entetepiece->doctrine = $doctrine;
@@ -140,6 +161,7 @@ class EntetePController extends AbstractController
 
         $form = $this->createForm(EntetePieceFormType::class, $entetepiece, [
             'read_only' => $isReadOnly,
+            'tier_origin' => $origin,
         ]);
         $form->remove('delai');
         $form->remove('edition');
@@ -148,6 +170,10 @@ class EntetePController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if ($new && $origin === 'fournisseur') {
+                $entetepiece->setTypet('Fournisseur');
+            }
+
             if (!$new && $originalType !== null && $entetepiece->getType() !== $originalType) {
                 $entetepiece->setType($originalType);
                 $this->addFlash('warning', 'Le type de piece est verrouille apres creation.');
@@ -169,6 +195,8 @@ class EntetePController extends AbstractController
                     'entetepiece' => $form->createView(),
                     'id' => $id,
                     'lignepieces' => $lignepieces,
+                    'origin' => $origin,
+                    'backRoute' => $backRoute,
                     'isReadOnly' => $isReadOnly,
                     'isPerimee' => $isReadOnly,
                     'statusProgression' => [
@@ -215,7 +243,7 @@ class EntetePController extends AbstractController
                     $this->addFlash('warning', 'Pensez a ajouter au moins une ligne avant de generer la facture.');
                 }
 
-                return $this->redirectToRoute('entetepiece.list');
+                return $this->redirectToRoute($backRoute);
             }
         }
 
@@ -223,6 +251,8 @@ class EntetePController extends AbstractController
             'entetepiece' => $form->createView(),
             'id' => $id,
             'lignepieces' => $lignepieces,
+            'origin' => $origin,
+            'backRoute' => $backRoute,
             'isReadOnly' => $isReadOnly,
             'isPerimee' => $isReadOnly,
             'statusProgression' => [
@@ -236,6 +266,9 @@ class EntetePController extends AbstractController
     #[Route('/transition/{id}', name: 'entetepiece.transition', methods: ['POST'])]
     public function transitionPiece(ManagerRegistry $doctrine, Request $request, int $id): RedirectResponse
     {
+        $origin = $this->resolvePieceOriginToken((string) $request->query->get('origin', ''));
+        $backRoute = $this->resolvePieceListRoute($origin);
+
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
         $piece = $doctrine->getRepository(Entetepiece::class)->findOneBy([
@@ -246,14 +279,14 @@ class EntetePController extends AbstractController
         if (!$piece instanceof Entetepiece) {
             $this->addFlash('error', "La piece demandee n'existe pas.");
 
-            return $this->redirectToRoute('entetepiece.list');
+            return $this->redirectToRoute($backRoute);
         }
 
         $token = (string) $request->request->get('_token', '');
         if (!$this->isCsrfTokenValid('transition_piece_' . $piece->getId(), $token)) {
             $this->addFlash('error', 'Demande de transition invalide.');
 
-            return $this->redirectToRoute('entetepiece.list');
+            return $this->redirectToRoute($backRoute);
         }
 
         $targetTypeRaw = (string) $request->request->get('targetType', '');
@@ -262,7 +295,7 @@ class EntetePController extends AbstractController
         if ($targetType === null) {
             $this->addFlash('warning', 'Type de transition non autorise pour cette piece.');
 
-            return $this->redirectToRoute('entetepiece.list');
+            return $this->redirectToRoute($backRoute);
         }
 
         $sourceLines = $doctrine->getRepository(Lignepiece::class)->findBy(['piece' => $piece]);
@@ -270,7 +303,7 @@ class EntetePController extends AbstractController
         if (!$eligibility['eligible']) {
             $this->addFlash('warning', (string) ($eligibility['reason'] ?? 'Cette piece ne peut pas etre convertie.'));
 
-            return $this->redirectToRoute('entetepiece.list');
+            return $this->redirectToRoute($backRoute);
         }
 
         $entityManager = $doctrine->getManager();
@@ -323,12 +356,15 @@ class EntetePController extends AbstractController
             (string) ($newPiece->getPieceno() ?? '-')
         ));
 
-        return $this->redirect($this->buildPieceLinesRedirectUrl((int) $newPiece->getId()));
+        return $this->redirect($this->buildPieceLinesRedirectUrl((int) $newPiece->getId(), $origin));
     }
 
     #[Route('/delete/{id}', name: 'entetepiece.delete')]
-    public function deleteEntetePiece(ManagerRegistry $doctrine, int $id): RedirectResponse
+    public function deleteEntetePiece(ManagerRegistry $doctrine, Request $request, int $id): RedirectResponse
     {
+        $origin = $this->resolvePieceOriginToken((string) $request->query->get('origin', ''));
+        $backRoute = $this->resolvePieceListRoute($origin);
+
         $repository = $doctrine->getRepository(Entetepiece::class);
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
@@ -342,7 +378,7 @@ class EntetePController extends AbstractController
             $this->addFlash('error', "L'entete de piece demandee n'existe pas");
         }
 
-        return $this->redirectToRoute('entetepiece.list');
+        return $this->redirectToRoute($backRoute);
     }
 
     #[Route('/ca/annee/', name: 'ca_annee')]
@@ -364,8 +400,9 @@ class EntetePController extends AbstractController
     private function renderPieceList(
         Request $request,
         EntetepieceRepository $entetepieceRepository,
-        ?string $forcedTierType,
-        string $listRoute
+        string|array|null $forcedTierType,
+        string $listRoute,
+        ?string $forcedTierLabel = null
     ): Response {
         $page = $request->query->getInt('page', 1);
         $searchData = new SearchPiece();
@@ -419,6 +456,17 @@ class EntetePController extends AbstractController
             ];
         }
 
+        if ($forcedTierLabel === null) {
+            if (is_array($forcedTierType)) {
+                $forcedTierLabel = implode(' / ', array_values(array_filter(array_map(
+                    static fn (mixed $type): string => trim((string) $type),
+                    $forcedTierType
+                ))));
+            } elseif (is_string($forcedTierType)) {
+                $forcedTierLabel = trim($forcedTierType);
+            }
+        }
+
         return $this->render('entetepiece/index.html.twig', [
             'search' => $searchForm->createView(),
             'entetepieces' => $pagination['items'],
@@ -430,7 +478,8 @@ class EntetePController extends AbstractController
             'lineCountByInvoice' => $lineCountByInvoice,
             'workflowByInvoice' => $workflowByInvoice,
             'listRoute' => $listRoute,
-            'forcedTierType' => $forcedTierType,
+            'origin' => $this->resolvePieceOriginTokenByListRoute($listRoute),
+            'forcedTierLabel' => $forcedTierLabel,
         ]);
     }
 
@@ -579,12 +628,43 @@ class EntetePController extends AbstractController
         return $next;
     }
 
-    private function buildPieceLinesRedirectUrl(int $pieceId): string
+    private function buildPieceLinesRedirectUrl(int $pieceId, ?string $origin = null): string
     {
-        return $this->generateUrl('entetepiece.edit', [
+        return $this->generateUrl('entetepiece.edit', array_merge([
             'id' => $pieceId,
             'scroll' => 'piece-lines',
-        ]) . '#piece-lines';
+        ], $this->buildPieceOriginQueryParams($origin))) . '#piece-lines';
+    }
+
+    private function resolvePieceOriginToken(?string $origin): ?string
+    {
+        return match ($this->normalizeToken($origin)) {
+            'fournisseur' => 'fournisseur',
+            'client', 'prospect' => 'client',
+            default => null,
+        };
+    }
+
+    private function resolvePieceOriginTokenByListRoute(string $listRoute): ?string
+    {
+        return match ($listRoute) {
+            'entetepiece.fournisseur_list' => 'fournisseur',
+            'entetepiece.client_list', 'entetepiece.list' => 'client',
+            default => null,
+        };
+    }
+
+    private function resolvePieceListRoute(?string $origin): string
+    {
+        return $origin === 'fournisseur' ? 'entetepiece.fournisseur_list' : 'entetepiece.client_list';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function buildPieceOriginQueryParams(?string $origin): array
+    {
+        return $origin !== null ? ['origin' => $origin] : [];
     }
 
     /**

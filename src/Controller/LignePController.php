@@ -53,6 +53,8 @@ class LignePController extends AbstractController
     #[Route('/edit/{id?0}/{pceId?0}', name: 'lignepiece.edit')]
     public function updateLignepiece(ManagerRegistry $doctrine, Request $request, int $id, int $pceId): Response
     {
+        $origin = $this->resolvePieceOriginToken((string) $request->query->get('origin', ''));
+
         $repository = $doctrine->getRepository(Lignepiece::class);
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
@@ -61,7 +63,7 @@ class LignePController extends AbstractController
         if ($lignepiece instanceof Lignepiece && $this->isPieceReadOnly($lignepiece->getPiece())) {
             $this->addFlash('warning', 'Cette pièce est périmée et ses lignes sont en lecture seule.');
 
-            return $this->redirect($this->buildPieceRedirectUrl((int) ($lignepiece->getPiece()?->getId() ?? $pceId)));
+            return $this->redirect($this->buildPieceRedirectUrl((int) ($lignepiece->getPiece()?->getId() ?? $pceId), $origin));
         }
 
         $new = false;
@@ -94,13 +96,14 @@ class LignePController extends AbstractController
 
             $this->addFlash('success', $message);
 
-            return $this->redirect($this->buildPieceRedirectUrl($pceId));
+            return $this->redirect($this->buildPieceRedirectUrl($pceId, $origin));
         }
 
         return $this->render('lignepiece/add-lignepiece.html.twig', [
             'lignepiece' => $form->createView(),
             'id' => $id,
             'pceId' => $pceId,
+            'origin' => $origin,
             'pieceTierId' => $lignepiece->getPiece()?->getTierId() ?? 0,
             'pieceTierType' => (string) ($lignepiece->getPiece()?->getTypet() ?? ''),
         ]);
@@ -109,6 +112,9 @@ class LignePController extends AbstractController
     #[Route('/add/{pceId?0}', name: 'lignepiece.add')]
     public function addLignepiece(ManagerRegistry $doctrine, Request $request, int $pceId): Response
     {
+        $origin = $this->resolvePieceOriginToken((string) $request->query->get('origin', ''));
+        $backRoute = $this->resolvePieceListRoute($origin);
+
         $repository = $doctrine->getRepository(Entetepiece::class);
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
@@ -116,13 +122,13 @@ class LignePController extends AbstractController
         if ($entetePiece === null) {
             $this->addFlash('error', "La piece demandee n'existe pas");
 
-            return $this->redirectToRoute('entetepiece.list');
+            return $this->redirectToRoute($backRoute);
         }
 
         if ($this->isPieceReadOnly($entetePiece)) {
             $this->addFlash('warning', 'Cette pièce est périmée et ses lignes sont en lecture seule.');
 
-            return $this->redirect($this->buildPieceRedirectUrl((int) $entetePiece->getId()));
+            return $this->redirect($this->buildPieceRedirectUrl((int) $entetePiece->getId(), $origin));
         }
 
         $lignepiece = new Lignepiece();
@@ -145,13 +151,14 @@ class LignePController extends AbstractController
 
             $this->addFlash('success', 'La ligne piece est ajoutee avec succes');
 
-            return $this->redirect($this->buildPieceRedirectUrl($pceId));
+            return $this->redirect($this->buildPieceRedirectUrl($pceId, $origin));
         }
 
         return $this->render('lignepiece/add-lignepiece.html.twig', [
             'lignepiece' => $form->createView(),
             'id' => 0,
             'pceId' => $pceId,
+            'origin' => $origin,
             'pieceTierId' => $entetePiece->getTierId() ?? 0,
             'pieceTierType' => (string) ($entetePiece->getTypet() ?? ''),
         ]);
@@ -160,6 +167,9 @@ class LignePController extends AbstractController
     #[Route('/delete/{id}', name: 'lignepiece.delete')]
     public function deleteLignepiece(ManagerRegistry $doctrine, Request $request, int $id): RedirectResponse
     {
+        $origin = $this->resolvePieceOriginToken((string) $request->query->get('origin', ''));
+        $backRoute = $this->resolvePieceListRoute($origin);
+
         $repository = $doctrine->getRepository(Lignepiece::class);
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
@@ -171,10 +181,10 @@ class LignePController extends AbstractController
                 $this->addFlash('warning', 'Cette pièce est périmée et ses lignes sont en lecture seule.');
 
                 if ($pieceId !== null) {
-                    return $this->redirect($this->buildPieceRedirectUrl($pieceId));
+                    return $this->redirect($this->buildPieceRedirectUrl($pieceId, $origin));
                 }
 
-                return $this->redirectToRoute('entetepiece.list');
+                return $this->redirectToRoute($backRoute);
             }
             $manager = $doctrine->getManager();
             $manager->remove($lignepiece);
@@ -192,7 +202,7 @@ class LignePController extends AbstractController
             $this->addFlash('success', 'La ligne piece a ete supprimee avec succes');
 
             if ($pieceId !== null) {
-                return $this->redirect($this->buildPieceRedirectUrl($pieceId));
+                return $this->redirect($this->buildPieceRedirectUrl($pieceId, $origin));
             }
         } else {
             $this->addFlash('error', "La ligne piece demandee n'existe pas");
@@ -200,7 +210,7 @@ class LignePController extends AbstractController
 
         $fallbackPieceId = $request->query->getInt('pceId', 0);
         if ($fallbackPieceId > 0) {
-            return $this->redirect($this->buildPieceRedirectUrl($fallbackPieceId));
+            return $this->redirect($this->buildPieceRedirectUrl($fallbackPieceId, $origin));
         }
 
         return $this->redirectToRoute('lignepiece.list');
@@ -388,12 +398,34 @@ class LignePController extends AbstractController
         $entityManager->persist($piece);
     }
 
-    private function buildPieceRedirectUrl(int $pieceId): string
+    private function buildPieceRedirectUrl(int $pieceId, ?string $origin = null): string
     {
-        return $this->generateUrl('entetepiece.edit', [
+        return $this->generateUrl('entetepiece.edit', array_merge([
             'id' => $pieceId,
             'scroll' => 'piece-lines',
-        ]) . '#piece-lines';
+        ], $this->buildPieceOriginQueryParams($origin))) . '#piece-lines';
+    }
+
+    private function resolvePieceOriginToken(?string $origin): ?string
+    {
+        return match ($this->normalizeToken($origin)) {
+            'fournisseur' => 'fournisseur',
+            'client', 'prospect' => 'client',
+            default => null,
+        };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function buildPieceOriginQueryParams(?string $origin): array
+    {
+        return $origin !== null ? ['origin' => $origin] : [];
+    }
+
+    private function resolvePieceListRoute(?string $origin): string
+    {
+        return $origin === 'fournisseur' ? 'entetepiece.fournisseur_list' : 'entetepiece.client_list';
     }
 
     private function isPieceReadOnly(?Entetepiece $piece): bool

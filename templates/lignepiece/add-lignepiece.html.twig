@@ -2,9 +2,11 @@
 {% block PageTitle %}Ligne de pièce{% endblock %}
 
 {% block body %}
+{% set pieceOrigin = origin|default(null) %}
+{% set pieceOriginParams = pieceOrigin ? {origin: pieceOrigin} : {} %}
 <div class="page-header">
     <div class="d-flex align-items-center">
-        <a href="{{ path('entetepiece.edit', {id: pceId}) }}" class="btn-back mr-3">
+        <a href="{{ path('entetepiece.edit', {id: pceId}|merge(pieceOriginParams)) }}" class="btn-back mr-3">
             <i class="fas fa-arrow-left"></i> Retour à la pièce
         </a>
         <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier la ligne' : 'Nouvelle ligne' }}</h1>
@@ -82,7 +84,7 @@
         <button type="submit" class="btn btn-primary">
             <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
         </button>
-        <a href="{{ path('entetepiece.edit', {id: pceId}) }}" class="btn btn-secondary">
+        <a href="{{ path('entetepiece.edit', {id: pceId}|merge(pieceOriginParams)) }}" class="btn btn-secondary">
             <i class="fas fa-times mr-2"></i>Annuler
         </a>
     </div>

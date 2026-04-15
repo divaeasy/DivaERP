@@ -33,7 +33,10 @@ class EntetePieceFormType extends AbstractType
         $piece = $options['data'] ?? null;
         $isEdit = $piece instanceof Entetepiece && null !== $piece->getId();
         $readOnly = (bool) ($options['read_only'] ?? false);
+        $tierOrigin = $this->normalizeTierOrigin($options['tier_origin'] ?? null);
+        $isNewFournisseurOrigin = !$isEdit && $tierOrigin === 'fournisseur';
         $currentDossier = $this->getCurrentDossier();
+        $tierTypeChoices = $this->buildTierTypeChoices($tierOrigin, $isEdit);
         $initialTierType = $piece instanceof Entetepiece ? $piece->getTypet() : null;
         $initialTiers = $this->getTierChoices($currentDossier, $initialTierType);
         $initialTierId = $piece instanceof Entetepiece && $piece->getTierId() !== null
@@ -54,16 +57,11 @@ class EntetePieceFormType extends AbstractType
                 'disabled' => $isEdit || $readOnly,
             ])
             ->add('typet', ChoiceType::class, [
-                'choices' => [
-                    'Client' => 'Client',
-                    'Prospect' => 'Prospect',
-                    'Fournisseur' => 'Fournisseur',
-                    'VAT' => 'VAT',
-                ],
-                'placeholder' => $isEdit ? false : 'Selectionner un type de tiers',
+                'choices' => $tierTypeChoices,
+                'placeholder' => ($isEdit || $isNewFournisseurOrigin) ? false : 'Selectionner un type de tiers',
                 'required' => true,
                 'label' => 'Type de tiers',
-                'disabled' => $readOnly,
+                'disabled' => $readOnly || $isNewFournisseurOrigin,
                 'attr' => [
                     'class' => 'js-tier-type',
                 ],
@@ -167,7 +165,7 @@ class EntetePieceFormType extends AbstractType
                 return;
             }
 
-            $typet = (string) ($data['typet'] ?? '');
+            $typet = (string) ($data['typet'] ?? $event->getForm()->get('typet')->getData() ?? '');
             $tierChoices = $this->getTierChoices($currentDossier, $typet);
             $selectedTier = trim((string) ($data['tierSelector'] ?? $data['tierId'] ?? ''));
 
@@ -198,8 +196,10 @@ class EntetePieceFormType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Entetepiece::class,
             'read_only' => false,
+            'tier_origin' => null,
         ]);
         $resolver->setAllowedTypes('read_only', 'bool');
+        $resolver->setAllowedTypes('tier_origin', ['null', 'string']);
     }
 
     private function getCurrentDossier(): ?\App\Entity\Dossier
@@ -330,5 +330,49 @@ class EntetePieceFormType extends AbstractType
         ]);
 
         return (string) preg_replace('/[^a-z0-9]/', '', $normalized);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function buildTierTypeChoices(?string $tierOrigin, bool $isEdit): array
+    {
+        if ($isEdit) {
+            return [
+                'Client' => 'Client',
+                'Prospect' => 'Prospect',
+                'Fournisseur' => 'Fournisseur',
+                'VAT' => 'VAT',
+            ];
+        }
+
+        if ($tierOrigin === 'fournisseur') {
+            return [
+                'Fournisseur' => 'Fournisseur',
+            ];
+        }
+
+        if ($tierOrigin === 'client') {
+            return [
+                'Client' => 'Client',
+                'Prospect' => 'Prospect',
+            ];
+        }
+
+        return [
+            'Client' => 'Client',
+            'Prospect' => 'Prospect',
+            'Fournisseur' => 'Fournisseur',
+            'VAT' => 'VAT',
+        ];
+    }
+
+    private function normalizeTierOrigin(?string $value): ?string
+    {
+        return match ($this->normalizeTierType($value)) {
+            'fournisseur' => 'fournisseur',
+            'client', 'prospect' => 'client',
+            default => null,
+        };
     }
 }
