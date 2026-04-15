@@ -11,6 +11,119 @@
     </div>
 </div>
 
+<style>
+    .article-image-field {
+        display: grid;
+        grid-template-columns: 132px minmax(0, 1fr);
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .article-image-field__preview {
+        min-height: 132px;
+        border: 1px dashed var(--theme-border);
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        overflow: hidden;
+    }
+
+    .article-image-field__preview img {
+        max-width: 100%;
+        max-height: 100px;
+        object-fit: cover;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        display: block;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+    }
+
+    .article-image-field__placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.55rem;
+        color: #94a3b8;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+    .article-image-field__placeholder i {
+        font-size: 1.4rem;
+        color: var(--theme-primary);
+    }
+
+    .article-image-field__controls {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.65rem;
+        min-width: 0;
+    }
+
+    .article-image-trigger-wrap {
+        position: relative;
+        display: inline-flex;
+        width: 100%;
+    }
+
+    .article-image-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0.85rem 1rem;
+        border-radius: 14px;
+        background: linear-gradient(180deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+        border: 0;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+        width: 100%;
+    }
+
+    .article-image-trigger:hover {
+        color: #fff;
+    }
+
+    .article-image-trigger:focus {
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14), 0 14px 28px rgba(15, 23, 42, 0.12);
+    }
+
+    .article-image-input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .article-image-filename {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #475569;
+        word-break: break-word;
+    }
+
+    .article-remove-check {
+        padding-top: 0.25rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .article-image-field {
+            grid-template-columns: 1fr;
+        }
+
+        .article-image-field__preview {
+            min-height: 150px;
+        }
+    }
+</style>
+
 <div class="form-card">
     {{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
 
@@ -18,7 +131,7 @@
         <h5><i class="fas fa-box mr-2"></i>Informations de l'article</h5>
     </div>
 
-    {% include 'article/_form_fields.html.twig' with {form: form} only %}
+    {% include 'article/_form_fields.html.twig' with {form: form, article: articleEntity|default(form.vars.data)} only %}
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">
@@ -46,6 +159,99 @@
             theme: 'bootstrap-5',
             allowClear: true
         });
+
+        var $imageInput = $('#articleImageUpload');
+        var $imagePreview = $('#articleImagePreview');
+        var $imageFileName = $('#articleImageFileName');
+        var $imageUploadButton = $('#articleImageUploadButton');
+        var $removeImageCheckbox = $('#articleRemoveImage');
+        var currentImageUrl = '{{ articleEntity is defined and articleEntity and articleEntity.image ? articleEntity.image|e('js') : '' }}';
+        var currentImageLabel = currentImageUrl ? 'Image actuelle chargee' : 'Aucun fichier selectionne';
+
+        function renderImagePlaceholder() {
+            if (!$imagePreview.length) {
+                return;
+            }
+
+            $imagePreview.html(
+                '<div class="article-image-field__placeholder" id="articleImagePreviewPlaceholder">' +
+                    '<i class="fas fa-image"></i>' +
+                    '<span>Apercu de l image</span>' +
+                '</div>'
+            );
+        }
+
+        function renderImagePreview(src, altText) {
+            if (!$imagePreview.length) {
+                return;
+            }
+
+            $imagePreview.html(
+                $('<img>', {
+                    src: src,
+                    alt: altText || "Image de l'article",
+                    id: 'articleImagePreviewImage'
+                })
+            );
+        }
+
+        function syncArticleImagePreview() {
+            if (!$imageInput.length) {
+                return;
+            }
+
+            var file = $imageInput[0].files && $imageInput[0].files[0] ? $imageInput[0].files[0] : null;
+            if (file) {
+                $imageFileName.text(file.name);
+                if ($removeImageCheckbox.length) {
+                    $removeImageCheckbox.prop('checked', false);
+                }
+
+                if (!file.type.match(/^image\//)) {
+                    return;
+                }
+
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    renderImagePreview(event.target.result, 'Apercu de la nouvelle image');
+                };
+                reader.readAsDataURL(file);
+                return;
+            }
+
+            if ($removeImageCheckbox.length && $removeImageCheckbox.is(':checked')) {
+                $imageFileName.text('L image sera supprimee a l enregistrement');
+                renderImagePlaceholder();
+                return;
+            }
+
+            $imageFileName.text(currentImageLabel);
+            if (currentImageUrl) {
+                renderImagePreview(currentImageUrl, "Image actuelle de l'article");
+                return;
+            }
+
+            renderImagePlaceholder();
+        }
+
+        if ($imageUploadButton.length && $imageInput.length) {
+            $imageUploadButton.on('click', function() {
+                $imageInput.trigger('click');
+            });
+        }
+
+        if ($imageInput.length) {
+            $imageInput.on('change', syncArticleImagePreview);
+            window.handleArticleImageChange = function() {
+                syncArticleImagePreview();
+            };
+        }
+
+        if ($removeImageCheckbox.length) {
+            $removeImageCheckbox.on('change', syncArticleImagePreview);
+        }
+
+        syncArticleImagePreview();
     });
 </script>
 {% endblock %}

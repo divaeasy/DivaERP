@@ -10,8 +10,10 @@ use App\Repository\TarifsRepository;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
 
 class ArticleFormType extends AbstractType
 {
@@ -25,6 +27,27 @@ class ArticleFormType extends AbstractType
 
         $builder
             ->add('libelle')
+            ->add('imageFile', FileType::class, [
+                'label' => "Image de l'article",
+                'mapped' => false,
+                'required' => false,
+                'help' => 'PNG, JPG ou WebP, 2 Mo max. L image sera affichee en vignette dans le tableau.',
+                'attr' => [
+                    'accept' => 'image/*',
+                ],
+                'constraints' => [
+                    new File([
+                        'maxSize' => '2M',
+                        'maxSizeMessage' => 'Le fichier dépasse 2 Mo',
+                        'mimeTypes' => [
+                            'image/jpeg',
+                            'image/png',
+                            'image/webp',
+                        ],
+                        'mimeTypesMessage' => 'Seuls les fichiers PNG, JPG et WebP sont acceptés',
+                    ]),
+                ],
+            ])
             ->add('unite', EntityType::class, [
                 'class' => Unite::class,
                 'choice_label' => 'libelle',
