@@ -2398,7 +2398,29 @@
         #accordionSidebar.double-sidebar .sidebar-panel-recent__list {
             display: flex;
             flex-direction: column;
-            gap: 0.26rem;
+            gap: 0.52rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__group-label {
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin: 0 0 0.34rem;
+            padding: 0 0.56rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__group .sidebar-panel-links {
+            gap: 0.24rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__group .sidebar-panel-link {
+            font-size: 0.79rem;
+            padding: 0.46rem 0.58rem;
+            line-height: 1.24;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__group .sidebar-panel-link i,
+        #accordionSidebar.double-sidebar .sidebar-panel-recent__group .sidebar-panel-link .lucide {
+            width: 15px;
+            height: 15px;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-recent__item {
             display: flex;
@@ -2645,6 +2667,12 @@
         }
         #accordionSidebar.double-sidebar .sidebar-panel-link--pieces {
             --sidebar-link-accent: #2563eb;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-link--pieces-client {
+            --sidebar-link-accent: #2563eb;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel-link--pieces-fournisseur {
+            --sidebar-link-accent: #0f766e;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-link--reglements {
             --sidebar-link-accent: #0f766e;
@@ -3375,8 +3403,8 @@
 
         <!-- Sidebar -->
         {% set currentRoute = app.request.attributes.get('_route') %}
-        {% set commercialRoutes = ['client.list', 'client.edit', 'prospect.list', 'prospect.edit', 'article.list', 'article.edit', 'tarif.list', 'tarif.edit', 'tarifvente.list', 'tarifvente.edit'] %}
-        {% set accountingRoutes = ['entetepiece.list', 'entetepiece.edit', 'reglement.list', 'reglement.edit', 'devise.list', 'devise.edit', 'unite.list', 'unite.edit'] %}
+        {% set commercialRoutes = ['client.list', 'client.edit', 'prospect.list', 'prospect.edit', 'fournisseur.list', 'fournisseur.edit', 'article.list', 'article.edit', 'tarif.list', 'tarif.edit', 'tarifvente.list', 'tarifvente.edit'] %}
+        {% set accountingRoutes = ['entetepiece.list', 'entetepiece.client_list', 'entetepiece.fournisseur_list', 'entetepiece.edit', 'reglement.list', 'reglement.edit', 'devise.list', 'devise.edit', 'unite.list', 'unite.edit'] %}
         {% set administrationRoutes = ['dossier.list', 'dossier.edit', 'pays.list', 'pays.edit', 'ville.list', 'ville.edit'] %}
         {% set initialSidebarPanel = '' %}
         {% set currentDossier = app.user and app.user.currentDossier ? app.user.currentDossier : null %}
@@ -3396,6 +3424,9 @@
             'prospect.list': {'module': 'Commercial', 'section': 'Prospects', 'page': 'Liste des prospects'},
             'prospect.edit': {'module': 'Commercial', 'section': 'Prospects', 'page': 'Fiche prospect'},
             'prospect.detail': {'module': 'Commercial', 'section': 'Prospects', 'page': 'Détails prospect'},
+            'fournisseur.list': {'module': 'Commercial', 'section': 'Fournisseurs', 'page': 'Liste des fournisseurs'},
+            'fournisseur.edit': {'module': 'Commercial', 'section': 'Fournisseurs', 'page': 'Fiche fournisseur'},
+            'fournisseur.detail': {'module': 'Commercial', 'section': 'Fournisseurs', 'page': 'Détails fournisseur'},
             'article.list': {'module': 'Commercial', 'section': 'Articles', 'page': 'Liste des articles'},
             'article.edit': {'module': 'Commercial', 'section': 'Articles', 'page': 'Fiche article'},
             'article.detail': {'module': 'Commercial', 'section': 'Articles', 'page': 'Détails article'},
@@ -3404,6 +3435,8 @@
             'tarifvente.list': {'module': 'Commercial', 'section': 'Tarifs vente', 'page': 'Liste des tarifs vente'},
             'tarifvente.edit': {'module': 'Commercial', 'section': 'Tarifs vente', 'page': 'Fiche tarif vente'},
             'entetepiece.list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Liste des pièces'},
+            'entetepiece.client_list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Pièces client'},
+            'entetepiece.fournisseur_list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Pièces fournisseur'},
             'entetepiece.edit': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Fiche pièce'},
             'entetepiece.add': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Nouvelle pièce'},
             'reglement.list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Liste des règlements'},
@@ -3629,12 +3662,14 @@
                     </div>
 
                     <div class="sidebar-panel-scroll">
-                        <div class="sidebar-panel-recent" id="sidebarRecentSection" hidden>
-                            <div class="sidebar-panel-recent__title">
-                                <i data-lucide="history"></i>
-                                <span>Récents</span>
+                        <div class="sidebar-panel-section is-open" id="sidebarRecentSection" data-section-key="recent-links" hidden>
+                            <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
+                                <span class="sidebar-panel-section-toggle__label">Récents</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                            <div class="sidebar-panel-section-body">
+                                <div class="sidebar-panel-links" id="sidebarRecentList"></div>
                             </div>
-                            <div class="sidebar-panel-recent__list" id="sidebarRecentList"></div>
                         </div>
                         <div class="sidebar-panel-content {% if initialSidebarPanel == 'commercial' %}is-active{% endif %}" data-sidebar-panel="commercial">
                             <div class="sidebar-panel-title sidebar-panel-title--commercial">
@@ -3657,6 +3692,11 @@
                                        href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('prospect.list') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="user-plus"></i>
                                         <span>Prospects</span>
+                                    </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--fournisseurs {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['fournisseur.list', 'fournisseur.edit', 'fournisseur.detail'] %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('fournisseur.list') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="truck"></i>
+                                        <span>Fournisseurs</span>
                                     </a>
                                     <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--articles {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['article.list', 'article.edit', 'article.detail'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('article.list') }}{% else %}javascript:void(0){% endif %}">
@@ -3690,10 +3730,15 @@
                                 </button>
                                 <div class="sidebar-panel-section-body">
                                 <div class="sidebar-panel-links">
-                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute in ['entetepiece.list', 'entetepiece.edit'] %}active{% endif %}"
-                                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('entetepiece.list') }}{% else %}javascript:void(0){% endif %}">
-                                        <i data-lucide="file-text"></i>
-                                        <span>Pièces</span>
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces sidebar-panel-link--pieces-client {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute == 'entetepiece.client_list' %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('entetepiece.client_list') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="users"></i>
+                                        <span>Pièce client</span>
+                                    </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces sidebar-panel-link--pieces-fournisseur {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute == 'entetepiece.fournisseur_list' %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('entetepiece.fournisseur_list') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="truck"></i>
+                                        <span>Pièce fournisseur</span>
                                     </a>
                                     <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--reglements {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute in ['reglement.list', 'reglement.edit'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('reglement.list') }}{% else %}javascript:void(0){% endif %}">
@@ -4674,6 +4719,8 @@
             var $sidebarRecentSection = $('#sidebarRecentSection');
             var $sidebarRecentList = $('#sidebarRecentList');
             var sidebarRecentStorageKey = 'diva_erp.sidebar.recent';
+            var maxRecentVisibleItems = 3;
+            var maxRecentStoredItems = 12;
             var sidebarSectionStateStorageKey = 'diva_erp.sidebar.sections';
             var routePanelId = String($sidebarPanelBreadcrumb.data('routePanel') || '').trim();
             var routeModuleLabel = String($sidebarPanelBreadcrumb.data('routeModule') || '').trim();
@@ -4712,6 +4759,214 @@
 
                 var sectionLabel = String($section.find('.sidebar-panel-section-toggle__label').first().text() || '').trim();
                 return sectionLabel;
+            };
+
+            var isSidebarNavigableUrl = function(url) {
+                var normalized = String(url || '').trim();
+                if (normalized === '') {
+                    return false;
+                }
+
+                if (/^javascript:/i.test(normalized)) {
+                    return false;
+                }
+
+                return true;
+            };
+
+            var canonicalizeUrlPath = function(url) {
+                var raw = String(url || '').trim();
+                if (raw === '') {
+                    return '';
+                }
+
+                try {
+                    var parsed = new URL(raw, window.location.origin);
+                    var path = String(parsed.pathname || '');
+                    path = path.replace(/\/+$/, '');
+                    path = path.replace(/\/index\.php$/i, '');
+                    path = path.replace(/^\/index\.php\//i, '/');
+                    path = path.replace(/^\/index\.php$/i, '');
+                    return path === '' ? '/' : path;
+                } catch (urlParseError) {
+                    var clean = raw.split('#')[0].split('?')[0].replace(/\/+$/, '');
+                    clean = clean.replace(/\/index\.php$/i, '');
+                    clean = clean.replace(/^\/index\.php\//i, '/');
+                    clean = clean.replace(/^\/index\.php$/i, '');
+                    return clean === '' ? '/' : clean;
+                }
+            };
+
+            var normalizeRecentLinkClass = function(rawClass) {
+                var classTokens = String(rawClass || '').split(/\s+/).filter(Boolean);
+                var allowedTokens = classTokens.filter(function(token) {
+                    return token.indexOf('sidebar-panel-link--') === 0;
+                });
+
+                return allowedTokens.join(' ');
+            };
+
+            var buildRecentItemFromLink = function($link, panelId, overrideName) {
+                if (!$link || !$link.length) {
+                    return null;
+                }
+
+                var href = String($link.attr('href') || '').trim();
+                if (!isSidebarNavigableUrl(href)) {
+                    return null;
+                }
+
+                var itemName = String(overrideName || $link.find('span').last().text() || '').trim();
+                if (itemName === '') {
+                    return null;
+                }
+
+                var normalizedPanelId = String(panelId || '').trim() || String($link.closest('.sidebar-panel-content').data('sidebarPanel') || '').trim();
+                var itemIcon = String($link.find('i[data-lucide]').first().attr('data-lucide') || 'circle').trim() || 'circle';
+                var itemSection = getSectionLabelFromLink($link);
+
+                return {
+                    name: itemName,
+                    url: href,
+                    panel: normalizedPanelId,
+                    icon: itemIcon,
+                    section: itemSection,
+                    linkClass: normalizeRecentLinkClass($link.attr('class') || '')
+                };
+            };
+
+            var getPanelSections = function(panelId) {
+                var sections = [];
+                var $panel = $sidebarPanelContents.filter('[data-sidebar-panel="' + panelId + '"]').first();
+                if (!$panel.length) {
+                    return sections;
+                }
+
+                $panel.find('.sidebar-panel-section').each(function() {
+                    var label = String($(this).find('.sidebar-panel-section-toggle__label').first().text() || '').trim();
+                    if (label !== '' && sections.indexOf(label) === -1) {
+                        sections.push(label);
+                    }
+                });
+
+                return sections;
+            };
+
+            var getPanelRecentRouteMeta = function(panelId) {
+                var routeMetaByPath = {};
+                var $panel = $sidebarPanelContents.filter('[data-sidebar-panel="' + panelId + '"]').first();
+
+                if (!$panel.length) {
+                    return routeMetaByPath;
+                }
+
+                $panel.find('.sidebar-panel-link').not('.nav-disabled').each(function() {
+                    var $link = $(this);
+                    var href = String($link.attr('href') || '').trim();
+                    if (!isSidebarNavigableUrl(href)) {
+                        return;
+                    }
+
+                    var canonicalPath = canonicalizeUrlPath(href);
+                    if (canonicalPath === '' || routeMetaByPath[canonicalPath]) {
+                        return;
+                    }
+
+                    routeMetaByPath[canonicalPath] = {
+                        name: String($link.find('span').last().text() || '').trim(),
+                        icon: String($link.find('i[data-lucide]').first().attr('data-lucide') || 'circle').trim() || 'circle',
+                        section: getSectionLabelFromLink($link),
+                        linkClass: normalizeRecentLinkClass($link.attr('class') || '')
+                    };
+                });
+
+                return routeMetaByPath;
+            };
+
+            var findSidebarLinkMetaByUrl = function(url, preferredPanelId) {
+                var targetPath = canonicalizeUrlPath(url);
+                if (targetPath === '') {
+                    return null;
+                }
+
+                var buildMetaFromLink = function($link) {
+                    return {
+                        name: String($link.find('span').last().text() || '').trim(),
+                        icon: String($link.find('i[data-lucide]').first().attr('data-lucide') || 'file-text').trim() || 'file-text',
+                        section: getSectionLabelFromLink($link),
+                        linkClass: normalizeRecentLinkClass($link.attr('class') || ''),
+                        panel: String($link.closest('.sidebar-panel-content').data('sidebarPanel') || '').trim()
+                    };
+                };
+
+                var $preferredPanelLinks = $();
+                if (String(preferredPanelId || '').trim() !== '') {
+                    $preferredPanelLinks = $sidebarPanelContents
+                        .filter('[data-sidebar-panel="' + String(preferredPanelId).trim() + '"]')
+                        .find('.sidebar-panel-link')
+                        .not('.nav-disabled');
+                }
+
+                var $allLinks = $('.sidebar-panel-link').not('.nav-disabled');
+                var $orderedLinks = $preferredPanelLinks.length
+                    ? $preferredPanelLinks.add($allLinks.not($preferredPanelLinks))
+                    : $allLinks;
+
+                var matchedMeta = null;
+                $orderedLinks.each(function() {
+                    var $candidate = $(this);
+                    var candidatePath = canonicalizeUrlPath(String($candidate.attr('href') || '').trim());
+                    if (candidatePath === targetPath) {
+                        matchedMeta = buildMetaFromLink($candidate);
+                        return false;
+                    }
+                });
+
+                return matchedMeta;
+            };
+
+            var getPanelFallbackLinkMeta = function(panelId) {
+                var $link = getPrimaryPanelLink(panelId);
+                if (!$link.length) {
+                    return { icon: 'file-text', linkClass: '' };
+                }
+
+                var icon = String($link.find('i[data-lucide]').first().attr('data-lucide') || '').trim();
+                if (icon === '' || icon === 'circle') {
+                    icon = 'file-text';
+                }
+
+                return {
+                    icon: icon,
+                    linkClass: normalizeRecentLinkClass($link.attr('class') || '')
+                };
+            };
+
+            var getPanelSectionLinkMeta = function(panelId, sectionLabel) {
+                var $panel = $sidebarPanelContents.filter('[data-sidebar-panel="' + panelId + '"]').first();
+                if (!$panel.length) {
+                    return getPanelFallbackLinkMeta(panelId);
+                }
+
+                var $sectionLinks = $panel.find('.sidebar-panel-section').filter(function() {
+                    var label = String($(this).find('.sidebar-panel-section-toggle__label').first().text() || '').trim();
+                    return label === sectionLabel;
+                }).first().find('.sidebar-panel-link').not('.nav-disabled');
+
+                if (!$sectionLinks.length) {
+                    return getPanelFallbackLinkMeta(panelId);
+                }
+
+                var $firstLink = $sectionLinks.first();
+                var icon = String($firstLink.find('i[data-lucide]').first().attr('data-lucide') || '').trim();
+                if (icon === '' || icon === 'circle') {
+                    icon = getPanelFallbackLinkMeta(panelId).icon;
+                }
+
+                return {
+                    icon: icon,
+                    linkClass: normalizeRecentLinkClass($firstLink.attr('class') || '')
+                };
             };
 
             var updateSidebarBreadcrumb = function(panelId) {
@@ -4754,18 +5009,42 @@
                     return [];
                 }
 
-                return rawItems
-                    .filter(function(item) {
-                        return item && item.url && item.name;
-                    })
-                    .map(function(item) {
-                        return {
-                            name: String(item.name),
-                            url: String(item.url),
-                            panel: String(item.panel || ''),
-                            icon: String(item.icon || 'circle')
-                        };
+                var seenKeys = {};
+                var normalizedItems = [];
+
+                rawItems.forEach(function(item) {
+                    if (!item || !item.url || !item.name) {
+                        return;
+                    }
+
+                    var panelId = String(item.panel || '').trim();
+                    var canonicalPath = canonicalizeUrlPath(item.url);
+                    if (canonicalPath === '') {
+                        return;
+                    }
+
+                    var key = panelId + '|' + canonicalPath;
+                    if (seenKeys[key]) {
+                        return;
+                    }
+                    seenKeys[key] = true;
+
+                    var icon = String(item.icon || '').trim();
+                    if (icon === 'circle') {
+                        icon = '';
+                    }
+
+                    normalizedItems.push({
+                        name: String(item.name),
+                        url: String(item.url),
+                        panel: panelId,
+                        icon: icon,
+                        section: String(item.section || ''),
+                        linkClass: normalizeRecentLinkClass(item.linkClass || '')
                     });
+                });
+
+                return normalizedItems.slice(0, maxRecentStoredItems);
             };
 
             var readRecentItems = function() {
@@ -4784,6 +5063,33 @@
                 }
             };
 
+            var upsertRecentItem = function(item) {
+                if (!item || !item.url || !item.name) {
+                    return;
+                }
+
+                var normalizedPanel = String(item.panel || '').trim();
+                var normalizedIcon = String(item.icon || '').trim();
+                if (normalizedIcon === 'circle') {
+                    normalizedIcon = '';
+                }
+
+                var canonicalTarget = canonicalizeUrlPath(item.url);
+                var recentItems = readRecentItems().filter(function(candidate) {
+                    return canonicalizeUrlPath(candidate.url) !== canonicalTarget;
+                });
+
+                recentItems.unshift({
+                    name: String(item.name || '').trim(),
+                    url: String(item.url || '').trim(),
+                    panel: normalizedPanel,
+                    icon: normalizedIcon,
+                    section: String(item.section || '').trim(),
+                    linkClass: normalizeRecentLinkClass(item.linkClass || '')
+                });
+                writeRecentItems(recentItems.slice(0, maxRecentStoredItems));
+            };
+
             var renderRecentItems = function(activePanelId) {
                 if (!$sidebarRecentSection.length || !$sidebarRecentList.length) {
                     return;
@@ -4798,7 +5104,7 @@
                     filteredItems = allItems;
                 }
 
-                filteredItems = filteredItems.slice(0, 4);
+                filteredItems = filteredItems.slice(0, maxRecentVisibleItems);
                 $sidebarRecentList.empty();
 
                 if (filteredItems.length === 0) {
@@ -4807,17 +5113,63 @@
                 }
 
                 filteredItems.forEach(function(item) {
-                    var $item = $('<a/>', {
-                        'class': 'sidebar-panel-recent__item nav-loading',
-                        href: item.url,
-                        title: item.name
-                    });
-                    var $icon = $('<span/>', { 'class': 'sidebar-panel-recent__icon' }).append($('<i/>', { 'data-lucide': item.icon }));
-                    var $name = $('<span/>', { 'class': 'sidebar-panel-recent__name', text: item.name });
-                    var $chevron = $('<span/>', { 'class': 'sidebar-panel-recent__chevron' }).append($('<i/>', { 'data-lucide': 'chevron-right' }));
+                    var canonicalPath = canonicalizeUrlPath(item.url);
+                    var sourcePanel = String(item.panel || activePanelId || '').trim();
+                    var matchedLinkMeta = findSidebarLinkMetaByUrl(item.url, sourcePanel || activePanelId);
+                    var panelRouteMeta = getPanelRecentRouteMeta(sourcePanel || activePanelId);
+                    var routeMeta = panelRouteMeta[canonicalPath] || null;
+                    var resolvedName = String(
+                        (matchedLinkMeta ? matchedLinkMeta.name : '') ||
+                        (routeMeta ? routeMeta.name : '') ||
+                        item.name ||
+                        ''
+                    ).trim();
+                    var resolvedSection = String(
+                        (matchedLinkMeta ? matchedLinkMeta.section : '') ||
+                        (routeMeta ? routeMeta.section : '') ||
+                        item.section ||
+                        ''
+                    ).trim();
+                    var sectionMeta = getPanelSectionLinkMeta(sourcePanel, resolvedSection);
+                    var panelFallbackMeta = getPanelFallbackLinkMeta(sourcePanel);
+                    var resolvedIcon = String(
+                        (matchedLinkMeta ? matchedLinkMeta.icon : '') ||
+                        (routeMeta ? routeMeta.icon : '') ||
+                        item.icon ||
+                        sectionMeta.icon ||
+                        panelFallbackMeta.icon ||
+                        'file-text'
+                    ).trim() || 'file-text';
+                    if (resolvedIcon === 'circle') {
+                        resolvedIcon = sectionMeta.icon || panelFallbackMeta.icon || 'file-text';
+                    }
+                    var resolvedLinkClass = normalizeRecentLinkClass(
+                        (matchedLinkMeta ? matchedLinkMeta.linkClass : '') ||
+                        (routeMeta ? routeMeta.linkClass : '') ||
+                        item.linkClass ||
+                        sectionMeta.linkClass ||
+                        panelFallbackMeta.linkClass ||
+                        ''
+                    );
 
-                    $item.append($icon).append($name).append($chevron);
-                    $sidebarRecentList.append($item);
+                    if (resolvedName === '') {
+                        return;
+                    }
+
+                    var itemClassName = 'nav-link nav-loading sidebar-panel-link';
+                    if (resolvedLinkClass !== '') {
+                        itemClassName += ' ' + resolvedLinkClass;
+                    }
+
+                    var $itemLink = $('<a/>', {
+                        'class': itemClassName,
+                        href: item.url,
+                        title: resolvedName
+                    });
+
+                    $itemLink.append($('<i/>', { 'data-lucide': resolvedIcon }));
+                    $itemLink.append($('<span/>', { text: resolvedName }));
+                    $sidebarRecentList.append($itemLink);
                 });
 
                 $sidebarRecentSection.removeAttr('hidden');
@@ -4834,38 +5186,93 @@
                 }
 
                 var $primaryLink = getPrimaryPanelLink(normalizedPanelId);
-                var pageName = '';
-                var pageIcon = 'circle';
+                var pageFallbackMeta = getPanelFallbackLinkMeta(normalizedPanelId);
+                var currentUrl = window.location.pathname + window.location.search;
+                var currentCanonicalPath = canonicalizeUrlPath(currentUrl);
+                var panelRouteMeta = getPanelRecentRouteMeta(normalizedPanelId);
+                var matchedRouteMeta = panelRouteMeta[currentCanonicalPath] || null;
+                var matchedLinkMeta = findSidebarLinkMetaByUrl(currentUrl, normalizedPanelId);
+                var existingForCurrentUrl = readRecentItems().find(function(item) {
+                    return canonicalizeUrlPath(item.url) === currentCanonicalPath;
+                }) || null;
 
-                if ($primaryLink.length) {
-                    pageName = String($primaryLink.find('span').last().text() || '').trim();
-                    pageIcon = String($primaryLink.find('i[data-lucide]').first().attr('data-lucide') || pageIcon).trim() || pageIcon;
-                }
+                var pageName = String(
+                    (matchedLinkMeta ? matchedLinkMeta.name : '') ||
+                    (matchedRouteMeta ? matchedRouteMeta.name : '') ||
+                    ''
+                ).trim();
+                var pageIcon = String(
+                    (matchedLinkMeta ? matchedLinkMeta.icon : '') ||
+                    (matchedRouteMeta ? matchedRouteMeta.icon : '') ||
+                    ''
+                ).trim();
+                var pageSection = String(
+                    (matchedLinkMeta ? matchedLinkMeta.section : '') ||
+                    (matchedRouteMeta ? matchedRouteMeta.section : '') ||
+                    ''
+                ).trim();
+                var pageLinkClass = normalizeRecentLinkClass(
+                    (matchedLinkMeta ? matchedLinkMeta.linkClass : '') ||
+                    (matchedRouteMeta ? matchedRouteMeta.linkClass : '') ||
+                    ''
+                );
 
                 if (routePanelId !== '' && normalizedPanelId === routePanelId && routePageLabel !== '') {
                     pageName = routePageLabel;
                 }
+                if (routePanelId !== '' && normalizedPanelId === routePanelId && routeSectionLabel !== '') {
+                    pageSection = routeSectionLabel;
+                }
 
                 if (pageName === '') {
-                    pageName = String($('.page-header h1').first().text() || '').trim() || String(document.title || '').trim();
+                    pageName = String($('.page-header h1').first().text() || '').trim();
+                }
+                if (pageName === '' && $primaryLink.length) {
+                    pageName = String($primaryLink.find('span').last().text() || '').trim();
+                }
+                if (pageName === '') {
+                    pageName = String(document.title || '').trim();
                 }
                 if (pageName === '') {
                     return;
                 }
 
-                var currentUrl = window.location.pathname + window.location.search;
-                var recentItems = readRecentItems().filter(function(item) {
-                    return item.url !== currentUrl;
-                });
+                if ((pageIcon === '' || pageIcon === 'circle') && existingForCurrentUrl) {
+                    pageIcon = String(existingForCurrentUrl.icon || '').trim();
+                }
+                if (pageIcon === '' || pageIcon === 'circle') {
+                    pageIcon = pageFallbackMeta.icon;
+                }
 
-                recentItems.unshift({
+                if (pageSection === '') {
+                    if (existingForCurrentUrl) {
+                        pageSection = String(existingForCurrentUrl.section || '').trim();
+                    }
+                    if (pageSection === '') {
+                        pageSection = getSectionLabelFromLink($primaryLink) || getPanelLabel(normalizedPanelId);
+                    }
+                }
+
+                if (pageLinkClass === '') {
+                    if (existingForCurrentUrl) {
+                        pageLinkClass = normalizeRecentLinkClass(existingForCurrentUrl.linkClass || '');
+                    }
+                    if (pageLinkClass === '' && $primaryLink.length) {
+                        pageLinkClass = normalizeRecentLinkClass($primaryLink.attr('class') || '');
+                    }
+                    if (pageLinkClass === '') {
+                        pageLinkClass = pageFallbackMeta.linkClass;
+                    }
+                }
+
+                upsertRecentItem({
                     name: pageName,
                     url: currentUrl,
                     panel: normalizedPanelId,
-                    icon: pageIcon
+                    icon: pageIcon,
+                    section: pageSection,
+                    linkClass: pageLinkClass
                 });
-
-                writeRecentItems(recentItems.slice(0, 12));
             };
 
             var readSectionState = function() {
@@ -4966,6 +5373,16 @@
                     }
 
                     setSidebarPanel(String($toggle.data('sidebarPanel') || '').trim(), true);
+                });
+
+                $('.sidebar-panel-link').not('.nav-disabled').on('click', function() {
+                    var $link = $(this);
+                    var panelId = String($link.closest('.sidebar-panel-content').data('sidebarPanel') || '').trim();
+                    var item = buildRecentItemFromLink($link, panelId);
+                    if (!item) {
+                        return;
+                    }
+                    upsertRecentItem(item);
                 });
             }
 
@@ -5634,9 +6051,12 @@
                 { name: 'Clients - Nouveau', url: '{{ path('client.edit') }}', icon: 'fas fa-user-plus' },
                 { name: 'Prospects - Liste', url: '{{ path('prospect.list') }}', icon: 'fas fa-user-plus' },
                 { name: 'Prospects - Nouveau', url: '{{ path('prospect.edit') }}', icon: 'fas fa-user-plus' },
+                { name: 'Fournisseurs - Liste', url: '{{ path('fournisseur.list') }}', icon: 'fas fa-truck' },
+                { name: 'Fournisseurs - Nouveau', url: '{{ path('fournisseur.edit') }}', icon: 'fas fa-truck-loading' },
                 { name: 'Articles - Liste', url: '{{ path('article.list') }}', icon: 'fas fa-boxes' },
                 { name: 'Articles - Nouveau', url: '{{ path('article.edit') }}', icon: 'fas fa-box' },
-                { name: 'Pièces - Liste', url: '{{ path('entetepiece.list') }}', icon: 'fas fa-file-invoice' },
+                { name: 'Pièces client - Liste', url: '{{ path('entetepiece.client_list') }}', icon: 'fas fa-file-invoice' },
+                { name: 'Pièces fournisseur - Liste', url: '{{ path('entetepiece.fournisseur_list') }}', icon: 'fas fa-file-invoice' },
                 { name: 'Pièces - Nouvelle', url: '{{ path('entetepiece.edit') }}', icon: 'fas fa-file-invoice' },
                 { name: 'Règlements - Liste', url: '{{ path('reglement.list') }}', icon: 'fas fa-money-bill-wave' },
                 { name: 'Règlements - Nouveau', url: '{{ path('reglement.edit') }}', icon: 'fas fa-money-bill-wave' },

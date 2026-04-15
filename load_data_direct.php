@@ -78,7 +78,7 @@ try {
     echo "✓ Added reglement\n";
     
     // Insert Invoices for 2025
-    $invoice_stmt = $pdo->prepare("INSERT IGNORE INTO entetepiece (id, type, typet, client_id, pieceno, pieceref, reglement_id, statut, montant, dossier_id, datep, delai, created_at, updated_at) VALUES (?, 'Facture', 'VAT', ?, ?, ?, 1, 'Validée', ?, ?, ?, ?, NOW(), NOW())");
+    $invoice_stmt = $pdo->prepare("INSERT IGNORE INTO entetepiece (id, type, typet, tier_id, pieceno, pieceref, reglement_id, statut, montant, dossier_id, datep, delai, created_at, updated_at) VALUES (?, 'Facture', 'Client', ?, ?, ?, 1, 'Validée', ?, ?, ?, ?, NOW(), NOW())");
     
     $invoice_data = [
         [1, 1, 1001, 'INV-2025-1001', 1200.50, 1, '2025-01-06', '2025-02-05'],
@@ -120,8 +120,8 @@ try {
         [37, 7, 2005, 'INV-2026-2005', 2550.30, 3, '2026-02-13', '2026-03-15'],
     ];
     
-    foreach ($invoice_data as [$inv_id, $client_id, $pieceno, $pieceref, $montant, $dossier_id, $datep, $delai]) {
-        $invoice_stmt->execute([$inv_id, $client_id, $pieceno, $pieceref, $montant, $dossier_id, $datep, $delai]);
+    foreach ($invoice_data as [$inv_id, $tier_id, $pieceno, $pieceref, $montant, $dossier_id, $datep, $delai]) {
+        $invoice_stmt->execute([$inv_id, $tier_id, $pieceno, $pieceref, $montant, $dossier_id, $datep, $delai]);
         $executed++;
     }
     echo "✓ Added invoices\n";

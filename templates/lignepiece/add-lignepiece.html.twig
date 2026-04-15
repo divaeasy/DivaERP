@@ -2,9 +2,11 @@
 {% block PageTitle %}Ligne de pièce{% endblock %}
 
 {% block body %}
+{% set pieceOrigin = origin|default(null) %}
+{% set pieceOriginParams = pieceOrigin ? {origin: pieceOrigin} : {} %}
 <div class="page-header">
     <div class="d-flex align-items-center">
-        <a href="{{ path('entetepiece.edit', {id: pceId}) }}" class="btn-back mr-3">
+        <a href="{{ path('entetepiece.edit', {id: pceId}|merge(pieceOriginParams)) }}" class="btn-back mr-3">
             <i class="fas fa-arrow-left"></i> Retour à la pièce
         </a>
         <h1 class="h3 mb-0 text-gray-800">{{ id > 0 ? 'Modifier la ligne' : 'Nouvelle ligne' }}</h1>
@@ -82,7 +84,7 @@
         <button type="submit" class="btn btn-primary">
             <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre à jour' : 'Enregistrer' }}
         </button>
-        <a href="{{ path('entetepiece.edit', {id: pceId}) }}" class="btn btn-secondary">
+        <a href="{{ path('entetepiece.edit', {id: pceId}|merge(pieceOriginParams)) }}" class="btn btn-secondary">
             <i class="fas fa-times mr-2"></i>Annuler
         </a>
     </div>
@@ -112,7 +114,8 @@
 
             const priceUrl = '{{ path("lignepiece.price") }}';
             const currentPieceId = '{{ pceId }}';
-            const currentClientId = '{{ pieceClientId|default(0) }}';
+            const currentTierId = '{{ pieceTierId|default(0) }}';
+            const currentTierType = '{{ pieceTierType|default('') }}';
             const $pieceField = $('[id$="_piece"]');
             const $doc = $(document);
             const $form = $article.closest('form');
@@ -309,9 +312,18 @@
                 return '';
             }
 
-            function resolveClientId() {
-                var candidate = String(currentClientId || '').trim();
+            function resolveTierId() {
+                var candidate = String(currentTierId || '').trim();
                 if (candidate !== '' && candidate !== '0') {
+                    return candidate;
+                }
+
+                return '';
+            }
+
+            function resolveTierType() {
+                var candidate = String(currentTierType || '').trim();
+                if (candidate !== '') {
                     return candidate;
                 }
 
@@ -335,9 +347,13 @@
                 if (pieceIdForRequest !== '') {
                     query += '&pieceId=' + encodeURIComponent(pieceIdForRequest);
                 }
-                var clientIdForRequest = resolveClientId();
-                if (clientIdForRequest !== '') {
-                    query += '&clientId=' + encodeURIComponent(clientIdForRequest);
+                var tierIdForRequest = resolveTierId();
+                var tierTypeForRequest = resolveTierType();
+                if (tierIdForRequest !== '') {
+                    query += '&tierId=' + encodeURIComponent(tierIdForRequest);
+                }
+                if (tierTypeForRequest !== '') {
+                    query += '&tierType=' + encodeURIComponent(tierTypeForRequest);
                 }
 
                 fetch(priceUrl + query, {

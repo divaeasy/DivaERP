@@ -1,0 +1,209 @@
+{% extends 'template_oukatech.html.twig' %}
+
+
+{% block body %}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('fournisseur.list') }}" class="btn-back mr-3">
+                <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Détails du Fournisseur</h1>
+    </div>
+    <div class="page-actions">
+        <a href="{{ path('fournisseur.edit', {id: fournisseur.id}) }}" class="btn btn-primary">
+                <i class="fas fa-edit mr-2"></i>Modifier
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-user mr-2"></i>Informations Générales</h5>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <div class="detail-label">ID</div>
+                    <div class="detail-value"><strong>#{{ fournisseur.id }}</strong></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Nom</div>
+                    <div class="detail-value">{{ fournisseur.nom }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Email</div>
+                    <div class="detail-value">
+                        {% if fournisseur.email %}
+                            <a href="mailto:{{ fournisseur.email }}">{{ fournisseur.email }}</a>
+                        {% else %}
+                            <span class="text-muted">Non renseigné</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Téléphone</div>
+                    <div class="detail-value">
+                        {% if fournisseur.tel %}
+                            <a href="tel:{{ fournisseur.tel }}">{{ fournisseur.tel }}</a>
+                        {% else %}
+                                <span class="text-muted">Non renseigné</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-map-marker-alt mr-2"></i>Adresse</h5>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <div class="detail-label">Adresse</div>
+                    <div class="detail-value">{{ fournisseur.adr1 ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Complément</div>
+                    <div class="detail-value">{{ fournisseur.adr2 ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Rue</div>
+                    <div class="detail-value">{{ fournisseur.rue ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Code Postal</div>
+                    <div class="detail-value">{{ fournisseur.codepostal ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Ville</div>
+                    <div class="detail-value">{{ fournisseur.ville ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Pays</div>
+                    <div class="detail-value">{{ fournisseur.pays ?: '-' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-briefcase mr-2"></i>Informations Commerciales</h5>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <div class="detail-label">Tarif</div>
+                    <div class="detail-value">
+                        {% if fournisseur.tarif %}
+                            <span class="badge badge-primary">{{ fournisseur.tarif }}</span>
+                        {% else %}
+                            <span class="text-muted">Non défini</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Règlement</div>
+                    <div class="detail-value">{{ fournisseur.reglement ?: '-' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-globe mr-2"></i>Présence en ligne</h5>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <div class="detail-label">LinkedIn</div>
+                    <div class="detail-value">
+                        {% if fournisseur.linkedin %}
+                            <a href="{{ fournisseur.linkedin }}" target="_blank" rel="noopener">
+                                <i class="fab fa-linkedin mr-1"></i>Voir le profil
+                            </a>
+                        {% else %}
+                            <span class="text-muted">Non renseigné</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Site Web</div>
+                    <div class="detail-value">
+                        {% if fournisseur.web %}
+                            <a href="{{ fournisseur.web }}" target="_blank" rel="noopener">
+                                    <i class="fas fa-external-link-alt mr-1"></i>Visiter
+                            </a>
+                        {% else %}
+                            <span class="text-muted">Non renseigné</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if fournisseur.createdAt or fournisseur.createdBy %}
+        <div class="form-card">
+            <div class="card-header-custom">
+                <h5><i class="fas fa-history mr-2"></i>Historique</h5>
+            </div>
+
+            <div class="detail-grid">
+                {% if fournisseur.createdAt %}
+                <div class="detail-row">
+                    <div class="detail-label">Créé le</div>
+                    <div class="detail-value">{{ fournisseur.createdAt|date('d/m/Y H:i') }}</div>
+                </div>
+                {% endif %}
+                {% if fournisseur.createdBy %}
+                <div class="detail-row">
+                    <div class="detail-label">Créé par</div>
+                    <div class="detail-value">{{ fournisseur.createdBy }}</div>
+                </div>
+                {% endif %}
+                {% if fournisseur.updatedAt %}
+                <div class="detail-row">
+                    <div class="detail-label">Modifié le</div>
+                    <div class="detail-value">{{ fournisseur.updatedAt|date('d/m/Y H:i') }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.detail-row {
+    display: flex;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.detail-row:last-child {
+    border-bottom: none;
+}
+.detail-label {
+    flex: 0 0 140px;
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 13px;
+}
+.detail-value {
+    flex: 1;
+    color: #333;
+}
+.page-actions {
+    display: flex;
+    gap: 10px;
+}
+</style>
+{% endblock %}

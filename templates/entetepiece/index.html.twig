@@ -5,18 +5,22 @@
 {% endblock %}
 
 {% block body %}
+{% set pieceOrigin = origin|default(listRoute is defined and listRoute == 'entetepiece.fournisseur_list' ? 'fournisseur' : 'client') %}
+{% set pieceOriginParams = pieceOrigin ? {origin: pieceOrigin} : {} %}
 <div class="page-header">
     <div class="d-flex align-items-center">
         <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
             <i class="fas fa-arrow-left"></i>
         </a>
-        <h1 class="h3 mb-0 text-gray-800">Gestion des Pieces</h1>
+        <h1 class="h3 mb-0 text-gray-800">
+            Gestion des Pieces{% if forcedTierLabel is defined and forcedTierLabel %} - {{ forcedTierLabel }}{% endif %}
+        </h1>
     </div>
 </div>
 
 <div class="action-bar">
     <div class="action-buttons">
-        <a class="btn-add" href="{{ path('entetepiece.edit') }}">
+        <a class="btn-add" href="{{ path('entetepiece.edit', pieceOriginParams) }}">
             <i class="fas fa-plus"></i> Nouvelle Piece
         </a>
         <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.factures') }}" title="Exporter CSV">
@@ -35,7 +39,7 @@
             <tr>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
                 <th data-sort-key="type">Type</th>
-                <th data-sort-key="client">Client</th>
+                <th data-sort-key="tier">Tiers</th>
                 <th data-sort-key="pieceno" data-sort-type="number">No Piece</th>
                 <th data-sort-key="pieceref">Reference</th>
                 <th data-sort-key="remise" data-sort-type="number" class="text-right">Remise</th>
@@ -86,7 +90,7 @@
             <tr>
                 <td><strong>#{{ entetepiece.id }}</strong></td>
                 <td><span class="badge badge-primary badge-lg">{{ entetepiece.type|default('____') }}</span></td>
-                <td>{{ entetepiece.client|default('____') }}</td>
+                <td>{{ entetepiece.tierName|default('____') }}</td>
                 <td><strong>{{ entetepiece.pieceno|default('____') }}</strong></td>
                 <td>{{ entetepiece.pieceref|default('____') }}</td>
                 <td class="text-right">{{ display_remise|number_format(2, ',', ' ') }}%</td>
@@ -113,13 +117,13 @@
                     <div class="piece-actions">
                         <span class="piece-action-slot">
                             {% if canView %}
-                                <a href="{{ path('entetepiece.edit', {id: entetepiece.id}) }}"
+                                <a href="{{ path('entetepiece.edit', {id: entetepiece.id}|merge(pieceOriginParams)) }}"
                                    class="btn btn-action btn-view"
                                    title="Voir les details (lecture seule)">
                                     <i class="fas fa-eye"></i>
                                 </a>
                             {% elseif canEdit %}
-                                <a href="{{ path('entetepiece.edit', {id: entetepiece.id}) }}"
+                                <a href="{{ path('entetepiece.edit', {id: entetepiece.id}|merge(pieceOriginParams)) }}"
                                    class="btn btn-action btn-edit"
                                    title="Modifier">
                                     <i class="fas fa-edit"></i>
@@ -132,7 +136,7 @@
                                 </button>
                             {% endif %}
                         </span>
-
+                        
                         <span class="piece-action-slot">
                             {% if wf.showTransition|default(false) and wf.transitionEnabled|default(false) %}
                                 <div class="dropdown d-inline-block">
@@ -147,7 +151,7 @@
                                     <div class="dropdown-menu dropdown-menu-right shadow-sm">
                                         {% for targetType in wf.transitionTargets|default([]) %}
                                             <form method="post"
-                                                  action="{{ path('entetepiece.transition', {id: entetepiece.id}) }}"
+                                                  action="{{ path('entetepiece.transition', {id: entetepiece.id}|merge(pieceOriginParams)) }}"
                                                   class="js-piece-transition-form no-loading px-2 py-1"
                                                   data-target-type="{{ targetType }}"
                                                   data-piece-label="Piece #{{ entetepiece.pieceno|default(entetepiece.id) }}">
@@ -188,7 +192,7 @@
                         <span class="piece-action-slot">
                             <button type="button"
                                     class="btn btn-action btn-delete delete-btn"
-                                    data-delete-url="{{ path('entetepiece.delete', {id: entetepiece.id}) }}"
+                                    data-delete-url="{{ path('entetepiece.delete', {id: entetepiece.id}|merge(pieceOriginParams)) }}"
                                     data-item-name="Piece #{{ entetepiece.pieceno }}"
                                     title="Supprimer">
                                 <i class="fas fa-trash"></i>
@@ -200,7 +204,7 @@
             {% endfor %}
         </tbody>
     </table>
-    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'entetepiece.list', routeParams: {}} %}
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: listRoute|default('entetepiece.list'), routeParams: {}} %}
     {% else %}
     <div class="empty-state">
         <div class="empty-state-icon">
@@ -208,7 +212,7 @@
         </div>
         <h5>Aucune piece trouvee</h5>
         <p>Creez votre premiere piece comptable pour commencer la facturation.</p>
-        <a href="{{ path('entetepiece.edit') }}" class="btn btn-primary">
+        <a href="{{ path('entetepiece.edit', pieceOriginParams) }}" class="btn btn-primary">
             <i class="fas fa-plus mr-2"></i>Nouvelle piece
         </a>
     </div>

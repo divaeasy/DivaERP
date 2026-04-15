@@ -54,7 +54,7 @@ class EntetepieceRepository extends ServiceEntityRepository
         return $result->fetchAllAssociative();
     }
 
-    public function getSearchQueryBuilder(?SearchPiece $searchData = null): QueryBuilder
+    public function getSearchQueryBuilder(?SearchPiece $searchData = null, string|array|null $forcedTierType = null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('e')
             ->orderBy('e.id', 'DESC');
@@ -71,18 +71,62 @@ class EntetepieceRepository extends ServiceEntityRepository
                ->setParameter('statut', "%{$searchData->statut}%");
         }
 
+        $tierTypes = $this->resolveTierFilters($forcedTierType, $searchData);
+        if ($tierTypes !== []) {
+            $normalizedTierTypes = array_values(array_unique(array_map(
+                static fn (string $type): string => mb_strtolower(trim($type), 'UTF-8'),
+                $tierTypes
+            )));
+
+            if (count($normalizedTierTypes) === 1) {
+                $qb->andWhere('LOWER(e.typet) = :tierType')
+                    ->setParameter('tierType', $normalizedTierTypes[0]);
+            } else {
+                $qb->andWhere('LOWER(e.typet) IN (:tierTypes)')
+                    ->setParameter('tierTypes', $normalizedTierTypes);
+            }
+        }
+
         return $qb;
     }
 
-    public function findBySearch(SearchPiece $searchData): array
+    public function findBySearch(SearchPiece $searchData, string|array|null $forcedTierType = null): array
     {
-        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+        return $this->getSearchQueryBuilder($searchData, $forcedTierType)->getQuery()->getResult();
     }
 
-    public function findPaginated(?SearchPiece $searchData = null, int $page = 1): array
+    public function findPaginated(?SearchPiece $searchData = null, int $page = 1, string|array|null $forcedTierType = null): array
     {
-        $qb = $this->getSearchQueryBuilder($searchData);
+        $qb = $this->getSearchQueryBuilder($searchData, $forcedTierType);
         return PaginationHelper::paginate($qb, $page);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function resolveTierFilters(string|array|null $forcedTierType, ?SearchPiece $searchData): array
+    {
+        if (is_array($forcedTierType)) {
+            $forcedValues = array_values(array_filter(array_map(
+                static fn (mixed $type): string => trim((string) $type),
+                $forcedTierType
+            )));
+            if ($forcedValues !== []) {
+                return $forcedValues;
+            }
+        } elseif (is_string($forcedTierType)) {
+            $forcedValue = trim($forcedTierType);
+            if ($forcedValue !== '') {
+                return [$forcedValue];
+            }
+        }
+
+        $searchValue = trim((string) ($searchData?->typet ?? ''));
+        if ($searchValue !== '') {
+            return [$searchValue];
+        }
+
+        return [];
     }
 
     /**

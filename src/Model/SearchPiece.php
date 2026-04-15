@@ -12,4 +12,7 @@ class SearchPiece
 
     /** @var string */
     public string $statut = '';
+
+    /** @var string */
+    public string $typet = '';
 }

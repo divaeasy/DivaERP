@@ -8,7 +8,7 @@
         </a>
         <div>
             <h1 class="h3 mb-0 text-gray-800">Facturation Électronique</h1>
-            <small class="text-muted">{{ invoice.type|default('Piece') }} #{{ invoice.pieceno|default('-') }} - {{ invoice.pieceref }} — {{ invoice.client.nom ?? 'Client non défini' }}</small>
+            <small class="text-muted">{{ invoice.type|default('Piece') }} #{{ invoice.pieceno|default('-') }} - {{ invoice.pieceref }} — {{ invoice.tierName ?? 'Tiers non défini' }}</small>
         </div>
     </div>
 </div>
@@ -616,8 +616,8 @@
                     <span class="einv-info-value">{{ invoice.type }}</span>
                 </div>
                 <div class="einv-info-row">
-                    <span class="einv-info-label">Client</span>
-                    <span class="einv-info-value">{{ invoice.client.nom ?? '—' }}</span>
+                    <span class="einv-info-label">Tiers</span>
+                    <span class="einv-info-value">{{ invoice.tierName ?? '—' }}</span>
                 </div>
                 <div class="einv-info-row">
                     <span class="einv-info-label">Montant</span>

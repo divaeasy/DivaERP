@@ -122,7 +122,7 @@ class PieceTransitionService
         $newPiece = new Entetepiece();
         $newPiece->setType($nextType);
         $newPiece->setTypet($piece->getTypet());
-        $newPiece->setClient($piece->getClient());
+        $newPiece->setTierId($piece->getTierId());
         $newPiece->setDevise($piece->getDevise());
         $newPiece->setReglement($piece->getReglement());
         $newPiece->setDossier($piece->getDossier());

@@ -234,28 +234,30 @@ class EN16931Builder
         $buyer = $doc->createElement('ram:BuyerTradeParty');
         $agreement->appendChild($buyer);
 
-        if ($invoice->getClient()) {
+        $tier = $invoice->getTier();
+        if ($tier !== null) {
             // Buyer Name
             $buyerName = $doc->createElement('ram:Name');
-            $buyerName->nodeValue = $invoice->getClient()->getRaisonSociale() ?? $invoice->getClient()->getNom();
+            $buyerName->nodeValue = $this->extractTierName($tier);
             $buyer->appendChild($buyerName);
 
             // Buyer Postal Address
-            if ($invoice->getClient()->getAdresse()) {
+            $tierAddress = $this->extractTierAddress($tier);
+            if ($tierAddress !== '') {
                 $buyerAddress = $doc->createElement('ram:PostalTradeAddress');
                 
                 $country = $doc->createElement('ram:CountryID');
                 $country->nodeValue = $this->resolveCountryCodeFromLibelle(
-                    $invoice->getClient()->getPays()?->getLibelle()
+                    $this->extractTierCountry($tier)
                 );
                 $buyerAddress->appendChild($country);
                 
                 $line = $doc->createElement('ram:LineOne');
-                $line->nodeValue = $invoice->getClient()->getAdresse();
+                $line->nodeValue = $tierAddress;
                 $buyerAddress->appendChild($line);
                 
                 $city = $doc->createElement('ram:CityName');
-                $city->nodeValue = $invoice->getClient()->getVille()?->getLibelle() ?? '';
+                $city->nodeValue = $this->extractTierCity($tier);
                 $buyerAddress->appendChild($city);
                 
                 $buyer->appendChild($buyerAddress);
@@ -372,6 +374,62 @@ class EN16931Builder
         $dueAmount = $doc->createElement('ram:DuePayableAmount');
         $dueAmount->nodeValue = number_format($taxableAmount + $taxAmount, 2, '.', '');
         $summary->appendChild($dueAmount);
+    }
+
+    private function extractTierName(?object $tier): string
+    {
+        if ($tier !== null && method_exists($tier, 'getRaisonSociale')) {
+            $name = trim((string) $tier->getRaisonSociale());
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        if ($tier !== null && method_exists($tier, 'getNom')) {
+            $name = trim((string) $tier->getNom());
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        return 'Client';
+    }
+
+    private function extractTierAddress(?object $tier): string
+    {
+        if ($tier !== null && method_exists($tier, 'getAdresse')) {
+            return (string) ($tier->getAdresse() ?? '');
+        }
+
+        return '';
+    }
+
+    private function extractTierCity(?object $tier): string
+    {
+        if ($tier !== null && method_exists($tier, 'getVille')) {
+            $ville = $tier->getVille();
+            if ($ville !== null && method_exists($ville, 'getLibelle')) {
+                return (string) ($ville->getLibelle() ?? '');
+            }
+
+            return trim((string) $ville);
+        }
+
+        return '';
+    }
+
+    private function extractTierCountry(?object $tier): ?string
+    {
+        if ($tier !== null && method_exists($tier, 'getPays')) {
+            $pays = $tier->getPays();
+            if ($pays !== null && method_exists($pays, 'getLibelle')) {
+                return (string) ($pays->getLibelle() ?? '');
+            }
+
+            return trim((string) $pays);
+        }
+
+        return null;
     }
 
     /**

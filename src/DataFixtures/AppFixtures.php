@@ -101,8 +101,9 @@ class AppFixtures extends Fixture
                     
                     $invoice = new Entetepiece();
                     $invoice->setType('Facture');
-                    $invoice->setTypet('VAT');
-                    $invoice->setClient($clients[array_rand($clients)]);
+                    $invoice->setTypet('Client');
+                    $randomClient = $clients[array_rand($clients)];
+                    $invoice->setTierId($randomClient->getId());
                     $invoice->setPieceno(rand(1000, 9999));
                     $invoice->setPieceref('INV-' . $year . '-' . rand(1000, 9999));
                     $invoice->setDossier($dossiers[array_rand($dossiers)]);
