@@ -327,14 +327,36 @@
         z-index: 12;
     }
 
-    .article-column-settings-header {
-        position: sticky;
-        right: 0;
-        z-index: 6;
-        background: var(--theme-primary);
-        padding: 0.7rem 0.5rem !important;
-        border-top-right-radius: 8px;
-        text-align: center;
+    .article-column-settings-floating {
+        position: absolute;
+        top: -10px;
+        right: 5px;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+    }
+
+    .article-column-settings-floating .article-column-settings__trigger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        background: none;
+        border: none;
+        box-shadow: none;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        transition: opacity 0.15s ease;
+        border-radius: 4px;
+    }
+
+    .article-column-settings-floating .article-column-settings__trigger:hover {
+        opacity: 0.8;
     }
 
     .article-column-settings {
@@ -365,18 +387,24 @@
     }
 
     .article-column-settings__menu {
-        position: fixed;
-        width: 300px;
-        max-width: calc(100vw - 2rem);
-        max-height: 400px;
-        overflow-y: auto;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        width: 240px;
+        max-width: calc(100vw - 1rem);
+        margin-top: 6px;
+        overflow: visible;
         background: #fff;
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        border-radius: 12px;
-        box-shadow: 0 25px 50px rgba(15, 23, 42, 0.2);
-        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 0;
         display: none;
         z-index: 9999;
+    }
+
+    .article-column-settings-floating.is-open .article-column-settings__menu {
+        display: block;
     }
 
     .article-column-settings.is-open .article-column-settings__menu {
@@ -384,64 +412,63 @@
     }
 
     .article-column-settings__title {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 0.7rem;
-        padding-bottom: 0.6rem;
-        border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #333;
+        padding: 0.6rem 0.8rem 0.4rem;
+        border-bottom: 1px solid #eee;
     }
 
     .article-column-settings__group {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        gap: 0;
     }
 
     .article-column-settings__divider {
         height: 1px;
-        background: rgba(226, 232, 240, 0.9);
-        margin: 0.85rem 0;
+        background: #eee;
+        margin: 0;
     }
 
     .article-column-settings__item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 0.75rem;
+        gap: 0.5rem;
         margin: 0;
-        padding: 0.5rem 0.65rem;
-        border-radius: 8px;
-        color: #334155;
-        font-weight: 500;
-        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0;
+        color: #333;
+        font-weight: 400;
+        font-size: 0.75rem;
         cursor: pointer;
-        background: rgba(248, 250, 252, 0.8);
-        transition: all 0.2s ease;
+        background: transparent;
     }
 
     .article-column-settings__item:hover:not(.is-static) {
-        background: rgba(37, 99, 235, 0.08);
-        color: #1e40af;
+        background: #f5f5f5;
+        color: #333;
     }
 
     .article-column-settings__item.is-static {
         cursor: default;
-        background: rgba(226, 232, 240, 0.4);
+        background: transparent;
+        color: #999;
     }
 
     .article-column-settings__item small {
-        color: #94a3b8;
-        font-weight: 600;
-        font-size: 0.7rem;
+        color: #aaa;
+        font-weight: 400;
+        font-size: 0.65rem;
         margin-left: auto;
         text-transform: uppercase;
         letter-spacing: 0.02em;
     }
 
     .article-column-settings__item input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
         margin: 0;
         accent-color: var(--theme-primary);
         flex: 0 0 auto;
@@ -505,11 +532,11 @@
 
     .table-container {
         overflow: visible;
+        position: relative;
     }
 
     .table-container--articles {
-        overflow-x: auto;
-        overflow-y: visible;
+        overflow: visible;
     }
 
     .articles-table {
@@ -537,6 +564,38 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .articles-table thead th {
+        position: relative;
+        user-select: none;
+    }
+
+    .article-column-resize-handle {
+        position: absolute;
+        top: 0;
+        width: 5px;
+        height: 100%;
+        cursor: col-resize;
+        user-select: none;
+        background: transparent;
+        transition: background 0.2s ease;
+    }
+
+    .article-column-resize-handle:hover {
+        background: rgba(37, 99, 235, 0.3);
+    }
+
+    .article-column-resize-handle.is-dragging {
+        background: rgba(37, 99, 235, 0.6);
+    }
+
+    .article-column-resize-handle.right {
+        right: -2.5px;
+    }
+
+    .article-column-resize-handle.left {
+        left: -2.5px;
     }
 
     .articles-table thead th:first-child {
@@ -1282,6 +1341,63 @@
 </div>
 
 <div class="table-container table-container--articles">
+    <div class="article-column-settings-floating">
+        <button type="button" class="no-loading article-column-settings__trigger" id="articleColumnSettingsToggle" aria-expanded="false" aria-controls="articleColumnSettingsMenu">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="article-column-settings__menu" id="articleColumnSettingsMenu">
+            <div class="article-column-settings__title">Colonnes</div>
+            <div class="article-column-settings__group">
+                <div class="article-column-settings__item is-static">
+                    <span>ID</span>
+                    <small>Obligatoire</small>
+                </div>
+                <div class="article-column-settings__item is-static">
+                    <span>Image</span>
+                    <small>Obligatoire</small>
+                </div>
+                <div class="article-column-settings__item is-static">
+                    <span>Designation</span>
+                    <small>Obligatoire</small>
+                </div>
+                <div class="article-column-settings__item is-static">
+                    <span>Actions</span>
+                    <small>Obligatoire</small>
+                </div>
+            </div>
+            <div class="article-column-settings__divider"></div>
+            <div class="article-column-settings__group">
+                <label class="article-column-settings__item" for="articleColumnToggle_unite">
+                    <span>Unite</span>
+                    <input type="checkbox" id="articleColumnToggle_unite" data-column-toggle="unite" checked>
+                </label>
+                <label class="article-column-settings__item" for="articleColumnToggle_tarif">
+                    <span>Tarif</span>
+                    <input type="checkbox" id="articleColumnToggle_tarif" data-column-toggle="tarif" checked>
+                </label>
+                <label class="article-column-settings__item" for="articleColumnToggle_modeGestion">
+                    <span>Mode gestion</span>
+                    <input type="checkbox" id="articleColumnToggle_modeGestion" data-column-toggle="modeGestion" checked>
+                </label>
+                <label class="article-column-settings__item" for="articleColumnToggle_modeSuivi">
+                    <span>Mode suivi</span>
+                    <input type="checkbox" id="articleColumnToggle_modeSuivi" data-column-toggle="modeSuivi" checked>
+                </label>
+                <label class="article-column-settings__item" for="articleColumnToggle_natureProduction">
+                    <span>Nature production</span>
+                    <input type="checkbox" id="articleColumnToggle_natureProduction" data-column-toggle="natureProduction" checked>
+                </label>
+                <label class="article-column-settings__item" for="articleColumnToggle_sortiStock">
+                    <span>Sortie stock</span>
+                    <input type="checkbox" id="articleColumnToggle_sortiStock" data-column-toggle="sortiStock" checked>
+                </label>
+                <label class="article-column-settings__item" for="articleColumnToggle_fournisseurHabituel">
+                    <span>Fournisseur habituel</span>
+                    <input type="checkbox" id="articleColumnToggle_fournisseurHabituel" data-column-toggle="fournisseurHabituel" checked>
+                </label>
+            </div>
+        </div>
+    </div>
     <table class="table articles-table" id="articlesTable" data-table-id="articles" {% if articles|length == 0 %}style="display:none;"{% endif %}>
         <thead>
             <tr>
@@ -1301,65 +1417,6 @@
                 <th data-column-key="sortiStock" data-sort-key="sortiStock">Sortie stock</th>
                 <th data-column-key="fournisseurHabituel" data-sort-key="fournisseurHabituel">Fournisseur habituel</th>
                 <th class="text-center" style="width: 130px;" data-column-key="actions">Actions</th>
-                <th class="article-column-settings-header" data-column-key="settings" style="width: 45px;">
-                    <div class="article-column-settings">
-                        <button type="button" class="no-loading article-column-settings__trigger" id="articleColumnSettingsToggle" aria-expanded="false" aria-controls="articleColumnSettingsMenu">
-                            <i class="fas fa-cog"></i>
-                        </button>
-                        <div class="article-column-settings__menu" id="articleColumnSettingsMenu">
-                            <div class="article-column-settings__title">Colonnes</div>
-                            <div class="article-column-settings__group">
-                                <div class="article-column-settings__item is-static">
-                                    <span>ID</span>
-                                    <small>Obligatoire</small>
-                                </div>
-                                <div class="article-column-settings__item is-static">
-                                    <span>Image</span>
-                                    <small>Obligatoire</small>
-                                </div>
-                                <div class="article-column-settings__item is-static">
-                                    <span>Designation</span>
-                                    <small>Obligatoire</small>
-                                </div>
-                                <div class="article-column-settings__item is-static">
-                                    <span>Actions</span>
-                                    <small>Obligatoire</small>
-                                </div>
-                            </div>
-                            <div class="article-column-settings__divider"></div>
-                            <div class="article-column-settings__group">
-                                <label class="article-column-settings__item" for="articleColumnToggle_unite">
-                                    <span>Unite</span>
-                                    <input type="checkbox" id="articleColumnToggle_unite" data-column-toggle="unite" checked>
-                                </label>
-                                <label class="article-column-settings__item" for="articleColumnToggle_tarif">
-                                    <span>Tarif</span>
-                                    <input type="checkbox" id="articleColumnToggle_tarif" data-column-toggle="tarif" checked>
-                                </label>
-                                <label class="article-column-settings__item" for="articleColumnToggle_modeGestion">
-                                    <span>Mode gestion</span>
-                                    <input type="checkbox" id="articleColumnToggle_modeGestion" data-column-toggle="modeGestion" checked>
-                                </label>
-                                <label class="article-column-settings__item" for="articleColumnToggle_modeSuivi">
-                                    <span>Mode suivi</span>
-                                    <input type="checkbox" id="articleColumnToggle_modeSuivi" data-column-toggle="modeSuivi" checked>
-                                </label>
-                                <label class="article-column-settings__item" for="articleColumnToggle_natureProduction">
-                                    <span>Nature production</span>
-                                    <input type="checkbox" id="articleColumnToggle_natureProduction" data-column-toggle="natureProduction" checked>
-                                </label>
-                                <label class="article-column-settings__item" for="articleColumnToggle_sortiStock">
-                                    <span>Sortie stock</span>
-                                    <input type="checkbox" id="articleColumnToggle_sortiStock" data-column-toggle="sortiStock" checked>
-                                </label>
-                                <label class="article-column-settings__item" for="articleColumnToggle_fournisseurHabituel">
-                                    <span>Fournisseur habituel</span>
-                                    <input type="checkbox" id="articleColumnToggle_fournisseurHabituel" data-column-toggle="fournisseurHabituel" checked>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </th>
             </tr>
         </thead>
         <tbody id="articlesTableBody">
@@ -1681,7 +1738,7 @@
         var $quickCreateImageFile = $('#quickCreateImageFile');
         var $quickCreateImageFileName = $('#quickCreateImageFileName');
         var $quickCreateImagePreview = $('#quickCreateImagePreview');
-        var $articleColumnSettings = $('.article-column-settings');
+        var $articleColumnSettings = $('.article-column-settings-floating');
         var $articleColumnSettingsToggle = $('#articleColumnSettingsToggle');
         var articleColumnStorageKey = 'article-table-columns:{{ app.user ? app.user.id : "guest" }}:{{ app.user and app.user.currentDossier ? app.user.currentDossier.id : "0" }}';
         var mandatoryColumnKeys = ['id', 'image', 'libelle', 'actions'];
@@ -1926,25 +1983,6 @@
             $articleColumnSettings.addClass('is-open');
             if ($articleColumnSettingsToggle.length) {
                 $articleColumnSettingsToggle.attr('aria-expanded', 'true');
-            }
-
-            var $menu = $articleColumnSettings.find('.article-column-settings__menu');
-            if ($menu.length && $articleColumnSettingsToggle.length) {
-                var buttonRect = $articleColumnSettingsToggle[0].getBoundingClientRect();
-                var menuHeight = $menu.outerHeight() || 400;
-                var spaceBelow = window.innerHeight - buttonRect.bottom;
-                var spaceAbove = buttonRect.top;
-                
-                var top = buttonRect.bottom + 8;
-                if (spaceBelow < menuHeight + 20 && spaceAbove > menuHeight + 20) {
-                    top = buttonRect.top - menuHeight - 8;
-                }
-                
-                $menu.css({
-                    'position': 'fixed',
-                    'top': top + 'px',
-                    'right': (window.innerWidth - buttonRect.right) + 'px'
-                });
             }
         }
 
@@ -2877,6 +2915,43 @@
             }
         });
 
+        function initColumnResizing() {
+            $articlesTable.find('thead th').each(function(index) {
+                var $th = $(this);
+                if ($th.data('column-key') === 'selector' || $th.data('column-key') === 'actions') {
+                    return;
+                }
+                
+                var $rightHandle = $('<div class="article-column-resize-handle right"></div>');
+                $th.append($rightHandle);
+                
+                $rightHandle.on('mousedown', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    var startX = e.pageX;
+                    var startWidth = $th.width();
+                    
+                    $rightHandle.addClass('is-dragging');
+                    
+                    $(document).on('mousemove.colresize', function(e) {
+                        var diff = e.pageX - startX;
+                        var newWidth = Math.max(60, startWidth + diff);
+                        $th.css('width', newWidth + 'px');
+                        $articlesTable.find('tbody tr').each(function() {
+                            $(this).find('td').eq(index).css('width', newWidth + 'px');
+                        });
+                    });
+                    
+                    $(document).on('mouseup.colresize', function() {
+                        $(document).off('mousemove.colresize mouseup.colresize');
+                        $rightHandle.removeClass('is-dragging');
+                    });
+                });
+            });
+        }
+
+        initColumnResizing();
         initTableSelectionManagers();
 
         $articlesTable.find('.delete-btn').off('click');
