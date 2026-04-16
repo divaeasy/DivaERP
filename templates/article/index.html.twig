@@ -549,8 +549,53 @@
     }
 
     .articles-table td[data-field="unite"],
-    .articles-table td[data-field="tarif"] {
+    .articles-table td[data-field="tarif"],
+    .articles-table td[data-field="modeGestion"],
+    .articles-table td[data-field="modeSuivi"],
+    .articles-table td[data-field="natureProduction"] {
         min-width: 180px;
+    }
+
+    .article-quick-radio-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    .article-quick-radio-item {
+        position: relative;
+        min-width: 120px;
+    }
+
+    .article-quick-radio-item input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .article-quick-radio-item label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        margin: 0;
+        padding: 0.6rem 0.85rem;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #334155;
+        font-weight: 600;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background 0.2s ease;
+        cursor: pointer;
+    }
+
+    .article-quick-radio-item input:checked + label {
+        border-color: var(--theme-primary);
+        background: rgba(37, 99, 235, 0.08);
+        color: var(--theme-primary);
+        box-shadow: 0 0 0 0.18rem rgba(37, 99, 235, 0.12);
     }
 
     .articles-table .article-image-cell,
@@ -922,6 +967,66 @@
                             {% endfor %}
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label for="quickCreateTarifId">Tarif</label>
+                        <select class="form-control article-quick-input" id="quickCreateTarifId" name="tarifId">
+                            <option value="">Selectionner un tarif</option>
+                            {% for tarif in inlineTarifs %}
+                                <option value="{{ tarif.id }}">{{ tarif.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quickCreateModeGestion">Mode de gestion</label>
+                        <select class="form-control article-quick-input" id="quickCreateModeGestion" name="modeGestion">
+                            {% for modeGestion in inlineModeGestions %}
+                                <option value="{{ modeGestion.value }}">{{ modeGestion.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quickCreateModeSuivi">Mode de suivi</label>
+                        <select class="form-control article-quick-input" id="quickCreateModeSuivi" name="modeSuivi">
+                            {% for modeSuivi in inlineModeSuivis %}
+                                <option value="{{ modeSuivi.value }}">{{ modeSuivi.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quickCreateNatureProductionId">Nature de production</label>
+                        <select class="form-control article-quick-input" id="quickCreateNatureProductionId" name="natureProductionId">
+                            <option value="">Selectionner une nature de production</option>
+                            {% for natureProduction in inlineNatureProductions %}
+                                <option value="{{ natureProduction.id }}">{{ natureProduction.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quickCreateFournisseurHabituelId">Fournisseur habituel</label>
+                        <select class="form-control article-quick-input" id="quickCreateFournisseurHabituelId" name="fournisseurHabituelId">
+                            <option value="">Selectionner un fournisseur</option>
+                            {% for fournisseur in inlineFournisseurs %}
+                                <option value="{{ fournisseur.id }}">{{ fournisseur.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="d-block mb-2">Sortie de stock</label>
+                        <div class="article-quick-radio-group">
+                            {% for sortiStock in inlineSortiStocks %}
+                                <div class="article-quick-radio-item">
+                                    <input
+                                        type="radio"
+                                        id="quickCreateSortiStock_{{ loop.index }}"
+                                        name="sortiStock"
+                                        value="{{ sortiStock.value }}"
+                                        {% if loop.first %}checked{% endif %}
+                                    >
+                                    <label for="quickCreateSortiStock_{{ loop.index }}">{{ sortiStock.label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
 
                     <div class="form-group mb-0">
                         <div class="article-quick-image-head">
@@ -996,6 +1101,9 @@
                 <th data-sort-key="libelle">Designation</th>
                 <th data-sort-key="unite">Unite</th>
                 <th data-sort-key="tarif">Tarif</th>
+                <th data-sort-key="modeGestion">Mode gestion</th>
+                <th data-sort-key="modeSuivi">Mode suivi</th>
+                <th data-sort-key="natureProduction">Nature production</th>
                 <th class="text-center" style="width: 130px;">Actions</th>
             </tr>
         </thead>
@@ -1012,6 +1120,13 @@
                 data-unite-label="{{ article.unite ? article.unite : '' }}"
                 data-tarif-id="{{ article.tarif ? article.tarif.id : '' }}"
                 data-tarif-label="{{ article.tarif ? article.tarif : '' }}"
+                data-mode-gestion="{{ article.modeGestion.value }}"
+                data-mode-suivi="{{ article.modeSuivi.value }}"
+                data-nature-production-id="{{ article.natureProduction ? article.natureProduction.id : '' }}"
+                data-nature-production-label="{{ article.natureProduction ? article.natureProduction : '' }}"
+                data-sorti-stock="{{ article.sortiStock.value }}"
+                data-fournisseur-habituel-id="{{ article.fournisseurHabituel ? article.fournisseurHabituel.id : '' }}"
+                data-fournisseur-habituel-label="{{ article.fournisseurHabituel ? article.fournisseurHabituel : '' }}"
                 tabindex="0">
                 <td class="row-selector-cell">
                     <div class="form-check d-flex justify-content-center mb-0">
@@ -1033,6 +1148,9 @@
                 <td data-field="libelle">{{ article.libelle|default('____') }}</td>
                 <td data-field="unite">{{ article.unite|default('____') }}</td>
                 <td data-field="tarif">{{ article.tarif|default('____') }}</td>
+                <td data-field="modeGestion">{{ article.modeGestion.value|default('____') }}</td>
+                <td data-field="modeSuivi">{{ article.modeSuivi.value|default('____') }}</td>
+                <td data-field="natureProduction">{{ article.natureProduction|default('____') }}</td>
                 <td class="text-center article-actions-cell">
                     <a href="{{ path('article.detail', {id: article.id}) }}" class="btn btn-action btn-view" title="Voir">
                         <i class="fas fa-eye"></i>
@@ -1298,6 +1416,11 @@
         var $quickCreateSubmit = $('#articleQuickCreateSubmit');
         var $quickCreateLibelle = $('#quickCreateLibelle');
         var $quickCreateUniteId = $('#quickCreateUniteId');
+        var $quickCreateTarifId = $('#quickCreateTarifId');
+        var $quickCreateModeGestion = $('#quickCreateModeGestion');
+        var $quickCreateModeSuivi = $('#quickCreateModeSuivi');
+        var $quickCreateNatureProductionId = $('#quickCreateNatureProductionId');
+        var $quickCreateFournisseurHabituelId = $('#quickCreateFournisseurHabituelId');
         var $quickCreateImageFile = $('#quickCreateImageFile');
         var $quickCreateImageFileName = $('#quickCreateImageFileName');
         var $quickCreateImagePreview = $('#quickCreateImagePreview');
@@ -1852,7 +1975,14 @@
                 uniteId: String($row.attr('data-unite-id') || ''),
                 uniteLabel: String($row.attr('data-unite-label') || ''),
                 tarifId: String($row.attr('data-tarif-id') || ''),
-                tarifLabel: String($row.attr('data-tarif-label') || '')
+                tarifLabel: String($row.attr('data-tarif-label') || ''),
+                modeGestionLabel: String($row.attr('data-mode-gestion') || ''),
+                modeSuiviLabel: String($row.attr('data-mode-suivi') || ''),
+                natureProductionId: String($row.attr('data-nature-production-id') || ''),
+                natureProductionLabel: String($row.attr('data-nature-production-label') || ''),
+                sortiStockLabel: String($row.attr('data-sorti-stock') || ''),
+                fournisseurHabituelId: String($row.attr('data-fournisseur-habituel-id') || ''),
+                fournisseurHabituelLabel: String($row.attr('data-fournisseur-habituel-label') || '')
             };
         }
 
@@ -1886,6 +2016,9 @@
             $row.find('td[data-field="libelle"]').html(escapeHtml(fallbackDisplay(snapshot.libelle)));
             $row.find('td[data-field="unite"]').html(escapeHtml(fallbackDisplay(snapshot.uniteLabel)));
             $row.find('td[data-field="tarif"]').html(escapeHtml(fallbackDisplay(snapshot.tarifLabel)));
+            $row.find('td[data-field="modeGestion"]').html(escapeHtml(fallbackDisplay(snapshot.modeGestionLabel)));
+            $row.find('td[data-field="modeSuivi"]').html(escapeHtml(fallbackDisplay(snapshot.modeSuiviLabel)));
+            $row.find('td[data-field="natureProduction"]').html(escapeHtml(fallbackDisplay(snapshot.natureProductionLabel)));
 
             var originalActions = $row.data('originalActionsHtml');
             if (originalActions) {
@@ -2007,6 +2140,13 @@
             $row.attr('data-unite-label', article.uniteLabel || '');
             $row.attr('data-tarif-id', article.tarifId || '');
             $row.attr('data-tarif-label', article.tarifLabel || '');
+            $row.attr('data-mode-gestion', article.modeGestionLabel || '');
+            $row.attr('data-mode-suivi', article.modeSuiviLabel || '');
+            $row.attr('data-nature-production-id', article.natureProductionId || '');
+            $row.attr('data-nature-production-label', article.natureProductionLabel || '');
+            $row.attr('data-sorti-stock', article.sortiStockLabel || '');
+            $row.attr('data-fournisseur-habituel-id', article.fournisseurHabituelId || '');
+            $row.attr('data-fournisseur-habituel-label', article.fournisseurHabituelLabel || '');
 
             restoreRowDisplay($row);
             $row.removeClass('is-new-unsaved').addClass('is-saved');
@@ -2085,6 +2225,13 @@
             var rowUniteLabel = String(article.uniteLabel || '');
             var rowTarifId = String(article.tarifId || '');
             var rowTarifLabel = String(article.tarifLabel || '');
+            var rowModeGestionLabel = String(article.modeGestionLabel || '');
+            var rowModeSuiviLabel = String(article.modeSuiviLabel || '');
+            var rowNatureProductionId = String(article.natureProductionId || '');
+            var rowNatureProductionLabel = String(article.natureProductionLabel || '');
+            var rowSortiStockLabel = String(article.sortiStockLabel || '');
+            var rowFournisseurHabituelId = String(article.fournisseurHabituelId || '');
+            var rowFournisseurHabituelLabel = String(article.fournisseurHabituelLabel || '');
             var rowInlineUpdateUrl = String(article.inlineUpdateUrl || '');
             var rowUploadImageUrl = String(article.uploadImageUrl || '');
             var rowDetailUrl = String(article.detailUrl || '#');
@@ -2100,7 +2247,14 @@
                 .attr('data-unite-id', rowUniteId)
                 .attr('data-unite-label', rowUniteLabel)
                 .attr('data-tarif-id', rowTarifId)
-                .attr('data-tarif-label', rowTarifLabel);
+                .attr('data-tarif-label', rowTarifLabel)
+                .attr('data-mode-gestion', rowModeGestionLabel)
+                .attr('data-mode-suivi', rowModeSuiviLabel)
+                .attr('data-nature-production-id', rowNatureProductionId)
+                .attr('data-nature-production-label', rowNatureProductionLabel)
+                .attr('data-sorti-stock', rowSortiStockLabel)
+                .attr('data-fournisseur-habituel-id', rowFournisseurHabituelId)
+                .attr('data-fournisseur-habituel-label', rowFournisseurHabituelLabel);
 
             var $selectorCell = $('<td class="row-selector-cell"></td>');
             var $selectorWrapper = $('<div class="form-check d-flex justify-content-center mb-0"></div>');
@@ -2116,6 +2270,9 @@
             var $libelleCell = $('<td data-field="libelle"></td>').text(fallbackDisplay(rowLibelle));
             var $uniteCell = $('<td data-field="unite"></td>').text(fallbackDisplay(rowUniteLabel));
             var $tarifCell = $('<td data-field="tarif"></td>').text(fallbackDisplay(rowTarifLabel));
+            var $modeGestionCell = $('<td data-field="modeGestion"></td>').text(fallbackDisplay(rowModeGestionLabel));
+            var $modeSuiviCell = $('<td data-field="modeSuivi"></td>').text(fallbackDisplay(rowModeSuiviLabel));
+            var $natureProductionCell = $('<td data-field="natureProduction"></td>').text(fallbackDisplay(rowNatureProductionLabel));
             var $actionsCell = $('<td class="text-center article-actions-cell"></td>');
 
             var $viewBtn = $('<a class="btn btn-action btn-view" title="Voir"></a>')
@@ -2127,7 +2284,7 @@
                 .append('<i class="fas fa-trash-alt"></i>');
 
             $actionsCell.append($viewBtn, $deleteBtn);
-            $row.append($selectorCell, $idCell, $imageCell, $libelleCell, $uniteCell, $tarifCell, $actionsCell);
+            $row.append($selectorCell, $idCell, $imageCell, $libelleCell, $uniteCell, $tarifCell, $modeGestionCell, $modeSuiviCell, $natureProductionCell, $actionsCell);
 
             renderRowImageCell($row);
             return $row;
@@ -2460,6 +2617,12 @@
                 var token = String($quickCreateForm.find('input[name="_token"]').val() || '');
                 var libelle = $.trim($quickCreateLibelle.val() || '');
                 var uniteId = String($quickCreateUniteId.val() || '');
+                var tarifId = String($quickCreateTarifId.val() || '');
+                var modeGestion = String($quickCreateModeGestion.val() || '');
+                var modeSuivi = String($quickCreateModeSuivi.val() || '');
+                var natureProductionId = String($quickCreateNatureProductionId.val() || '');
+                var fournisseurHabituelId = String($quickCreateFournisseurHabituelId.val() || '');
+                var sortiStock = String($quickCreateForm.find('input[name="sortiStock"]:checked').val() || '');
 
                 if (libelle === '') {
                     showToast('error', 'La designation est obligatoire.');
@@ -2486,6 +2649,12 @@
                 formData.append('_token', token);
                 formData.append('libelle', libelle);
                 formData.append('uniteId', uniteId);
+                formData.append('tarifId', tarifId);
+                formData.append('modeGestion', modeGestion);
+                formData.append('modeSuivi', modeSuivi);
+                formData.append('natureProductionId', natureProductionId);
+                formData.append('fournisseurHabituelId', fournisseurHabituelId);
+                formData.append('sortiStock', sortiStock);
                 if (imageFile) {
                     formData.append('imageFile', imageFile);
                 }

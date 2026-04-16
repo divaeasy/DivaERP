@@ -1,13 +1,12 @@
 {% extends 'template_oukatech.html.twig' %}
 
-
 {% block body %}
 <div class="page-header">
     <div class="d-flex align-items-center">
         <a href="{{ path('article.list') }}" class="btn-back mr-3">
             <i class="fas fa-arrow-left"></i>
         </a>
-        <h1 class="h3 mb-0 text-gray-800">Détails de l'Article</h1>
+        <h1 class="h3 mb-0 text-gray-800">Details de l'Article</h1>
     </div>
     <div class="page-actions">
         <a href="{{ path('article.edit', {id: article.id}) }}" class="btn btn-primary">
@@ -20,16 +19,16 @@
     <div class="col-lg-8">
         <div class="form-card">
             <div class="card-header-custom">
-                <h5><i class="fas fa-box mr-2"></i>Informations Générales</h5>
+                <h5><i class="fas fa-box mr-2"></i>Informations generales</h5>
             </div>
-            
+
             <div class="detail-grid">
                 <div class="detail-row">
                     <div class="detail-label">ID</div>
                     <div class="detail-value"><strong>#{{ article.id }}</strong></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label">Désignation</div>
+                    <div class="detail-label">Designation</div>
                     <div class="detail-value">{{ article.libelle }}</div>
                 </div>
                 <div class="detail-row">
@@ -38,9 +37,29 @@
                         {% if article.dossier %}
                             <span class="badge badge-primary">{{ article.dossier }}</span>
                         {% else %}
-                            <span class="text-muted">Non défini</span>
+                            <span class="text-muted">Non defini</span>
                         {% endif %}
                     </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Mode de gestion</div>
+                    <div class="detail-value">{{ article.modeGestion.value }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Mode de suivi</div>
+                    <div class="detail-value">{{ article.modeSuivi.value }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Nature production</div>
+                    <div class="detail-value">{{ article.natureProduction ?: '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Sortie de stock</div>
+                    <div class="detail-value">{{ article.sortiStock.value }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Fournisseur habituel</div>
+                    <div class="detail-value">{{ article.fournisseurHabituel ?: '-' }}</div>
                 </div>
             </div>
         </div>
@@ -49,17 +68,17 @@
     <div class="col-lg-4">
         <div class="form-card">
             <div class="card-header-custom">
-                <h5><i class="fas fa-tags mr-2"></i>Informations Commerciales</h5>
+                <h5><i class="fas fa-tags mr-2"></i>Informations commerciales</h5>
             </div>
-            
+
             <div class="detail-grid">
                 <div class="detail-row">
-                    <div class="detail-label">Unité</div>
+                    <div class="detail-label">Unite</div>
                     <div class="detail-value">
                         {% if article.unite %}
                             {{ article.unite }}
                         {% else %}
-                            <span class="text-muted">Non définie</span>
+                            <span class="text-muted">Non definie</span>
                         {% endif %}
                     </div>
                 </div>
@@ -69,7 +88,7 @@
                         {% if article.tarif %}
                             <span class="badge badge-primary">{{ article.tarif }}</span>
                         {% else %}
-                            <span class="text-muted">Non défini</span>
+                            <span class="text-muted">Non defini</span>
                         {% endif %}
                     </div>
                 </div>
@@ -81,23 +100,23 @@
             <div class="card-header-custom">
                 <h5><i class="fas fa-history mr-2"></i>Historique</h5>
             </div>
-            
+
             <div class="detail-grid">
                 {% if article.createdAt %}
                 <div class="detail-row">
-                    <div class="detail-label">Créé le</div>
+                    <div class="detail-label">Cree le</div>
                     <div class="detail-value">{{ article.createdAt|date('d/m/Y H:i') }}</div>
                 </div>
                 {% endif %}
                 {% if article.createdBy %}
                 <div class="detail-row">
-                    <div class="detail-label">Créé par</div>
+                    <div class="detail-label">Cree par</div>
                     <div class="detail-value">{{ article.createdBy }}</div>
                 </div>
                 {% endif %}
                 {% if article.updatedAt %}
                 <div class="detail-row">
-                    <div class="detail-label">Modifié le</div>
+                    <div class="detail-label">Modifie le</div>
                     <div class="detail-value">{{ article.updatedAt|date('d/m/Y H:i') }}</div>
                 </div>
                 {% endif %}

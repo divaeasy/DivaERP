@@ -113,6 +113,46 @@
         padding-top: 0.25rem;
     }
 
+    .article-sorti-stock-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0.35rem;
+    }
+
+    .article-sorti-stock-option {
+        position: relative;
+    }
+
+    .article-sorti-stock-input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+    }
+
+    .article-sorti-stock-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0.6rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid #d1d3e2;
+        background: #fff;
+        color: #334155;
+        font-weight: 600;
+        margin-bottom: 0;
+        cursor: pointer;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background 0.2s ease;
+    }
+
+    .article-sorti-stock-input:checked + .article-sorti-stock-label {
+        border-color: var(--theme-primary);
+        background: rgba(37, 99, 235, 0.08);
+        color: var(--theme-primary);
+        box-shadow: 0 0 0 0.18rem rgba(37, 99, 235, 0.12);
+    }
+
     @media (max-width: 767.98px) {
         .article-image-field {
             grid-template-columns: 1fr;

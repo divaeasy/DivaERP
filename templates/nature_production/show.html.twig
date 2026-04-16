@@ -1,0 +1,70 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block PageTitle %}Nature de Production{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_nature_production_index') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Details de la nature de production</h1>
+    </div>
+    <div class="page-actions">
+        <a href="{{ path('app_nature_production_edit', {id: natureProduction.id}) }}" class="btn btn-primary">
+            <i class="fas fa-edit mr-2"></i>Modifier
+        </a>
+    </div>
+</div>
+
+<div class="form-card">
+    <div class="card-header-custom">
+        <h5><i class="fas fa-industry mr-2"></i>Informations generales</h5>
+    </div>
+
+    <div class="detail-grid">
+        <div class="detail-row">
+            <div class="detail-label">ID</div>
+            <div class="detail-value"><strong>#{{ natureProduction.id }}</strong></div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Libelle</div>
+            <div class="detail-value">{{ natureProduction.libelle }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Type</div>
+            <div class="detail-value">{{ natureProduction.type.value|capitalize }}</div>
+        </div>
+    </div>
+</div>
+
+<style>
+.detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.detail-row {
+    display: flex;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.detail-row:last-child {
+    border-bottom: none;
+}
+.detail-label {
+    flex: 0 0 140px;
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 13px;
+}
+.detail-value {
+    flex: 1;
+    color: #333;
+}
+.page-actions {
+    display: flex;
+    gap: 10px;
+}
+</style>
+{% endblock %}

@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\SortiStockMode;
 use App\Repository\DossierRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -79,6 +80,18 @@ class Dossier
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $penalitesretard = null;
+
+    #[ORM\ManyToOne]
+    private ?NatureProduction $natureStock = null;
+
+    #[ORM\Column(length: 20, enumType: SortiStockMode::class, options: ['default' => 'FIFO'])]
+    private SortiStockMode $sortiStockDefaut = SortiStockMode::FIFO;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $gererStocks = false;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $autoriserStockNegatif = false;
 
     public function getId(): ?int
     {
@@ -333,6 +346,54 @@ class Dossier
     public function setPenalitesretard(?string $penalitesretard): static
     {
         $this->penalitesretard = $penalitesretard;
+
+        return $this;
+    }
+
+    public function getNatureStock(): ?NatureProduction
+    {
+        return $this->natureStock;
+    }
+
+    public function setNatureStock(?NatureProduction $natureStock): static
+    {
+        $this->natureStock = $natureStock;
+
+        return $this;
+    }
+
+    public function getSortiStockDefaut(): SortiStockMode
+    {
+        return $this->sortiStockDefaut;
+    }
+
+    public function setSortiStockDefaut(SortiStockMode $sortiStockDefaut): static
+    {
+        $this->sortiStockDefaut = $sortiStockDefaut;
+
+        return $this;
+    }
+
+    public function isGererStocks(): bool
+    {
+        return $this->gererStocks;
+    }
+
+    public function setGererStocks(bool $gererStocks): static
+    {
+        $this->gererStocks = $gererStocks;
+
+        return $this;
+    }
+
+    public function isAutoriserStockNegatif(): bool
+    {
+        return $this->autoriserStockNegatif;
+    }
+
+    public function setAutoriserStockNegatif(bool $autoriserStockNegatif): static
+    {
+        $this->autoriserStockNegatif = $autoriserStockNegatif;
 
         return $this;
     }

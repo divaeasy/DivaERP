@@ -2,6 +2,9 @@
 
 namespace App\Entity;
 
+use App\Enum\ArticleModeGestion;
+use App\Enum\ArticleModeSuivi;
+use App\Enum\SortiStockMode;
 use App\Repository\ArticleRepository;
 use App\Traits\TimeStampTrait;
 use Doctrine\ORM\Mapping as ORM;
@@ -36,6 +39,21 @@ class Article
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $image = null;
+
+    #[ORM\Column(length: 20, enumType: ArticleModeGestion::class, options: ['default' => 'En stock'])]
+    private ArticleModeGestion $modeGestion = ArticleModeGestion::EN_STOCK;
+
+    #[ORM\Column(length: 30, enumType: ArticleModeSuivi::class, options: ['default' => 'En quantité'])]
+    private ArticleModeSuivi $modeSuivi = ArticleModeSuivi::EN_QUANTITE;
+
+    #[ORM\ManyToOne]
+    private ?NatureProduction $natureProduction = null;
+
+    #[ORM\Column(length: 20, enumType: SortiStockMode::class, options: ['default' => 'FIFO'])]
+    private SortiStockMode $sortiStock = SortiStockMode::FIFO;
+
+    #[ORM\ManyToOne]
+    private ?Fournisseur $fournisseurHabituel = null;
 
     public function getId(): ?int
     {
@@ -98,6 +116,66 @@ class Article
     public function setImage(?string $image): static
     {
         $this->image = $image;
+
+        return $this;
+    }
+
+    public function getModeGestion(): ArticleModeGestion
+    {
+        return $this->modeGestion;
+    }
+
+    public function setModeGestion(ArticleModeGestion $modeGestion): static
+    {
+        $this->modeGestion = $modeGestion;
+
+        return $this;
+    }
+
+    public function getModeSuivi(): ArticleModeSuivi
+    {
+        return $this->modeSuivi;
+    }
+
+    public function setModeSuivi(ArticleModeSuivi $modeSuivi): static
+    {
+        $this->modeSuivi = $modeSuivi;
+
+        return $this;
+    }
+
+    public function getNatureProduction(): ?NatureProduction
+    {
+        return $this->natureProduction;
+    }
+
+    public function setNatureProduction(?NatureProduction $natureProduction): static
+    {
+        $this->natureProduction = $natureProduction;
+
+        return $this;
+    }
+
+    public function getSortiStock(): SortiStockMode
+    {
+        return $this->sortiStock;
+    }
+
+    public function setSortiStock(SortiStockMode $sortiStock): static
+    {
+        $this->sortiStock = $sortiStock;
+
+        return $this;
+    }
+
+    public function getFournisseurHabituel(): ?Fournisseur
+    {
+        return $this->fournisseurHabituel;
+    }
+
+    public function setFournisseurHabituel(?Fournisseur $fournisseurHabituel): static
+    {
+        $this->fournisseurHabituel = $fournisseurHabituel;
 
         return $this;
     }

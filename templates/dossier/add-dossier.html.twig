@@ -226,6 +226,51 @@
                     </div>
                 </div>
             </section>
+
+            <section class="form-card dossier-panel dossier-panel--compact mt-4">
+                <div class="dossier-panel__head">
+                    <h5><i class="fas fa-warehouse mr-2"></i>Gestion des stocks</h5>
+                    <p>Activez la gestion de stock et definissez le comportement par defaut du dossier.</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.natureStock, 'Nature de stock') }}
+                            {{ form_widget(dossier.natureStock, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                            {{ form_errors(dossier.natureStock) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.sortiStockDefaut, 'Sortie de stock par defaut') }}
+                            {{ form_widget(dossier.sortiStockDefaut, {'attr': {'class': 'form-control'}}) }}
+                            {{ form_errors(dossier.sortiStockDefaut) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-0">
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            <div class="form-check">
+                                {{ form_widget(dossier.gererStocks, {'attr': {'class': 'form-check-input'}}) }}
+                                {{ form_label(dossier.gererStocks, 'Gerer les stocks', {'label_attr': {'class': 'form-check-label'}}) }}
+                            </div>
+                            {{ form_errors(dossier.gererStocks) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            <div class="form-check">
+                                {{ form_widget(dossier.autoriserStockNegatif, {'attr': {'class': 'form-check-input'}}) }}
+                                {{ form_label(dossier.autoriserStockNegatif, 'Autoriser le stock negatif', {'label_attr': {'class': 'form-check-label'}}) }}
+                            </div>
+                            {{ form_errors(dossier.autoriserStockNegatif) }}
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
 
         <div class="col-xl-5 mb-4">

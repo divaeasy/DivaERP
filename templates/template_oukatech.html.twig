@@ -3405,7 +3405,7 @@
         {% set currentRoute = app.request.attributes.get('_route') %}
         {% set commercialRoutes = ['client.list', 'client.edit', 'prospect.list', 'prospect.edit', 'fournisseur.list', 'fournisseur.edit', 'article.list', 'article.edit', 'tarif.list', 'tarif.edit', 'tarifvente.list', 'tarifvente.edit'] %}
         {% set accountingRoutes = ['entetepiece.list', 'entetepiece.client_list', 'entetepiece.fournisseur_list', 'entetepiece.edit', 'reglement.list', 'reglement.edit', 'devise.list', 'devise.edit', 'unite.list', 'unite.edit'] %}
-        {% set administrationRoutes = ['dossier.list', 'dossier.edit', 'pays.list', 'pays.edit', 'ville.list', 'ville.edit'] %}
+        {% set administrationRoutes = ['dossier.list', 'dossier.edit', 'pays.list', 'pays.edit', 'ville.list', 'ville.edit', 'app_nature_production_index', 'app_nature_production_new', 'app_nature_production_edit', 'app_nature_production_show', 'app_tiers_interne_index', 'app_tiers_interne_new', 'app_tiers_interne_edit', 'app_tiers_interne_show', 'app_depot_index', 'app_depot_new', 'app_depot_edit', 'app_depot_show'] %}
         {% set initialSidebarPanel = '' %}
         {% set currentDossier = app.user and app.user.currentDossier ? app.user.currentDossier : null %}
         {% set currentDossierLocation = '' %}
@@ -3447,6 +3447,18 @@
             'unite.edit': {'module': 'Comptabilité', 'section': 'Référentiels', 'page': 'Fiche unité'},
             'dossier.list': {'module': 'Administration', 'section': 'Organisation', 'page': 'Liste des dossiers'},
             'dossier.edit': {'module': 'Administration', 'section': 'Organisation', 'page': 'Fiche dossier'},
+            'app_nature_production_index': {'module': 'Administration', 'section': 'Organisation', 'page': 'Liste des natures de production'},
+            'app_nature_production_new': {'module': 'Administration', 'section': 'Organisation', 'page': 'Nouvelle nature de production'},
+            'app_nature_production_edit': {'module': 'Administration', 'section': 'Organisation', 'page': 'Fiche nature de production'},
+            'app_nature_production_show': {'module': 'Administration', 'section': 'Organisation', 'page': 'Details nature de production'},
+            'app_tiers_interne_index': {'module': 'Administration', 'section': 'Organisation', 'page': 'Liste des tiers internes'},
+            'app_tiers_interne_new': {'module': 'Administration', 'section': 'Organisation', 'page': 'Nouveau tiers interne'},
+            'app_tiers_interne_edit': {'module': 'Administration', 'section': 'Organisation', 'page': 'Fiche tiers interne'},
+            'app_tiers_interne_show': {'module': 'Administration', 'section': 'Organisation', 'page': 'Details tiers interne'},
+            'app_depot_index': {'module': 'Administration', 'section': 'Organisation', 'page': 'Liste des depots'},
+            'app_depot_new': {'module': 'Administration', 'section': 'Organisation', 'page': 'Nouveau depot'},
+            'app_depot_edit': {'module': 'Administration', 'section': 'Organisation', 'page': 'Fiche depot'},
+            'app_depot_show': {'module': 'Administration', 'section': 'Organisation', 'page': 'Details depot'},
             'pays.list': {'module': 'Administration', 'section': 'Localisation', 'page': 'Liste des pays'},
             'pays.edit': {'module': 'Administration', 'section': 'Localisation', 'page': 'Fiche pays'},
             'ville.list': {'module': 'Administration', 'section': 'Localisation', 'page': 'Liste des villes'},
@@ -3786,6 +3798,21 @@
                                        href="{% if is_granted('ROLE_ADMIN') %}{{ path('dossier.list') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="folder-open"></i>
                                         <span>Dossier</span>
+                                    </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if currentRoute in ['app_nature_production_index', 'app_nature_production_new', 'app_nature_production_edit', 'app_nature_production_show'] %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_ADMIN') %}{{ path('app_nature_production_index') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="factory"></i>
+                                        <span>Nature production</span>
+                                    </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if currentRoute in ['app_tiers_interne_index', 'app_tiers_interne_new', 'app_tiers_interne_edit', 'app_tiers_interne_show'] %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_ADMIN') %}{{ path('app_tiers_interne_index') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="building-2"></i>
+                                        <span>Tiers interne</span>
+                                    </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if currentRoute in ['app_depot_index', 'app_depot_new', 'app_depot_edit', 'app_depot_show'] %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_ADMIN') %}{{ path('app_depot_index') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="package"></i>
+                                        <span>Depots</span>
                                     </a>
                                     <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pays {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if currentRoute in ['pays.list', 'pays.edit'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_ADMIN') %}{{ path('pays.list') }}{% else %}javascript:void(0){% endif %}">
@@ -6062,6 +6089,12 @@
                 { name: 'Règlements - Nouveau', url: '{{ path('reglement.edit') }}', icon: 'fas fa-money-bill-wave' },
                 { name: 'Dossiers - Liste', url: '{{ path('dossier.list') }}', icon: 'fas fa-folder-open' },
                 { name: 'Dossiers - Nouveau', url: '{{ path('dossier.edit') }}', icon: 'fas fa-folder-plus' },
+                { name: 'Nature Production - Liste', url: '{{ path('app_nature_production_index') }}', icon: 'fas fa-industry' },
+                { name: 'Nature Production - Nouveau', url: '{{ path('app_nature_production_new') }}', icon: 'fas fa-plus' },
+                { name: 'Tiers Interne - Liste', url: '{{ path('app_tiers_interne_index') }}', icon: 'fas fa-building' },
+                { name: 'Tiers Interne - Nouveau', url: '{{ path('app_tiers_interne_new') }}', icon: 'fas fa-plus' },
+                { name: 'Depots - Liste', url: '{{ path('app_depot_index') }}', icon: 'fas fa-warehouse' },
+                { name: 'Depots - Nouveau', url: '{{ path('app_depot_new') }}', icon: 'fas fa-plus' },
                 { name: 'Devises - Liste', url: '{{ path('devise.list') }}', icon: 'fas fa-euro-sign' },
                 { name: 'Devises - Nouvelle', url: '{{ path('devise.edit') }}', icon: 'fas fa-euro-sign' },
                 { name: 'Tarifs - Liste', url: '{{ path('tarif.list') }}', icon: 'fas fa-tags' },

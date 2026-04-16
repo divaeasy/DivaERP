@@ -1,0 +1,81 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block PageTitle %}Gestion des Depots{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Gestion des Depots</h1>
+    </div>
+</div>
+
+<div class="action-bar">
+    <div class="action-buttons">
+        <a class="btn-add" href="{{ path('app_depot_new') }}">
+            <i class="fas fa-plus"></i> Nouveau depot
+        </a>
+    </div>
+    <div class="search-box">
+        {% include "components/search_data.html.twig" with {search: search} only %}
+    </div>
+</div>
+
+<div class="table-container">
+    {% if depots|length > 0 %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Libelle</th>
+                <th>Tiers interne</th>
+                <th>Adresse</th>
+                <th>Ville</th>
+                <th>Pays</th>
+                <th class="text-center" style="width: 150px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for depot in depots %}
+            <tr>
+                <td><strong>#{{ depot.id }}</strong></td>
+                <td>{{ depot.libelle }}</td>
+                <td>{{ depot.tiersInterne ?: '____' }}</td>
+                <td>{{ depot.adr1 ?: '____' }}</td>
+                <td>{{ depot.ville ?: '____' }}</td>
+                <td>{{ depot.pays ?: '____' }}</td>
+                <td class="text-center">
+                    <a href="{{ path('app_depot_show', {id: depot.id}) }}" class="btn btn-action btn-view" title="Voir">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{{ path('app_depot_edit', {id: depot.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-delete delete-btn"
+                            data-delete-url="{{ path('app_depot_delete', {id: depot.id}) }}"
+                            data-item-name="{{ depot.libelle }}"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'app_depot_index', routeParams: {}} %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-warehouse"></i>
+        </div>
+        <h5>Aucun depot trouve</h5>
+        <p>Ajoutez vos depots pour organiser les stocks et les emplacements logistiques.</p>
+        <a href="{{ path('app_depot_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouveau depot
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

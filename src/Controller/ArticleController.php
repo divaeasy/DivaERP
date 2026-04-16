@@ -4,13 +4,20 @@ namespace App\Controller;
 
 use App\Entity\Article;
 use App\Entity\Dossier;
+use App\Entity\Fournisseur;
+use App\Entity\NatureProduction;
 use App\Entity\Tarifs;
 use App\Entity\Unite;
 use App\Entity\User;
+use App\Enum\ArticleModeGestion;
+use App\Enum\ArticleModeSuivi;
+use App\Enum\SortiStockMode;
 use App\Form\ArticleFormType;
 use App\Form\SearchArtFormType;
 use App\Model\SearchDataArt;
 use App\Repository\ArticleRepository;
+use App\Repository\FournisseurRepository;
+use App\Repository\NatureProductionRepository;
 use App\Repository\TarifsRepository;
 use App\Repository\UniteRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -37,7 +44,9 @@ class ArticleController extends AbstractController
         ManagerRegistry $doctrine,
         ArticleRepository $artRepository,
         UniteRepository $uniteRepository,
-        TarifsRepository $tarifsRepository
+        TarifsRepository $tarifsRepository,
+        NatureProductionRepository $natureProductionRepository,
+        FournisseurRepository $fournisseurRepository
     ): Response
     {
         $user = $this->getUser();
@@ -56,6 +65,10 @@ class ArticleController extends AbstractController
         $pagination = $artRepository->findPaginated($searchActive, $page);
         $unites = $uniteRepository->findBy([], ['libelle' => 'ASC']);
         $tarifs = $tarifsRepository->getSearchQueryBuilder()->getQuery()->getResult();
+        $naturesProduction = $natureProductionRepository->findBy([], ['libelle' => 'ASC']);
+        $fournisseurs = $currentDossier instanceof Dossier
+            ? $fournisseurRepository->findBy(['dossier' => $currentDossier], ['nom' => 'ASC'])
+            : [];
 
         return $this->render('article/index.html.twig', [
             'search' => $searchForm->createView(),
@@ -77,6 +90,41 @@ class ArticleController extends AbstractController
                 ],
                 $tarifs
             ),
+            'inlineModeGestions' => array_map(
+                static fn (ArticleModeGestion $mode): array => [
+                    'value' => $mode->value,
+                    'label' => $mode->value,
+                ],
+                ArticleModeGestion::cases()
+            ),
+            'inlineModeSuivis' => array_map(
+                static fn (ArticleModeSuivi $mode): array => [
+                    'value' => $mode->value,
+                    'label' => $mode->value,
+                ],
+                ArticleModeSuivi::cases()
+            ),
+            'inlineSortiStocks' => array_map(
+                static fn (SortiStockMode $mode): array => [
+                    'value' => $mode->value,
+                    'label' => $mode->value,
+                ],
+                SortiStockMode::cases()
+            ),
+            'inlineNatureProductions' => array_map(
+                static fn (NatureProduction $natureProduction): array => [
+                    'id' => $natureProduction->getId(),
+                    'label' => (string) $natureProduction->getLibelle(),
+                ],
+                $naturesProduction
+            ),
+            'inlineFournisseurs' => array_map(
+                static fn (Fournisseur $fournisseur): array => [
+                    'id' => $fournisseur->getId(),
+                    'label' => (string) $fournisseur->getNom(),
+                ],
+                $fournisseurs
+            ),
         ]);
     }
 
@@ -84,7 +132,10 @@ class ArticleController extends AbstractController
     public function createMinimalArticle(
         Request $request,
         ManagerRegistry $doctrine,
-        UniteRepository $uniteRepository
+        UniteRepository $uniteRepository,
+        TarifsRepository $tarifsRepository,
+        NatureProductionRepository $natureProductionRepository,
+        FournisseurRepository $fournisseurRepository
     ): Response {
         $user = $this->getUser();
         $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
@@ -130,6 +181,76 @@ class ArticleController extends AbstractController
         $article->setDossier($currentDossier);
         $article->setLibelle($libelle);
         $article->setUnite($unite);
+        $article->setModeGestion($this->resolveArticleModeGestion((string) $request->request->get('modeGestion', '')));
+        $article->setModeSuivi($this->resolveArticleModeSuivi((string) $request->request->get('modeSuivi', '')));
+        $article->setSortiStock($this->resolveSortiStockMode((string) $request->request->get('sortiStock', '')));
+
+        $natureProductionId = trim((string) $request->request->get('natureProductionId', ''));
+        if ($natureProductionId !== '') {
+            if (!ctype_digit($natureProductionId)) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Nature de production invalide.',
+                ], 422);
+            }
+
+            $natureProduction = $natureProductionRepository->find((int) $natureProductionId);
+            if (!$natureProduction instanceof NatureProduction) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Nature de production introuvable.',
+                ], 404);
+            }
+
+            $article->setNatureProduction($natureProduction);
+        }
+
+        $fournisseurHabituelId = trim((string) $request->request->get('fournisseurHabituelId', ''));
+        if ($fournisseurHabituelId !== '') {
+            if (!ctype_digit($fournisseurHabituelId)) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Fournisseur habituel invalide.',
+                ], 422);
+            }
+
+            $fournisseurHabituel = $fournisseurRepository->findOneBy([
+                'id' => (int) $fournisseurHabituelId,
+                'dossier' => $currentDossier,
+            ]);
+            if (!$fournisseurHabituel instanceof Fournisseur) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Fournisseur habituel introuvable.',
+                ], 404);
+            }
+
+            $article->setFournisseurHabituel($fournisseurHabituel);
+        }
+
+        $tarifId = trim((string) $request->request->get('tarifId', ''));
+        if ($tarifId !== '') {
+            if (!ctype_digit($tarifId)) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Tarif invalide.',
+                ], 422);
+            }
+
+            $tarif = $tarifsRepository->findOneBy([
+                'id' => (int) $tarifId,
+                'dossier' => $currentDossier,
+            ]);
+            if (!$tarif instanceof Tarifs) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Tarif introuvable.',
+                ], 404);
+            }
+
+            $article->setTarif($tarif);
+        }
+
         $article->setDoctrine($doctrine);
         if ($user instanceof User) {
             $article->setUser($user);
@@ -700,6 +821,13 @@ class ArticleController extends AbstractController
             'uniteLabel' => $article->getUnite()?->getLibelle() ?? '',
             'tarifId' => $article->getTarif()?->getId(),
             'tarifLabel' => $article->getTarif()?->getLibelle() ?? '',
+            'modeGestionLabel' => $article->getModeGestion()->value,
+            'modeSuiviLabel' => $article->getModeSuivi()->value,
+            'natureProductionId' => $article->getNatureProduction()?->getId(),
+            'natureProductionLabel' => $article->getNatureProduction()?->getLibelle() ?? '',
+            'sortiStockLabel' => $article->getSortiStock()->value,
+            'fournisseurHabituelId' => $article->getFournisseurHabituel()?->getId(),
+            'fournisseurHabituelLabel' => $article->getFournisseurHabituel()?->getNom() ?? '',
             'imageUrl' => $article->getImage() ?? '',
             'uploadImageUrl' => $this->generateUrl('article.upload_image', ['id' => $article->getId()]),
         ];
@@ -970,5 +1098,38 @@ class ArticleController extends AbstractController
         $normalized = strtolower($normalized);
 
         return preg_replace('/[^a-z0-9]+/', '', $normalized) ?? '';
+    }
+
+    private function resolveArticleModeGestion(string $value): ArticleModeGestion
+    {
+        foreach (ArticleModeGestion::cases() as $modeGestion) {
+            if ($modeGestion->value === trim($value)) {
+                return $modeGestion;
+            }
+        }
+
+        return ArticleModeGestion::EN_STOCK;
+    }
+
+    private function resolveArticleModeSuivi(string $value): ArticleModeSuivi
+    {
+        foreach (ArticleModeSuivi::cases() as $modeSuivi) {
+            if ($modeSuivi->value === trim($value)) {
+                return $modeSuivi;
+            }
+        }
+
+        return ArticleModeSuivi::EN_QUANTITE;
+    }
+
+    private function resolveSortiStockMode(string $value): SortiStockMode
+    {
+        foreach (SortiStockMode::cases() as $sortiStockMode) {
+            if ($sortiStockMode->value === trim($value)) {
+                return $sortiStockMode;
+            }
+        }
+
+        return SortiStockMode::FIFO;
     }
 }

@@ -58,4 +58,46 @@
             {{ form_errors(form.tarif) }}
         </div>
     </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.modeGestion, 'Mode de gestion') }}
+            {{ form_widget(form.modeGestion, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.modeGestion) }}
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.modeSuivi, 'Mode de suivi') }}
+            {{ form_widget(form.modeSuivi, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.modeSuivi) }}
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.natureProduction, 'Nature de production') }}
+            {{ form_widget(form.natureProduction, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+            {{ form_errors(form.natureProduction) }}
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.sortiStock, 'Sortie de stock') }}
+            <div class="article-sorti-stock-group">
+                {% for child in form.sortiStock %}
+                    <div class="article-sorti-stock-option">
+                        {{ form_widget(child, {'attr': {'class': 'article-sorti-stock-input'}}) }}
+                        {{ form_label(child, null, {'label_attr': {'class': 'article-sorti-stock-label'}}) }}
+                    </div>
+                {% endfor %}
+            </div>
+            {{ form_errors(form.sortiStock) }}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            {{ form_label(form.fournisseurHabituel, 'Fournisseur habituel') }}
+            {{ form_widget(form.fournisseurHabituel, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+            {{ form_errors(form.fournisseurHabituel) }}
+        </div>
+    </div>
 </div>

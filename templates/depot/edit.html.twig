@@ -1,0 +1,16 @@
+{% extends "template_oukatech.html.twig" %}
+
+{% block PageTitle %}Modifier Depot{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_depot_index') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Modifier le depot</h1>
+    </div>
+</div>
+
+{% include 'depot/_form.html.twig' with {form: form, submit_label: 'Mettre a jour'} %}
+{% endblock %}

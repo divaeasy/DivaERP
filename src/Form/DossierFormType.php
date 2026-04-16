@@ -4,11 +4,15 @@ namespace App\Form;
 
 use App\Entity\Devises;
 use App\Entity\Dossier;
+use App\Entity\NatureProduction;
 use App\Entity\Theme;
+use App\Enum\SortiStockMode;
 use App\Repository\ThemeRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -47,15 +51,15 @@ class DossierFormType extends AbstractType
                 'constraints' => [
                     new Regex([
                         'pattern' => '/^[+]?[0-9\s\-()\.]{7,20}$/',
-                        'message' => 'Format téléphone invalide'
-                    ])
-                ]
+                        'message' => 'Format telephone invalide',
+                    ]),
+                ],
             ])
             ->add('email', EmailType::class, [
                 'required' => false,
                 'constraints' => [
-                    new Email(['message' => 'Format email invalide'])
-                ]
+                    new Email(['message' => 'Format email invalide']),
+                ],
             ])
             ->add('iban', null, ['required' => false])
             ->add('bic', null, ['required' => false])
@@ -99,6 +103,26 @@ class DossierFormType extends AbstractType
                 'class' => Devises::class,
                 'choice_label' => 'code',
                 'placeholder' => $isEdit ? false : 'Selectionner une devise',
+            ])
+            ->add('natureStock', EntityType::class, [
+                'class' => NatureProduction::class,
+                'choice_label' => 'libelle',
+                'required' => false,
+                'placeholder' => 'Selectionner une nature de stock',
+            ])
+            ->add('sortiStockDefaut', EnumType::class, [
+                'class' => SortiStockMode::class,
+                'choices' => array_filter(
+                    SortiStockMode::cases(),
+                    static fn (SortiStockMode $choice): bool => $choice !== SortiStockMode::DOSSIER
+                ),
+                'choice_label' => static fn (SortiStockMode $choice): string => $choice->value,
+            ])
+            ->add('gererStocks', CheckboxType::class, [
+                'required' => false,
+            ])
+            ->add('autoriserStockNegatif', CheckboxType::class, [
+                'required' => false,
             ]);
     }
 
@@ -109,4 +133,3 @@ class DossierFormType extends AbstractType
         ]);
     }
 }
-

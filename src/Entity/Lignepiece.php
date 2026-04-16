@@ -17,7 +17,7 @@ class Lignepiece
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(inversedBy: 'lignepieces')]
     private ?Entetepiece $piece = null;
 
     #[ORM\ManyToOne]
