@@ -47,8 +47,67 @@
             </div>
         </div>
     </div>
-    <div class="search-box">
-        {% include "components/search_data.html.twig" with {search: search} only %}
+    <div class="action-tools">
+        <div class="search-box">
+            {% include "components/search_data.html.twig" with {search: search} only %}
+        </div>
+        <div class="article-column-settings">
+            <button type="button" class="no-loading article-column-settings__trigger" id="articleColumnSettingsToggle" aria-expanded="false" aria-controls="articleColumnSettingsMenu">
+                <i class="fas fa-cog"></i>
+            </button>
+            <div class="article-column-settings__menu" id="articleColumnSettingsMenu">
+                <div class="article-column-settings__title">Colonnes</div>
+                <div class="article-column-settings__group">
+                    <div class="article-column-settings__item is-static">
+                        <span>ID</span>
+                        <small>Obligatoire</small>
+                    </div>
+                    <div class="article-column-settings__item is-static">
+                        <span>Image</span>
+                        <small>Obligatoire</small>
+                    </div>
+                    <div class="article-column-settings__item is-static">
+                        <span>Designation</span>
+                        <small>Obligatoire</small>
+                    </div>
+                    <div class="article-column-settings__item is-static">
+                        <span>Actions</span>
+                        <small>Obligatoire</small>
+                    </div>
+                </div>
+                <div class="article-column-settings__divider"></div>
+                <div class="article-column-settings__group">
+                    <label class="article-column-settings__item" for="articleColumnToggle_unite">
+                        <span>Unite</span>
+                        <input type="checkbox" id="articleColumnToggle_unite" data-column-toggle="unite" checked>
+                    </label>
+                    <label class="article-column-settings__item" for="articleColumnToggle_tarif">
+                        <span>Tarif</span>
+                        <input type="checkbox" id="articleColumnToggle_tarif" data-column-toggle="tarif" checked>
+                    </label>
+                    <label class="article-column-settings__item" for="articleColumnToggle_modeGestion">
+                        <span>Mode gestion</span>
+                        <input type="checkbox" id="articleColumnToggle_modeGestion" data-column-toggle="modeGestion" checked>
+                    </label>
+                    <label class="article-column-settings__item" for="articleColumnToggle_modeSuivi">
+                        <span>Mode suivi</span>
+                        <input type="checkbox" id="articleColumnToggle_modeSuivi" data-column-toggle="modeSuivi" checked>
+                    </label>
+                    <label class="article-column-settings__item" for="articleColumnToggle_natureProduction">
+                        <span>Nature production</span>
+                        <input type="checkbox" id="articleColumnToggle_natureProduction" data-column-toggle="natureProduction" checked>
+                    </label>
+                    <label class="article-column-settings__item" for="articleColumnToggle_sortiStock">
+                        <span>Sortie stock</span>
+                        <input type="checkbox" id="articleColumnToggle_sortiStock" data-column-toggle="sortiStock" checked>
+                    </label>
+                    <label class="article-column-settings__item" for="articleColumnToggle_fournisseurHabituel">
+                        <span>Fournisseur habituel</span>
+                        <input type="checkbox" id="articleColumnToggle_fournisseurHabituel" data-column-toggle="fournisseurHabituel" checked>
+                    </label>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -315,6 +374,100 @@
         box-shadow: none;
     }
 
+    .action-tools {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-left: auto;
+        position: relative;
+        z-index: 12;
+    }
+
+    .article-column-settings {
+        position: relative;
+        flex: 0 0 auto;
+    }
+
+    .article-column-settings__trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: none;
+        border: none;
+        box-shadow: none;
+    }
+
+    .article-column-settings__menu {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        width: 280px;
+        max-width: calc(100vw - 2rem);
+        background: #fff;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 14px;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16);
+        padding: 0.9rem;
+        display: none;
+    }
+
+    .article-column-settings.is-open .article-column-settings__menu {
+        display: block;
+    }
+
+    .article-column-settings__title {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.7rem;
+    }
+
+    .article-column-settings__group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .article-column-settings__divider {
+        height: 1px;
+        background: rgba(226, 232, 240, 0.9);
+        margin: 0.7rem 0;
+    }
+
+    .article-column-settings__item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 0;
+        padding: 0.55rem 0.65rem;
+        border-radius: 10px;
+        color: #334155;
+        font-weight: 600;
+        cursor: pointer;
+        background: rgba(248, 250, 252, 0.72);
+    }
+
+    .article-column-settings__item.is-static {
+        cursor: default;
+    }
+
+    .article-column-settings__item small {
+        color: #64748b;
+        font-weight: 700;
+        margin-left: auto;
+    }
+
+    .article-column-settings__item input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: var(--theme-primary);
+        flex: 0 0 auto;
+    }
+
     .unsaved-changes-modal .modal-content {
         border-radius: 12px;
         border: none;
@@ -375,11 +528,33 @@
         overflow: visible;
     }
 
+    .table-container--articles {
+        overflow: hidden;
+    }
+
     .articles-table {
+        width: 100%;
+        table-layout: fixed;
         position: relative;
         z-index: 1;
         border-collapse: separate;
         border-spacing: 0;
+    }
+
+    .articles-table thead th,
+    .articles-table tbody td {
+        padding: 0.8rem 0.55rem;
+        font-size: 0.9rem;
+    }
+
+    .articles-table thead th {
+        white-space: nowrap;
+    }
+
+    .articles-table tbody td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .articles-table thead th:first-child {
@@ -396,6 +571,26 @@
 
     .articles-table tbody tr:last-child td:last-child {
         border-bottom-right-radius: 8px;
+    }
+
+    .articles-table [data-column-key="actions"] {
+        position: sticky;
+        right: 0;
+        z-index: 3;
+        background: #fff;
+    }
+
+    .articles-table thead [data-column-key="actions"] {
+        z-index: 5;
+        background: var(--theme-primary);
+    }
+
+    .articles-table .article-row.is-editing [data-column-key="actions"] {
+        background: rgba(37, 99, 235, 0.06);
+    }
+
+    .articles-table .article-row.is-new-unsaved [data-column-key="actions"] {
+        background: rgba(16, 185, 129, 0.1);
     }
 
     .articles-table .article-row.is-editing {
@@ -426,8 +621,16 @@
 
     .articles-table .row-selector-cell,
     .articles-table .row-selector-head {
-        width: 52px;
+        width: 40px;
         text-align: center;
+    }
+
+    .articles-table [data-column-key="id"] {
+        width: 68px;
+    }
+
+    .articles-table [data-column-key="actions"] {
+        width: 88px;
     }
 
     .articles-table .article-row.is-selected {
@@ -545,15 +748,17 @@
     }
 
     .articles-table td[data-field="libelle"] {
-        min-width: 240px;
+        width: 18%;
     }
 
     .articles-table td[data-field="unite"],
     .articles-table td[data-field="tarif"],
     .articles-table td[data-field="modeGestion"],
     .articles-table td[data-field="modeSuivi"],
-    .articles-table td[data-field="natureProduction"] {
-        min-width: 180px;
+    .articles-table td[data-field="natureProduction"],
+    .articles-table td[data-field="sortiStock"],
+    .articles-table td[data-field="fournisseurHabituel"] {
+        width: auto;
     }
 
     .article-quick-radio-group {
@@ -564,21 +769,13 @@
     }
 
     .article-quick-radio-item {
-        position: relative;
-        min-width: 120px;
-    }
-
-    .article-quick-radio-item input {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        cursor: pointer;
+        min-width: 0;
     }
 
     .article-quick-radio-item label {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        justify-content: center;
+        gap: 0.55rem;
         min-height: 42px;
         margin: 0;
         padding: 0.6rem 0.85rem;
@@ -591,7 +788,16 @@
         cursor: pointer;
     }
 
-    .article-quick-radio-item input:checked + label {
+    .article-quick-radio-item input {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: var(--theme-primary);
+        flex: 0 0 auto;
+        cursor: pointer;
+    }
+
+    .article-quick-radio-item label:has(input:checked) {
         border-color: var(--theme-primary);
         background: rgba(37, 99, 235, 0.08);
         color: var(--theme-primary);
@@ -600,34 +806,34 @@
 
     .articles-table .article-image-cell,
     .articles-table .article-image-head {
-        width: 76px;
+        width: 72px;
         text-align: center;
         vertical-align: middle;
     }
 
     .articles-table .article-image-cell {
         position: relative;
-        min-height: 64px;
+        min-height: 56px;
     }
 
     .article-image-button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 48px;
-        height: 48px;
+        width: 40px;
+        height: 40px;
         padding: 0;
         background: transparent;
         border: none;
         cursor: default;
-        border-radius: 12px;
+        border-radius: 10px;
     }
 
     .article-image-thumb,
     .article-image-placeholder {
-        width: 48px;
-        height: 48px;
-        border-radius: 8px;
+        width: 40px;
+        height: 40px;
+        border-radius: 7px;
         border: 2px solid var(--theme-border);
         transition: all 0.2s ease;
         box-shadow: 0 0 0 rgba(15, 23, 42, 0);
@@ -711,8 +917,8 @@
         position: absolute;
         top: -8px;
         right: -8px;
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
         border: none;
         border-radius: 999px;
         background: #ef4444;
@@ -831,7 +1037,7 @@
     .articles-table .inline-actions {
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
+        gap: 0.2rem;
     }
 
     @media (max-width: 1200px) {
@@ -1015,14 +1221,16 @@
                         <div class="article-quick-radio-group">
                             {% for sortiStock in inlineSortiStocks %}
                                 <div class="article-quick-radio-item">
-                                    <input
-                                        type="radio"
-                                        id="quickCreateSortiStock_{{ loop.index }}"
-                                        name="sortiStock"
-                                        value="{{ sortiStock.value }}"
-                                        {% if loop.first %}checked{% endif %}
-                                    >
-                                    <label for="quickCreateSortiStock_{{ loop.index }}">{{ sortiStock.label }}</label>
+                                    <label for="quickCreateSortiStock_{{ loop.index }}">
+                                        <input
+                                            type="radio"
+                                            id="quickCreateSortiStock_{{ loop.index }}"
+                                            name="sortiStock"
+                                            value="{{ sortiStock.value }}"
+                                            {% if loop.first %}checked{% endif %}
+                                        >
+                                        <span>{{ sortiStock.label }}</span>
+                                    </label>
                                 </div>
                             {% endfor %}
                         </div>
@@ -1087,24 +1295,26 @@
     </div>
 </div>
 
-<div class="table-container">
+<div class="table-container table-container--articles">
     <table class="table articles-table" id="articlesTable" data-table-id="articles" {% if articles|length == 0 %}style="display:none;"{% endif %}>
         <thead>
             <tr>
-                <th class="row-selector-head">
+                <th class="row-selector-head" data-column-key="selector">
                     <div class="form-check d-flex justify-content-center mb-0">
                         <input class="form-check-input position-static" type="checkbox" id="selectAllArticlesRows" data-select-all-checkbox aria-label="Selectionner toutes les lignes">
                     </div>
                 </th>
-                <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th class="article-image-head">Image</th>
-                <th data-sort-key="libelle">Designation</th>
-                <th data-sort-key="unite">Unite</th>
-                <th data-sort-key="tarif">Tarif</th>
-                <th data-sort-key="modeGestion">Mode gestion</th>
-                <th data-sort-key="modeSuivi">Mode suivi</th>
-                <th data-sort-key="natureProduction">Nature production</th>
-                <th class="text-center" style="width: 130px;">Actions</th>
+                <th data-column-key="id" data-sort-key="id" data-sort-type="number">ID</th>
+                <th class="article-image-head" data-column-key="image">Image</th>
+                <th data-column-key="libelle" data-sort-key="libelle">Designation</th>
+                <th data-column-key="unite" data-sort-key="unite">Unite</th>
+                <th data-column-key="tarif" data-sort-key="tarif">Tarif</th>
+                <th data-column-key="modeGestion" data-sort-key="modeGestion">Mode gestion</th>
+                <th data-column-key="modeSuivi" data-sort-key="modeSuivi">Mode suivi</th>
+                <th data-column-key="natureProduction" data-sort-key="natureProduction">Nature production</th>
+                <th data-column-key="sortiStock" data-sort-key="sortiStock">Sortie stock</th>
+                <th data-column-key="fournisseurHabituel" data-sort-key="fournisseurHabituel">Fournisseur habituel</th>
+                <th class="text-center" style="width: 130px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
         <tbody id="articlesTableBody">
@@ -1128,13 +1338,13 @@
                 data-fournisseur-habituel-id="{{ article.fournisseurHabituel ? article.fournisseurHabituel.id : '' }}"
                 data-fournisseur-habituel-label="{{ article.fournisseurHabituel ? article.fournisseurHabituel : '' }}"
                 tabindex="0">
-                <td class="row-selector-cell">
+                <td class="row-selector-cell" data-column-key="selector">
                     <div class="form-check d-flex justify-content-center mb-0">
                         <input class="form-check-input position-static article-row-checkbox" type="checkbox" value="{{ article.id }}" data-row-checkbox aria-label="Selectionner l'article {{ article.libelle|default('') }}">
                     </div>
                 </td>
-                <td><strong>#{{ article.id }}</strong></td>
-                <td class="article-image-cell" data-field="image">
+                <td data-column-key="id"><strong>#{{ article.id }}</strong></td>
+                <td class="article-image-cell" data-field="image" data-column-key="image">
                     <div class="article-image-button" data-ignore-row-selection aria-label="Image de l'article {{ article.libelle|default('') }}">
                         {% if article.image %}
                             <img src="{{ article.image }}" alt="Image de {{ article.libelle|default('cet article') }}" class="article-image-thumb">
@@ -1145,13 +1355,15 @@
                         {% endif %}
                     </div>
                 </td>
-                <td data-field="libelle">{{ article.libelle|default('____') }}</td>
-                <td data-field="unite">{{ article.unite|default('____') }}</td>
-                <td data-field="tarif">{{ article.tarif|default('____') }}</td>
-                <td data-field="modeGestion">{{ article.modeGestion.value|default('____') }}</td>
-                <td data-field="modeSuivi">{{ article.modeSuivi.value|default('____') }}</td>
-                <td data-field="natureProduction">{{ article.natureProduction|default('____') }}</td>
-                <td class="text-center article-actions-cell">
+                <td data-field="libelle" data-column-key="libelle">{{ article.libelle|default('____') }}</td>
+                <td data-field="unite" data-column-key="unite">{{ article.unite|default('____') }}</td>
+                <td data-field="tarif" data-column-key="tarif">{{ article.tarif|default('____') }}</td>
+                <td data-field="modeGestion" data-column-key="modeGestion">{{ article.modeGestion.value|default('____') }}</td>
+                <td data-field="modeSuivi" data-column-key="modeSuivi">{{ article.modeSuivi.value|default('____') }}</td>
+                <td data-field="natureProduction" data-column-key="natureProduction">{{ article.natureProduction|default('____') }}</td>
+                <td data-field="sortiStock" data-column-key="sortiStock">{{ article.sortiStock.value|default('____') }}</td>
+                <td data-field="fournisseurHabituel" data-column-key="fournisseurHabituel">{{ article.fournisseurHabituel|default('____') }}</td>
+                <td class="text-center article-actions-cell" data-column-key="actions">
                     <a href="{{ path('article.detail', {id: article.id}) }}" class="btn btn-action btn-view" title="Voir">
                         <i class="fas fa-eye"></i>
                     </a>
@@ -1424,6 +1636,12 @@
         var $quickCreateImageFile = $('#quickCreateImageFile');
         var $quickCreateImageFileName = $('#quickCreateImageFileName');
         var $quickCreateImagePreview = $('#quickCreateImagePreview');
+        var $articleColumnSettings = $('.article-column-settings');
+        var $articleColumnSettingsToggle = $('#articleColumnSettingsToggle');
+        var articleColumnStorageKey = 'article-table-columns:{{ app.user ? app.user.id : "guest" }}:{{ app.user and app.user.currentDossier ? app.user.currentDossier.id : "0" }}';
+        var mandatoryColumnKeys = ['id', 'image', 'libelle', 'actions'];
+        var optionalColumnKeys = ['unite', 'tarif', 'modeGestion', 'modeSuivi', 'natureProduction', 'sortiStock', 'fournisseurHabituel'];
+        var articleColumnPreferences = Object.create(null);
         var $unsavedChangesModal = $('#articleUnsavedChangesModal');
         var $unsavedChangesMessage = $('#articleUnsavedChangesMessage');
         var $unsavedChangesConfirmBtn = $('#articleUnsavedChangesConfirmBtn');
@@ -1441,6 +1659,7 @@
         var tableSelectionManagers = Object.create(null);
         var articleSelectionManager = null;
         var activeEditRow = null;
+        articleColumnPreferences = loadColumnPreferences();
 
         function showToast(type, message) {
             if (typeof window.showAppToast === 'function') {
@@ -1563,6 +1782,106 @@
             }
 
             return '';
+        }
+
+        function getDefaultColumnPreferences() {
+            return {
+                unite: true,
+                tarif: true,
+                modeGestion: true,
+                modeSuivi: true,
+                natureProduction: true,
+                sortiStock: true,
+                fournisseurHabituel: true
+            };
+        }
+
+        function normalizeColumnPreferences(rawPreferences) {
+            var defaults = getDefaultColumnPreferences();
+            var normalized = $.extend({}, defaults);
+
+            if (!rawPreferences || typeof rawPreferences !== 'object') {
+                return normalized;
+            }
+
+            optionalColumnKeys.forEach(function(columnKey) {
+                if (Object.prototype.hasOwnProperty.call(rawPreferences, columnKey)) {
+                    normalized[columnKey] = rawPreferences[columnKey] !== false;
+                }
+            });
+
+            return normalized;
+        }
+
+        function loadColumnPreferences() {
+            try {
+                var storedValue = window.localStorage ? window.localStorage.getItem(articleColumnStorageKey) : null;
+                if (!storedValue) {
+                    return getDefaultColumnPreferences();
+                }
+
+                return normalizeColumnPreferences(JSON.parse(storedValue));
+            } catch (error) {
+                return getDefaultColumnPreferences();
+            }
+        }
+
+        function saveColumnPreferences() {
+            try {
+                if (window.localStorage) {
+                    window.localStorage.setItem(articleColumnStorageKey, JSON.stringify(articleColumnPreferences));
+                }
+            } catch (error) {
+            }
+        }
+
+        function updateColumnSettingsInputs() {
+            optionalColumnKeys.forEach(function(columnKey) {
+                $('[data-column-toggle="' + columnKey + '"]').prop('checked', articleColumnPreferences[columnKey] !== false);
+            });
+        }
+
+        function setColumnVisibility(columnKey, isVisible) {
+            $articlesTable.find('[data-column-key="' + columnKey + '"]').toggle(!!isVisible);
+        }
+
+        function applyColumnPreferences() {
+            optionalColumnKeys.forEach(function(columnKey) {
+                setColumnVisibility(columnKey, articleColumnPreferences[columnKey] !== false);
+            });
+            updateColumnSettingsInputs();
+        }
+
+        function toggleColumnPreference(columnKey, isVisible) {
+            if (mandatoryColumnKeys.indexOf(columnKey) !== -1) {
+                return;
+            }
+
+            articleColumnPreferences[columnKey] = !!isVisible;
+            applyColumnPreferences();
+            saveColumnPreferences();
+        }
+
+        function closeColumnSettingsMenu() {
+            if (!$articleColumnSettings.length) {
+                return;
+            }
+
+            $articleColumnSettings.removeClass('is-open');
+            if ($articleColumnSettingsToggle.length) {
+                $articleColumnSettingsToggle.attr('aria-expanded', 'false');
+            }
+        }
+
+        function openColumnSettingsMenu() {
+            if (!$articleColumnSettings.length) {
+                return;
+            }
+
+            $articleColumnSettings.addClass('is-open');
+            if ($articleColumnSettingsToggle.length) {
+                $articleColumnSettingsToggle.attr('aria-expanded', 'true');
+            }
         }
 
         function renderQuickCreateImagePreview(imageUrl) {
@@ -2019,6 +2338,8 @@
             $row.find('td[data-field="modeGestion"]').html(escapeHtml(fallbackDisplay(snapshot.modeGestionLabel)));
             $row.find('td[data-field="modeSuivi"]').html(escapeHtml(fallbackDisplay(snapshot.modeSuiviLabel)));
             $row.find('td[data-field="natureProduction"]').html(escapeHtml(fallbackDisplay(snapshot.natureProductionLabel)));
+            $row.find('td[data-field="sortiStock"]').html(escapeHtml(fallbackDisplay(snapshot.sortiStockLabel)));
+            $row.find('td[data-field="fournisseurHabituel"]').html(escapeHtml(fallbackDisplay(snapshot.fournisseurHabituelLabel)));
 
             var originalActions = $row.data('originalActionsHtml');
             if (originalActions) {
@@ -2273,7 +2594,9 @@
             var $modeGestionCell = $('<td data-field="modeGestion"></td>').text(fallbackDisplay(rowModeGestionLabel));
             var $modeSuiviCell = $('<td data-field="modeSuivi"></td>').text(fallbackDisplay(rowModeSuiviLabel));
             var $natureProductionCell = $('<td data-field="natureProduction"></td>').text(fallbackDisplay(rowNatureProductionLabel));
-            var $actionsCell = $('<td class="text-center article-actions-cell"></td>');
+            var $sortiStockCell = $('<td data-field="sortiStock"></td>').text(fallbackDisplay(rowSortiStockLabel));
+            var $fournisseurHabituelCell = $('<td data-field="fournisseurHabituel"></td>').text(fallbackDisplay(rowFournisseurHabituelLabel));
+            var $actionsCell = $('<td class="text-center article-actions-cell" data-column-key="actions"></td>');
 
             var $viewBtn = $('<a class="btn btn-action btn-view" title="Voir"></a>')
                 .attr('href', rowDetailUrl)
@@ -2284,7 +2607,19 @@
                 .append('<i class="fas fa-trash-alt"></i>');
 
             $actionsCell.append($viewBtn, $deleteBtn);
-            $row.append($selectorCell, $idCell, $imageCell, $libelleCell, $uniteCell, $tarifCell, $modeGestionCell, $modeSuiviCell, $natureProductionCell, $actionsCell);
+            $selectorCell.attr('data-column-key', 'selector');
+            $idCell.attr('data-column-key', 'id');
+            $imageCell.attr('data-column-key', 'image');
+            $libelleCell.attr('data-column-key', 'libelle');
+            $uniteCell.attr('data-column-key', 'unite');
+            $tarifCell.attr('data-column-key', 'tarif');
+            $modeGestionCell.attr('data-column-key', 'modeGestion');
+            $modeSuiviCell.attr('data-column-key', 'modeSuivi');
+            $natureProductionCell.attr('data-column-key', 'natureProduction');
+            $sortiStockCell.attr('data-column-key', 'sortiStock');
+            $fournisseurHabituelCell.attr('data-column-key', 'fournisseurHabituel');
+
+            $row.append($selectorCell, $idCell, $imageCell, $libelleCell, $uniteCell, $tarifCell, $modeGestionCell, $modeSuiviCell, $natureProductionCell, $sortiStockCell, $fournisseurHabituelCell, $actionsCell);
 
             renderRowImageCell($row);
             return $row;
@@ -2297,6 +2632,7 @@
                 $row.removeClass('is-just-created');
             }, 1100);
             refreshTableVisibility();
+            applyColumnPreferences();
             updateSelectionUi();
             scrollRowIntoView($row);
             return $row;
@@ -2440,6 +2776,31 @@
             });
         }
 
+        applyColumnPreferences();
+
+        if ($articleColumnSettingsToggle.length) {
+            $articleColumnSettingsToggle.on('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if ($articleColumnSettings.hasClass('is-open')) {
+                    closeColumnSettingsMenu();
+                    return;
+                }
+
+                openColumnSettingsMenu();
+            });
+        }
+
+        $(document).on('change', '[data-column-toggle]', function() {
+            var columnKey = String($(this).attr('data-column-toggle') || '');
+            if (columnKey === '') {
+                return;
+            }
+
+            toggleColumnPreference(columnKey, $(this).is(':checked'));
+        });
+
         initTableSelectionManagers();
 
         $articlesTable.find('.delete-btn').off('click');
@@ -2562,6 +2923,10 @@
         });
 
         $(document).on('click', function(event) {
+            if ($(event.target).closest('.article-column-settings').length === 0) {
+                closeColumnSettingsMenu();
+            }
+
             if ($(event.target).closest('.inline-dropdown-shell').length === 0) {
                 closeDropdowns();
             }

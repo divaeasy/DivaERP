@@ -85,8 +85,10 @@
             <div class="article-sorti-stock-group">
                 {% for child in form.sortiStock %}
                     <div class="article-sorti-stock-option">
-                        {{ form_widget(child, {'attr': {'class': 'article-sorti-stock-input'}}) }}
-                        {{ form_label(child, null, {'label_attr': {'class': 'article-sorti-stock-label'}}) }}
+                        <label class="article-sorti-stock-label" for="{{ child.vars.id }}">
+                            {{ form_widget(child, {'attr': {'class': 'article-sorti-stock-input'}}) }}
+                            <span>{{ child.vars.label }}</span>
+                        </label>
                     </div>
                 {% endfor %}
             </div>

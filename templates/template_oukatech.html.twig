@@ -3403,9 +3403,9 @@
 
         <!-- Sidebar -->
         {% set currentRoute = app.request.attributes.get('_route') %}
-        {% set commercialRoutes = ['client.list', 'client.edit', 'prospect.list', 'prospect.edit', 'fournisseur.list', 'fournisseur.edit', 'article.list', 'article.edit', 'tarif.list', 'tarif.edit', 'tarifvente.list', 'tarifvente.edit'] %}
+        {% set commercialRoutes = ['client.list', 'client.edit', 'prospect.list', 'prospect.edit', 'fournisseur.list', 'fournisseur.edit', 'article.list', 'article.edit', 'tarif.list', 'tarif.edit', 'tarifvente.list', 'tarifvente.edit', 'app_tiers_interne_index', 'app_tiers_interne_new', 'app_tiers_interne_edit', 'app_tiers_interne_show'] %}
         {% set accountingRoutes = ['entetepiece.list', 'entetepiece.client_list', 'entetepiece.fournisseur_list', 'entetepiece.edit', 'reglement.list', 'reglement.edit', 'devise.list', 'devise.edit', 'unite.list', 'unite.edit'] %}
-        {% set administrationRoutes = ['dossier.list', 'dossier.edit', 'pays.list', 'pays.edit', 'ville.list', 'ville.edit', 'app_nature_production_index', 'app_nature_production_new', 'app_nature_production_edit', 'app_nature_production_show', 'app_tiers_interne_index', 'app_tiers_interne_new', 'app_tiers_interne_edit', 'app_tiers_interne_show', 'app_depot_index', 'app_depot_new', 'app_depot_edit', 'app_depot_show'] %}
+        {% set administrationRoutes = ['dossier.list', 'dossier.edit', 'pays.list', 'pays.edit', 'ville.list', 'ville.edit', 'app_nature_production_index', 'app_nature_production_new', 'app_nature_production_edit', 'app_nature_production_show', 'app_depot_index', 'app_depot_new', 'app_depot_edit', 'app_depot_show'] %}
         {% set initialSidebarPanel = '' %}
         {% set currentDossier = app.user and app.user.currentDossier ? app.user.currentDossier : null %}
         {% set currentDossierLocation = '' %}
@@ -3451,10 +3451,10 @@
             'app_nature_production_new': {'module': 'Administration', 'section': 'Organisation', 'page': 'Nouvelle nature de production'},
             'app_nature_production_edit': {'module': 'Administration', 'section': 'Organisation', 'page': 'Fiche nature de production'},
             'app_nature_production_show': {'module': 'Administration', 'section': 'Organisation', 'page': 'Details nature de production'},
-            'app_tiers_interne_index': {'module': 'Administration', 'section': 'Organisation', 'page': 'Liste des tiers internes'},
-            'app_tiers_interne_new': {'module': 'Administration', 'section': 'Organisation', 'page': 'Nouveau tiers interne'},
-            'app_tiers_interne_edit': {'module': 'Administration', 'section': 'Organisation', 'page': 'Fiche tiers interne'},
-            'app_tiers_interne_show': {'module': 'Administration', 'section': 'Organisation', 'page': 'Details tiers interne'},
+            'app_tiers_interne_index': {'module': 'Commercial', 'section': 'Articles', 'page': 'Liste des tiers internes'},
+            'app_tiers_interne_new': {'module': 'Commercial', 'section': 'Articles', 'page': 'Nouveau tiers interne'},
+            'app_tiers_interne_edit': {'module': 'Commercial', 'section': 'Articles', 'page': 'Fiche tiers interne'},
+            'app_tiers_interne_show': {'module': 'Commercial', 'section': 'Articles', 'page': 'Details tiers interne'},
             'app_depot_index': {'module': 'Administration', 'section': 'Organisation', 'page': 'Liste des depots'},
             'app_depot_new': {'module': 'Administration', 'section': 'Organisation', 'page': 'Nouveau depot'},
             'app_depot_edit': {'module': 'Administration', 'section': 'Organisation', 'page': 'Fiche depot'},
@@ -3715,6 +3715,11 @@
                                         <i data-lucide="package"></i>
                                         <span>Articles</span>
                                     </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['app_tiers_interne_index', 'app_tiers_interne_new', 'app_tiers_interne_edit', 'app_tiers_interne_show'] %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('app_tiers_interne_index') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="building-2"></i>
+                                        <span>Tiers interne</span>
+                                    </a>
                                     <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--tarifs {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute in ['tarif.list', 'tarif.edit'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('tarif.list') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="tags"></i>
@@ -3803,11 +3808,6 @@
                                        href="{% if is_granted('ROLE_ADMIN') %}{{ path('app_nature_production_index') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="factory"></i>
                                         <span>Nature production</span>
-                                    </a>
-                                    <a class="nav-link nav-loading sidebar-panel-link {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if currentRoute in ['app_tiers_interne_index', 'app_tiers_interne_new', 'app_tiers_interne_edit', 'app_tiers_interne_show'] %}active{% endif %}"
-                                       href="{% if is_granted('ROLE_ADMIN') %}{{ path('app_tiers_interne_index') }}{% else %}javascript:void(0){% endif %}">
-                                        <i data-lucide="building-2"></i>
-                                        <span>Tiers interne</span>
                                     </a>
                                     <a class="nav-link nav-loading sidebar-panel-link {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if currentRoute in ['app_depot_index', 'app_depot_new', 'app_depot_edit', 'app_depot_show'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_ADMIN') %}{{ path('app_depot_index') }}{% else %}javascript:void(0){% endif %}">

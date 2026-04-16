@@ -121,19 +121,22 @@
     }
 
     .article-sorti-stock-option {
-        position: relative;
+        min-width: 0;
     }
 
     .article-sorti-stock-input {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: var(--theme-primary);
+        flex: 0 0 auto;
+        cursor: pointer;
     }
 
     .article-sorti-stock-label {
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 0.55rem;
         min-height: 42px;
         padding: 0.6rem 0.9rem;
         border-radius: 10px;
@@ -146,7 +149,7 @@
         transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background 0.2s ease;
     }
 
-    .article-sorti-stock-input:checked + .article-sorti-stock-label {
+    .article-sorti-stock-label:has(.article-sorti-stock-input:checked) {
         border-color: var(--theme-primary);
         background: rgba(37, 99, 235, 0.08);
         color: var(--theme-primary);
