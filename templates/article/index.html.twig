@@ -1464,11 +1464,11 @@
                 data-unite-label="{{ article.unite ? article.unite : '' }}"
                 data-tarif-id="{{ article.tarif ? article.tarif.id : '' }}"
                 data-tarif-label="{{ article.tarif ? article.tarif : '' }}"
-                data-mode-gestion="{{ article.modeGestion.value }}"
-                data-mode-suivi="{{ article.modeSuivi.value }}"
+                data-mode-gestion="{{ article.modeGestion ? article.modeGestion.value : '' }}"
+                data-mode-suivi="{{ article.modeSuivi ? article.modeSuivi.value : '' }}"
                 data-nature-production-id="{{ article.natureProduction ? article.natureProduction.id : '' }}"
                 data-nature-production-label="{{ article.natureProduction ? article.natureProduction : '' }}"
-                data-sorti-stock="{{ article.sortiStock.value }}"
+                data-sorti-stock="{{ article.sortiStock ? article.sortiStock.value : '' }}"
                 data-fournisseur-habituel-id="{{ article.fournisseurHabituel ? article.fournisseurHabituel.id : '' }}"
                 data-fournisseur-habituel-label="{{ article.fournisseurHabituel ? article.fournisseurHabituel : '' }}"
                 tabindex="0">
@@ -2415,7 +2415,7 @@
             $menu.append(createDropdownOption('', emptyLabel, normalizedSelectedValue === ''));
 
             options.forEach(function(option) {
-                var optionValue = String(option.id);
+                var optionValue = String(option.id || option.value || '');
                 $menu.append(
                     createDropdownOption(optionValue, option.label, optionValue === normalizedSelectedValue)
                         .attr('data-label', option.label)
@@ -2967,7 +2967,8 @@
             });
         }
 
-        $(document).on('change', '[data-column-toggle]', function() {
+        $(document).on('change', '[data-column-toggle]', function(event) {
+            event.stopPropagation();
             var columnKey = String($(this).attr('data-column-toggle') || '');
             if (columnKey === '') {
                 return;
@@ -2976,9 +2977,21 @@
             toggleColumnPreference(columnKey, $(this).is(':checked'));
         });
 
+        $(document).on('click', '[data-column-toggle]', function(event) {
+            event.stopPropagation();
+        });
+
         $(document).on('click', function(event) {
-            if ($articleColumnSettings.length && !$articleColumnSettings.find($(event.target)).length && !$articleColumnSettingsToggle.is($(event.target)) && !$articleColumnSettingsToggle.find($(event.target)).length) {
-                closeColumnSettingsMenu();
+            // Only close column settings if clicking outside the menu and toggle button
+            if ($articleColumnSettings.length && $articleColumnSettings.hasClass('is-open')) {
+                var $target = $(event.target);
+                var isClickInsideMenu = $target.closest('.article-column-settings__menu').length > 0 
+                    || $target.closest('label.article-column-settings__item').length > 0;
+                var isClickOnToggle = $target.closest($articleColumnSettingsToggle).length > 0;
+                
+                if (!isClickInsideMenu && !isClickOnToggle) {
+                    closeColumnSettingsMenu();
+                }
             }
         });
 
@@ -3147,11 +3160,10 @@
         });
 
         $(document).on('click', function(event) {
-            if ($(event.target).closest('.article-column-settings').length === 0) {
-                closeColumnSettingsMenu();
-            }
+            var $target = $(event.target);
 
-            if ($(event.target).closest('.inline-dropdown-shell').length === 0) {
+            // Close inline dropdowns if clicking outside
+            if ($target.closest('.inline-dropdown-shell').length === 0) {
                 closeDropdowns();
             }
 
@@ -3159,7 +3171,7 @@
                 return;
             }
 
-            if ($(event.target).closest(activeEditRow).length > 0) {
+            if ($target.closest(activeEditRow).length > 0) {
                 return;
             }
 

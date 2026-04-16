@@ -482,6 +482,8 @@ class ArticleController extends AbstractController
         ManagerRegistry $doctrine,
         UniteRepository $uniteRepository,
         TarifsRepository $tarifsRepository,
+        NatureProductionRepository $natureProductionRepository,
+        FournisseurRepository $fournisseurRepository,
         int $id
     ): Response {
         $user = $this->getUser();
@@ -562,9 +564,107 @@ class ArticleController extends AbstractController
             }
         }
 
+        $modeGestion = trim((string) $request->request->get('modeGestion', ''));
+        if ($modeGestion !== '') {
+            try {
+                $modeGestion = ArticleModeGestion::from($modeGestion);
+            } catch (\Throwable $e) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Mode de gestion invalide.',
+                ], 422);
+            }
+        } else {
+            $modeGestion = null;
+        }
+
+        $modeSuivi = trim((string) $request->request->get('modeSuivi', ''));
+        if ($modeSuivi !== '') {
+            try {
+                $modeSuivi = ArticleModeSuivi::from($modeSuivi);
+            } catch (\Throwable $e) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Mode de suivi invalide.',
+                ], 422);
+            }
+        } else {
+            $modeSuivi = null;
+        }
+
+        $natureProductionId = trim((string) $request->request->get('natureProductionId', ''));
+        $natureProduction = null;
+        if ($natureProductionId !== '') {
+            if (!ctype_digit($natureProductionId)) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Nature de production invalide.',
+                ], 422);
+            }
+
+            $natureProduction = $natureProductionRepository->find((int) $natureProductionId);
+            if (!$natureProduction instanceof NatureProduction) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Nature de production introuvable.',
+                ], 404);
+            }
+        }
+
+        $sortiStock = trim((string) $request->request->get('sortiStock', ''));
+        if ($sortiStock !== '') {
+            try {
+                $sortiStock = SortiStockMode::from($sortiStock);
+            } catch (\Throwable $e) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Sortie de stock invalide.',
+                ], 422);
+            }
+        } else {
+            $sortiStock = null;
+        }
+
+        $fournisseurHabituelId = trim((string) $request->request->get('fournisseurHabituelId', ''));
+        $fournisseurHabituel = null;
+        if ($fournisseurHabituelId !== '') {
+            if (!ctype_digit($fournisseurHabituelId)) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Fournisseur habituel invalide.',
+                ], 422);
+            }
+
+            $fournisseurHabituel = $fournisseurRepository->findOneBy([
+                'id' => (int) $fournisseurHabituelId,
+                'dossier' => $currentDossier,
+            ]);
+            if (!$fournisseurHabituel instanceof Fournisseur) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Fournisseur habituel introuvable.',
+                ], 404);
+            }
+        }
+
         $article->setLibelle($libelle);
         $article->setUnite($unite);
         $article->setTarif($tarif);
+        if ($modeGestion !== null) {
+            $article->setModeGestion($modeGestion);
+        }
+        if ($modeSuivi !== null) {
+            $article->setModeSuivi($modeSuivi);
+        }
+        if ($natureProduction !== null) {
+            $article->setNatureProduction($natureProduction);
+        }
+        if ($sortiStock !== null) {
+            $article->setSortiStock($sortiStock);
+        }
+        if ($fournisseurHabituel !== null) {
+            $article->setFournisseurHabituel($fournisseurHabituel);
+        }
         $article->setDoctrine($doctrine);
         if ($user instanceof User) {
             $article->setUser($user);
@@ -821,11 +921,11 @@ class ArticleController extends AbstractController
             'uniteLabel' => $article->getUnite()?->getLibelle() ?? '',
             'tarifId' => $article->getTarif()?->getId(),
             'tarifLabel' => $article->getTarif()?->getLibelle() ?? '',
-            'modeGestionLabel' => $article->getModeGestion()->value,
-            'modeSuiviLabel' => $article->getModeSuivi()->value,
+            'modeGestionLabel' => $article->getModeGestion()?->value ?? '',
+            'modeSuiviLabel' => $article->getModeSuivi()?->value ?? '',
             'natureProductionId' => $article->getNatureProduction()?->getId(),
             'natureProductionLabel' => $article->getNatureProduction()?->getLibelle() ?? '',
-            'sortiStockLabel' => $article->getSortiStock()->value,
+            'sortiStockLabel' => $article->getSortiStock()?->value ?? '',
             'fournisseurHabituelId' => $article->getFournisseurHabituel()?->getId(),
             'fournisseurHabituelLabel' => $article->getFournisseurHabituel()?->getNom() ?? '',
             'imageUrl' => $article->getImage() ?? '',

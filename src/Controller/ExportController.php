@@ -134,7 +134,7 @@ class ExportController extends AbstractController
     public function exportFactures(EntetepieceRepository $repo, ManagerRegistry $doctrine): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'RÃ©fÃ©rence', 'Tiers', 'Date', 'Montant', 'Statut', 'Ã‰chÃ©ance'];
+        $headers = ['ID', 'Référence', 'Tiers', 'Date', 'Montant', 'Statut', 'Échéance'];
         $rows = array_map(
             fn($e) => [
                 $e->getId(),
@@ -159,7 +159,7 @@ class ExportController extends AbstractController
     public function exportDevises(DevisesRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'Code', 'LibellÃ©'];
+        $headers = ['ID', 'Code', 'Libellé'];
         $rows = array_map(
             fn($d) => [$d->getId(), $d->getCode(), $d->getLibelle()],
             $items
@@ -176,7 +176,7 @@ class ExportController extends AbstractController
     public function exportPays(PaysRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'LibellÃ©'];
+        $headers = ['ID', 'Libellé'];
         $rows = array_map(
             fn($p) => [$p->getId(), $p->getLibelle()],
             $items
@@ -193,7 +193,7 @@ class ExportController extends AbstractController
     public function exportVilles(VilleRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'LibellÃ©'];
+        $headers = ['ID', 'Libellé'];
         $rows = array_map(
             fn($v) => [$v->getId(), $v->getLibelle()],
             $items
@@ -210,7 +210,7 @@ class ExportController extends AbstractController
     public function exportUnites(UniteRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'Code', 'LibellÃ©'];
+        $headers = ['ID', 'Code', 'Libellé'];
         $rows = array_map(
             fn($u) => [$u->getId(), $u->getCode(), $u->getLibelle()],
             $items
@@ -227,7 +227,7 @@ class ExportController extends AbstractController
     public function exportTarifs(TarifsRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'LibellÃ©'];
+        $headers = ['ID', 'Libellé'];
         $rows = array_map(
             fn($t) => [$t->getId(), $t->getLibelle()],
             $items
@@ -244,14 +244,14 @@ class ExportController extends AbstractController
     public function exportReglements(ReglementRepository $repo): BinaryFileResponse
     {
         $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
-        $headers = ['ID', 'LibellÃ©'];
+        $headers = ['ID', 'Libellé'];
         $rows = array_map(
             fn($r) => [$r->getId(), $r->getLibelle()],
             $items
         );
         return $this->exportService->exportListToExcel(
             'reglements_' . date('Y-m-d_His') . '.xlsx',
-            'RÃ¨glements',
+            'Règlements',
             $headers,
             $rows
         );
