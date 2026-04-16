@@ -566,6 +566,10 @@
         text-overflow: ellipsis;
     }
 
+    .articles-table .article-row.is-editing td {
+        overflow: visible;
+    }
+
     .articles-table thead th {
         position: relative;
         user-select: none;
@@ -626,16 +630,6 @@
     .articles-table thead [data-column-key="settings"] {
         z-index: 5;
         background: var(--theme-primary);
-    }
-
-    .articles-table .article-row.is-editing [data-column-key="actions"],
-    .articles-table .article-row.is-editing [data-column-key="settings"] {
-        background: rgba(37, 99, 235, 0.06);
-    }
-
-    .articles-table .article-row.is-new-unsaved [data-column-key="actions"],
-    .articles-table .article-row.is-new-unsaved [data-column-key="settings"] {
-        background: rgba(16, 185, 129, 0.1);
     }
 
     .articles-table .article-row.is-editing {
@@ -998,14 +992,16 @@
         position: relative;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 0.4rem;
+        justify-content: flex-start;
+        gap: 0.3rem;
         min-height: 1.5rem;
         z-index: 1;
+        overflow: visible;
     }
 
     .inline-dropdown-shell.is-open {
         z-index: 2400;
+        overflow: visible;
     }
 
     .inline-dropdown-label {
@@ -1016,19 +1012,32 @@
         overflow: hidden;
         text-overflow: ellipsis;
         cursor: pointer;
+        font-size: 0.88rem;
+        color: #334155;
+        font-weight: 500;
+        padding: 0.25rem 0.4rem;
+        border-radius: 4px;
+        transition: background-color 0.15s ease;
+    }
+
+    .inline-dropdown-shell.is-open .inline-dropdown-label {
+        background: rgba(37, 99, 235, 0.06);
     }
 
     .inline-dropdown-trigger {
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
         border: none;
         background: transparent;
         color: #6b7280;
-        border-radius: 999px;
+        border-radius: 4px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: background-color 0.18s ease, color 0.18s ease;
+        transition: background-color 0.15s ease, color 0.15s ease;
+        flex-shrink: 0;
+        font-size: 0.75rem;
+        padding: 0;
     }
 
     .inline-dropdown-trigger:hover,
@@ -1039,22 +1048,25 @@
 
     .inline-dropdown-menu {
         position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        min-width: 210px;
-        max-height: 240px;
+        top: calc(100% + 6px);
+        left: 0;
+        right: auto;
+        min-width: 200px;
+        max-width: calc(100vw - 1rem);
+        max-height: 280px;
         overflow-y: auto;
-        padding: 0.35rem;
-        border-radius: 12px;
+        padding: 0;
+        border-radius: 8px;
         background: #fff;
-        border: 1px solid rgba(203, 213, 225, 0.95);
-        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
         display: none;
-        z-index: 2500;
+        z-index: 9999;
     }
 
     .inline-dropdown-shell.is-open .inline-dropdown-menu {
-        display: block;
+        display: flex;
+        flex-direction: column;
     }
 
     .inline-dropdown-option {
@@ -1062,17 +1074,37 @@
         border: none;
         background: transparent;
         text-align: left;
-        padding: 0.55rem 0.7rem;
-        border-radius: 8px;
+        padding: 0.65rem 0.85rem;
+        border-radius: 0;
         color: #334155;
-        font-size: 0.92rem;
-        transition: background-color 0.16s ease, color 0.16s ease;
+        font-size: 0.88rem;
+        font-weight: 500;
+        transition: background-color 0.12s ease, color 0.12s ease;
+        cursor: pointer;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
     }
 
-    .inline-dropdown-option:hover,
+    .inline-dropdown-option:first-child {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .inline-dropdown-option:last-child {
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+
+    .inline-dropdown-option:hover {
+        background: #f0f4f8;
+        color: #1e293b;
+    }
+
     .inline-dropdown-option.is-active {
-        background: rgba(37, 99, 235, 0.1);
+        background: rgba(37, 99, 235, 0.08);
         color: var(--theme-primary);
+        font-weight: 600;
     }
 
     .articles-table .article-actions-cell {
@@ -1716,6 +1748,11 @@
     $(function() {
         var inlineUnites = {{ inlineUnites|json_encode|raw }};
         var inlineTarifs = {{ inlineTarifs|json_encode|raw }};
+        var inlineModeGestions = {{ inlineModeGestions|json_encode|raw }};
+        var inlineModeSuivis = {{ inlineModeSuivis|json_encode|raw }};
+        var inlineNatureProductions = {{ inlineNatureProductions|json_encode|raw }};
+        var inlineFournisseurs = {{ inlineFournisseurs|json_encode|raw }};
+        var inlineSortiStocks = {{ inlineSortiStocks|json_encode|raw }};
         var inlineUpdateToken = '{{ csrf_token('article_inline_update') }}';
         var uploadImageToken = '{{ csrf_token('article_upload_image') }}';
         var createMinimalUrl = '{{ path('article.create_minimal') }}';
@@ -2411,7 +2448,12 @@
             return {
                 libelle: $.trim($row.find('.inline-editable-text').text() || ''),
                 uniteId: String($row.find('.inline-dropdown-shell[data-name="uniteId"]').attr('data-value') || ''),
-                tarifId: String($row.find('.inline-dropdown-shell[data-name="tarifId"]').attr('data-value') || '')
+                tarifId: String($row.find('.inline-dropdown-shell[data-name="tarifId"]').attr('data-value') || ''),
+                modeGestion: String($row.find('.inline-dropdown-shell[data-name="modeGestion"]').attr('data-value') || ''),
+                modeSuivi: String($row.find('.inline-dropdown-shell[data-name="modeSuivi"]').attr('data-value') || ''),
+                natureProductionId: String($row.find('.inline-dropdown-shell[data-name="natureProductionId"]').attr('data-value') || ''),
+                sortiStock: String($row.find('.inline-dropdown-shell[data-name="sortiStock"]').attr('data-value') || ''),
+                fournisseurHabituelId: String($row.find('.inline-dropdown-shell[data-name="fournisseurHabituelId"]').attr('data-value') || '')
             };
         }
 
@@ -2425,7 +2467,12 @@
 
             return snapshot.libelle !== currentValues.libelle
                 || snapshot.uniteId !== currentValues.uniteId
-                || snapshot.tarifId !== currentValues.tarifId;
+                || snapshot.tarifId !== currentValues.tarifId
+                || snapshot.modeGestionLabel !== currentValues.modeGestion
+                || snapshot.modeSuiviLabel !== currentValues.modeSuivi
+                || snapshot.natureProductionId !== currentValues.natureProductionId
+                || snapshot.sortiStockLabel !== currentValues.sortiStock
+                || snapshot.fournisseurHabituelId !== currentValues.fournisseurHabituelId;
         }
 
         function restoreRowDisplay($row) {
@@ -2466,9 +2513,15 @@
                 return;
             }
 
-            if (fieldName === 'unite' || fieldName === 'tarif') {
-                var dropdownName = fieldName + 'Id';
+            if (fieldName === 'unite' || fieldName === 'tarif' || fieldName === 'modeGestion' || fieldName === 'modeSuivi' 
+                || fieldName === 'natureProduction' || fieldName === 'sortiStock' || fieldName === 'fournisseurHabituel') {
+                var dropdownName = (fieldName === 'natureProduction' || fieldName === 'fournisseurHabituel' || fieldName === 'modeGestion' || fieldName === 'modeSuivi' || fieldName === 'sortiStock')
+                    ? fieldName + (fieldName === 'natureProduction' || fieldName === 'fournisseurHabituel' ? 'Id' : '')
+                    : fieldName + 'Id';
                 var $shell = $row.find('.inline-dropdown-shell[data-name="' + dropdownName + '"]');
+                if ($shell.length === 0) {
+                    $shell = $row.find('.inline-dropdown-shell[data-name="' + fieldName + '"]');
+                }
                 openDropdownShell($shell);
                 $shell.find('.inline-dropdown-trigger').trigger('focus');
                 return;
@@ -2480,7 +2533,7 @@
         }
 
         function focusRelativeField($row, currentField, direction) {
-            var fields = ['libelle', 'unite', 'tarif'];
+            var fields = ['libelle', 'unite', 'tarif', 'modeGestion', 'modeSuivi', 'natureProduction', 'sortiStock', 'fournisseurHabituel'];
             var index = fields.indexOf(currentField);
             if (index === -1) {
                 focusEditableField($row, 'libelle');
@@ -2530,6 +2583,21 @@
             );
             $row.find('td[data-field="tarif"]').html(
                 buildInlineDropdown(inlineTarifs, snapshot.tarifId, snapshot.tarifLabel, 'Aucun tarif').attr('data-name', 'tarifId')
+            );
+            $row.find('td[data-field="modeGestion"]').html(
+                buildInlineDropdown(inlineModeGestions, snapshot.modeGestionLabel, snapshot.modeGestionLabel, 'Aucun mode').attr('data-name', 'modeGestion')
+            );
+            $row.find('td[data-field="modeSuivi"]').html(
+                buildInlineDropdown(inlineModeSuivis, snapshot.modeSuiviLabel, snapshot.modeSuiviLabel, 'Aucun mode').attr('data-name', 'modeSuivi')
+            );
+            $row.find('td[data-field="natureProduction"]').html(
+                buildInlineDropdown(inlineNatureProductions, snapshot.natureProductionId, snapshot.natureProductionLabel, 'Aucune nature').attr('data-name', 'natureProductionId')
+            );
+            $row.find('td[data-field="sortiStock"]').html(
+                buildInlineDropdown(inlineSortiStocks, snapshot.sortiStockLabel, snapshot.sortiStockLabel, 'Aucune sortie').attr('data-name', 'sortiStock')
+            );
+            $row.find('td[data-field="fournisseurHabituel"]').html(
+                buildInlineDropdown(inlineFournisseurs, snapshot.fournisseurHabituelId, snapshot.fournisseurHabituelLabel, 'Aucun fournisseur').attr('data-name', 'fournisseurHabituelId')
             );
 
             $actionsCell.html(
@@ -2600,7 +2668,12 @@
                     _token: inlineUpdateToken,
                     libelle: values.libelle,
                     uniteId: values.uniteId,
-                    tarifId: values.tarifId
+                    tarifId: values.tarifId,
+                    modeGestion: values.modeGestion,
+                    modeSuivi: values.modeSuivi,
+                    natureProductionId: values.natureProductionId,
+                    sortiStock: values.sortiStock,
+                    fournisseurHabituelId: values.fournisseurHabituelId
                 },
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
