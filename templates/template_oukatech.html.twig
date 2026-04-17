@@ -3674,19 +3674,19 @@
                     </div>
 
                     <div class="sidebar-panel-scroll">
-                        <div class="sidebar-panel-section is-open" id="sidebarRecentSection" data-section-key="recent-links" hidden>
-                            <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
-                                <span class="sidebar-panel-section-toggle__label">Récents</span>
-                                <i data-lucide="chevron-down"></i>
-                            </button>
-                            <div class="sidebar-panel-section-body">
-                                <div class="sidebar-panel-links" id="sidebarRecentList"></div>
-                            </div>
-                        </div>
                         <div class="sidebar-panel-content {% if initialSidebarPanel == 'commercial' %}is-active{% endif %}" data-sidebar-panel="commercial">
                             <div class="sidebar-panel-title sidebar-panel-title--commercial">
                                 <i data-lucide="handshake"></i>
                                 <span>Commercial</span>
+                            </div>
+                            <div class="sidebar-panel-section is-open" id="sidebarRecentSection" data-section-key="recent-links" hidden>
+                                <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
+                                    <span class="sidebar-panel-section-toggle__label">Récents</span>
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                                <div class="sidebar-panel-section-body">
+                                    <div class="sidebar-panel-links" id="sidebarRecentList"></div>
+                                </div>
                             </div>
                             <div class="sidebar-panel-section is-open" data-section-key="commercial-core">
                                 <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
@@ -3740,6 +3740,15 @@
                                 <i data-lucide="calculator"></i>
                                 <span>Comptabilité</span>
                             </div>
+                            <div class="sidebar-panel-section is-open" id="sidebarRecentSectionAccounting" data-section-key="recent-links" hidden>
+                                <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
+                                    <span class="sidebar-panel-section-toggle__label">Récents</span>
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                                <div class="sidebar-panel-section-body">
+                                    <div class="sidebar-panel-links" id="sidebarRecentListAccounting"></div>
+                                </div>
+                            </div>
                             <div class="sidebar-panel-section is-open" data-section-key="accounting-documents">
                                 <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
                                     <span class="sidebar-panel-section-toggle__label">Documents</span>
@@ -3791,6 +3800,15 @@
                             <div class="sidebar-panel-title sidebar-panel-title--administration">
                                 <i data-lucide="network"></i>
                                 <span>Administration</span>
+                            </div>
+                            <div class="sidebar-panel-section is-open" id="sidebarRecentSectionAdministration" data-section-key="recent-links" hidden>
+                                <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
+                                    <span class="sidebar-panel-section-toggle__label">Récents</span>
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                                <div class="sidebar-panel-section-body">
+                                    <div class="sidebar-panel-links" id="sidebarRecentListAdministration"></div>
+                                </div>
                             </div>
                             <div class="sidebar-panel-section is-open" data-section-key="administration-core">
                                 <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
@@ -4743,8 +4761,6 @@
             var $breadcrumbModule = $sidebarPanelBreadcrumb.find('[data-breadcrumb-module]');
             var $breadcrumbSection = $sidebarPanelBreadcrumb.find('[data-breadcrumb-section]');
             var $breadcrumbPage = $sidebarPanelBreadcrumb.find('[data-breadcrumb-page]');
-            var $sidebarRecentSection = $('#sidebarRecentSection');
-            var $sidebarRecentList = $('#sidebarRecentList');
             var sidebarRecentStorageKey = 'diva_erp.sidebar.recent';
             var maxRecentVisibleItems = 3;
             var maxRecentStoredItems = 12;
@@ -4753,6 +4769,22 @@
             var routeModuleLabel = String($sidebarPanelBreadcrumb.data('routeModule') || '').trim();
             var routeSectionLabel = String($sidebarPanelBreadcrumb.data('routeSection') || '').trim();
             var routePageLabel = String($sidebarPanelBreadcrumb.data('routePage') || '').trim();
+
+            var getRecentSectionForPanel = function(panelId) {
+                var $panel = $sidebarPanelContents.filter('[data-sidebar-panel="' + panelId + '"]').first();
+                if (!$panel.length) {
+                    return $();
+                }
+                return $panel.find('[data-section-key="recent-links"]').first();
+            };
+
+            var getRecentListForPanel = function(panelId) {
+                var $recentSection = getRecentSectionForPanel(panelId);
+                if (!$recentSection.length) {
+                    return $();
+                }
+                return $recentSection.find('.sidebar-panel-links').first();
+            };
 
             var getPanelLabel = function(panelId) {
                 var $panelToggle = $sidebarPanelToggles.filter('[data-sidebar-panel="' + panelId + '"]').first();
@@ -5118,7 +5150,10 @@
             };
 
             var renderRecentItems = function(activePanelId) {
-                if (!$sidebarRecentSection.length || !$sidebarRecentList.length) {
+                var $recentSection = getRecentSectionForPanel(activePanelId);
+                var $recentList = getRecentListForPanel(activePanelId);
+                
+                if (!$recentSection.length || !$recentList.length) {
                     return;
                 }
 
@@ -5132,10 +5167,10 @@
                 }
 
                 filteredItems = filteredItems.slice(0, maxRecentVisibleItems);
-                $sidebarRecentList.empty();
+                $recentList.empty();
 
                 if (filteredItems.length === 0) {
-                    $sidebarRecentSection.attr('hidden', 'hidden');
+                    $recentSection.attr('hidden', 'hidden');
                     return;
                 }
 
@@ -5196,13 +5231,13 @@
 
                     $itemLink.append($('<i/>', { 'data-lucide': resolvedIcon }));
                     $itemLink.append($('<span/>', { text: resolvedName }));
-                    $sidebarRecentList.append($itemLink);
+                    $recentList.append($itemLink);
                 });
 
-                $sidebarRecentSection.removeAttr('hidden');
+                $recentSection.removeAttr('hidden');
 
                 if (typeof window.renderProjectOutlineIcons === 'function') {
-                    window.renderProjectOutlineIcons($sidebarRecentList[0]);
+                    window.renderProjectOutlineIcons($recentList[0]);
                 }
             };
 
