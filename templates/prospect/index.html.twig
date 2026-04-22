@@ -30,7 +30,10 @@
 
 <div class="table-container">
     {% if prospects|length > 0 %}
-    <table class="table">
+    <table class="table js-crud-list-table"
+           data-crud-resource="prospect"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_prospect') }}"
+           data-placeholder="____">
         <thead>
             <tr>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
@@ -45,7 +48,7 @@
         </thead>
         <tbody>
             {% for prospect in prospects %}
-            <tr>
+            <tr data-row-id="{{ prospect.id }}">
                 <td><strong>#{{ prospect.id }}</strong></td>
                 <td>{{ prospect.nom|default('____') }}</td>
                 <td>{{ prospect.adr1|default('____') }}</td>
@@ -53,7 +56,7 @@
                 <td>{{ prospect.pays|default('____') }}</td>
                 <td>{{ prospect.tel|default('____') }}</td>
                 <td>{{ prospect.email|default('____') }}</td>
-                <td class="text-center">
+                <td class="text-center" data-role="actions">
                     <button type="button" class="btn btn-action btn-convert convert-prospect-btn" 
                             title="Convertir en client"
                             data-convert-url="{{ path('prospect.convert', {id: prospect.id}) }}"
@@ -146,3 +149,5 @@ $(document).ready(function() {
 </script>
 {% endblock %}
 {% endblock %}
+
+

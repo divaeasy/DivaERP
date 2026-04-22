@@ -30,22 +30,30 @@
 
 <div class="table-container">
     {% if unites|length > 0 %}
-    <table class="table">
+    <table class="table js-crud-list-table"
+           data-crud-resource="unite"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_unite') }}"
+           data-update-token="{{ csrf_token('crud_update_unite') }}"
+           data-create-token="{{ csrf_token('crud_create_unite') }}"
+           data-import-token="{{ csrf_token('crud_import_unite') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
+           data-placeholder="____">
         <thead>
             <tr>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="code">Code</th>
-                <th data-sort-key="libelle">Libellé</th>
+                <th data-sort-key="code" data-field="code">Code</th>
+                <th data-sort-key="libelle" data-field="libelle" data-required="1">Libelle</th>
                 <th class="text-center" style="width: 120px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for unite in unites %}
-            <tr>
+            <tr data-row-id="{{ unite.id }}">
                 <td><strong>#{{ unite.id }}</strong></td>
-                <td><span class="badge badge-secondary badge-lg">{{ unite.code|default('____') }}</span></td>
-                <td>{{ unite.libelle|default('____') }}</td>
-                <td class="text-center">
+                <td data-field="code" data-field-value="{{ unite.code|default('') }}"><span class="badge badge-secondary badge-lg">{{ unite.code|default('____') }}</span></td>
+                <td data-field="libelle" data-field-value="{{ unite.libelle|default('') }}">{{ unite.libelle|default('____') }}</td>
+                <td class="text-center" data-role="actions">
                     <a href="{{ path('unite.edit', {id: unite.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
@@ -75,3 +83,5 @@
     {% endif %}
 </div>
 {% endblock %}
+
+

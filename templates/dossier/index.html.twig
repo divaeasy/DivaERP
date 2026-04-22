@@ -1,4 +1,4 @@
-ï»¿{% extends 'template_oukatech.html.twig' %}
+{% extends 'template_oukatech.html.twig' %}
 
 {% block PageTitle %}
     Gestion des Dossiers
@@ -30,12 +30,20 @@
 
 <div class="table-container">
     {% if dossiers|length > 0 %}
-    <table class="table">
+    <table class="table js-crud-list-table"
+           data-crud-resource="dossier"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_dossier') }}"
+           data-update-token="{{ csrf_token('crud_update_dossier') }}"
+           data-create-token="{{ csrf_token('crud_create_dossier') }}"
+           data-import-token="{{ csrf_token('crud_import_dossier') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
+           data-placeholder="____">
         <thead>
             <tr>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="nom">Nom</th>
-                <th data-sort-key="adresse">Adresse</th>
+                <th data-sort-key="nom" data-field="nom" data-required="1">Nom</th>
+                <th data-sort-key="adresse" data-field="adresse">Adresse</th>
                 <th>CP / Ville / Pays</th>
                 <th data-sort-key="rc">RC</th>
                 <th>Logo</th>
@@ -49,11 +57,11 @@
             {% for dossier in dossiers %}
             {% set dossierTheme = dossier.theme %}
             {% set themeColor = dossierTheme ? dossierTheme.primaryColor : '#475569' %}
-            {% set themeLabel = dossierTheme ? dossierTheme.name : 'ThÃ¨me non dÃ©fini' %}
-            <tr>
+            {% set themeLabel = dossierTheme ? dossierTheme.name : 'Thème non défini' %}
+            <tr data-row-id="{{ dossier.id }}">
                 <td><strong>#{{ dossier.id }}</strong></td>
-                <td>{{ dossier.nom|default('____') }}</td>
-                <td>{{ dossier.adresse|default('____') }}</td>
+                <td data-field="nom" data-field-value="{{ dossier.nom|default('') }}">{{ dossier.nom|default('____') }}</td>
+                <td data-field="adresse" data-field-value="{{ dossier.adresse|default('') }}">{{ dossier.adresse|default('____') }}</td>
                 <td>
                     {{ dossier.codepostal ?: '-' }}
                     {{ dossier.ville ?: '' }}
@@ -78,7 +86,7 @@
                     <small class="text-muted d-block">DV: {{ dossier.devisno ?? 0 }} | CMD: {{ dossier.cmdno ?? 0 }}</small>
                     <small class="text-muted d-block">BL: {{ dossier.blno ?? 0 }} | FAC: {{ dossier.factureno ?? 0 }}</small>
                 </td>
-                <td class="text-center">
+                <td class="text-center" data-role="actions">
                     <a href="{{ path('dossier.edit', {id: dossier.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
@@ -149,3 +157,5 @@
     }
 </style>
 {% endblock %}
+
+

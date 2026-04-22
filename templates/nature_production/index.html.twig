@@ -17,6 +17,9 @@
         <a class="btn-add" href="{{ path('app_nature_production_new') }}">
             <i class="fas fa-plus"></i> Nouvelle nature
         </a>
+        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.nature_production') }}" title="Exporter CSV">
+            <i class="fas fa-file-csv mr-1"></i> Exporter
+        </a>
     </div>
     <div class="search-box">
         {% include "components/search_data.html.twig" with {search: search} only %}
@@ -25,7 +28,10 @@
 
 <div class="table-container">
     {% if naturesProduction|length > 0 %}
-        <table class="table">
+        <table class="table js-crud-list-table"
+               data-crud-resource="nature_production"
+               data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_nature_production') }}"
+               data-placeholder="____">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -36,11 +42,11 @@
             </thead>
             <tbody>
                 {% for natureProduction in naturesProduction %}
-                    <tr>
+                    <tr data-row-id="{{ natureProduction.id }}">
                         <td><strong>#{{ natureProduction.id }}</strong></td>
                         <td>{{ natureProduction.libelle }}</td>
                         <td><span class="badge badge-primary">{{ natureProduction.type.value|capitalize }}</span></td>
-                        <td class="text-center">
+                        <td class="text-center" data-role="actions">
                             <a href="{{ path('app_nature_production_show', {id: natureProduction.id}) }}" class="btn btn-action btn-view" title="Voir">
                                 <i class="fas fa-eye"></i>
                             </a>

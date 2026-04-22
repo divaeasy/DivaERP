@@ -17,6 +17,9 @@
         <a class="btn-add" href="{{ path('app_tiers_interne_new') }}">
             <i class="fas fa-plus"></i> Nouveau tiers interne
         </a>
+        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.tiers_internes') }}" title="Exporter CSV">
+            <i class="fas fa-file-csv mr-1"></i> Exporter
+        </a>
     </div>
     <div class="search-box">
         {% include "components/search_data.html.twig" with {search: search} only %}
@@ -25,9 +28,12 @@
 
 <div class="table-container">
     {% if tiersInternes|length > 0 %}
-    <table class="table">
+    <table class="table js-crud-list-table"
+           data-crud-resource="tiers_interne"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_tiers_interne') }}"
+           data-placeholder="____">
         <thead>
-            <tr>
+            <tr data-row-id="{{ tiersInterne.id }}">
                 <th>ID</th>
                 <th>Nom</th>
                 <th>Adresse</th>
@@ -50,7 +56,7 @@
                 <td>{{ tiersInterne.tel|default('____') }}</td>
                 <td>{{ tiersInterne.email|default('____') }}</td>
                 <td>{{ tiersInterne.tarif|default('____') }}</td>
-                <td class="text-center">
+                <td class="text-center" data-role="actions">
                     <a href="{{ path('app_tiers_interne_show', {id: tiersInterne.id}) }}" class="btn btn-action btn-view" title="Voir">
                         <i class="fas fa-eye"></i>
                     </a>

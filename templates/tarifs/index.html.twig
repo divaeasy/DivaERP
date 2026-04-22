@@ -30,20 +30,28 @@
 
 <div class="table-container">
     {% if tarifs|length > 0 %}
-    <table class="table">
+    <table class="table js-crud-list-table"
+           data-crud-resource="tarif"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_tarif') }}"
+           data-update-token="{{ csrf_token('crud_update_tarif') }}"
+           data-create-token="{{ csrf_token('crud_create_tarif') }}"
+           data-import-token="{{ csrf_token('crud_import_tarif') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
+           data-placeholder="____">
         <thead>
             <tr>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="libelle">Libellé</th>
+                <th data-sort-key="libelle" data-field="libelle" data-required="1">Libelle</th>
                 <th class="text-center" style="width: 120px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for tarif in tarifs %}
-            <tr>
+            <tr data-row-id="{{ tarif.id }}">
                 <td><strong>#{{ tarif.id }}</strong></td>
-                <td>{{ tarif.libelle|default('____') }}</td>
-                <td class="text-center">
+                <td data-field="libelle" data-field-value="{{ tarif.libelle|default('') }}">{{ tarif.libelle|default('____') }}</td>
+                <td class="text-center" data-role="actions">
                     <a href="{{ path('tarif.edit', {id: tarif.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
@@ -73,3 +81,5 @@
     {% endif %}
 </div>
 {% endblock %}
+
+

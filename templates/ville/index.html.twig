@@ -30,20 +30,28 @@
 
 <div class="table-container">
     {% if villes|length > 0 %}
-    <table class="table">
+    <table class="table js-crud-list-table"
+           data-crud-resource="ville"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_ville') }}"
+           data-update-token="{{ csrf_token('crud_update_ville') }}"
+           data-create-token="{{ csrf_token('crud_create_ville') }}"
+           data-import-token="{{ csrf_token('crud_import_ville') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
+           data-placeholder="____">
         <thead>
             <tr>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="libelle">Libellé</th>
+                <th data-sort-key="libelle" data-field="libelle" data-required="1">Libelle</th>
                 <th class="text-center" style="width: 120px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for ville in villes %}
-            <tr>
+            <tr data-row-id="{{ ville.id }}">
                 <td><strong>#{{ ville.id }}</strong></td>
-                <td>{{ ville.libelle|default('____') }}</td>
-                <td class="text-center">
+                <td data-field="libelle" data-field-value="{{ ville.libelle|default('') }}">{{ ville.libelle|default('____') }}</td>
+                <td class="text-center" data-role="actions">
                     <a href="{{ path('ville.edit', {id: ville.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
@@ -73,3 +81,5 @@
     {% endif %}
 </div>
 {% endblock %}
+
+

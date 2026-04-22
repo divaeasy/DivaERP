@@ -30,22 +30,30 @@
 
 <div class="table-container">
     {% if devises|length > 0 %}
-    <table class="table">
+    <table class="table js-crud-list-table"
+           data-crud-resource="devise"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_devise') }}"
+           data-update-token="{{ csrf_token('crud_update_devise') }}"
+           data-create-token="{{ csrf_token('crud_create_devise') }}"
+           data-import-token="{{ csrf_token('crud_import_devise') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
+           data-placeholder="____">
         <thead>
             <tr>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="code">Code</th>
-                <th data-sort-key="libelle">Libellé</th>
+                <th data-sort-key="code" data-field="code" data-required="1">Code</th>
+                <th data-sort-key="libelle" data-field="libelle" data-required="1">Libelle</th>
                 <th class="text-center" style="width: 120px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for devise in devises %}
-            <tr>
+            <tr data-row-id="{{ devise.id }}">
                 <td><strong>#{{ devise.id }}</strong></td>
-                <td><span class="badge badge-info badge-lg">{{ devise.code|default('____') }}</span></td>
-                <td>{{ devise.libelle|default('____') }}</td>
-                <td class="text-center">
+                <td data-field="code" data-field-value="{{ devise.code|default('') }}"><span class="badge badge-info badge-lg">{{ devise.code|default('____') }}</span></td>
+                <td data-field="libelle" data-field-value="{{ devise.libelle|default('') }}">{{ devise.libelle|default('____') }}</td>
+                <td class="text-center" data-role="actions">
                     <a href="{{ path('devise.edit', {id: devise.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
@@ -75,3 +83,5 @@
     {% endif %}
 </div>
 {% endblock %}
+
+

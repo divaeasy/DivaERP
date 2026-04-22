@@ -11,9 +11,14 @@
 </div>
 
 <div class="action-bar">
-    <a class="btn-add" href="{{ path('tarifvente.edit') }}">
-        <i class="fas fa-plus"></i> Nouveau Tarif de Vente
-    </a>
+    <div class="action-buttons">
+        <a class="btn-add" href="{{ path('tarifvente.edit') }}">
+            <i class="fas fa-plus"></i> Nouveau Tarif de Vente
+        </a>
+        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.tarifs_vente') }}" title="Exporter CSV">
+            <i class="fas fa-file-csv mr-1"></i> Exporter
+        </a>
+    </div>
     <div class="search-box">
         {% include "components/search_data.html.twig" with {search: search} only %}
     </div>
@@ -21,7 +26,10 @@
 
 <div class="table-container">
     {% if tarifventes|length > 0 %}
-    <table class="table">
+    <table class="table js-crud-list-table"
+           data-crud-resource="tarifvente"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_tarifvente') }}"
+           data-placeholder="____">
         <thead>
             <tr>
                 <th data-sort-key="id" data-sort-type="number">ID</th>
@@ -36,7 +44,7 @@
         </thead>
         <tbody>
             {% for tarifvente in tarifventes %}
-            <tr>
+            <tr data-row-id="{{ tarifvente.id }}">
                 <td><strong>#{{ tarifvente.id }}</strong></td>
                 <td>{{ tarifvente.tarif }}</td>
                 <td>{{ tarifvente.client }}</td>
@@ -44,7 +52,7 @@
                 <td><span class="badge badge-info badge-lg">{{ tarifvente.devise }}</span></td>
                 <td>{{ tarifvente.dateeffet|date('d/m/Y') }}</td>
                 <td class="text-right"><strong>{{ tarifvente.prix|number_format(2, ',', ' ') }}</strong></td>
-                <td class="text-center">
+                <td class="text-center" data-role="actions">
                     <a href="{{ path('tarifvente.edit', {id: tarifvente.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
@@ -74,3 +82,5 @@
     {% endif %}
 </div>
 {% endblock %}
+
+

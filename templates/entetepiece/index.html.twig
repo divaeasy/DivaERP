@@ -20,38 +20,131 @@
 
 <div class="action-bar">
     <div class="action-buttons">
-        <a class="btn-add" href="{{ path('entetepiece.edit', pieceOriginParams) }}">
-            <i class="fas fa-plus"></i> Nouvelle Piece
-        </a>
+        <button type="button" class="btn-add no-loading" data-toggle="modal" data-target="#pieceQuickCreateModal">
+            <i class="fas fa-plus"></i> Creation rapide
+        </button>
         <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.factures') }}" title="Exporter CSV">
             <i class="fas fa-file-csv mr-1"></i> Exporter
         </a>
     </div>
-    <div class="search-box">
-        {% include "components/search_data.html.twig" with {search: search} only %}
+    <div class="table-bulk-actions" id="piecesBulkActions" data-bulk-bar-for="pieces">
+        <div class="table-bulk-actions__content">
+            <div class="table-bulk-actions__left">
+                <span class="table-bulk-actions__badge">
+                    <i class="fas fa-check-circle"></i>
+                    <strong data-selection-count>0</strong>
+                </span>
+                <span class="table-bulk-actions__label" data-selection-label>
+                    Aucune piece selectionnee
+                </span>
+            </div>
+            <div class="table-bulk-actions__buttons">
+                <button type="button" class="btn btn-sm table-bulk-actions__delete-btn no-loading" data-bulk-action="delete">
+                    <i class="fas fa-trash-alt mr-1"></i> Supprimer
+                </button>
+                <button type="button" class="btn btn-sm table-bulk-actions__clear-btn no-loading" data-bulk-clear>
+                    Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="action-tools">
+        <div class="search-box">
+            {% include "components/search_data.html.twig" with {search: search} only %}
+        </div>
     </div>
 </div>
 
-<div class="table-container">
+<div class="table-container table-container--pieces">
     {% if entetepieces|length > 0 %}
-    <table class="table">
+    <div class="piece-column-settings-floating">
+        <button type="button" class="no-loading piece-column-settings__trigger" id="pieceColumnSettingsToggle" aria-expanded="false" aria-controls="pieceColumnSettingsMenu">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="piece-column-settings__menu" id="pieceColumnSettingsMenu">
+            <div class="piece-column-settings__title">Colonnes</div>
+            <div class="piece-column-settings__group">
+                <div class="piece-column-settings__item is-static">
+                    <span>ID</span>
+                    <small>Obligatoire</small>
+                </div>
+                <div class="piece-column-settings__item is-static">
+                    <span>Type</span>
+                    <small>Obligatoire</small>
+                </div>
+                <div class="piece-column-settings__item is-static">
+                    <span>Tiers</span>
+                    <small>Obligatoire</small>
+                </div>
+                <div class="piece-column-settings__item is-static">
+                    <span>Actions</span>
+                    <small>Obligatoire</small>
+                </div>
+            </div>
+            <div class="piece-column-settings__divider"></div>
+            <div class="piece-column-settings__group">
+                <label class="piece-column-settings__item" for="pieceColumnToggle_pieceno">
+                    <span>No Piece</span>
+                    <input type="checkbox" id="pieceColumnToggle_pieceno" data-column-toggle="pieceno" checked>
+                </label>
+                <label class="piece-column-settings__item" for="pieceColumnToggle_pieceref">
+                    <span>Reference</span>
+                    <input type="checkbox" id="pieceColumnToggle_pieceref" data-column-toggle="pieceref" checked>
+                </label>
+                <label class="piece-column-settings__item" for="pieceColumnToggle_remise">
+                    <span>Remise</span>
+                    <input type="checkbox" id="pieceColumnToggle_remise" data-column-toggle="remise" checked>
+                </label>
+                <label class="piece-column-settings__item" for="pieceColumnToggle_montant">
+                    <span>Montant</span>
+                    <input type="checkbox" id="pieceColumnToggle_montant" data-column-toggle="montant" checked>
+                </label>
+                <label class="piece-column-settings__item" for="pieceColumnToggle_lignes">
+                    <span>Lignes</span>
+                    <input type="checkbox" id="pieceColumnToggle_lignes" data-column-toggle="lignes" checked>
+                </label>
+                <label class="piece-column-settings__item" for="pieceColumnToggle_statut">
+                    <span>Statut</span>
+                    <input type="checkbox" id="pieceColumnToggle_statut" data-column-toggle="statut" checked>
+                </label>
+                <label class="piece-column-settings__item" for="pieceColumnToggle_devise">
+                    <span>Devise</span>
+                    <input type="checkbox" id="pieceColumnToggle_devise" data-column-toggle="devise" checked>
+                </label>
+                <label class="piece-column-settings__item" for="pieceColumnToggle_annee">
+                    <span>Annee</span>
+                    <input type="checkbox" id="pieceColumnToggle_annee" data-column-toggle="annee" checked>
+                </label>
+            </div>
+        </div>
+    </div>
+    <table class="table pieces-table"
+           id="piecesTable"
+           data-table-id="pieces"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_entetepiece') }}"
+           data-inline-update-token="{{ csrf_token('entetepiece_inline_update') }}">
         <thead>
             <tr>
-                <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="type">Type</th>
-                <th data-sort-key="tier">Tiers</th>
-                <th data-sort-key="pieceno" data-sort-type="number">No Piece</th>
-                <th data-sort-key="pieceref">Reference</th>
-                <th data-sort-key="remise" data-sort-type="number" class="text-right">Remise</th>
-                <th data-sort-key="montant" data-sort-type="number" class="text-right">Montant</th>
-                <th data-sort-key="lignes" data-sort-type="number" class="text-center">Lignes</th>
-                <th data-sort-key="statut">Statut</th>
-                <th data-sort-key="devise">Devise</th>
-                <th data-sort-key="annee" data-sort-type="number">Annee</th>
-                <th class="text-center" style="width: 280px;">Actions</th>
+                <th class="row-selector-head" data-column-key="selector">
+                    <div class="form-check d-flex justify-content-center mb-0">
+                        <input class="form-check-input position-static" type="checkbox" id="selectAllPiecesRows" data-select-all-checkbox aria-label="Selectionner toutes les lignes">
+                    </div>
+                </th>
+                <th data-column-key="id" data-sort-key="id" data-sort-type="number">ID</th>
+                <th data-column-key="type" data-sort-key="type">Type</th>
+                <th data-column-key="tier" data-sort-key="tier">Tiers</th>
+                <th data-column-key="pieceno" data-sort-key="pieceno" data-sort-type="number">No Piece</th>
+                <th data-column-key="pieceref" data-sort-key="pieceref">Reference</th>
+                <th data-column-key="remise" data-sort-key="remise" data-sort-type="number" class="text-right">Remise</th>
+                <th data-column-key="montant" data-sort-key="montant" data-sort-type="number" class="text-right">Montant</th>
+                <th data-column-key="lignes" data-sort-key="lignes" data-sort-type="number" class="text-center">Lignes</th>
+                <th data-column-key="statut" data-sort-key="statut">Statut</th>
+                <th data-column-key="devise" data-sort-key="devise">Devise</th>
+                <th data-column-key="annee" data-sort-key="annee" data-sort-type="number">Annee</th>
+                <th class="text-center" style="width: 280px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="piecesTableBody">
             {% for entetepiece in entetepieces %}
             {% set wf = workflowByInvoice[entetepiece.id]|default({}) %}
             {% set display_remise = remiseByInvoice[entetepiece.id]|default(entetepiece.remise ?? 0) %}
@@ -87,18 +180,39 @@
                 {% set einvoiceDisabledReason = '' %}
             {% endif %}
 
-            <tr>
-                <td><strong>#{{ entetepiece.id }}</strong></td>
-                <td><span class="badge badge-primary badge-lg">{{ entetepiece.type|default('____') }}</span></td>
-                <td>{{ entetepiece.tierName|default('____') }}</td>
-                <td><strong>{{ entetepiece.pieceno|default('____') }}</strong></td>
-                <td>{{ entetepiece.pieceref|default('____') }}</td>
-                <td class="text-right">{{ display_remise|number_format(2, ',', ' ') }}%</td>
-                <td class="text-right"><strong>{{ display_amount|number_format(2, ',', ' ') }}</strong></td>
-                <td class="text-center">
+            <tr class="piece-row"
+                data-row-id="{{ entetepiece.id }}"
+                data-item-id="{{ entetepiece.id }}"
+                data-inline-editable="{% if canEdit %}1{% else %}0{% endif %}"
+                data-inline-update-url="{{ path('entetepiece.inline_update', {id: entetepiece.id}|merge(pieceOriginParams)) }}"
+                data-type-value="{{ entetepiece.type|default('') }}"
+                data-tier-type="{{ entetepiece.typet|default('') }}"
+                data-tier-id="{{ entetepiece.tierId is not null ? entetepiece.tierId : '' }}"
+                data-tier-label="{{ entetepiece.tierName|default('____') }}"
+                data-statut-value="{{ entetepiece.statut|default('') }}"
+                data-statut-label="{{ wf.statusLabel|default(entetepiece.statut|default('-')) }}"
+                data-devise-id="{{ entetepiece.devise ? entetepiece.devise.id : '' }}"
+                data-devise-label="{{ entetepiece.devise ? entetepiece.devise.code : '' }}"
+                data-annee-value="{{ entetepiece.datep ? entetepiece.datep|date('Y') : '' }}"
+                data-piece-ref-value="{{ entetepiece.pieceref|default('') }}"
+                data-remise-value="{{ display_remise|number_format(2, '.', '') }}"
+                tabindex="0">
+                <td class="row-selector-cell" data-column-key="selector">
+                    <div class="form-check d-flex justify-content-center mb-0">
+                        <input class="form-check-input position-static piece-row-checkbox" type="checkbox" value="{{ entetepiece.id }}" data-row-checkbox aria-label="Selectionner la piece {{ entetepiece.pieceno|default(entetepiece.id) }}">
+                    </div>
+                </td>
+                <td data-column-key="id"><strong>#{{ entetepiece.id }}</strong></td>
+                <td data-field="type" data-column-key="type"><span class="badge badge-primary badge-lg">{{ entetepiece.type|default('____') }}</span></td>
+                <td data-field="tier" data-column-key="tier">{{ entetepiece.tierName|default('____') }}</td>
+                <td data-column-key="pieceno"><strong>{{ entetepiece.pieceno|default('____') }}</strong></td>
+                <td data-field="pieceref" data-column-key="pieceref">{{ entetepiece.pieceref|default('____') }}</td>
+                <td class="text-right" data-field="remise" data-column-key="remise">{{ display_remise|number_format(2, ',', ' ') }}%</td>
+                <td class="text-right" data-column-key="montant"><strong>{{ display_amount|number_format(2, ',', ' ') }}</strong></td>
+                <td class="text-center" data-column-key="lignes">
                     <span class="badge {{ line_count > 0 ? 'badge-success' : 'badge-warning' }}">{{ line_count }}</span>
                 </td>
-                <td>
+                <td data-field="statut" data-column-key="statut">
                     {% if statusKey in ['validee', 'valide'] %}
                         <span class="badge badge-success badge-lg">{{ wf.statusLabel|default(entetepiece.statut) }}</span>
                     {% elseif statusKey == 'brouillon' %}
@@ -111,9 +225,9 @@
                         <span class="badge badge-warning badge-lg">{{ wf.statusLabel|default(entetepiece.statut|default('-')) }}</span>
                     {% endif %}
                 </td>
-                <td>{{ entetepiece.devise }}</td>
-                <td>{{ entetepiece.datep ? entetepiece.datep|date('Y') : '-' }}</td>
-                <td class="text-center">
+                <td data-field="devise" data-column-key="devise">{{ entetepiece.devise }}</td>
+                <td data-field="annee" data-column-key="annee">{{ entetepiece.datep ? entetepiece.datep|date('Y') : '-' }}</td>
+                <td class="text-center piece-actions-cell" data-column-key="actions" data-role="actions">
                     <div class="piece-actions">
                         <span class="piece-action-slot">
                             {% if canView %}
@@ -123,11 +237,11 @@
                                     <i class="fas fa-eye"></i>
                                 </a>
                             {% elseif canEdit %}
-                                <a href="{{ path('entetepiece.edit', {id: entetepiece.id}|merge(pieceOriginParams)) }}"
-                                   class="btn btn-action btn-edit"
+                                <button type="button"
+                                   class="btn btn-action btn-edit js-piece-inline-edit"
                                    title="Modifier">
                                     <i class="fas fa-edit"></i>
-                                </a>
+                                </button>
                             {% else %}
                                 <button type="button"
                                         class="btn btn-action btn-edit is-disabled-ui js-disabled-action"
@@ -217,6 +331,109 @@
         </a>
     </div>
     {% endif %}
+</div>
+
+<div class="modal fade piece-quick-modal" id="pieceQuickCreateModal" tabindex="-1" role="dialog" aria-labelledby="pieceQuickCreateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <button type="button" class="close piece-quick-modal-close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <form id="pieceQuickCreateForm" class="no-loading" data-no-loading novalidate>
+                <div class="piece-quick-modal-body">
+                    <input type="hidden" name="_token" value="{{ csrf_token('entetepiece_create_minimal') }}">
+                    <input type="hidden" name="origin" value="{{ pieceOrigin|default('client') }}">
+                    <div class="piece-quick-modal-badge">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
+                    <h3 class="piece-quick-modal-title" id="pieceQuickCreateModalLabel">Creation rapide de piece</h3>
+                    <p class="piece-quick-modal-subtitle">Renseignez les champs requis et les champs complementaires sans ouvrir le formulaire complet.</p>
+                    <div class="piece-quick-modal-note">
+                        Astuce: apres creation, la nouvelle ligne passe directement en mode edition inline.
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pieceQuickType">Type de piece <span class="text-danger">*</span></label>
+                        <select id="pieceQuickType" name="type" class="form-control piece-quick-input" required>
+                            {% for item in inlinePieceTypes|default([]) %}
+                                <option value="{{ item.value }}" {% if item.value == 'Facture' %}selected{% endif %}>{{ item.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pieceQuickTierType">Type de tiers <span class="text-danger">*</span></label>
+                        <select id="pieceQuickTierType" name="typet" class="form-control piece-quick-input" required {% if (inlineTierTypes|default([]))|length <= 1 %}disabled{% endif %}>
+                            {% for item in inlineTierTypes|default([]) %}
+                                <option value="{{ item.value }}">{{ item.label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if (inlineTierTypes|default([]))|length <= 1 %}
+                            <input type="hidden" name="typet" value="{{ (inlineTierTypes|default([]))[0].value|default('Client') }}">
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pieceQuickTierId">Tiers <span class="text-danger">*</span></label>
+                        <select id="pieceQuickTierId" name="tierId" class="form-control piece-quick-input" required>
+                            <option value="">Selectionner un tiers</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pieceQuickReference">Reference</label>
+                        <input id="pieceQuickReference" name="pieceref" type="text" class="form-control piece-quick-input" maxlength="255" placeholder="Reference optionnelle">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pieceQuickRemise">Remise (%)</label>
+                        <input id="pieceQuickRemise" name="remise" type="number" class="form-control piece-quick-input" min="0" step="0.01" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pieceQuickStatut">Statut <span class="text-danger">*</span></label>
+                        <select id="pieceQuickStatut" name="statut" class="form-control piece-quick-input" required>
+                            {% for item in inlinePieceStatuses|default([]) %}
+                                <option value="{{ item.value }}" {% if item.value == 'Brouillon' %}selected{% endif %}>{{ item.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pieceQuickDeviseId">Devise</label>
+                        <select id="pieceQuickDeviseId" name="deviseId" class="form-control piece-quick-input">
+                            <option value="">Selectionner une devise</option>
+                            {% for item in inlineDevises|default([]) %}
+                                <option value="{{ item.id }}" {% if app.user and app.user.currentDossier and app.user.currentDossier.devise and app.user.currentDossier.devise.id == item.id %}selected{% endif %}>{{ item.code }}{% if item.label %} - {{ item.label }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pieceQuickReglementId">Reglement</label>
+                        <select id="pieceQuickReglementId" name="reglementId" class="form-control piece-quick-input">
+                            <option value="">Selectionner un reglement</option>
+                            {% for item in inlineReglements|default([]) %}
+                                <option value="{{ item.id }}">{{ item.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="pieceQuickDate">Date de piece</label>
+                        <input id="pieceQuickDate" name="datep" type="date" class="form-control piece-quick-input" value="{{ "now"|date("Y-m-d") }}">
+                    </div>
+
+                    <div class="piece-quick-modal-actions">
+                        <button type="button" class="btn piece-quick-cancel" data-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn piece-quick-submit" id="pieceQuickCreateSubmit">
+                            <i class="fas fa-check mr-1"></i>Creer
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="transitionConfirmModal" tabindex="-1" role="dialog" aria-labelledby="transitionModalLabel" aria-hidden="true">
@@ -386,7 +603,1617 @@
         document.addEventListener('turbo:render', initPieceTransitions);
     })();
 </script>
+<script>
+    (function() {
+        function initPieceListUx() {
+            if (!window.jQuery) {
+                return;
+            }
+
+            var $quickCreateModal = $('#pieceQuickCreateModal');
+            var $quickCreateForm = $('#pieceQuickCreateForm');
+            var $quickCreateSubmit = $('#pieceQuickCreateSubmit');
+            var quickCreateUrl = '{{ path('entetepiece.create_minimal') }}';
+            var $table = $('#piecesTable');
+            var $tbody = $('#piecesTableBody');
+            var hasTable = $table.length > 0 && $tbody.length > 0;
+            var inlineUpdateToken = hasTable ? String($table.data('inlineUpdateToken') || '').trim() : '';
+            var bulkDeleteToken = hasTable ? String($table.data('bulkDeleteToken') || '').trim() : '';
+            var bulkDeleteUrl = '{{ path('api.crud.bulk_delete', {resource: 'entetepiece'}) }}';
+            var $bulkBar = $('#piecesBulkActions');
+            var $selectAll = $table.find('[data-select-all-checkbox]').first();
+            var $columnSettings = $('.piece-column-settings-floating');
+            var $columnSettingsToggle = $('#pieceColumnSettingsToggle');
+            var pieceColumnStorageKey = 'piece-table-columns:{{ app.user ? app.user.id : "guest" }}:{{ app.user and app.user.currentDossier ? app.user.currentDossier.id : "0" }}';
+            var mandatoryColumnKeys = ['selector', 'id', 'type', 'tier', 'actions'];
+            var optionalColumnKeys = ['pieceno', 'pieceref', 'remise', 'montant', 'lignes', 'statut', 'devise', 'annee'];
+            var columnPrefs = Object.create(null);
+            var activeInlineRow = null;
+            var rowClickTimer = null;
+            var tierEndpointTemplate = '{{ path('entetepiece.tier_autocomplete', {tierType: '__TYPE__'}) }}';
+            var tierOptionsCache = Object.create(null);
+            var inlinePieceTypes = {{ inlinePieceTypes|default([])|json_encode|raw }};
+            var inlinePieceStatuses = {{ inlinePieceStatuses|default([])|json_encode|raw }};
+            var inlineDevises = {{ inlineDevises|default([])|json_encode|raw }};
+            var inlineTierTypes = {{ inlineTierTypes|default([])|json_encode|raw }};
+
+            function showPieceToast(message, type) {
+                if (typeof window.showAppToast === 'function') {
+                    window.showAppToast({ message: message, type: type || 'info' });
+                    return;
+                }
+                window.alert(message);
+            }
+
+            function parseNumber(value) {
+                var normalized = String(value || '')
+                    .replace(/[%\s\u00a0\u202f]/g, '')
+                    .replace(',', '.')
+                    .trim();
+                if (normalized === '') {
+                    return 0;
+                }
+                var parsed = parseFloat(normalized);
+                return Number.isFinite(parsed) ? parsed : 0;
+            }
+
+            function formatNumber(value) {
+                return parseNumber(value).toLocaleString('fr-FR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            function formatRemise(value) {
+                return formatNumber(value) + '%';
+            }
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function fallbackDisplay(value) {
+                var normalized = $.trim(String(value || ''));
+                return normalized === '' ? '____' : normalized;
+            }
+
+            function normalizeToken(value) {
+                var normalized = String(value || '').toLowerCase();
+                if (typeof normalized.normalize === 'function') {
+                    normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                }
+                return normalized.replace(/[^a-z0-9]/g, '');
+            }
+
+            function resolveStatusBadgeClass(statusValue) {
+                var statusKey = normalizeToken(statusValue);
+                if (statusKey === 'validee' || statusKey === 'valide') {
+                    return 'badge badge-success badge-lg';
+                }
+                if (statusKey === 'brouillon') {
+                    return 'badge badge-secondary badge-lg';
+                }
+                if (statusKey === 'active') {
+                    return 'badge badge-info badge-lg';
+                }
+                if (statusKey === 'perimee' || statusKey === 'perime' || statusKey === 'archivee' || statusKey === 'archive') {
+                    return 'badge badge-danger badge-lg';
+                }
+                return 'badge badge-warning badge-lg';
+            }
+
+            function getTierTypeOptions() {
+                return Array.isArray(inlineTierTypes) ? inlineTierTypes : [];
+            }
+
+            function getDefaultTierTypeValue() {
+                var options = getTierTypeOptions();
+                return options.length > 0 ? String(options[0].value || '') : 'Client';
+            }
+
+            function mapTierItems(items) {
+                var mapped = [];
+                (items || []).forEach(function(item) {
+                    var id = String(item.id || '').trim();
+                    var label = String(item.name || item.label || '').trim();
+                    if (id === '' || label === '') {
+                        return;
+                    }
+                    mapped.push({
+                        value: id,
+                        label: label
+                    });
+                });
+                return mapped;
+            }
+
+            function fetchTierOptions(tierType, forceReload) {
+                var deferred = $.Deferred();
+                var normalizedType = normalizeToken(tierType);
+                if (normalizedType === '') {
+                    deferred.resolve([]);
+                    return deferred.promise();
+                }
+
+                if (!forceReload && Array.isArray(tierOptionsCache[normalizedType])) {
+                    deferred.resolve(tierOptionsCache[normalizedType]);
+                    return deferred.promise();
+                }
+
+                var endpoint = tierEndpointTemplate.replace('__TYPE__', encodeURIComponent(String(tierType || '').trim()));
+                $.ajax({
+                    url: endpoint,
+                    method: 'GET',
+                    dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).done(function(response) {
+                    var mapped = mapTierItems(response);
+                    tierOptionsCache[normalizedType] = mapped;
+                    deferred.resolve(mapped);
+                }).fail(function() {
+                    deferred.resolve([]);
+                });
+
+                return deferred.promise();
+            }
+
+            function getRows() {
+                return $tbody.find('.piece-row');
+            }
+
+            function getRowCheckbox($row) {
+                return $row.find('[data-row-checkbox]').first();
+            }
+
+            function getSelectedIds() {
+                var selectedIds = [];
+                getRows().each(function() {
+                    var $row = $(this);
+                    var $checkbox = getRowCheckbox($row);
+                    if ($checkbox.is(':checked')) {
+                        selectedIds.push(String($row.attr('data-item-id') || '').trim());
+                    }
+                });
+                return selectedIds.filter(Boolean);
+            }
+
+            function updateSelectionUi() {
+                var $rows = getRows();
+                var totalRows = $rows.length;
+                var selectedIds = getSelectedIds();
+                var selectedCount = selectedIds.length;
+                var allSelected = totalRows > 0 && selectedCount === totalRows;
+
+                $rows.each(function() {
+                    var $row = $(this);
+                    $row.toggleClass('is-selected', getRowCheckbox($row).is(':checked'));
+                });
+
+                if ($selectAll.length) {
+                    $selectAll.prop('checked', allSelected);
+                    $selectAll.prop('indeterminate', selectedCount > 0 && !allSelected);
+                }
+
+                if ($bulkBar.length) {
+                    $bulkBar.toggleClass('is-visible', selectedCount > 0);
+                    $bulkBar.find('[data-selection-count]').text(selectedCount);
+                    $bulkBar.find('[data-selection-label]').text(
+                        selectedCount > 1
+                            ? selectedCount + ' pieces selectionnees'
+                            : (selectedCount === 1 ? '1 piece selectionnee' : 'Aucune piece selectionnee')
+                    );
+                }
+            }
+
+            function isEditableRow($row) {
+                return String($row.attr('data-inline-editable') || '') === '1';
+            }
+
+            function readSnapshot($row) {
+                var typeValue = String($row.attr('data-type-value') || '').trim();
+                var tierType = String($row.attr('data-tier-type') || '').trim();
+                var tierId = String($row.attr('data-tier-id') || '').trim();
+                var tierLabel = String($row.attr('data-tier-label') || '').trim();
+                var piecerefValue = String($row.attr('data-piece-ref-value') || '').trim();
+                var remiseValue = parseNumber(String($row.attr('data-remise-value') || '0'));
+                var statutValue = String($row.attr('data-statut-value') || '').trim();
+                var statutLabel = String($row.attr('data-statut-label') || '').trim();
+                var deviseId = String($row.attr('data-devise-id') || '').trim();
+                var deviseLabel = String($row.attr('data-devise-label') || '').trim();
+                var anneeValue = String($row.attr('data-annee-value') || '').trim();
+
+                return {
+                    typeValue: typeValue,
+                    tierType: tierType || getDefaultTierTypeValue(),
+                    tierId: tierId,
+                    tierLabel: tierLabel,
+                    piecerefValue: piecerefValue,
+                    piecerefDisplay: piecerefValue !== '' ? piecerefValue : '____',
+                    remiseValue: remiseValue,
+                    remiseDisplay: formatRemise(remiseValue),
+                    statutValue: statutValue,
+                    statutLabel: statutLabel,
+                    deviseId: deviseId,
+                    deviseLabel: deviseLabel,
+                    anneeValue: anneeValue
+                };
+            }
+
+            function restoreRowSnapshot($row, snapshot) {
+                $row.find('td[data-field="type"]').html('<span class="badge badge-primary badge-lg">' + escapeHtml(fallbackDisplay(snapshot.typeValue)) + '</span>');
+                $row.find('td[data-field="tier"]').text(fallbackDisplay(snapshot.tierLabel));
+                $row.find('td[data-field="pieceref"]').text(snapshot.piecerefDisplay);
+                $row.find('td[data-field="remise"]').text(snapshot.remiseDisplay);
+                $row.find('td[data-field="statut"]').html('<span class="' + resolveStatusBadgeClass(snapshot.statutValue) + '">' + escapeHtml(fallbackDisplay(snapshot.statutLabel)) + '</span>');
+                $row.find('td[data-field="devise"]').text(fallbackDisplay(snapshot.deviseLabel));
+                $row.find('td[data-field="annee"]').text(snapshot.anneeValue !== '' ? snapshot.anneeValue : '-');
+            }
+
+            function closeDropdowns(exceptShell) {
+                $table.find('.inline-dropdown-shell.is-open').each(function() {
+                    var $shell = $(this);
+                    if (exceptShell && $shell.is(exceptShell)) {
+                        return;
+                    }
+                    $shell.removeClass('is-open');
+                });
+            }
+
+            function openDropdownShell($shell) {
+                if (!$shell || !$shell.length) {
+                    return;
+                }
+                closeDropdowns($shell);
+                $shell.addClass('is-open');
+            }
+
+            function createDropdownOption(value, label, isActive) {
+                return $('<button type="button" class="inline-dropdown-option"></button>')
+                    .attr('data-value', value)
+                    .attr('data-label', label)
+                    .toggleClass('is-active', !!isActive)
+                    .text(label);
+            }
+
+            function setDropdownValue($shell, value, label) {
+                $shell.attr('data-value', String(value || ''));
+                $shell.find('.inline-dropdown-label').text(fallbackDisplay(label));
+                $shell.find('.inline-dropdown-option').removeClass('is-active');
+                $shell.find('.inline-dropdown-option').filter(function() {
+                    return String($(this).attr('data-value') || '') === String(value || '');
+                }).first().addClass('is-active');
+            }
+
+            function buildInlineDropdown(options, selectedValue, selectedLabel, emptyLabel) {
+                var normalizedSelectedValue = String(selectedValue || '');
+                var $shell = $('<div class="inline-dropdown-shell"></div>').attr('data-value', normalizedSelectedValue);
+                var $label = $('<span class="inline-dropdown-label"></span>').text(fallbackDisplay(selectedLabel));
+                var $trigger = $('<button type="button" class="inline-dropdown-trigger" aria-label="Ouvrir la liste"><i class="fas fa-chevron-down"></i></button>');
+                var $menu = $('<div class="inline-dropdown-menu"></div>');
+
+                $menu.append(createDropdownOption('', emptyLabel, normalizedSelectedValue === ''));
+                (options || []).forEach(function(option) {
+                    var optionValue = String(option.value || option.id || '');
+                    var optionLabel = String(option.label || option.name || optionValue);
+                    $menu.append(createDropdownOption(optionValue, optionLabel, optionValue === normalizedSelectedValue));
+                });
+
+                $shell.append($label, $trigger, $menu);
+                return $shell;
+            }
+
+            function focusEditableField($row, fieldName) {
+                if (!$row || !$row.length || !$row.hasClass('is-editing')) {
+                    return;
+                }
+
+                if (!fieldName || fieldName === 'pieceref') {
+                    $row.find('.piece-inline-text[data-field="pieceref"]').trigger('focus');
+                    return;
+                }
+
+                if (fieldName === 'remise' || fieldName === 'annee') {
+                    $row.find('.piece-inline-text[data-field="' + fieldName + '"]').trigger('focus');
+                    return;
+                }
+
+                if (fieldName === 'tier') {
+                    openDropdownShell($row.find('.inline-dropdown-shell[data-name="tierId"]').first());
+                    $row.find('.inline-dropdown-shell[data-name="tierId"] .inline-dropdown-trigger').trigger('focus');
+                    return;
+                }
+
+                var dropdownName = fieldName;
+                if (fieldName === 'devise') {
+                    dropdownName = 'deviseId';
+                } else if (fieldName === 'statut') {
+                    dropdownName = 'statut';
+                } else if (fieldName === 'type') {
+                    dropdownName = 'type';
+                }
+                openDropdownShell($row.find('.inline-dropdown-shell[data-name="' + dropdownName + '"]').first());
+                $row.find('.inline-dropdown-shell[data-name="' + dropdownName + '"] .inline-dropdown-trigger').trigger('focus');
+            }
+
+            function getEditValues($row) {
+                return {
+                    type: String($row.find('.inline-dropdown-shell[data-name="type"]').attr('data-value') || ''),
+                    typet: String($row.find('.inline-dropdown-shell[data-name="tierType"]').attr('data-value') || ''),
+                    tierId: String($row.find('.inline-dropdown-shell[data-name="tierId"]').attr('data-value') || ''),
+                    pieceref: $.trim($row.find('.piece-inline-text[data-field="pieceref"]').text() || ''),
+                    remise: $.trim($row.find('.piece-inline-text[data-field="remise"]').text() || ''),
+                    statut: String($row.find('.inline-dropdown-shell[data-name="statut"]').attr('data-value') || ''),
+                    deviseId: String($row.find('.inline-dropdown-shell[data-name="deviseId"]').attr('data-value') || ''),
+                    annee: $.trim($row.find('.piece-inline-text[data-field="annee"]').text() || '')
+                };
+            }
+
+            function applySavedState($row, item) {
+                var pieceRefValue = String(item.pieceref || '');
+                var pieceRefDisplay = String(item.piecerefDisplay || (pieceRefValue !== '' ? pieceRefValue : '____'));
+                var remiseValue = parseNumber(item.remise);
+                var remiseDisplay = String(item.remiseDisplay || formatRemise(remiseValue));
+                var tierLabel = String(item.tier || '');
+                var statutLabel = String(item.statutLabel || item.statut || '');
+                var deviseLabel = String(item.devise || '');
+                var anneeValue = String(item.annee || '');
+
+                $row.attr('data-inline-editable', item.canEdit ? '1' : '0');
+                $row.attr('data-inline-update-url', String(item.inlineUpdateUrl || $row.attr('data-inline-update-url') || ''));
+                $row.attr('data-type-value', String(item.type || ''));
+                $row.attr('data-tier-type', String(item.typet || ''));
+                $row.attr('data-tier-id', String(item.tierId || ''));
+                $row.attr('data-tier-label', tierLabel);
+                $row.attr('data-piece-ref-value', pieceRefValue);
+                $row.attr('data-remise-value', remiseValue.toFixed(2));
+                $row.attr('data-statut-value', String(item.statut || ''));
+                $row.attr('data-statut-label', statutLabel);
+                $row.attr('data-devise-id', String(item.deviseId || ''));
+                $row.attr('data-devise-label', deviseLabel);
+                $row.attr('data-annee-value', anneeValue);
+
+                if (item.pieceno) {
+                    $row.find('td[data-column-key="pieceno"]').html('<strong>' + escapeHtml(String(item.pieceno)) + '</strong>');
+                }
+                if (typeof item.montantDisplay !== 'undefined') {
+                    $row.find('td[data-column-key="montant"]').html('<strong>' + escapeHtml(String(item.montantDisplay)) + '</strong>');
+                }
+                if (typeof item.lignes !== 'undefined') {
+                    var lineCount = parseInt(item.lignes, 10);
+                    if (!Number.isFinite(lineCount)) {
+                        lineCount = 0;
+                    }
+                    var lineBadgeClass = lineCount > 0 ? 'badge badge-success' : 'badge badge-warning';
+                    $row.find('td[data-column-key="lignes"]').html('<span class="' + lineBadgeClass + '">' + lineCount + '</span>');
+                }
+                if (item.deleteUrl) {
+                    $row.find('.delete-btn').attr('data-delete-url', item.deleteUrl);
+                }
+                $row.find('.delete-btn').attr('data-item-name', 'Piece #' + String(item.pieceno || item.id || ''));
+                if (item.editUrl) {
+                    $row.find('.js-piece-view-link').attr('href', item.editUrl);
+                }
+
+                restoreRowSnapshot($row, readSnapshot($row));
+            }
+
+            function closeInlineEdit($row, restoreSnapshot) {
+                if (!$row || !$row.length) {
+                    return;
+                }
+
+                var snapshot = $row.data('inlineSnapshot') || null;
+                if (restoreSnapshot && snapshot) {
+                    restoreRowSnapshot($row, snapshot);
+                }
+
+                $row.find('.piece-inline-actions').remove();
+                $row.find('.piece-actions').removeClass('d-none');
+                $row.removeClass('is-editing is-saving').removeData('inlineSnapshot');
+                closeDropdowns();
+
+                if (activeInlineRow && activeInlineRow[0] === $row[0]) {
+                    activeInlineRow = null;
+                }
+            }
+
+            function renderTierSelectorForRow($row, tierTypeValue, selectedTierId, selectedTierLabel) {
+                fetchTierOptions(tierTypeValue, false).done(function(tierOptions) {
+                    if (!$row || !$row.length || !$row.hasClass('is-editing')) {
+                        return;
+                    }
+
+                    var $tierSelectorHost = $row.find('.piece-inline-tier-selector').first();
+                    if (!$tierSelectorHost.length) {
+                        return;
+                    }
+
+                    var tierShell = buildInlineDropdown(tierOptions, selectedTierId, selectedTierLabel, 'Selectionner un tiers').attr('data-name', 'tierId');
+                    $tierSelectorHost.empty().append(tierShell);
+                });
+            }
+
+            function beginInlineEdit($row, focusField, forceTierType) {
+                if (!$row.length || !isEditableRow($row)) {
+                    return;
+                }
+
+                if (activeInlineRow && activeInlineRow.length && activeInlineRow[0] !== $row[0]) {
+                    closeInlineEdit(activeInlineRow, true);
+                }
+
+                if ($row.hasClass('is-editing')) {
+                    focusEditableField($row, focusField);
+                    return;
+                }
+
+                var snapshot = readSnapshot($row);
+                $row.data('inlineSnapshot', snapshot);
+                var selectedTierType = String(forceTierType || snapshot.tierType || getDefaultTierTypeValue());
+
+                $row.find('td[data-field="type"]').html(
+                    buildInlineDropdown(inlinePieceTypes, snapshot.typeValue, snapshot.typeValue, 'Selectionner').attr('data-name', 'type')
+                );
+                $row.find('td[data-field="tier"]').html(
+                    '<div class="piece-inline-tier-edit">' +
+                        '<div class="piece-inline-tier-type"></div>' +
+                        '<div class="piece-inline-tier-selector"></div>' +
+                    '</div>'
+                );
+                $row.find('.piece-inline-tier-type').append(
+                    buildInlineDropdown(getTierTypeOptions(), selectedTierType, selectedTierType, 'Type tiers').attr('data-name', 'tierType')
+                );
+                renderTierSelectorForRow($row, selectedTierType, snapshot.tierId, snapshot.tierLabel);
+
+                $row.find('td[data-field="pieceref"]').html(
+                    $('<span class="piece-inline-text inline-editable-text" contenteditable="true" spellcheck="false" data-field="pieceref"></span>').text(snapshot.piecerefValue)
+                );
+                $row.find('td[data-field="remise"]').html(
+                    $('<span class="piece-inline-text inline-editable-text text-right" contenteditable="true" spellcheck="false" data-field="remise"></span>').text(formatNumber(snapshot.remiseValue))
+                );
+                $row.find('td[data-field="statut"]').html(
+                    buildInlineDropdown(inlinePieceStatuses, snapshot.statutValue, snapshot.statutLabel, 'Statut').attr('data-name', 'statut')
+                );
+                var deviseOptions = (inlineDevises || []).map(function(item) {
+                    var code = String(item.code || '');
+                    var label = String(item.label || '');
+                    return {
+                        value: String(item.id || ''),
+                        label: code !== '' ? (code + (label !== '' ? ' - ' + label : '')) : label
+                    };
+                });
+                $row.find('td[data-field="devise"]').html(
+                    buildInlineDropdown(deviseOptions, snapshot.deviseId, snapshot.deviseLabel, 'Devise').attr('data-name', 'deviseId')
+                );
+                $row.find('td[data-field="annee"]').html(
+                    $('<span class="piece-inline-text inline-editable-text" contenteditable="true" spellcheck="false" data-field="annee"></span>').text(snapshot.anneeValue || '')
+                );
+
+                var $actions = $row.find('.piece-actions').first();
+                $actions.addClass('d-none');
+                $actions.after(
+                    '<div class="piece-inline-actions">' +
+                        '<button type="button" class="btn btn-action btn-view js-piece-inline-save" title="Enregistrer"><i class="fas fa-check"></i></button>' +
+                        '<button type="button" class="btn btn-action btn-delete js-piece-inline-cancel" title="Annuler"><i class="fas fa-times"></i></button>' +
+                    '</div>'
+                );
+
+                $row.addClass('is-editing');
+                activeInlineRow = $row;
+                focusEditableField($row, focusField || 'tier');
+            }
+
+            function saveInlineEdit($row) {
+                if (!$row.length || !$row.hasClass('is-editing')) {
+                    return;
+                }
+
+                var updateUrl = String($row.attr('data-inline-update-url') || '').trim();
+                if (updateUrl === '' || inlineUpdateToken === '') {
+                    showPieceToast('Edition inline indisponible.', 'error');
+                    return;
+                }
+
+                var values = getEditValues($row);
+                var remise = parseNumber(values.remise);
+                var annee = $.trim(String(values.annee || ''));
+
+                if (remise < 0) {
+                    showPieceToast('La remise ne peut pas etre negative.', 'error');
+                    return;
+                }
+
+                if (values.tierId === '') {
+                    showPieceToast('Le tiers est obligatoire.', 'error');
+                    focusEditableField($row, 'tier');
+                    return;
+                }
+
+                if ($.trim(String(values.type || '')) === '') {
+                    showPieceToast('Le type de piece est obligatoire.', 'error');
+                    focusEditableField($row, 'type');
+                    return;
+                }
+
+                if ($.trim(String(values.typet || '')) === '') {
+                    showPieceToast('Le type de tiers est obligatoire.', 'error');
+                    focusEditableField($row, 'tier');
+                    return;
+                }
+
+                if (values.statut === '') {
+                    showPieceToast('Le statut est obligatoire.', 'error');
+                    focusEditableField($row, 'statut');
+                    return;
+                }
+
+                if (annee !== '' && !/^\d{4}$/.test(annee)) {
+                    showPieceToast('L annee doit contenir 4 chiffres.', 'error');
+                    focusEditableField($row, 'annee');
+                    return;
+                }
+
+                $row.addClass('is-saving');
+                $row.find('.js-piece-inline-save, .js-piece-inline-cancel, .inline-dropdown-trigger, .inline-dropdown-option').prop('disabled', true);
+
+                $.ajax({
+                    url: updateUrl,
+                    method: 'POST',
+                    dataType: 'json',
+                    data: {
+                        _token: inlineUpdateToken,
+                        type: values.type,
+                        typet: values.typet,
+                        tierId: values.tierId,
+                        pieceref: values.pieceref,
+                        remise: remise.toFixed(2),
+                        statut: values.statut,
+                        deviseId: values.deviseId,
+                        annee: annee
+                    },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).done(function(response) {
+                    if (!response || response.success !== true || !response.item) {
+                        showPieceToast((response && response.message) ? response.message : 'La mise a jour a echoue.', 'error');
+                        $row.removeClass('is-saving');
+                        $row.find('.js-piece-inline-save, .js-piece-inline-cancel, .inline-dropdown-trigger, .inline-dropdown-option').prop('disabled', false);
+                        return;
+                    }
+
+                    applySavedState($row, response.item);
+                    closeInlineEdit($row, false);
+                    $row.addClass('is-saved');
+                    window.setTimeout(function() {
+                        $row.removeClass('is-saved');
+                    }, 900);
+
+                    showPieceToast(response.message || 'Piece mise a jour avec succes.', 'success');
+                }).fail(function(xhr) {
+                    var message = 'La mise a jour a echoue.';
+                    if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    showPieceToast(message, 'error');
+                    $row.removeClass('is-saving');
+                    $row.find('.js-piece-inline-save, .js-piece-inline-cancel, .inline-dropdown-trigger, .inline-dropdown-option').prop('disabled', false);
+                });
+            }
+
+            function buildPieceActionsCell(item) {
+                var canEdit = !!item.canEdit;
+                var canView = !!item.canView;
+                var editUrl = String(item.editUrl || '#');
+                var deleteUrl = String(item.deleteUrl || '#');
+                var inlineDisabledClass = canEdit ? '' : ' is-disabled-ui js-disabled-action';
+                var inlineDisabledTitle = canEdit ? 'Modifier' : 'Action indisponible';
+
+                var html = '<div class="piece-actions">';
+                html += '<span class="piece-action-slot">';
+                if (canView) {
+                    html += '<a href="' + escapeHtml(editUrl) + '" class="btn btn-action btn-view js-piece-view-link" title="Voir les details (lecture seule)"><i class="fas fa-eye"></i></a>';
+                } else {
+                    html += '<button type="button" class="btn btn-action btn-edit js-piece-inline-edit' + inlineDisabledClass + '" title="' + escapeHtml(inlineDisabledTitle) + '"><i class="fas fa-edit"></i></button>';
+                }
+                html += '</span>';
+                html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-convert is-disabled-ui js-disabled-action" title="Validez la piece pour pouvoir la convertir"><i class="fas fa-random"></i></button></span>';
+                html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-einvoicing is-disabled-ui js-disabled-action" title="Validez la piece pour activer la e-facturation"><i class="fas fa-file-invoice"></i></button></span>';
+                html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-delete delete-btn" data-delete-url="' + escapeHtml(deleteUrl) + '" data-item-name="Piece #' + escapeHtml(String(item.pieceno || item.id || '')) + '" title="Supprimer"><i class="fas fa-trash"></i></button></span>';
+                html += '</div>';
+                return html;
+            }
+
+            function buildPieceRow(item) {
+                var id = String(item.id || '');
+                var row = [
+                    '<tr class="piece-row is-new-unsaved" data-row-id="' + escapeHtml(id) + '" data-item-id="' + escapeHtml(id) + '"' +
+                        ' data-inline-editable="' + (item.canEdit ? '1' : '0') + '"' +
+                        ' data-inline-update-url="' + escapeHtml(String(item.inlineUpdateUrl || '')) + '"' +
+                        ' data-type-value="' + escapeHtml(String(item.type || '')) + '"' +
+                        ' data-tier-type="' + escapeHtml(String(item.typet || '')) + '"' +
+                        ' data-tier-id="' + escapeHtml(String(item.tierId || '')) + '"' +
+                        ' data-tier-label="' + escapeHtml(String(item.tier || '')) + '"' +
+                        ' data-piece-ref-value="' + escapeHtml(String(item.pieceref || '')) + '"' +
+                        ' data-remise-value="' + escapeHtml(String(parseNumber(item.remise).toFixed(2))) + '"' +
+                        ' data-statut-value="' + escapeHtml(String(item.statut || '')) + '"' +
+                        ' data-statut-label="' + escapeHtml(String(item.statutLabel || item.statut || '')) + '"' +
+                        ' data-devise-id="' + escapeHtml(String(item.deviseId || '')) + '"' +
+                        ' data-devise-label="' + escapeHtml(String(item.devise || '')) + '"' +
+                        ' data-annee-value="' + escapeHtml(String(item.annee || '')) + '"' +
+                        ' tabindex="0">',
+                        '<td class="row-selector-cell" data-column-key="selector"><div class="form-check d-flex justify-content-center mb-0"><input class="form-check-input position-static piece-row-checkbox" type="checkbox" value="' + escapeHtml(id) + '" data-row-checkbox aria-label="Selectionner la piece ' + escapeHtml(String(item.pieceno || item.id || '')) + '"></div></td>',
+                        '<td data-column-key="id"><strong>#' + escapeHtml(id) + '</strong></td>',
+                        '<td data-field="type" data-column-key="type"><span class="badge badge-primary badge-lg">' + escapeHtml(fallbackDisplay(item.type)) + '</span></td>',
+                        '<td data-field="tier" data-column-key="tier">' + escapeHtml(fallbackDisplay(item.tier)) + '</td>',
+                        '<td data-column-key="pieceno"><strong>' + escapeHtml(String(item.pieceno || '')) + '</strong></td>',
+                        '<td data-field="pieceref" data-column-key="pieceref">' + escapeHtml(fallbackDisplay(item.piecerefDisplay || item.pieceref || '')) + '</td>',
+                        '<td class="text-right" data-field="remise" data-column-key="remise">' + escapeHtml(String(item.remiseDisplay || formatRemise(item.remise || 0))) + '</td>',
+                        '<td class="text-right" data-column-key="montant"><strong>' + escapeHtml(String(item.montantDisplay || formatNumber(item.montant || 0))) + '</strong></td>',
+                        '<td class="text-center" data-column-key="lignes"><span class="' + ((parseInt(item.lignes, 10) || 0) > 0 ? 'badge badge-success' : 'badge badge-warning') + '">' + escapeHtml(String(item.lignes || 0)) + '</span></td>',
+                        '<td data-field="statut" data-column-key="statut"><span class="' + resolveStatusBadgeClass(item.statut) + '">' + escapeHtml(fallbackDisplay(item.statutLabel || item.statut || '-')) + '</span></td>',
+                        '<td data-field="devise" data-column-key="devise">' + escapeHtml(fallbackDisplay(item.devise || '')) + '</td>',
+                        '<td data-field="annee" data-column-key="annee">' + escapeHtml(String(item.annee || '-')) + '</td>',
+                        '<td class="text-center piece-actions-cell" data-column-key="actions" data-role="actions">' + buildPieceActionsCell(item) + '</td>',
+                    '</tr>'
+                ].join('');
+                return $(row);
+            }
+
+            function appendCreatedRow(item) {
+                if (!hasTable) {
+                    window.location.reload();
+                    return null;
+                }
+                var $row = buildPieceRow(item);
+                $tbody.prepend($row);
+                applyColumnPrefs();
+                updateSelectionUi();
+                $row[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                window.setTimeout(function() {
+                    $row.removeClass('is-new-unsaved');
+                }, 1200);
+                return $row;
+            }
+
+            function loadQuickCreateTiers(selectedTierId) {
+                var $tierType = $('#pieceQuickTierType');
+                var $tierSelect = $('#pieceQuickTierId');
+                if (!$tierSelect.length) {
+                    return;
+                }
+
+                var tierType = String($tierType.val() || getDefaultTierTypeValue());
+                fetchTierOptions(tierType, true).done(function(options) {
+                    $tierSelect.empty().append('<option value="">Selectionner un tiers</option>');
+                    options.forEach(function(option) {
+                        var $option = $('<option></option>').attr('value', option.value).text(option.label);
+                        $tierSelect.append($option);
+                    });
+                    if (selectedTierId) {
+                        $tierSelect.val(String(selectedTierId));
+                    }
+                });
+            }
+
+            function readColumnPrefs() {
+                try {
+                    var parsed = JSON.parse(window.localStorage.getItem(pieceColumnStorageKey) || '{}');
+                    if (parsed && typeof parsed === 'object') {
+                        columnPrefs = parsed;
+                    }
+                } catch (error) {
+                    columnPrefs = Object.create(null);
+                }
+            }
+
+            function writeColumnPrefs() {
+                try {
+                    window.localStorage.setItem(pieceColumnStorageKey, JSON.stringify(columnPrefs));
+                } catch (error) {
+                    // Ignore storage failures.
+                }
+            }
+
+            function isColumnVisible(columnKey) {
+                if (mandatoryColumnKeys.indexOf(columnKey) !== -1) {
+                    return true;
+                }
+                return columnPrefs[columnKey] !== false;
+            }
+
+            function applyColumnPrefs() {
+                optionalColumnKeys.forEach(function(columnKey) {
+                    var visible = isColumnVisible(columnKey);
+                    $table.find('[data-column-key="' + columnKey + '"]').toggle(visible);
+                    $('#pieceColumnToggle_' + columnKey).prop('checked', visible);
+                });
+            }
+
+            function openColumnSettingsMenu() {
+                $columnSettings.addClass('is-open');
+                $columnSettingsToggle.attr('aria-expanded', 'true');
+            }
+
+            function closeColumnSettingsMenu() {
+                $columnSettings.removeClass('is-open');
+                $columnSettingsToggle.attr('aria-expanded', 'false');
+            }
+
+            function initColumnResizing() {
+                $table.find('.piece-column-resize-handle').remove();
+
+                $table.find('thead th').each(function(index) {
+                    var $th = $(this);
+                    var columnKey = String($th.attr('data-column-key') || '').trim();
+                    if (columnKey === 'selector' || columnKey === 'actions') {
+                        return;
+                    }
+
+                    var $handle = $('<div class="piece-column-resize-handle right" />');
+                    $th.append($handle);
+
+                    $handle.on('mousedown.pieceResize', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        var startX = event.pageX;
+                        var startWidth = $th.outerWidth();
+                        $handle.addClass('is-dragging');
+
+                        $(document).on('mousemove.pieceResize', function(moveEvent) {
+                            var diff = moveEvent.pageX - startX;
+                            var newWidth = Math.max(72, startWidth + diff);
+
+                            $th.css({
+                                width: newWidth + 'px',
+                                minWidth: newWidth + 'px',
+                                maxWidth: newWidth + 'px'
+                            });
+
+                            $tbody.find('tr').each(function() {
+                                $(this).find('td').eq(index).css({
+                                    width: newWidth + 'px',
+                                    minWidth: newWidth + 'px',
+                                    maxWidth: newWidth + 'px'
+                                });
+                            });
+                        });
+
+                        $(document).on('mouseup.pieceResize', function() {
+                            $(document).off('mousemove.pieceResize mouseup.pieceResize');
+                            $handle.removeClass('is-dragging');
+                        });
+                    });
+                });
+            }
+
+            $table.off('.pieceList');
+            $bulkBar.off('.pieceList');
+            $(document).off('.pieceListColumns');
+            $(document).off('.pieceInlineDropdown');
+            if (hasTable) {
+                $table.on('change.pieceList', '[data-row-checkbox]', function() {
+                    updateSelectionUi();
+                });
+
+                $table.on('change.pieceList', '[data-select-all-checkbox]', function() {
+                    var isChecked = $(this).is(':checked');
+                    getRows().each(function() {
+                        getRowCheckbox($(this)).prop('checked', isChecked);
+                    });
+                    updateSelectionUi();
+                });
+
+                $table.on('click.pieceList', '.piece-row', function(event) {
+                    var $row = $(this);
+                    if ($row.hasClass('is-editing')) {
+                        return;
+                    }
+                    if ($(event.target).closest('a, button, input, select, textarea, label, .dropdown-menu, .dropdown-toggle, [contenteditable="true"], .inline-dropdown-menu, .inline-dropdown-trigger, .inline-dropdown-option').length > 0) {
+                        return;
+                    }
+                    if (rowClickTimer) {
+                        window.clearTimeout(rowClickTimer);
+                        rowClickTimer = null;
+                    }
+                    rowClickTimer = window.setTimeout(function() {
+                        var $checkbox = getRowCheckbox($row);
+                        $checkbox.prop('checked', !$checkbox.is(':checked'));
+                        updateSelectionUi();
+                        rowClickTimer = null;
+                    }, 220);
+                });
+
+                $table.on('dblclick.pieceList', '.piece-row', function(event) {
+                    if ($(event.target).closest('a, button, input, select, textarea, label, .dropdown-menu, .dropdown-toggle').length > 0) {
+                        return;
+                    }
+                    if (rowClickTimer) {
+                        window.clearTimeout(rowClickTimer);
+                        rowClickTimer = null;
+                    }
+                    beginInlineEdit($(this), 'tier');
+                });
+
+                $table.on('click.pieceList', '.js-piece-inline-edit', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    beginInlineEdit($(this).closest('.piece-row'), 'tier');
+                });
+
+                $table.on('click.pieceList', '.js-piece-inline-save', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    saveInlineEdit($(this).closest('.piece-row'));
+                });
+
+                $table.on('click.pieceList', '.js-piece-inline-cancel', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    closeInlineEdit($(this).closest('.piece-row'), true);
+                });
+
+                $table.on('click.pieceList', '.inline-dropdown-trigger, .inline-dropdown-label', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    var $shell = $(this).closest('.inline-dropdown-shell');
+                    if ($shell.hasClass('is-open')) {
+                        $shell.removeClass('is-open');
+                        return;
+                    }
+                    openDropdownShell($shell);
+                });
+
+                $table.on('click.pieceList', '.inline-dropdown-option', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    var $option = $(this);
+                    var $shell = $option.closest('.inline-dropdown-shell');
+                    var value = String($option.attr('data-value') || '');
+                    var label = value === '' ? '' : String($option.attr('data-label') || $option.text() || '');
+                    setDropdownValue($shell, value, label);
+                    $shell.removeClass('is-open');
+
+                    if (String($shell.attr('data-name') || '') === 'tierType') {
+                        var $row = $shell.closest('.piece-row');
+                        renderTierSelectorForRow($row, value, '', '');
+                    }
+                });
+
+                $table.on('keydown.pieceList', '.piece-inline-text, .inline-dropdown-trigger, .inline-dropdown-option', function(event) {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        closeInlineEdit($(this).closest('.piece-row'), true);
+                    }
+                });
+
+                $table.on('keydown.pieceList', '.piece-inline-text', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        saveInlineEdit($(this).closest('.piece-row'));
+                    }
+                });
+
+                $bulkBar.on('click.pieceList', '[data-bulk-clear]', function(event) {
+                    event.preventDefault();
+                    getRows().each(function() {
+                        getRowCheckbox($(this)).prop('checked', false);
+                    });
+                    updateSelectionUi();
+                });
+
+                $bulkBar.on('click.pieceList', '[data-bulk-action="delete"]', function(event) {
+                    event.preventDefault();
+
+                    var ids = getSelectedIds();
+                    if (!ids.length) {
+                        return;
+                    }
+                    if (bulkDeleteToken === '') {
+                        showPieceToast('Jeton de suppression indisponible.', 'error');
+                        return;
+                    }
+
+                    if (!window.confirm('Supprimer ' + ids.length + ' piece(s) selectionnee(s) ?')) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: bulkDeleteUrl,
+                        method: 'POST',
+                        dataType: 'json',
+                        data: {
+                            _token: bulkDeleteToken,
+                            ids: ids
+                        },
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).done(function(response) {
+                        if (!response || response.success !== true) {
+                            showPieceToast((response && response.message) ? response.message : 'Suppression impossible.', 'error');
+                            return;
+                        }
+
+                        showPieceToast(response.message || 'Pieces supprimees.', 'success');
+                        window.location.reload();
+                    }).fail(function(xhr) {
+                        var message = 'Suppression impossible.';
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        showPieceToast(message, 'error');
+                    });
+                });
+
+                readColumnPrefs();
+                applyColumnPrefs();
+                initColumnResizing();
+                updateSelectionUi();
+            }
+
+            if ($quickCreateForm.length) {
+                var $quickTierType = $('#pieceQuickTierType');
+                var $quickTierId = $('#pieceQuickTierId');
+                var $quickRef = $('#pieceQuickReference');
+                var $quickDate = $('#pieceQuickDate');
+
+                if ($quickTierType.length) {
+                    $quickTierType.off('change.pieceQuickCreate').on('change.pieceQuickCreate', function() {
+                        loadQuickCreateTiers('');
+                    });
+                }
+
+                $quickCreateModal.off('shown.bs.modal.pieceQuickCreate').on('shown.bs.modal.pieceQuickCreate', function() {
+                    loadQuickCreateTiers('');
+                    if ($quickRef.length) {
+                        $quickRef.trigger('focus');
+                    }
+                });
+
+                $quickCreateForm.off('submit.pieceQuickCreate').on('submit.pieceQuickCreate', function(event) {
+                    event.preventDefault();
+
+                    var tierId = String($quickTierId.val() || '').trim();
+                    if (tierId === '') {
+                        showPieceToast('Le tiers est obligatoire.', 'error');
+                        $quickTierId.trigger('focus');
+                        return;
+                    }
+
+                    $quickCreateSubmit.prop('disabled', true);
+                    var formData = $(this).serialize();
+
+                    $.ajax({
+                        url: quickCreateUrl,
+                        method: 'POST',
+                        dataType: 'json',
+                        data: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).done(function(response) {
+                        if (!response || response.success !== true || !response.item) {
+                            showPieceToast((response && response.message) ? response.message : 'La creation rapide a echoue.', 'error');
+                            $quickCreateSubmit.prop('disabled', false);
+                            return;
+                        }
+
+                        showPieceToast(response.message || 'Piece creee avec succes.', 'success');
+                        $quickCreateModal.modal('hide');
+
+                        var $row = appendCreatedRow(response.item);
+                        if ($row && $row.length) {
+                            beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
+                        }
+                    }).fail(function(xhr) {
+                        var message = 'La creation rapide a echoue.';
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        showPieceToast(message, 'error');
+                    }).always(function() {
+                        $quickCreateSubmit.prop('disabled', false);
+                    });
+                });
+
+                $quickCreateModal.off('hidden.bs.modal.pieceQuickCreate').on('hidden.bs.modal.pieceQuickCreate', function() {
+                    $quickCreateSubmit.prop('disabled', false);
+                    if ($quickCreateForm[0]) {
+                        $quickCreateForm[0].reset();
+                    }
+                    if ($quickDate.length) {
+                        $quickDate.val('{{ "now"|date("Y-m-d") }}');
+                    }
+                    if ($quickTierType.length && getTierTypeOptions().length <= 1) {
+                        $quickTierType.val(getDefaultTierTypeValue());
+                    }
+                });
+            }
+
+            if ($columnSettingsToggle.length) {
+                $columnSettingsToggle.off('click.pieceList').on('click.pieceList', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if ($columnSettings.hasClass('is-open')) {
+                        closeColumnSettingsMenu();
+                    } else {
+                        openColumnSettingsMenu();
+                    }
+                });
+            }
+
+            $(document).on('change.pieceListColumns', '[data-column-toggle]', function(event) {
+                event.stopPropagation();
+                var columnKey = String($(this).attr('data-column-toggle') || '').trim();
+                if (columnKey === '' || mandatoryColumnKeys.indexOf(columnKey) !== -1) {
+                    return;
+                }
+                columnPrefs[columnKey] = $(this).is(':checked');
+                writeColumnPrefs();
+                if (hasTable) {
+                    applyColumnPrefs();
+                }
+            });
+
+            $(document).on('click.pieceListColumns', function(event) {
+                var $target = $(event.target);
+                if (!$columnSettings.hasClass('is-open')) {
+                    return;
+                }
+                if ($target.closest('.piece-column-settings__menu').length || $target.closest('#pieceColumnSettingsToggle').length) {
+                    return;
+                }
+                closeColumnSettingsMenu();
+                if (hasTable && $target.closest('.inline-dropdown-shell').length === 0) {
+                    closeDropdowns();
+                }
+            });
+
+            $(document).on('click.pieceInlineDropdown', function(event) {
+                if (!hasTable) {
+                    return;
+                }
+                if ($(event.target).closest('.inline-dropdown-shell').length === 0) {
+                    closeDropdowns();
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPieceListUx);
+        } else {
+            initPieceListUx();
+        }
+
+        document.addEventListener('turbo:load', initPieceListUx);
+        document.addEventListener('turbo:render', initPieceListUx);
+    })();
+</script>
 <style>
+    .piece-quick-modal .modal-dialog {
+        max-width: 580px;
+    }
+    .piece-quick-modal .modal-content {
+        border-radius: 14px;
+        overflow: hidden;
+        position: relative;
+        background: #fff;
+        border: none;
+        box-shadow: 0 24px 50px rgba(15, 23, 42, 0.18);
+    }
+    .piece-quick-modal-close {
+        position: absolute;
+        right: 18px;
+        top: 16px;
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #94a3b8;
+        opacity: 0.78;
+        z-index: 3;
+        transition: color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+        width: 28px;
+        height: 28px;
+        line-height: 1;
+        padding: 0;
+    }
+    .piece-quick-modal-close:hover {
+        opacity: 1;
+        color: #334155;
+        transform: scale(1.06);
+    }
+    .piece-quick-modal-body {
+        padding: 42px 30px 26px;
+    }
+    .piece-quick-modal-badge {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        box-shadow: 0 10px 28px rgba(30, 64, 175, 0.27);
+    }
+    .piece-quick-modal-badge i {
+        color: #fff;
+        font-size: 28px;
+    }
+    .piece-quick-modal-title {
+        margin: 0 0 8px;
+        text-align: center;
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .piece-quick-modal-subtitle {
+        margin: 0 0 14px;
+        text-align: center;
+        color: #64748b;
+        font-size: 0.94rem;
+        line-height: 1.5;
+    }
+    .piece-quick-modal-note {
+        background: rgba(15, 23, 42, 0.035);
+        border-left: 3px solid var(--theme-primary);
+        border-radius: 7px;
+        padding: 11px 13px;
+        margin: 0 0 18px;
+        color: #475569;
+        font-size: 0.84rem;
+        line-height: 1.45;
+    }
+    .piece-quick-input {
+        border-radius: 10px;
+        min-height: 42px;
+    }
+    .piece-quick-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.65rem;
+        margin-top: 22px;
+    }
+    .piece-quick-cancel,
+    .piece-quick-submit {
+        min-width: 130px;
+        border-radius: 10px;
+        font-weight: 700;
+        padding: 0.58rem 1rem;
+    }
+    .piece-quick-cancel {
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #dbe3ec;
+    }
+    .piece-quick-submit {
+        border: none;
+        color: #fff;
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        box-shadow: 0 10px 20px rgba(30, 64, 175, 0.22);
+    }
+    .action-bar {
+        position: relative;
+    }
+    .action-bar .action-buttons {
+        order: 1;
+    }
+    .action-tools {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-left: 0;
+        position: relative;
+        z-index: 12;
+        order: 3;
+    }
+    .table-bulk-actions {
+        position: static;
+        order: 2;
+        flex: 0 0 auto;
+        max-width: 0;
+        min-width: 0;
+        width: 0;
+        margin: 0;
+        transform: translateY(14px);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.22s ease, opacity 0.22s ease;
+        z-index: 8;
+        padding: 0;
+        border-radius: 12px;
+        border: 0;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        color: #0f172a;
+        overflow: hidden;
+    }
+    .table-bulk-actions.is-visible {
+        width: min(52vw, 560px);
+        min-width: 320px;
+        max-width: 560px;
+        margin: 0 0.5rem;
+        padding: 8px 10px;
+        border: 1px solid rgba(148, 163, 184, 0.36);
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .table-bulk-actions__content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .table-bulk-actions__left {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+    .table-bulk-actions__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(37, 99, 235, 0.12);
+        color: #1e40af;
+        border-radius: 999px;
+        padding: 0.34rem 0.62rem;
+        font-size: 0.88rem;
+        white-space: nowrap;
+    }
+    .table-bulk-actions__label {
+        font-size: 0.88rem;
+        color: #475569;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .table-bulk-actions__buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+    .table-bulk-actions__delete-btn,
+    .table-bulk-actions__clear-btn {
+        border-radius: 8px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .table-bulk-actions__delete-btn {
+        color: #fff;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border: 0;
+        box-shadow: 0 8px 18px rgba(220, 38, 38, 0.22);
+    }
+    .table-bulk-actions__clear-btn {
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        background: #fff;
+    }
+    .table-container--pieces {
+        overflow: visible;
+        position: relative;
+    }
+    .piece-column-settings-floating {
+        position: absolute;
+        top: -10px;
+        right: 5px;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+    }
+    .piece-column-settings__trigger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        background: none;
+        border: none;
+        box-shadow: none;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        transition: opacity 0.15s ease;
+        border-radius: 4px;
+    }
+    .piece-column-settings__trigger:hover {
+        opacity: 0.8;
+    }
+    .piece-column-settings__menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        width: 240px;
+        max-width: calc(100vw - 1rem);
+        margin-top: 6px;
+        overflow: visible;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 0;
+        display: none;
+        z-index: 9999;
+    }
+    .piece-column-settings-floating.is-open .piece-column-settings__menu {
+        display: block;
+    }
+    .piece-column-settings__title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #333;
+        padding: 0.6rem 0.8rem 0.4rem;
+        border-bottom: 1px solid #eee;
+    }
+    .piece-column-settings__group {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+    .piece-column-settings__divider {
+        height: 1px;
+        background: #eee;
+        margin: 0;
+    }
+    .piece-column-settings__item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0;
+        color: #333;
+        font-weight: 400;
+        font-size: 0.75rem;
+        cursor: pointer;
+        background: transparent;
+    }
+    .piece-column-settings__item:hover:not(.is-static) {
+        background: #f5f5f5;
+        color: #333;
+    }
+    .piece-column-settings__item.is-static {
+        cursor: default;
+        background: transparent;
+        color: #999;
+    }
+    .piece-column-settings__item small {
+        color: #aaa;
+        font-weight: 400;
+        font-size: 0.65rem;
+        margin-left: auto;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+    .piece-column-settings__item input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        margin: 0;
+        accent-color: var(--theme-primary);
+        flex: 0 0 auto;
+    }
+    .pieces-table {
+        width: 100%;
+        table-layout: fixed;
+        position: relative;
+        z-index: 1;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .pieces-table thead th,
+    .pieces-table tbody td {
+        padding: 0.7rem 0.45rem;
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+    .pieces-table thead th {
+        white-space: nowrap;
+        text-align: left;
+        position: relative;
+        user-select: none;
+    }
+    .pieces-table tbody td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .pieces-table .row-selector-cell,
+    .pieces-table .row-selector-head {
+        width: 40px;
+        text-align: center;
+    }
+    .pieces-table [data-column-key="id"] {
+        width: 82px;
+    }
+    .pieces-table [data-column-key="actions"] {
+        width: 280px;
+    }
+    .pieces-table .piece-row.is-selected {
+        background: rgba(37, 99, 235, 0.08);
+    }
+    .pieces-table .piece-row.is-editing {
+        position: relative;
+        z-index: 1300;
+        background: rgba(37, 99, 235, 0.06);
+        box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
+        cursor: default;
+    }
+    .pieces-table .piece-row.is-saving {
+        opacity: 0.75;
+        pointer-events: none;
+    }
+    .pieces-table .piece-row.is-saved {
+        animation: pieceInlineSavedPulse 0.8s ease-out 1;
+    }
+    @keyframes pieceInlineSavedPulse {
+        0% {
+            box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.46), 0 0 0 3px rgba(16, 185, 129, 0.24);
+        }
+        100% {
+            box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.16), 0 0 0 0 rgba(16, 185, 129, 0);
+        }
+    }
+    .piece-inline-text {
+        display: block;
+        min-height: 1.5rem;
+        line-height: 1.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        outline: none;
+        padding: 0.1rem 0.2rem;
+        border-radius: 4px;
+    }
+    .piece-inline-text[contenteditable="true"] {
+        cursor: text;
+    }
+    .piece-inline-tier-edit {
+        display: grid;
+        grid-template-columns: minmax(120px, 1fr) minmax(180px, 2fr);
+        gap: 0.35rem;
+        align-items: center;
+    }
+    .inline-dropdown-shell {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.3rem;
+        min-height: 1.5rem;
+        z-index: 1;
+        overflow: visible;
+    }
+    .inline-dropdown-shell.is-open {
+        z-index: 2400;
+        overflow: visible;
+    }
+    .inline-dropdown-label {
+        display: block;
+        flex: 1 1 auto;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        font-size: 0.84rem;
+        color: #334155;
+        font-weight: 500;
+        padding: 0.2rem 0.32rem;
+        border-radius: 4px;
+        transition: background-color 0.15s ease;
+    }
+    .inline-dropdown-shell.is-open .inline-dropdown-label {
+        background: rgba(37, 99, 235, 0.06);
+    }
+    .inline-dropdown-trigger {
+        width: 20px;
+        height: 20px;
+        border: none;
+        background: transparent;
+        color: #6b7280;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.15s ease, color 0.15s ease;
+        flex-shrink: 0;
+        font-size: 0.75rem;
+        padding: 0;
+    }
+    .inline-dropdown-trigger:hover,
+    .inline-dropdown-shell.is-open .inline-dropdown-trigger {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--theme-primary);
+    }
+    .inline-dropdown-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: auto;
+        min-width: 200px;
+        max-width: calc(100vw - 1rem);
+        max-height: 280px;
+        overflow-y: auto;
+        padding: 0;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+        display: none;
+        z-index: 9999;
+    }
+    .inline-dropdown-shell.is-open .inline-dropdown-menu {
+        display: flex;
+        flex-direction: column;
+    }
+    .inline-dropdown-option {
+        width: 100%;
+        border: none;
+        background: transparent;
+        text-align: left;
+        padding: 0.6rem 0.78rem;
+        border-radius: 0;
+        color: #334155;
+        font-size: 0.84rem;
+        font-weight: 500;
+        transition: background-color 0.12s ease, color 0.12s ease;
+        cursor: pointer;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    .inline-dropdown-option:hover {
+        background: #f0f4f8;
+        color: #1e293b;
+    }
+    .inline-dropdown-option.is-active {
+        background: rgba(37, 99, 235, 0.08);
+        color: var(--theme-primary);
+        font-weight: 600;
+    }
+    .piece-inline-actions {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .piece-column-resize-handle {
+        position: absolute;
+        top: 0;
+        width: 5px;
+        height: 100%;
+        cursor: col-resize;
+        user-select: none;
+        background: transparent;
+        transition: background 0.2s ease;
+        z-index: 5;
+    }
+    .piece-column-resize-handle:hover {
+        background: rgba(37, 99, 235, 0.3);
+    }
+    .piece-column-resize-handle.is-dragging {
+        background: rgba(37, 99, 235, 0.6);
+    }
+    .piece-column-resize-handle.right {
+        right: -2.5px;
+    }
     .piece-actions {
         display: inline-flex;
         align-items: center;
@@ -420,6 +2247,66 @@
         background: rgba(8, 145, 178, 0.12) !important;
         color: #0e7490 !important;
         transform: translateY(-1px) !important;
+    }
+    @media (max-width: 992px) {
+        .piece-quick-modal-body {
+            padding: 34px 18px 18px;
+        }
+        .piece-quick-modal-actions {
+            flex-direction: column-reverse;
+            align-items: stretch;
+        }
+        .piece-quick-cancel,
+        .piece-quick-submit {
+            width: 100%;
+        }
+        .piece-inline-tier-edit {
+            grid-template-columns: 1fr;
+        }
+        .table-bulk-actions {
+            order: 3;
+        }
+        .table-bulk-actions.is-visible {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            margin: 0.35rem 0 0;
+        }
+    }
+    @media (max-width: 768px) {
+        .table-bulk-actions {
+            position: static;
+            transform: none;
+            opacity: 0;
+            pointer-events: auto;
+            width: 100%;
+            min-width: 0;
+            margin-top: 0.6rem;
+            display: none;
+        }
+        .table-bulk-actions.is-visible {
+            display: block;
+            transform: none;
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            margin-top: 0.6rem;
+        }
+        .table-bulk-actions__content {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .table-bulk-actions__buttons {
+            justify-content: flex-end;
+        }
+        .action-tools {
+            width: 100%;
+            margin-top: 0.5rem;
+            order: 4;
+        }
+        .inline-dropdown-menu {
+            min-width: 180px;
+        }
     }
 </style>
 {% endblock %}
