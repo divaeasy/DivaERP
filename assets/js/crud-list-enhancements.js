@@ -5,7 +5,10 @@
         return;
     }
 
-    $(function() {
+    var crudBulkDeleteState = null;
+    var crudGlobalHandlersBound = false;
+
+    function bootCrudListEnhancements() {
         var $tables = $('table.js-crud-list-table[data-crud-resource]');
         if ($tables.length === 0) {
             return;
@@ -13,11 +16,27 @@
 
         ensureCrudEnhancerModals();
 
-        $tables.each(function() {
-            enhanceCrudTable($(this));
-        });
+        if (!crudGlobalHandlersBound) {
+            bindCrudBulkDeleteConfirmHandler();
+            crudGlobalHandlersBound = true;
+        }
 
-        function enhanceCrudTable($table) {
+        $tables.each(function() {
+            var $table = $(this);
+            if ($table.attr('data-crud-enhanced') === '1') {
+                return;
+            }
+
+            enhanceCrudTable($table);
+            $table.attr('data-crud-enhanced', '1');
+        });
+    }
+
+    $(bootCrudListEnhancements);
+    document.addEventListener('turbo:load', bootCrudListEnhancements);
+    document.addEventListener('turbo:render', bootCrudListEnhancements);
+
+    function enhanceCrudTable($table) {
             var resource = String($table.data('crudResource') || '').trim();
             if (resource === '') {
                 return;
@@ -59,42 +78,60 @@
                 return;
             }
 
-            if ($theadRow.find('th.js-row-selector-head').length === 0) {
+            var tableId = resolveTableId($table, config.resource);
+            var rowCheckboxSelector = '.js-row-selector, [data-row-checkbox]';
+            var selectAllSelector = '.js-select-all-rows, [data-select-all-checkbox]';
+
+            if ($theadRow.find(selectAllSelector).length === 0 && $theadRow.find('th.js-row-selector-head, th.row-selector-head').length === 0) {
                 $theadRow.prepend(
-                    '<th class="js-row-selector-head text-center" style="width:42px;">' +
-                        '<input type="checkbox" class="js-select-all-rows" aria-label="Tout selectionner">' +
+                    '<th class="row-selector-head js-row-selector-head text-center" data-column-key="selector" style="width:42px;">' +
+                        '<div class="form-check d-flex justify-content-center mb-0">' +
+                            '<input type="checkbox" class="form-check-input position-static js-select-all-rows" data-select-all-checkbox aria-label="Tout selectionner">' +
+                        '</div>' +
                     '</th>'
                 );
             }
 
             $table.find('tbody tr[data-row-id]').each(function() {
                 var $row = $(this);
-                if ($row.find('td.js-row-selector-cell').length > 0) {
+                if ($row.find(rowCheckboxSelector).length > 0 || $row.find('td.js-row-selector-cell, td.row-selector-cell').length > 0) {
+                    if (!$row.attr('data-item-id')) {
+                        $row.attr('data-item-id', String($row.attr('data-row-id') || ''));
+                    }
                     return;
                 }
 
+                var rowId = String($row.attr('data-row-id') || '');
                 $row.prepend(
-                    '<td class="js-row-selector-cell text-center">' +
-                        '<input type="checkbox" class="js-row-selector" aria-label="Selectionner la ligne">' +
+                    '<td class="row-selector-cell js-row-selector-cell text-center" data-column-key="selector">' +
+                        '<div class="form-check d-flex justify-content-center mb-0">' +
+                            '<input type="checkbox" class="form-check-input position-static js-row-selector" data-row-checkbox value="' + escapeHtml(rowId) + '" aria-label="Selectionner la ligne">' +
+                        '</div>' +
                     '</td>'
                 );
+
+                if (!$row.attr('data-item-id')) {
+                    $row.attr('data-item-id', rowId);
+                }
             });
 
-            var $bulkBar = buildOrGetBulkBar($table);
+            var $bulkBar = buildOrGetBulkBar($table, tableId);
             refreshBulkState($table, $bulkBar);
 
-            $table.on('change', '.js-select-all-rows', function() {
+            $table.on('change', selectAllSelector, function() {
                 var isChecked = $(this).is(':checked');
-                $table.find('tbody .js-row-selector').prop('checked', isChecked).trigger('change');
+                $table.find('tbody ' + rowCheckboxSelector).prop('checked', isChecked).trigger('change');
             });
 
-            $table.on('change', '.js-row-selector', function() {
+            $table.on('change', rowCheckboxSelector, function() {
                 var $row = $(this).closest('tr');
-                $row.toggleClass('table-active', $(this).is(':checked'));
+                var isChecked = $(this).is(':checked');
+                $row.toggleClass('table-active', isChecked);
+                $row.toggleClass('is-selected', isChecked);
 
-                var totalRows = $table.find('tbody .js-row-selector').length;
-                var checkedRows = $table.find('tbody .js-row-selector:checked').length;
-                var $selectAll = $table.find('.js-select-all-rows');
+                var totalRows = $table.find('tbody ' + rowCheckboxSelector).length;
+                var checkedRows = $table.find('tbody ' + rowCheckboxSelector + ':checked').length;
+                var $selectAll = $table.find(selectAllSelector);
 
                 $selectAll.prop('checked', totalRows > 0 && totalRows === checkedRows);
                 refreshBulkState($table, $bulkBar);
@@ -114,7 +151,16 @@
             });
         }
 
-        function buildOrGetBulkBar($table) {
+        function buildOrGetBulkBar($table, tableId) {
+            var normalizedTableId = String(tableId || '').trim();
+
+            if (normalizedTableId !== '') {
+                var $linked = $('[data-bulk-bar-for="' + normalizedTableId + '"]').first();
+                if ($linked.length > 0) {
+                    return $linked;
+                }
+            }
+
             var $existing = $table.prev('.js-crud-bulk-bar').first();
             if ($existing.length > 0) {
                 return $existing;
@@ -122,39 +168,78 @@
 
             var tableTitle = String($('.page-header h1').first().text() || 'elements').trim().toLowerCase();
             var $bar = $(
-                '<div class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between mb-3 js-crud-bulk-bar" style="display:none;">' +
-                    '<div class="font-weight-semibold">' +
-                        '<i class="fas fa-layer-group mr-2 text-primary"></i>' +
-                        '<span class="js-bulk-label">0 ligne selectionnee</span>' +
-                    '</div>' +
-                    '<div class="d-flex align-items-center" style="gap:8px;">' +
-                        '<button type="button" class="btn btn-sm btn-outline-danger no-loading js-bulk-delete-btn">' +
-                            '<i class="fas fa-trash mr-1"></i>Supprimer' +
-                        '</button>' +
-                        '<button type="button" class="btn btn-sm btn-outline-secondary no-loading js-bulk-clear-btn">Effacer</button>' +
+                '<div class="table-bulk-actions js-crud-bulk-bar" data-bulk-bar-for="' + escapeHtml(normalizedTableId) + '">' +
+                    '<div class="table-bulk-actions__content">' +
+                        '<div class="table-bulk-actions__left">' +
+                            '<span class="table-bulk-actions__badge">' +
+                                '<i class="fas fa-check-circle"></i>' +
+                                '<strong data-selection-count>0</strong>' +
+                            '</span>' +
+                            '<span class="table-bulk-actions__label" data-selection-label>0 ligne selectionnee</span>' +
+                        '</div>' +
+                        '<div class="table-bulk-actions__buttons">' +
+                            '<button type="button" class="btn btn-sm table-bulk-actions__delete-btn no-loading js-bulk-delete-btn" data-bulk-action="delete">' +
+                                '<i class="fas fa-trash-alt mr-1"></i> Supprimer' +
+                            '</button>' +
+                            '<button type="button" class="btn btn-sm table-bulk-actions__clear-btn no-loading js-bulk-clear-btn" data-bulk-clear>' +
+                                'Annuler' +
+                            '</button>' +
+                        '</div>' +
                     '</div>' +
                 '</div>'
             );
 
             $bar.attr('data-list-title', tableTitle);
-            $table.before($bar);
+            var $actionBar = $table.closest('.table-container').prevAll('.action-bar').first();
+            if ($actionBar.length > 0) {
+                var $actionTools = $actionBar.find('.action-tools').first();
+                if ($actionTools.length > 0) {
+                    $bar.insertBefore($actionTools);
+                } else {
+                    $actionBar.append($bar);
+                }
+            } else {
+                $table.before($bar);
+            }
 
-            $bar.on('click', '.js-bulk-clear-btn', function() {
-                $table.find('.js-select-all-rows').prop('checked', false);
-                $table.find('.js-row-selector').prop('checked', false).trigger('change');
+            $bar.on('click', '[data-bulk-clear], .js-bulk-clear-btn', function() {
+                $table.find('.js-select-all-rows, [data-select-all-checkbox]').prop('checked', false);
+                $table.find('.js-row-selector, [data-row-checkbox]').prop('checked', false).trigger('change');
             });
 
             return $bar;
         }
 
         function refreshBulkState($table, $bulkBar) {
-            var selectedCount = $table.find('.js-row-selector:checked').length;
+            var selectedCount = $table.find('.js-row-selector:checked, [data-row-checkbox]:checked').length;
+            var totalRows = $table.find('tbody tr[data-row-id], tbody tr[data-item-id]').length;
             var label = selectedCount > 1
                 ? selectedCount + ' lignes selectionnees'
                 : (selectedCount === 1 ? '1 ligne selectionnee' : '0 ligne selectionnee');
 
-            $bulkBar.find('.js-bulk-label').text(label);
-            if (selectedCount > 0) {
+            var $selectAll = $table.find('.js-select-all-rows, [data-select-all-checkbox]').first();
+            if ($selectAll.length > 0) {
+                $selectAll.prop('checked', totalRows > 0 && selectedCount === totalRows);
+                $selectAll.prop('indeterminate', selectedCount > 0 && selectedCount < totalRows);
+            }
+
+            if ($bulkBar.length === 0) {
+                return;
+            }
+
+            if ($bulkBar.find('[data-selection-count]').length > 0) {
+                $bulkBar.find('[data-selection-count]').text(selectedCount);
+            }
+            if ($bulkBar.find('[data-selection-label]').length > 0) {
+                $bulkBar.find('[data-selection-label]').text(label);
+            }
+            if ($bulkBar.find('.js-bulk-label').length > 0) {
+                $bulkBar.find('.js-bulk-label').text(label);
+            }
+
+            if ($bulkBar.hasClass('table-bulk-actions')) {
+                $bulkBar.toggleClass('is-visible', selectedCount > 0);
+            } else if (selectedCount > 0) {
                 $bulkBar.show();
             } else {
                 $bulkBar.hide();
@@ -162,53 +247,210 @@
         }
 
         function setupBulkDeletion($table, config) {
-            var $bulkBar = buildOrGetBulkBar($table);
+            var $bulkBar = buildOrGetBulkBar($table, resolveTableId($table, config.resource));
 
-            $bulkBar.on('click', '.js-bulk-delete-btn', function() {
+            $bulkBar.on('click', '[data-bulk-action="delete"], .js-bulk-delete-btn', function() {
                 var selectedIds = collectSelectedIds($table);
                 if (selectedIds.length === 0) {
                     return;
                 }
 
-                if (!window.confirm('Supprimer ' + selectedIds.length + ' element(s) selectionne(s) ?')) {
-                    return;
-                }
-
-                $.ajax({
-                    url: '/api/crud/' + encodeURIComponent(config.resource) + '/bulk-delete',
-                    method: 'POST',
-                    dataType: 'json',
-                    data: {
-                        _token: config.bulkDeleteToken,
-                        ids: selectedIds
-                    }
-                }).done(function(response) {
-                    if (!response || response.success !== true) {
-                        showToast((response && response.message) ? response.message : 'Suppression impossible.', 'error');
-                        return;
-                    }
-
-                    showToast(response.message || 'Elements supprimes avec succes.', 'success');
-                    window.location.reload();
-                }).fail(function(xhr) {
-                    var message = 'Suppression impossible.';
-                    if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
-                        message = xhr.responseJSON.message;
-                    }
-                    showToast(message, 'error');
-                });
+                openCrudBulkDeleteDialog($table, config, selectedIds);
             });
         }
 
         function collectSelectedIds($table) {
             var ids = [];
-            $table.find('tbody .js-row-selector:checked').each(function() {
-                var id = parseInt($(this).closest('tr').data('rowId'), 10);
+            $table.find('tbody .js-row-selector:checked, tbody [data-row-checkbox]:checked').each(function() {
+                var $row = $(this).closest('tr');
+                var rowIdValue = String($row.attr('data-row-id') || $(this).val() || '').trim();
+                var id = parseInt(rowIdValue, 10);
                 if (!isNaN(id) && id > 0) {
                     ids.push(id);
                 }
             });
             return ids;
+        }
+
+        function resolveTableId($table, fallbackResource) {
+            var tableId = String($table.attr('data-table-id') || '').trim();
+            if (tableId !== '') {
+                return tableId;
+            }
+
+            tableId = String(fallbackResource || '').trim();
+            if (tableId !== '') {
+                $table.attr('data-table-id', tableId);
+            }
+            return tableId;
+        }
+
+        function bindCrudBulkDeleteConfirmHandler() {
+            $(document).off('click.crudBulkDelete', '#confirmDeleteBtn').on('click.crudBulkDelete', '#confirmDeleteBtn', function(event) {
+                if (String($(this).attr('data-crud-bulk-delete') || '') !== '1') {
+                    return;
+                }
+
+                event.preventDefault();
+
+                if (!crudBulkDeleteState || !crudBulkDeleteState.table || crudBulkDeleteState.ids.length === 0) {
+                    resetCrudBulkDeleteState();
+                    return;
+                }
+
+                submitCrudBulkDelete();
+            });
+
+            $('#deleteConfirmModal').off('hidden.bs.modal.crudBulkDelete').on('hidden.bs.modal.crudBulkDelete', function() {
+                if (!crudBulkDeleteState || !crudBulkDeleteState.submitting) {
+                    resetCrudBulkDeleteState();
+                }
+            });
+        }
+
+        function openCrudBulkDeleteDialog($table, config, selectedIds) {
+            var ids = Array.isArray(selectedIds) ? selectedIds.slice() : [];
+            if (ids.length === 0) {
+                return;
+            }
+
+            var $modal = $('#deleteConfirmModal');
+            if ($modal.length === 0 || $('#confirmDeleteBtn').length === 0) {
+                fallbackBulkDeleteWithConfirm($table, config, ids);
+                return;
+            }
+
+            crudBulkDeleteState = {
+                table: $table,
+                config: config,
+                ids: ids,
+                submitting: false
+            };
+
+            $('#deleteModalItemName').text(ids.length > 1 ? (ids.length + ' elements selectionnes') : 'cet element selectionne');
+            $('#confirmDeleteBtn')
+                .attr('href', '#')
+                .attr('data-crud-bulk-delete', '1')
+                .removeClass('bulk-delete-loading')
+                .css('pointer-events', '');
+
+            $modal.modal('show');
+        }
+
+        function submitCrudBulkDelete() {
+            if (!crudBulkDeleteState || crudBulkDeleteState.submitting) {
+                return;
+            }
+
+            var state = crudBulkDeleteState;
+            var config = state.config || {};
+            var $confirmDeleteBtn = $('#confirmDeleteBtn');
+            var $deleteModal = $('#deleteConfirmModal');
+
+            state.submitting = true;
+            $confirmDeleteBtn.addClass('bulk-delete-loading').css('pointer-events', 'none');
+
+            $.ajax({
+                url: '/api/crud/' + encodeURIComponent(config.resource) + '/bulk-delete',
+                method: 'POST',
+                dataType: 'json',
+                data: JSON.stringify({
+                    _token: config.bulkDeleteToken,
+                    ids: state.ids
+                }),
+                contentType: 'application/json; charset=UTF-8',
+                processData: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function(response) {
+                if (!response || response.success !== true) {
+                    showToast((response && response.message) ? response.message : 'Suppression impossible.', 'error');
+                    return;
+                }
+
+                var deletedIds = Array.isArray(response.deletedIds) && response.deletedIds.length
+                    ? response.deletedIds
+                    : state.ids;
+
+                removeRowsByIds(state.table, deletedIds);
+
+                var $selectAll = state.table.find('.js-select-all-rows, [data-select-all-checkbox]').first();
+                if ($selectAll.length > 0) {
+                    $selectAll.prop('checked', false).prop('indeterminate', false);
+                }
+
+                refreshBulkState(state.table, buildOrGetBulkBar(state.table, resolveTableId(state.table, config.resource)));
+                $deleteModal.modal('hide');
+                showToast(response.message || 'Elements supprimes avec succes.', 'success');
+            }).fail(function(xhr) {
+                var message = 'Suppression impossible.';
+                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                showToast(message, 'error');
+            }).always(function() {
+                if (crudBulkDeleteState) {
+                    crudBulkDeleteState.submitting = false;
+                }
+                $confirmDeleteBtn.removeClass('bulk-delete-loading').css('pointer-events', '');
+                if (!$deleteModal.hasClass('show')) {
+                    resetCrudBulkDeleteState();
+                }
+            });
+        }
+
+        function fallbackBulkDeleteWithConfirm($table, config, ids) {
+            if (!window.confirm('Supprimer ' + ids.length + ' element(s) selectionne(s) ?')) {
+                return;
+            }
+
+            $.ajax({
+                url: '/api/crud/' + encodeURIComponent(config.resource) + '/bulk-delete',
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    _token: config.bulkDeleteToken,
+                    ids: ids
+                }
+            }).done(function(response) {
+                if (!response || response.success !== true) {
+                    showToast((response && response.message) ? response.message : 'Suppression impossible.', 'error');
+                    return;
+                }
+                removeRowsByIds($table, ids);
+                refreshBulkState($table, buildOrGetBulkBar($table, resolveTableId($table, config.resource)));
+                showToast(response.message || 'Elements supprimes avec succes.', 'success');
+            }).fail(function(xhr) {
+                var message = 'Suppression impossible.';
+                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                showToast(message, 'error');
+            });
+        }
+
+        function removeRowsByIds($table, ids) {
+            var idMap = {};
+            ids.forEach(function(id) {
+                idMap[String(id)] = true;
+            });
+
+            $table.find('tbody tr').each(function() {
+                var $row = $(this);
+                var rowId = String($row.attr('data-row-id') || $row.attr('data-item-id') || '').trim();
+                if (rowId !== '' && idMap[rowId]) {
+                    $row.remove();
+                }
+            });
+        }
+
+        function resetCrudBulkDeleteState() {
+            crudBulkDeleteState = null;
+            $('#confirmDeleteBtn')
+                .removeAttr('data-crud-bulk-delete')
+                .removeClass('bulk-delete-loading')
+                .css('pointer-events', '');
         }
 
         function setupInlineEditing($table, config) {
@@ -670,5 +912,4 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         }
-    });
 })(window.jQuery);

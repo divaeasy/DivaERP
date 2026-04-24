@@ -23,9 +23,12 @@
         <button type="button" class="btn-add no-loading" data-toggle="modal" data-target="#pieceQuickCreateModal">
             <i class="fas fa-plus"></i> Creation rapide
         </button>
-        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.factures') }}" title="Exporter CSV">
-            <i class="fas fa-file-csv mr-1"></i> Exporter
+        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.factures') }}" title="Exporter Excel">
+            <i class="fas fa-file-excel fa-md"></i> Exporter
         </a>
+        <button type="button" class="btn btn-sm btn-outline-primary ml-2 no-loading" data-toggle="modal" data-target="#pieceImportModal">
+            <i class="fas fa-file-import fa-md"></i> Importer
+        </button>
     </div>
     <div class="table-bulk-actions" id="piecesBulkActions" data-bulk-bar-for="pieces">
         <div class="table-bulk-actions__content">
@@ -141,7 +144,7 @@
                 <th data-column-key="statut" data-sort-key="statut">Statut</th>
                 <th data-column-key="devise" data-sort-key="devise">Devise</th>
                 <th data-column-key="annee" data-sort-key="annee" data-sort-type="number">Annee</th>
-                <th class="text-center" style="width: 280px;" data-column-key="actions">Actions</th>
+                <th class="text-center" style="width: 220px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
         <tbody id="piecesTableBody">
@@ -333,6 +336,37 @@
     {% endif %}
 </div>
 
+<div class="modal fade" id="pieceImportModal" tabindex="-1" role="dialog" aria-labelledby="pieceImportModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="pieceImportForm" class="no-loading" enctype="multipart/form-data" novalidate>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pieceImportModalLabel">Importer des pieces</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="_token" value="{{ csrf_token('entetepiece_import') }}">
+                    <input type="hidden" name="origin" value="{{ pieceOrigin|default('client') }}">
+                    <div class="alert alert-info py-2 mb-3">
+                        Format similaire a l'import article. Colonnes attendues:
+                        <strong>type, typet, tierId, pieceref, remise, statut, datep</strong> (CSV/XLS/XLSX).
+                    </div>
+                    <div class="form-group mb-0">
+                        <label for="pieceImportFile">Fichier</label>
+                        <input id="pieceImportFile" type="file" name="file" class="form-control-file" accept=".csv,.txt,.xls,.xlsx" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary" id="pieceImportSubmit">Importer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade piece-quick-modal" id="pieceQuickCreateModal" tabindex="-1" role="dialog" aria-labelledby="pieceQuickCreateModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg">
@@ -347,7 +381,7 @@
                         <i class="fas fa-file-invoice"></i>
                     </div>
                     <h3 class="piece-quick-modal-title" id="pieceQuickCreateModalLabel">Creation rapide de piece</h3>
-                    <p class="piece-quick-modal-subtitle">Renseignez les champs requis et les champs complementaires sans ouvrir le formulaire complet.</p>
+                    <p class="piece-quick-modal-subtitle">Renseignez uniquement les champs requis. Les autres informations se completent ensuite en edition inline.</p>
                     <div class="piece-quick-modal-note">
                         Astuce: apres creation, la nouvelle ligne passe directement en mode edition inline.
                     </div>
@@ -385,44 +419,8 @@
                         <input id="pieceQuickReference" name="pieceref" type="text" class="form-control piece-quick-input" maxlength="255" placeholder="Reference optionnelle">
                     </div>
 
-                    <div class="form-group">
-                        <label for="pieceQuickRemise">Remise (%)</label>
-                        <input id="pieceQuickRemise" name="remise" type="number" class="form-control piece-quick-input" min="0" step="0.01" value="0">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="pieceQuickStatut">Statut <span class="text-danger">*</span></label>
-                        <select id="pieceQuickStatut" name="statut" class="form-control piece-quick-input" required>
-                            {% for item in inlinePieceStatuses|default([]) %}
-                                <option value="{{ item.value }}" {% if item.value == 'Brouillon' %}selected{% endif %}>{{ item.label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="pieceQuickDeviseId">Devise</label>
-                        <select id="pieceQuickDeviseId" name="deviseId" class="form-control piece-quick-input">
-                            <option value="">Selectionner une devise</option>
-                            {% for item in inlineDevises|default([]) %}
-                                <option value="{{ item.id }}" {% if app.user and app.user.currentDossier and app.user.currentDossier.devise and app.user.currentDossier.devise.id == item.id %}selected{% endif %}>{{ item.code }}{% if item.label %} - {{ item.label }}{% endif %}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="pieceQuickReglementId">Reglement</label>
-                        <select id="pieceQuickReglementId" name="reglementId" class="form-control piece-quick-input">
-                            <option value="">Selectionner un reglement</option>
-                            {% for item in inlineReglements|default([]) %}
-                                <option value="{{ item.id }}">{{ item.label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group mb-0">
-                        <label for="pieceQuickDate">Date de piece</label>
-                        <input id="pieceQuickDate" name="datep" type="date" class="form-control piece-quick-input" value="{{ "now"|date("Y-m-d") }}">
-                    </div>
+                    <input type="hidden" name="remise" value="0">
+                    <input type="hidden" name="statut" value="Brouillon">
 
                     <div class="piece-quick-modal-actions">
                         <button type="button" class="btn piece-quick-cancel" data-dismiss="modal">Annuler</button>
@@ -613,7 +611,11 @@
             var $quickCreateModal = $('#pieceQuickCreateModal');
             var $quickCreateForm = $('#pieceQuickCreateForm');
             var $quickCreateSubmit = $('#pieceQuickCreateSubmit');
+            var $pieceImportModal = $('#pieceImportModal');
+            var $pieceImportForm = $('#pieceImportForm');
+            var $pieceImportSubmit = $('#pieceImportSubmit');
             var quickCreateUrl = '{{ path('entetepiece.create_minimal') }}';
+            var importUrl = '{{ path('entetepiece.import') }}';
             var $table = $('#piecesTable');
             var $tbody = $('#piecesTableBody');
             var hasTable = $table.length > 0 && $tbody.length > 0;
@@ -621,6 +623,9 @@
             var bulkDeleteToken = hasTable ? String($table.data('bulkDeleteToken') || '').trim() : '';
             var bulkDeleteUrl = '{{ path('api.crud.bulk_delete', {resource: 'entetepiece'}) }}';
             var $bulkBar = $('#piecesBulkActions');
+            var $deleteConfirmModal = $('#deleteConfirmModal');
+            var $deleteModalItemName = $('#deleteModalItemName');
+            var $confirmDeleteBtn = $('#confirmDeleteBtn');
             var $selectAll = $table.find('[data-select-all-checkbox]').first();
             var $columnSettings = $('.piece-column-settings-floating');
             var $columnSettingsToggle = $('#pieceColumnSettingsToggle');
@@ -636,6 +641,8 @@
             var inlinePieceStatuses = {{ inlinePieceStatuses|default([])|json_encode|raw }};
             var inlineDevises = {{ inlineDevises|default([])|json_encode|raw }};
             var inlineTierTypes = {{ inlineTierTypes|default([])|json_encode|raw }};
+            var bulkDeletePending = null;
+            var isBulkDeleteSubmitting = false;
 
             function showPieceToast(message, type) {
                 if (typeof window.showAppToast === 'function') {
@@ -643,6 +650,109 @@
                     return;
                 }
                 window.alert(message);
+            }
+
+            function setBulkDeleteConfirmButtonLoading(isLoading) {
+                if (!$confirmDeleteBtn.length) {
+                    return;
+                }
+
+                var initialHtml = String($confirmDeleteBtn.data('bulk-initial-html') || '');
+                if (!initialHtml) {
+                    initialHtml = String($confirmDeleteBtn.html() || '');
+                    $confirmDeleteBtn.data('bulk-initial-html', initialHtml);
+                }
+
+                if (isLoading) {
+                    $confirmDeleteBtn
+                        .addClass('bulk-delete-loading')
+                        .html('<i class="fas fa-spinner fa-spin"></i>Suppression...');
+                    return;
+                }
+
+                $confirmDeleteBtn
+                    .removeClass('bulk-delete-loading')
+                    .html(initialHtml);
+            }
+
+            function resetBulkDeleteConfirmState() {
+                if ($confirmDeleteBtn.length) {
+                    $confirmDeleteBtn.removeAttr('data-bulk-delete');
+                }
+                setBulkDeleteConfirmButtonLoading(false);
+            }
+
+            function openBulkDeleteConfirmation(selectedIds) {
+                if (!$deleteConfirmModal.length || !$confirmDeleteBtn.length || !$deleteModalItemName.length) {
+                    showPieceToast('La confirmation de suppression est indisponible.', 'error');
+                    return;
+                }
+
+                var normalizedIds = Array.isArray(selectedIds)
+                    ? selectedIds.map(function(idValue) { return String(idValue || '').trim(); }).filter(function(idValue) { return idValue !== ''; })
+                    : [];
+
+                if (!normalizedIds.length) {
+                    showPieceToast('Selection vide.', 'error');
+                    return;
+                }
+
+                bulkDeletePending = { ids: normalizedIds };
+                var count = normalizedIds.length;
+                var itemLabel = count > 1 ? ('ces ' + count + ' pieces') : 'cette piece';
+                $deleteModalItemName.text(itemLabel);
+                $confirmDeleteBtn.attr('href', '#').attr('data-bulk-delete', '1');
+                setBulkDeleteConfirmButtonLoading(false);
+                $deleteConfirmModal.modal('show');
+            }
+
+            function submitBulkDeleteSelection() {
+                if (isBulkDeleteSubmitting || !bulkDeletePending || !Array.isArray(bulkDeletePending.ids) || !bulkDeletePending.ids.length) {
+                    return;
+                }
+                if (bulkDeleteToken === '') {
+                    showPieceToast('Jeton de suppression indisponible.', 'error');
+                    return;
+                }
+
+                isBulkDeleteSubmitting = true;
+                setBulkDeleteConfirmButtonLoading(true);
+                var pendingSnapshot = bulkDeletePending;
+
+                $.ajax({
+                    url: bulkDeleteUrl,
+                    method: 'POST',
+                    contentType: 'application/json; charset=UTF-8',
+                    dataType: 'json',
+                    data: JSON.stringify({
+                        _token: bulkDeleteToken,
+                        ids: pendingSnapshot.ids
+                    }),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).done(function(response) {
+                    if (!response || response.success !== true) {
+                        showPieceToast((response && response.message) ? response.message : 'Suppression impossible.', 'error');
+                        return;
+                    }
+
+                    showPieceToast(response.message || 'Pieces supprimees.', 'success');
+                    window.location.reload();
+                }).fail(function(xhr) {
+                    var message = 'Suppression impossible.';
+                    if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    showPieceToast(message, 'error');
+                }).always(function() {
+                    isBulkDeleteSubmitting = false;
+                    setBulkDeleteConfirmButtonLoading(false);
+                    if (!$deleteConfirmModal.hasClass('show')) {
+                        bulkDeletePending = null;
+                        resetBulkDeleteConfirmState();
+                    }
+                });
             }
 
             function parseNumber(value) {
@@ -778,10 +888,14 @@
                     var $row = $(this);
                     var $checkbox = getRowCheckbox($row);
                     if ($checkbox.is(':checked')) {
-                        selectedIds.push(String($row.attr('data-item-id') || '').trim());
+                        var rawId = String($row.attr('data-item-id') || '').trim();
+                        if (!/^\d+$/.test(rawId)) {
+                            return;
+                        }
+                        selectedIds.push(rawId);
                     }
                 });
-                return selectedIds.filter(Boolean);
+                return selectedIds;
             }
 
             function updateSelectionUi() {
@@ -866,12 +980,59 @@
                 });
             }
 
+            function positionDropdownMenu($shell) {
+                if (!$shell || !$shell.length) {
+                    return;
+                }
+                var $menu = $shell.find('.inline-dropdown-menu').first();
+                if (!$menu.length) {
+                    return;
+                }
+                var triggerRect = $shell[0].getBoundingClientRect();
+                var menuWidth = $menu.outerWidth() || 220;
+                var menuHeight = $menu.outerHeight() || 300;
+                var viewportHeight = window.innerHeight;
+                var viewportWidth = window.innerWidth;
+                var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                // Try to position below the trigger first
+                var top = triggerRect.bottom + scrollTop + 8;
+                var left = triggerRect.left + scrollLeft;
+                
+                // Check if menu goes below viewport, if so position above
+                if (triggerRect.bottom + menuHeight + 16 > viewportHeight) {
+                    top = triggerRect.top + scrollTop - menuHeight - 8;
+                }
+                
+                // Check if menu goes right of viewport, if so align to right side of viewport
+                if (left + menuWidth > viewportWidth - 10) {
+                    left = Math.max(10, viewportWidth - menuWidth - 10) + scrollLeft;
+                }
+                
+                // Ensure menu doesn't go off left side
+                if (left < 10) {
+                    left = 10 + scrollLeft;
+                }
+                
+                // Ensure menu is at least 10px from top
+                if (top < 10) {
+                    top = 10 + scrollTop;
+                }
+                
+                $menu.css({
+                    top: top + 'px',
+                    left: left + 'px'
+                });
+            }
+            
             function openDropdownShell($shell) {
                 if (!$shell || !$shell.length) {
                     return;
                 }
                 closeDropdowns($shell);
                 $shell.addClass('is-open');
+                positionDropdownMenu($shell);
             }
 
             function createDropdownOption(value, label, isActive) {
@@ -943,10 +1104,20 @@
             }
 
             function getEditValues($row) {
+                var tierTypeValue = String($row.attr('data-tier-type') || '').trim();
+                var tierIdValue = String($row.find('.inline-dropdown-shell[data-name="tierId"]').attr('data-value') || '').trim();
+
+                if (tierTypeValue === '') {
+                    tierTypeValue = String($row.attr('data-tier-type') || '').trim();
+                }
+                if (tierIdValue === '') {
+                    tierIdValue = String($row.attr('data-tier-id') || '').trim();
+                }
+
                 return {
                     type: String($row.find('.inline-dropdown-shell[data-name="type"]').attr('data-value') || ''),
-                    typet: String($row.find('.inline-dropdown-shell[data-name="tierType"]').attr('data-value') || ''),
-                    tierId: String($row.find('.inline-dropdown-shell[data-name="tierId"]').attr('data-value') || ''),
+                    typet: tierTypeValue,
+                    tierId: tierIdValue,
                     pieceref: $.trim($row.find('.piece-inline-text[data-field="pieceref"]').text() || ''),
                     remise: $.trim($row.find('.piece-inline-text[data-field="remise"]').text() || ''),
                     statut: String($row.find('.inline-dropdown-shell[data-name="statut"]').attr('data-value') || ''),
@@ -1037,6 +1208,11 @@
 
                     var tierShell = buildInlineDropdown(tierOptions, selectedTierId, selectedTierLabel, 'Selectionner un tiers').attr('data-name', 'tierId');
                     $tierSelectorHost.empty().append(tierShell);
+                    
+                    // Ensure the value is set on the shell
+                    if (selectedTierId && selectedTierId !== '') {
+                        $tierSelectorHost.find('.inline-dropdown-shell').attr('data-value', selectedTierId);
+                    }
                 });
             }
 
@@ -1063,12 +1239,8 @@
                 );
                 $row.find('td[data-field="tier"]').html(
                     '<div class="piece-inline-tier-edit">' +
-                        '<div class="piece-inline-tier-type"></div>' +
                         '<div class="piece-inline-tier-selector"></div>' +
                     '</div>'
-                );
-                $row.find('.piece-inline-tier-type').append(
-                    buildInlineDropdown(getTierTypeOptions(), selectedTierType, selectedTierType, 'Type tiers').attr('data-name', 'tierType')
                 );
                 renderTierSelectorForRow($row, selectedTierType, snapshot.tierId, snapshot.tierLabel);
 
@@ -1145,12 +1317,6 @@
                 if ($.trim(String(values.typet || '')) === '') {
                     showPieceToast('Le type de tiers est obligatoire.', 'error');
                     focusEditableField($row, 'tier');
-                    return;
-                }
-
-                if (values.statut === '') {
-                    showPieceToast('Le statut est obligatoire.', 'error');
-                    focusEditableField($row, 'statut');
                     return;
                 }
 
@@ -1480,12 +1646,14 @@
                     var value = String($option.attr('data-value') || '');
                     var label = value === '' ? '' : String($option.attr('data-label') || $option.text() || '');
                     setDropdownValue($shell, value, label);
-                    $shell.removeClass('is-open');
+                    
+                    // Ensure value is properly set before closing
+                    $shell.attr('data-value', value);
+                    
+                    setTimeout(function() {
+                        $shell.removeClass('is-open');
+                    }, 50);
 
-                    if (String($shell.attr('data-name') || '') === 'tierType') {
-                        var $row = $shell.closest('.piece-row');
-                        renderTierSelectorForRow($row, value, '', '');
-                    }
                 });
 
                 $table.on('keydown.pieceList', '.piece-inline-text, .inline-dropdown-trigger, .inline-dropdown-option', function(event) {
@@ -1517,41 +1685,7 @@
                     if (!ids.length) {
                         return;
                     }
-                    if (bulkDeleteToken === '') {
-                        showPieceToast('Jeton de suppression indisponible.', 'error');
-                        return;
-                    }
-
-                    if (!window.confirm('Supprimer ' + ids.length + ' piece(s) selectionnee(s) ?')) {
-                        return;
-                    }
-
-                    $.ajax({
-                        url: bulkDeleteUrl,
-                        method: 'POST',
-                        dataType: 'json',
-                        data: {
-                            _token: bulkDeleteToken,
-                            ids: ids
-                        },
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    }).done(function(response) {
-                        if (!response || response.success !== true) {
-                            showPieceToast((response && response.message) ? response.message : 'Suppression impossible.', 'error');
-                            return;
-                        }
-
-                        showPieceToast(response.message || 'Pieces supprimees.', 'success');
-                        window.location.reload();
-                    }).fail(function(xhr) {
-                        var message = 'Suppression impossible.';
-                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
-                            message = xhr.responseJSON.message;
-                        }
-                        showPieceToast(message, 'error');
-                    });
+                    openBulkDeleteConfirmation(ids);
                 });
 
                 readColumnPrefs();
@@ -1564,7 +1698,6 @@
                 var $quickTierType = $('#pieceQuickTierType');
                 var $quickTierId = $('#pieceQuickTierId');
                 var $quickRef = $('#pieceQuickReference');
-                var $quickDate = $('#pieceQuickDate');
 
                 if ($quickTierType.length) {
                     $quickTierType.off('change.pieceQuickCreate').on('change.pieceQuickCreate', function() {
@@ -1630,12 +1763,53 @@
                     if ($quickCreateForm[0]) {
                         $quickCreateForm[0].reset();
                     }
-                    if ($quickDate.length) {
-                        $quickDate.val('{{ "now"|date("Y-m-d") }}');
-                    }
                     if ($quickTierType.length && getTierTypeOptions().length <= 1) {
                         $quickTierType.val(getDefaultTierTypeValue());
                     }
+                });
+            }
+
+            if ($pieceImportForm.length) {
+                $pieceImportForm.off('submit.pieceImport').on('submit.pieceImport', function(event) {
+                    event.preventDefault();
+
+                    var formEl = $pieceImportForm[0];
+                    var fileInput = formEl ? formEl.querySelector('input[name="file"]') : null;
+                    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+                        showPieceToast('Selectionnez un fichier a importer.', 'error');
+                        return;
+                    }
+
+                    var formData = new FormData(formEl);
+                    $pieceImportSubmit.prop('disabled', true);
+
+                    $.ajax({
+                        url: importUrl,
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        dataType: 'json',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).done(function(response) {
+                        if (!response || response.success !== true) {
+                            showPieceToast((response && response.message) ? response.message : 'Import impossible.', 'error');
+                            return;
+                        }
+                        showPieceToast(response.message || 'Import termine.', 'success');
+                        $pieceImportModal.modal('hide');
+                        window.location.reload();
+                    }).fail(function(xhr) {
+                        var message = 'Import impossible.';
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        showPieceToast(message, 'error');
+                    }).always(function() {
+                        $pieceImportSubmit.prop('disabled', false);
+                    });
                 });
             }
 
@@ -1682,10 +1856,59 @@
                 if (!hasTable) {
                     return;
                 }
+                // Don't close dropdowns if clicking on table elements
+                if ($(event.target).closest('#piecesTable').length) {
+                    if ($(event.target).closest('.inline-dropdown-shell').length === 0 && 
+                        $(event.target).closest('.inline-dropdown-menu').length === 0) {
+                        closeDropdowns();
+                    }
+                    return;
+                }
                 if ($(event.target).closest('.inline-dropdown-shell').length === 0) {
                     closeDropdowns();
                 }
             });
+
+            // Reposition dropdowns on scroll and window resize
+            var repositionDropdownsThrottled = (function() {
+                var timeout = null;
+                return function() {
+                    if (timeout) {
+                        clearTimeout(timeout);
+                    }
+                    timeout = setTimeout(function() {
+                        if (hasTable) {
+                            $table.find('.inline-dropdown-shell.is-open').each(function() {
+                                positionDropdownMenu($(this));
+                            });
+                        }
+                    }, 10);
+                };
+            })();
+
+            $(window).on('scroll.pieceInlineDropdown resize.pieceInlineDropdown', repositionDropdownsThrottled);
+            
+            // Prevent dropdown from closing when clicking inside it
+            $table.on('click.pieceDropdown', '.inline-dropdown-menu, .inline-dropdown-option, .inline-dropdown-trigger', function(e) {
+                e.stopPropagation();
+                return true;
+            });
+
+            $(document).off('click.pieceBulkDeleteConfirm', '#confirmDeleteBtn').on('click.pieceBulkDeleteConfirm', '#confirmDeleteBtn', function(event) {
+                if ($(this).attr('data-bulk-delete') !== '1') {
+                    return;
+                }
+                event.preventDefault();
+                submitBulkDeleteSelection();
+            });
+
+            if ($deleteConfirmModal.length) {
+                $deleteConfirmModal.off('hidden.bs.modal.pieceBulkDelete').on('hidden.bs.modal.pieceBulkDelete', function() {
+                    bulkDeletePending = null;
+                    isBulkDeleteSubmitting = false;
+                    resetBulkDeleteConfirmState();
+                });
+            }
         }
 
         if (document.readyState === 'loading') {
@@ -1804,49 +2027,57 @@
     }
     .action-bar {
         position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: nowrap;
+        min-height: 52px;
     }
     .action-bar .action-buttons {
         order: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex: 0 0 auto;
+        white-space: nowrap;
     }
     .action-tools {
         display: flex;
         align-items: center;
         justify-content: flex-end;
         gap: 0.75rem;
-        margin-left: 0;
+        margin-left: auto;
         position: relative;
         z-index: 12;
         order: 3;
+        flex: 1 1 auto;
+        min-width: 260px;
     }
     .table-bulk-actions {
-        position: static;
+        position: absolute;
+        left: 50%;
+        top: 50%;
         order: 2;
-        flex: 0 0 auto;
-        max-width: 0;
-        min-width: 0;
-        width: 0;
+        width: min(52vw, 560px);
+        min-width: 320px;
+        max-width: 560px;
         margin: 0;
-        transform: translateY(14px);
+        transform: translate(-50%, calc(-50% + 14px));
         opacity: 0;
         pointer-events: none;
         transition: transform 0.22s ease, opacity 0.22s ease;
         z-index: 8;
-        padding: 0;
+        padding: 8px 10px;
         border-radius: 12px;
-        border: 0;
+        border: 1px solid rgba(148, 163, 184, 0.36);
         background: #fff;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
         color: #0f172a;
         overflow: hidden;
     }
     .table-bulk-actions.is-visible {
-        width: min(52vw, 560px);
-        min-width: 320px;
-        max-width: 560px;
-        margin: 0 0.5rem;
-        padding: 8px 10px;
-        border: 1px solid rgba(148, 163, 184, 0.36);
-        transform: translateY(0);
+        transform: translate(-50%, -50%);
         opacity: 1;
         pointer-events: auto;
     }
@@ -2029,6 +2260,18 @@
         position: relative;
         user-select: none;
     }
+    .pieces-table thead th:first-child {
+        border-top-left-radius: 8px;
+    }
+    .pieces-table thead th:last-child {
+        border-top-right-radius: 8px;
+    }
+    .pieces-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 8px;
+    }
+    .pieces-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 8px;
+    }
     .pieces-table tbody td {
         white-space: nowrap;
         overflow: hidden;
@@ -2043,7 +2286,15 @@
         width: 82px;
     }
     .pieces-table [data-column-key="actions"] {
-        width: 280px;
+        width: 220px;
+        position: sticky;
+        right: 0;
+        z-index: 3;
+        background: #fff;
+    }
+    .pieces-table thead [data-column-key="actions"] {
+        z-index: 5;
+        background: var(--theme-primary);
     }
     .pieces-table .piece-row.is-selected {
         background: rgba(37, 99, 235, 0.08);
@@ -2086,7 +2337,7 @@
     }
     .piece-inline-tier-edit {
         display: grid;
-        grid-template-columns: minmax(120px, 1fr) minmax(180px, 2fr);
+        grid-template-columns: minmax(0, 1fr);
         gap: 0.35rem;
         align-items: center;
     }
@@ -2094,11 +2345,13 @@
         position: relative;
         display: flex;
         align-items: center;
-        justify-content: flex-start;
+        justify-content: space-between;
         gap: 0.3rem;
         min-height: 1.5rem;
         z-index: 1;
         overflow: visible;
+        min-width: 0;
+        width: 100%;
     }
     .inline-dropdown-shell.is-open {
         z-index: 2400;
@@ -2106,7 +2359,7 @@
     }
     .inline-dropdown-label {
         display: block;
-        flex: 1 1 auto;
+        flex: 1 1 0;
         min-width: 0;
         white-space: nowrap;
         overflow: hidden;
@@ -2123,19 +2376,22 @@
         background: rgba(37, 99, 235, 0.06);
     }
     .inline-dropdown-trigger {
-        width: 20px;
-        height: 20px;
-        border: none;
-        background: transparent;
+        width: 24px;
+        height: 24px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
         color: #6b7280;
-        border-radius: 4px;
+        border-radius: 6px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         transition: background-color 0.15s ease, color 0.15s ease;
         flex-shrink: 0;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         padding: 0;
+        opacity: 1 !important;
+        visibility: visible !important;
+        flex: 0 0 24px;
     }
     .inline-dropdown-trigger:hover,
     .inline-dropdown-shell.is-open .inline-dropdown-trigger {
@@ -2143,32 +2399,45 @@
         color: var(--theme-primary);
     }
     .inline-dropdown-menu {
-        position: absolute;
-        top: calc(100% + 6px);
-        left: 0;
+        position: fixed;
+        top: auto;
+        left: auto;
         right: auto;
-        min-width: 200px;
+        min-width: 220px;
         max-width: calc(100vw - 1rem);
-        max-height: 280px;
+        max-height: 320px;
         overflow-y: auto;
         padding: 0;
-        border-radius: 8px;
+        border-radius: 10px;
         background: #fff;
         border: 1px solid #e2e8f0;
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
         display: none;
-        z-index: 9999;
+        z-index: 10000;
+        animation: slideInDropdown 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+        pointer-events: auto;
+    }
+    @keyframes slideInDropdown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px) scale(0.96);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
     }
     .inline-dropdown-shell.is-open .inline-dropdown-menu {
         display: flex;
         flex-direction: column;
+        pointer-events: auto !important;
     }
     .inline-dropdown-option {
         width: 100%;
         border: none;
         background: transparent;
         text-align: left;
-        padding: 0.6rem 0.78rem;
+        padding: 0.65rem 0.85rem;
         border-radius: 0;
         color: #334155;
         font-size: 0.84rem;
@@ -2178,13 +2447,14 @@
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
+        pointer-events: auto;
     }
     .inline-dropdown-option:hover {
-        background: #f0f4f8;
-        color: #1e293b;
+        background: rgba(37, 99, 235, 0.06);
+        color: var(--theme-primary);
     }
     .inline-dropdown-option.is-active {
-        background: rgba(37, 99, 235, 0.08);
+        background: rgba(37, 99, 235, 0.12);
         color: var(--theme-primary);
         font-weight: 600;
     }

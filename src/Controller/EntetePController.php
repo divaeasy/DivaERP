@@ -16,6 +16,7 @@ use App\Form\SearchPieceFormType;
 use App\Model\SearchPiece;
 use App\Repository\EntetepieceRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
@@ -23,6 +24,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('piece')]
@@ -495,6 +497,165 @@ class EntetePController extends AbstractController
             'success' => true,
             'message' => 'Piece creee avec succes.',
             'item' => $this->serializePieceListItem($piece, $doctrine, $origin, $lineStats),
+        ]);
+    }
+
+    #[Route('/import', name: 'entetepiece.import', methods: ['POST'])]
+    public function importPieces(Request $request, ManagerRegistry $doctrine): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid('entetepiece_import', (string) $request->request->get('_token'))) {
+            return $this->json(['success' => false, 'message' => 'Jeton de securite invalide.'], 403);
+        }
+
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if (!$currentDossier instanceof Dossier) {
+            return $this->json(['success' => false, 'message' => 'Aucun dossier courant selectionne.'], 403);
+        }
+
+        $file = $request->files->get('file');
+        if (!$file instanceof UploadedFile || !$file->isValid()) {
+            return $this->json(['success' => false, 'message' => 'Fichier invalide.'], 422);
+        }
+
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+        if (!in_array($extension, ['csv', 'txt', 'xls', 'xlsx'], true)) {
+            return $this->json(['success' => false, 'message' => 'Format non supporte. Utilisez CSV, XLS ou XLSX.'], 422);
+        }
+
+        try {
+            $sheet = IOFactory::load((string) $file->getPathname())->getActiveSheet();
+            $rows = $sheet->toArray(null, true, true, true);
+        } catch (\Throwable) {
+            return $this->json(['success' => false, 'message' => 'Lecture du fichier impossible.'], 422);
+        }
+
+        if (count($rows) < 2) {
+            return $this->json(['success' => false, 'message' => 'Le fichier ne contient aucune ligne a importer.'], 422);
+        }
+
+        $headerRow = array_shift($rows) ?: [];
+        $headers = [];
+        foreach ($headerRow as $col => $label) {
+            $headers[(string) $col] = $this->normalizeToken((string) $label);
+        }
+
+        $origin = $this->resolvePieceOriginToken((string) $request->request->get('origin', (string) $request->query->get('origin', '')));
+        $allowedTierTypes = $this->resolveAllowedTierTypesForOrigin($origin);
+        $defaultTierType = $allowedTierTypes[0] ?? 'Client';
+
+        $createdCount = 0;
+        $errors = [];
+        $manager = $doctrine->getManager();
+
+        foreach ($rows as $index => $rawRow) {
+            $lineNumber = $index + 2;
+            $normalized = [];
+            foreach ($rawRow as $col => $value) {
+                $key = $headers[(string) $col] ?? '';
+                if ($key === '') {
+                    continue;
+                }
+                $normalized[$key] = is_string($value) ? trim($value) : $value;
+            }
+
+            $tierIdRaw = trim((string) ($normalized['tierid'] ?? $normalized['tiersid'] ?? ''));
+            if ($tierIdRaw === '' || !ctype_digit($tierIdRaw)) {
+                $errors[] = sprintf('Ligne %d: tierId manquant ou invalide.', $lineNumber);
+                continue;
+            }
+
+            $pieceType = $this->resolveAllowedCreatePieceType((string) ($normalized['type'] ?? 'Facture'));
+            if ($pieceType === null) {
+                $errors[] = sprintf('Ligne %d: type de piece invalide.', $lineNumber);
+                continue;
+            }
+
+            $tierType = $this->resolveAllowedTierType((string) ($normalized['typet'] ?? $defaultTierType), $allowedTierTypes);
+            if ($tierType === null) {
+                $errors[] = sprintf('Ligne %d: type de tiers invalide.', $lineNumber);
+                continue;
+            }
+
+            $tierClass = $this->resolveTierClass($tierType);
+            if ($tierClass === null) {
+                $errors[] = sprintf('Ligne %d: type de tiers invalide.', $lineNumber);
+                continue;
+            }
+
+            $tier = $doctrine->getRepository($tierClass)->findOneBy([
+                'id' => (int) $tierIdRaw,
+                'dossier' => $currentDossier,
+            ]);
+            if ($tier === null) {
+                $errors[] = sprintf('Ligne %d: tiers introuvable dans le dossier.', $lineNumber);
+                continue;
+            }
+
+            $status = $this->resolveEditableStatusValue((string) ($normalized['statut'] ?? 'Brouillon'));
+            if ($status === null) {
+                $errors[] = sprintf('Ligne %d: statut invalide.', $lineNumber);
+                continue;
+            }
+
+            $remiseRaw = trim((string) ($normalized['remise'] ?? '0'));
+            if ($remiseRaw !== '' && !is_numeric($remiseRaw)) {
+                $errors[] = sprintf('Ligne %d: remise invalide.', $lineNumber);
+                continue;
+            }
+            $remise = $remiseRaw === '' ? 0.0 : max(0.0, round((float) $remiseRaw, 2));
+
+            $dateRaw = trim((string) ($normalized['datep'] ?? ''));
+            $datep = new \DateTimeImmutable('today');
+            if ($dateRaw !== '') {
+                $parsedDate = \DateTimeImmutable::createFromFormat('Y-m-d', $dateRaw);
+                if (!$parsedDate instanceof \DateTimeImmutable) {
+                    $errors[] = sprintf('Ligne %d: date invalide (format attendu YYYY-MM-DD).', $lineNumber);
+                    continue;
+                }
+                $datep = $parsedDate;
+            }
+
+            $piece = new Entetepiece();
+            $piece->setDossier($currentDossier);
+            $piece->setType($pieceType);
+            $piece->setTypet($tierType);
+            $piece->setTierId((int) $tierIdRaw);
+            $piece->setPieceno($this->getAndIncrementDossierCounter($pieceType, $currentDossier));
+            $piece->setPieceref(($normalized['pieceref'] ?? '') !== '' ? (string) $normalized['pieceref'] : null);
+            $piece->setDevise($currentDossier->getDevise());
+            $piece->setDatep($datep);
+            $piece->setStatut($status);
+            $piece->setRemise($remise);
+            $piece->setReglement($this->extractTierReglement($tier));
+            $piece->setMontant(0.0);
+            $piece->setResolvedTierName($this->extractTierName($tier));
+
+            $manager->persist($piece);
+            ++$createdCount;
+        }
+
+        if ($createdCount === 0 && $errors !== []) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Aucune piece importee. ' . $errors[0],
+                'errors' => $errors,
+            ], 422);
+        }
+
+        $manager->flush();
+
+        $message = sprintf('%d piece(s) importee(s).', $createdCount);
+        if ($errors !== []) {
+            $message .= sprintf(' %d ligne(s) ignoree(s).', count($errors));
+        }
+
+        return $this->json([
+            'success' => true,
+            'message' => $message,
+            'createdCount' => $createdCount,
+            'errorCount' => count($errors),
+            'errors' => array_slice($errors, 0, 20),
         ]);
     }
 

@@ -644,6 +644,7 @@
 
         /* ===== UNIFIED ACTION BAR (Search + Create Button) ===== */
         .action-bar {
+            position: relative;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -654,6 +655,7 @@
             padding: 15px 20px;
             border-radius: 8px;
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            min-height: 56px;
         }
         .action-bar .btn-add {
             background: linear-gradient(180deg, var(--theme-primary) 10%, var(--theme-secondary) 100%);
@@ -701,6 +703,155 @@
             display: inline-flex;
             align-items: center;
             gap: 0.42rem;
+        }
+        .action-bar .action-tools {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-left: auto;
+        }
+        .action-bar .table-bulk-actions {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, calc(-50% + 14px));
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.22s ease, opacity 0.22s ease;
+            z-index: 8;
+            width: min(52vw, 560px);
+            min-width: 320px;
+            max-width: 560px;
+            margin: 0;
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.36);
+            background: #fff;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+            color: #0f172a;
+            overflow: hidden;
+        }
+        .action-bar .table-bulk-actions.is-visible {
+            transform: translate(-50%, -50%);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .table-bulk-actions__content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .table-bulk-actions__left {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .table-bulk-actions__badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(37, 99, 235, 0.12);
+            color: #1e40af;
+            border-radius: 999px;
+            padding: 0.34rem 0.62rem;
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+        .table-bulk-actions__label {
+            font-size: 0.88rem;
+            color: #475569;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .table-bulk-actions__buttons {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+        .table-bulk-actions__delete-btn,
+        .table-bulk-actions__clear-btn {
+            border-radius: 8px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .table-bulk-actions__delete-btn {
+            color: #fff;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: 0;
+            box-shadow: 0 8px 18px rgba(220, 38, 38, 0.22);
+        }
+        .table-bulk-actions__clear-btn {
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            background: #fff;
+        }
+        .table-container .commercial-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table-container .commercial-table thead th,
+        .table-container .commercial-table tbody td {
+            padding: 0.72rem 0.5rem;
+            font-size: 0.86rem;
+            vertical-align: middle;
+        }
+        .table-container .commercial-table .row-selector-head,
+        .table-container .commercial-table .row-selector-cell {
+            width: 42px;
+            text-align: center;
+        }
+        .table-container .commercial-table [data-column-key="actions"] {
+            position: sticky;
+            right: 0;
+            z-index: 3;
+            background: #fff;
+        }
+        .table-container .commercial-table thead [data-column-key="actions"] {
+            z-index: 5;
+            background: var(--theme-primary);
+        }
+        .table-container .commercial-table tbody tr.is-selected {
+            background: rgba(37, 99, 235, 0.08);
+        }
+        .table-container .commercial-table tbody td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @media (max-width: 992px) {
+            .action-bar .table-bulk-actions {
+                position: static;
+                transform: none;
+                opacity: 0;
+                pointer-events: auto;
+                width: 100%;
+                min-width: 0;
+                max-width: none;
+                margin-top: 0.55rem;
+                display: none;
+            }
+            .action-bar .table-bulk-actions.is-visible {
+                display: block;
+                transform: none;
+                opacity: 1;
+                margin-top: 0.55rem;
+            }
+            .table-bulk-actions__content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .table-bulk-actions__buttons {
+                justify-content: flex-end;
+            }
+            .action-bar .action-tools {
+                width: 100%;
+                justify-content: flex-start;
+            }
         }
 
         /* ===== NAVIGATION SEARCH DROPDOWN ===== */
@@ -2106,34 +2257,197 @@
             flex-direction: column;
             gap: 0.42rem;
             align-items: center;
+            overflow: visible;
+        }
+        #accordionSidebar.double-sidebar,
+        #accordionSidebar.double-sidebar .sidebar-utility-actions,
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown,
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .nav-item {
+            overflow: visible !important;
         }
         #accordionSidebar.double-sidebar .sidebar-utility-actions .nav-item {
             width: 100%;
             display: flex;
             justify-content: center;
             position: relative;
+            overflow: visible;
         }
         #accordionSidebar.double-sidebar .sidebar-utility-toggle {
             position: relative;
+            transition: all 0.2s ease;
+            border-radius: 12px;
+            padding: 0.42rem 0.5rem;
+            margin: 0.1rem 0;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:hover {
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--theme-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:focus {
+            outline: 2px solid var(--theme-primary);
+            outline-offset: 2px;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:active {
+            transform: translateY(0);
         }
         #accordionSidebar.double-sidebar .sidebar-utility-toggle .badge-counter {
             position: absolute;
-            top: 2px;
-            right: 1px;
-            transform: translate(40%, -40%);
-            font-size: 0.54rem;
+            top: -2px;
+            right: -2px;
+            transform: translate(30%, -30%);
+            font-size: 0.55rem;
             line-height: 1;
-            padding: 0.2rem 0.28rem;
+            padding: 0.22rem 0.3rem;
             border-radius: 999px;
             box-shadow: 0 4px 10px rgba(2, 6, 23, 0.25);
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+        @keyframes badgePulse {
+            0%, 100% {
+                transform: translate(30%, -30%) scale(1);
+            }
+            50% {
+                transform: translate(30%, -30%) scale(1.08);
+            }
         }
         #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-menu {
-            margin-left: 0.55rem;
-            max-height: min(70vh, 540px);
+            position: fixed !important;
+            left: -9999px;
+            top: -9999px;
+            right: auto !important;
+            bottom: auto !important;
+            margin: 0 !important;
+            max-height: min(70vh, 440px);
             overflow-y: auto;
-            border-radius: 14px;
+            width: 286px;
+            min-width: 286px;
+            border-radius: 12px;
             border: 1px solid rgba(148, 163, 184, 0.22);
-            box-shadow: 0 18px 34px rgba(2, 6, 23, 0.2);
+            box-shadow: 0 18px 42px rgba(2, 6, 23, 0.24), 0 8px 18px rgba(2, 6, 23, 0.1);
+            z-index: 2147483000;
+            animation: slideInSidebarDropdown 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: left center;
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.99);
+            pointer-events: auto !important;
+            padding: 0;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-menu::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 18px;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-left: 1px solid rgba(148, 163, 184, 0.22);
+            border-top: 1px solid rgba(148, 163, 184, 0.22);
+            transform: rotate(-45deg);
+            z-index: -1;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-menu.is-position-left::before {
+            left: auto;
+            right: -6px;
+            transform: rotate(135deg);
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-list .dropdown-header {
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            font-size: 0.72rem;
+            padding: 0.56rem 0.8rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-list .dropdown-item {
+            padding: 0.62rem 0.78rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+            color: #334155;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-list .dropdown-item:last-child {
+            border-bottom: none;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            font-weight: 600;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-item {
+            gap: 0.62rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-item__icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 30px;
+            font-size: 0.8rem;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-item__body {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.12rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-item__title {
+            font-size: 0.76rem;
+            line-height: 1.3;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-item__meta {
+            font-size: 0.68rem;
+            color: #64748b;
+            line-height: 1.2;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 30px;
+            font-size: 0.67rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #fff;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            box-shadow: 0 4px 10px rgba(30, 64, 175, 0.2);
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-footer-link {
+            color: var(--theme-primary) !important;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.56rem 0.78rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-footer-link:hover,
+        #accordionSidebar.double-sidebar .sidebar-utility-footer-link:focus {
+            background: rgba(37, 99, 235, 0.08);
+            color: var(--theme-secondary) !important;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown.show > .sidebar-utility-toggle {
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--theme-primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.16);
+        }
+        @keyframes slideInSidebarDropdown {
+            from {
+                opacity: 0;
+                transform: scale(0.94) translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
         #accordionSidebar.double-sidebar .sidebar-footer {
             margin-top: auto;
@@ -2967,21 +3281,24 @@
         }
         .topbar .nav-item .nav-link:hover,
         .topbar .nav-item .nav-link:focus {
-            background: rgba(15, 23, 42, 0.06);
+            background: rgba(37, 99, 235, 0.08);
             color: var(--theme-primary) !important;
-            transform: translateY(-1px);
-            box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
         }
         .topbar-divider {
             margin-left: 0.35rem !important;
             margin-right: 0.4rem !important;
             border-color: rgba(15, 23, 42, 0.12) !important;
         }
-        .topbar .dropdown-item {
-            transition: background-color 0.18s ease, color 0.18s ease, padding-left 0.18s ease;
+        .topbar .dropdown-item,
+        .sidebar-utility-actions .dropdown-item {
+            transition: background-color 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
         }
         .topbar .dropdown-item:hover,
-        .topbar .dropdown-item:focus {
+        .topbar .dropdown-item:focus,
+        .sidebar-utility-actions .dropdown-item:hover,
+        .sidebar-utility-actions .dropdown-item:focus {
             background: rgba(37, 99, 235, 0.08);
             color: var(--theme-primary);
             padding-left: 1.15rem;
@@ -3668,44 +3985,38 @@
                                 <i class="fas fa-bell fa-fw"></i>
                                 <span class="badge badge-danger badge-counter">3+</span>
                             </a>
-                            <div class="dropdown-list dropdown-menu shadow animated--grow-in" aria-labelledby="alertsDropdown">
+                            <div class="dropdown-list dropdown-menu shadow animated--grow-in sidebar-utility-dropdown-menu sidebar-utility-dropdown-menu--alerts" aria-labelledby="alertsDropdown">
                                 <h6 class="dropdown-header">
-                                    Alerts Center
+                                    Notifications
                                 </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-primary">
-                                            <i class="fas fa-file-alt text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 12, 2019</div>
-                                        <span class="font-weight-bold">A new monthly report is ready to download!</span>
-                                    </div>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item" href="#">
+                                    <span class="sidebar-utility-item__icon bg-primary">
+                                        <i class="fas fa-file-alt text-white"></i>
+                                    </span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Rapport mensuel disponible</span>
+                                        <span class="sidebar-utility-item__meta">Il y a 4 min</span>
+                                    </span>
                                 </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-success">
-                                            <i class="fas fa-donate text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 7, 2019</div>
-                                        $290.29 has been deposited into your account!
-                                    </div>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item" href="#">
+                                    <span class="sidebar-utility-item__icon bg-success">
+                                        <i class="fas fa-receipt text-white"></i>
+                                    </span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Paiement client enregistre</span>
+                                        <span class="sidebar-utility-item__meta">Il y a 32 min</span>
+                                    </span>
                                 </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-warning">
-                                            <i class="fas fa-exclamation-triangle text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 2, 2019</div>
-                                        Spending Alert: We've noticed unusually high spending for your account.
-                                    </div>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item" href="#">
+                                    <span class="sidebar-utility-item__icon bg-warning">
+                                        <i class="fas fa-exclamation-triangle text-white"></i>
+                                    </span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Piece en attente de validation</span>
+                                        <span class="sidebar-utility-item__meta">Il y a 1 h</span>
+                                    </span>
                                 </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+                                <a class="dropdown-item text-center small sidebar-utility-footer-link" href="#">Voir toutes les notifications</a>
                             </div>
                         </div>
 
@@ -3722,59 +4033,32 @@
                                 <i class="fas fa-envelope fa-fw"></i>
                                 <span class="badge badge-danger badge-counter">7</span>
                             </a>
-                            <div class="dropdown-list dropdown-menu shadow animated--grow-in" aria-labelledby="messagesDropdown">
+                            <div class="dropdown-list dropdown-menu shadow animated--grow-in sidebar-utility-dropdown-menu sidebar-utility-dropdown-menu--messages" aria-labelledby="messagesDropdown">
                                 <h6 class="dropdown-header">
-                                    Message Center
+                                    Messages
                                 </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_1.svg"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div class="font-weight-bold">
-                                        <div class="text-truncate">Hi there! I am wondering if you can help me with a
-                                            problem I've been having.</div>
-                                        <div class="small text-gray-500">Emily Fowler · 58m</div>
-                                    </div>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item sidebar-utility-item--message" href="#">
+                                    <span class="sidebar-utility-avatar">AM</span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Ahmed M. a commente une facture</span>
+                                        <span class="sidebar-utility-item__meta">Il y a 9 min</span>
+                                    </span>
                                 </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_2.svg"
-                                            alt="...">
-                                        <div class="status-indicator"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">I have the photos that you ordered last month, how
-                                            would you like them sent to you?</div>
-                                        <div class="small text-gray-500">Jae Chun · 1d</div>
-                                    </div>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item sidebar-utility-item--message" href="#">
+                                    <span class="sidebar-utility-avatar">SF</span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Sara F. a partage un nouveau devis</span>
+                                        <span class="sidebar-utility-item__meta">Il y a 26 min</span>
+                                    </span>
                                 </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_3.svg"
-                                            alt="...">
-                                        <div class="status-indicator bg-warning"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Last month's report looks great, I am very happy with
-                                            the progress so far, keep up the good work!</div>
-                                        <div class="small text-gray-500">Morgan Alvarez · 2d</div>
-                                    </div>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item sidebar-utility-item--message" href="#">
+                                    <span class="sidebar-utility-avatar">LB</span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Lea B. demande une confirmation de prix</span>
+                                        <span class="sidebar-utility-item__meta">Aujourd'hui</span>
+                                    </span>
                                 </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Am I a good boy? The reason I ask is because someone
-                                            told me that people say this to all dogs, even if they aren't good...</div>
-                                        <div class="small text-gray-500">Chicken the Dog · 2w</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
+                                <a class="dropdown-item text-center small sidebar-utility-footer-link" href="#">Voir tous les messages</a>
                             </div>
                         </div>
                     </div>
@@ -4799,6 +5083,87 @@
                 positionSidebarProfileMenu();
             });
 
+            var $sidebarUtilityToggles = $('.sidebar-utility-actions .sidebar-utility-toggle');
+
+            var closeSidebarUtilityMenus = function() {
+                $('.sidebar-utility-actions .dropdown').removeClass('show');
+                $('.sidebar-utility-actions .dropdown-menu').removeClass('show is-position-left').css({ left: '', top: '', right: '', bottom: '' });
+                $sidebarUtilityToggles.attr('aria-expanded', 'false');
+            };
+
+            var positionSidebarUtilityMenu = function($toggle, $menu) {
+                if (!$toggle || !$toggle.length || !$menu || !$menu.length || !$menu.hasClass('show')) {
+                    return;
+                }
+
+                var toggleRect = $toggle[0].getBoundingClientRect();
+                var menuElement = $menu[0];
+                var previousVisibility = menuElement.style.visibility;
+
+                menuElement.style.visibility = 'hidden';
+                var menuWidth = menuElement.offsetWidth || 286;
+                var menuHeight = menuElement.offsetHeight || 240;
+
+                var gap = 10;
+                var viewportPadding = 8;
+                var left = toggleRect.right + gap;
+                var top = toggleRect.top + ((toggleRect.height - menuHeight) / 2);
+                var positionLeft = false;
+
+                if ((left + menuWidth) > (window.innerWidth - viewportPadding)) {
+                    left = Math.max(viewportPadding, toggleRect.left - menuWidth - gap);
+                    positionLeft = true;
+                }
+                if (top < viewportPadding) {
+                    top = viewportPadding;
+                }
+                if ((top + menuHeight) > (window.innerHeight - viewportPadding)) {
+                    top = Math.max(viewportPadding, window.innerHeight - menuHeight - viewportPadding);
+                }
+
+                $menu.toggleClass('is-position-left', positionLeft).css({
+                    left: Math.round(left) + 'px',
+                    top: Math.round(top) + 'px',
+                    right: 'auto',
+                    bottom: 'auto'
+                });
+
+                menuElement.style.visibility = previousVisibility;
+            };
+
+            $sidebarUtilityToggles.off('click.sidebarUtilityDropdown').on('click.sidebarUtilityDropdown', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                var $toggle = $(this);
+                var $menu = $toggle.siblings('.dropdown-menu').first();
+                var $dropdown = $toggle.closest('.dropdown');
+                var isOpen = $menu.hasClass('show');
+
+                closeSidebarUtilityMenus();
+                if ($sidebarProfileToggle.length) {
+                    $sidebarProfileToggle.attr('aria-expanded', 'false');
+                    $sidebarProfileMenu.removeClass('show').css({ left: '', top: '', right: '', bottom: '' });
+                }
+
+                if (isOpen) {
+                    return;
+                }
+
+                $dropdown.addClass('show');
+                $menu.addClass('show');
+                $toggle.attr('aria-expanded', 'true');
+                positionSidebarUtilityMenu($toggle, $menu);
+            });
+
+            $(window).on('resize.sidebarUtilityDropdown', function() {
+                $('.sidebar-utility-actions .dropdown-menu.show').each(function() {
+                    var $menu = $(this);
+                    var $toggle = $menu.siblings('.sidebar-utility-toggle').first();
+                    positionSidebarUtilityMenu($toggle, $menu);
+                });
+            });
+
             // ===== SIDEBAR COLLAPSE/EXPAND =====
             var $body = $('body');
             var $sidebar = $('#accordionSidebar');
@@ -4816,6 +5181,7 @@
                 if (hoverCardElement) {
                     hoverCardElement.classList.remove('show');
                 }
+                closeSidebarUtilityMenus();
                 if ($sidebarProfileToggle.length) {
                     $sidebarProfileToggle.attr('aria-expanded', 'false');
                     $sidebarProfileMenu.removeClass('show').css({ left: '', top: '', right: '', bottom: '' });
@@ -5019,6 +5385,34 @@
                 return allowedTokens.join(' ');
             };
 
+            var extractLucideNameFromElement = function(el) {
+                if (!el) {
+                    return '';
+                }
+                var attrValue = String(el.getAttribute('data-lucide') || '').trim();
+                if (attrValue !== '') {
+                    return attrValue;
+                }
+                var className = String(el.getAttribute('class') || '');
+                var match = className.match(/(?:^|\s)lucide-([a-z0-9-]+)(?:\s|$)/i);
+                return match ? String(match[1] || '').trim() : '';
+            };
+
+            var getIconNameFromLink = function($link) {
+                if (!$link || !$link.length) {
+                    return 'file-text';
+                }
+                var iconName = '';
+                var iconEl = $link.find('i[data-lucide], i.lucide, svg[data-lucide], svg.lucide').first()[0] || null;
+                if (iconEl) {
+                    iconName = extractLucideNameFromElement(iconEl);
+                }
+                if (iconName === '' || iconName === 'circle') {
+                    iconName = 'file-text';
+                }
+                return iconName;
+            };
+
             var buildRecentItemFromLink = function($link, panelId, overrideName) {
                 if (!$link || !$link.length) {
                     return null;
@@ -5035,7 +5429,7 @@
                 }
 
                 var normalizedPanelId = String(panelId || '').trim() || String($link.closest('.sidebar-panel-content').data('sidebarPanel') || '').trim();
-                var itemIcon = String($link.find('i[data-lucide]').first().attr('data-lucide') || 'circle').trim() || 'circle';
+                var itemIcon = getIconNameFromLink($link);
                 var itemSection = getSectionLabelFromLink($link);
 
                 return {
@@ -5087,7 +5481,7 @@
 
                     routeMetaByPath[canonicalPath] = {
                         name: String($link.find('span').last().text() || '').trim(),
-                        icon: String($link.find('i[data-lucide]').first().attr('data-lucide') || 'circle').trim() || 'circle',
+                        icon: getIconNameFromLink($link),
                         section: getSectionLabelFromLink($link),
                         linkClass: normalizeRecentLinkClass($link.attr('class') || '')
                     };
@@ -5105,7 +5499,7 @@
                 var buildMetaFromLink = function($link) {
                     return {
                         name: String($link.find('span').last().text() || '').trim(),
-                        icon: String($link.find('i[data-lucide]').first().attr('data-lucide') || 'file-text').trim() || 'file-text',
+                        icon: getIconNameFromLink($link),
                         section: getSectionLabelFromLink($link),
                         linkClass: normalizeRecentLinkClass($link.attr('class') || ''),
                         panel: String($link.closest('.sidebar-panel-content').data('sidebarPanel') || '').trim()
@@ -5144,10 +5538,7 @@
                     return { icon: 'file-text', linkClass: '' };
                 }
 
-                var icon = String($link.find('i[data-lucide]').first().attr('data-lucide') || '').trim();
-                if (icon === '' || icon === 'circle') {
-                    icon = 'file-text';
-                }
+                var icon = getIconNameFromLink($link);
 
                 return {
                     icon: icon,
@@ -5171,7 +5562,7 @@
                 }
 
                 var $firstLink = $sectionLinks.first();
-                var icon = String($firstLink.find('i[data-lucide]').first().attr('data-lucide') || '').trim();
+                var icon = getIconNameFromLink($firstLink);
                 if (icon === '' || icon === 'circle') {
                     icon = getPanelFallbackLinkMeta(panelId).icon;
                 }
@@ -5647,8 +6038,10 @@
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('.dropdown').length) {
                     $('.dropdown-menu.show').removeClass('show');
+                    $('.dropdown.show').removeClass('show');
                     $('.dropdown-toggle').attr('aria-expanded', 'false');
                     $sidebarProfileMenu.css({ left: '', top: '', right: '', bottom: '' });
+                    $('.sidebar-utility-actions .dropdown-menu').removeClass('is-position-left').css({ left: '', top: '', right: '', bottom: '' });
                 }
             });
 
@@ -6083,7 +6476,11 @@
                 var itemName = $(this).data('item-name') || 'cet élèment';
                 
                 $('#deleteModalItemName').text(itemName);
-                $('#confirmDeleteBtn').attr('href', deleteUrl);
+                $('#confirmDeleteBtn')
+                    .attr('href', deleteUrl)
+                    .removeAttr('data-crud-bulk-delete')
+                    .removeClass('bulk-delete-loading')
+                    .css('pointer-events', '');
                 $('#deleteConfirmModal').modal('show');
             });
 
@@ -6232,6 +6629,24 @@
             $(window).on('beforeunload', function() {
                 $('.toast-container').hide();
             });
+
+            // ===== SIDEBAR UTILITY DROPDOWN STABILITY =====
+            (function() {
+                function initSidebarUtilityDropdowns() {
+                    $(document).off('click.sidebarUtility').on('click.sidebarUtility', '.sidebar-utility-actions', function(e) {
+                        e.stopPropagation();
+                    });
+                }
+                
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initSidebarUtilityDropdowns);
+                } else {
+                    initSidebarUtilityDropdowns();
+                }
+                
+                document.addEventListener('turbo:load', initSidebarUtilityDropdowns);
+                document.addEventListener('turbo:render', initSidebarUtilityDropdowns);
+            })();
 
             // ===== INITIALIZE SELECT2 WITH IMPROVED STYLING =====
             if ($.fn.select2) {

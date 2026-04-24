@@ -23,42 +23,75 @@
             <i class="fas fa-file-csv mr-1"></i> Exporter
         </a>
     </div>
-    <div class="search-box">
-        {% include "components/search_data.html.twig" with {search: search} only %}
+    <div class="table-bulk-actions" id="fournisseursBulkActions" data-bulk-bar-for="fournisseurs">
+        <div class="table-bulk-actions__content">
+            <div class="table-bulk-actions__left">
+                <span class="table-bulk-actions__badge">
+                    <i class="fas fa-check-circle"></i>
+                    <strong data-selection-count>0</strong>
+                </span>
+                <span class="table-bulk-actions__label" data-selection-label>Aucun fournisseur selectionne</span>
+            </div>
+            <div class="table-bulk-actions__buttons">
+                <button type="button" class="btn btn-sm table-bulk-actions__delete-btn no-loading" data-bulk-action="delete">
+                    <i class="fas fa-trash-alt mr-1"></i> Supprimer
+                </button>
+                <button type="button" class="btn btn-sm table-bulk-actions__clear-btn no-loading" data-bulk-clear>
+                    Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="action-tools">
+        <div class="search-box">
+            {% include "components/search_data.html.twig" with {search: search} only %}
+        </div>
     </div>
 </div>
 
 <div class="table-container">
     {% if fournisseurs|length > 0 %}
-    <table class="table js-crud-list-table"
+    <table class="table js-crud-list-table commercial-table"
+           id="fournisseursTable"
+           data-table-id="fournisseurs"
            data-crud-resource="fournisseur"
            data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_fournisseur') }}"
            data-placeholder="____">
         <thead>
-            <tr data-row-id="{{ fournisseur.id }}">
-                <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="nom">Nom</th>
-                <th data-sort-key="adresse">Adresse</th>
-                <th data-sort-key="ville">Ville</th>
-                <th data-sort-key="pays">Pays</th>
-                <th data-sort-key="tel">Téléphone</th>
-                <th data-sort-key="email">Email</th>
-                <th data-sort-key="tarif">Tarif</th>
-                <th class="text-center" style="width: 150px;">Actions</th>
+            <tr>
+                <th class="row-selector-head" data-column-key="selector">
+                    <div class="form-check d-flex justify-content-center mb-0">
+                        <input class="form-check-input position-static" type="checkbox" data-select-all-checkbox aria-label="Selectionner toutes les lignes">
+                    </div>
+                </th>
+                <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
+                <th data-sort-key="nom" data-column-key="nom">Nom</th>
+                <th data-sort-key="adresse" data-column-key="adresse">Adresse</th>
+                <th data-sort-key="ville" data-column-key="ville">Ville</th>
+                <th data-sort-key="pays" data-column-key="pays">Pays</th>
+                <th data-sort-key="tel" data-column-key="tel">Telephone</th>
+                <th data-sort-key="email" data-column-key="email">Email</th>
+                <th data-sort-key="tarif" data-column-key="tarif">Tarif</th>
+                <th class="text-center" style="width: 170px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for fournisseur in fournisseurs %}
-            <tr>
-                <td><strong>#{{ fournisseur.id }}</strong></td>
-                <td>{{ fournisseur.nom|default('____') }}</td>
-                <td>{{ fournisseur.adr1|default('____') }}</td>
-                <td>{{ fournisseur.ville|default('____') }}</td>
-                <td>{{ fournisseur.pays|default('____') }}</td>
-                <td>{{ fournisseur.tel|default('____') }}</td>
-                <td>{{ fournisseur.email|default('____') }}</td>
-                <td>{{ fournisseur.tarif|default('____') }}</td>
-                <td class="text-center" data-role="actions">
+            <tr data-row-id="{{ fournisseur.id }}" data-item-id="{{ fournisseur.id }}">
+                <td class="row-selector-cell" data-column-key="selector">
+                    <div class="form-check d-flex justify-content-center mb-0">
+                        <input class="form-check-input position-static" type="checkbox" value="{{ fournisseur.id }}" data-row-checkbox aria-label="Selectionner fournisseur {{ fournisseur.nom|default(fournisseur.id) }}">
+                    </div>
+                </td>
+                <td data-column-key="id"><strong>#{{ fournisseur.id }}</strong></td>
+                <td data-column-key="nom">{{ fournisseur.nom|default('____') }}</td>
+                <td data-column-key="adresse">{{ fournisseur.adr1|default('____') }}</td>
+                <td data-column-key="ville">{{ fournisseur.ville|default('____') }}</td>
+                <td data-column-key="pays">{{ fournisseur.pays|default('____') }}</td>
+                <td data-column-key="tel">{{ fournisseur.tel|default('____') }}</td>
+                <td data-column-key="email">{{ fournisseur.email|default('____') }}</td>
+                <td data-column-key="tarif">{{ fournisseur.tarif|default('____') }}</td>
+                <td class="text-center" data-role="actions" data-column-key="actions">
                     <a href="{{ path('fournisseur.detail', {id: fournisseur.id}) }}" class="btn btn-action btn-view" title="Voir">
                         <i class="fas fa-eye"></i>
                     </a>
@@ -82,8 +115,8 @@
         <div class="empty-state-icon">
             <i class="fas fa-truck"></i>
         </div>
-        <h5>Aucun fournisseur trouvé</h5>
-        <p>Ajoutez votre premier fournisseur pour commencer à gérer vos achats.</p>
+        <h5>Aucun fournisseur trouve</h5>
+        <p>Ajoutez votre premier fournisseur pour commencer a gerer vos achats.</p>
         <a href="{{ path('fournisseur.edit') }}" class="btn btn-primary">
             <i class="fas fa-plus mr-2"></i>Nouveau fournisseur
         </a>
