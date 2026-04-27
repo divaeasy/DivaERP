@@ -4,14 +4,18 @@ namespace App\Controller;
 
 use App\Repository\ArticleRepository;
 use App\Repository\ClientsRepository;
+use App\Repository\DepotRepository;
 use App\Repository\DevisesRepository;
 use App\Repository\DossierRepository;
 use App\Repository\EntetepieceRepository;
+use App\Repository\FournisseurRepository;
+use App\Repository\NatureProductionRepository;
 use App\Repository\PaysRepository;
 use App\Repository\ProspectsRepository;
 use App\Repository\ReglementRepository;
 use App\Repository\TarifsRepository;
 use App\Repository\TarifventeRepository;
+use App\Repository\TiersInterneRepository;
 use App\Repository\UniteRepository;
 use App\Repository\VilleRepository;
 use App\Service\DashboardService;
@@ -76,6 +80,103 @@ class ExportController extends AbstractController
         return $this->exportService->exportListToExcel(
             'prospects_' . date('Y-m-d_His') . '.xlsx',
             'Prospects',
+            $headers,
+            $rows
+        );
+    }
+
+    #[Route('/fournisseurs', name: 'export.fournisseurs')]
+    public function exportFournisseurs(FournisseurRepository $repo): BinaryFileResponse
+    {
+        $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
+        $headers = ['ID', 'Nom', 'Adresse', 'Ville', 'Pays', 'Telephone', 'Email', 'Tarif'];
+        $rows = array_map(
+            fn($f) => [
+                $f->getId(),
+                $f->getNom(),
+                $f->getAdr1(),
+                (string) $f->getVille(),
+                (string) $f->getPays(),
+                $f->getTel(),
+                $f->getEmail(),
+                (string) $f->getTarif(),
+            ],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'fournisseurs_' . date('Y-m-d_His') . '.xlsx',
+            'Fournisseurs',
+            $headers,
+            $rows
+        );
+    }
+
+    #[Route('/tiers-internes', name: 'export.tiers_internes')]
+    public function exportTiersInternes(TiersInterneRepository $repo): BinaryFileResponse
+    {
+        $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
+        $headers = ['ID', 'Nom', 'Adresse', 'Ville', 'Pays', 'Telephone', 'Email', 'Tarif'];
+        $rows = array_map(
+            fn($t) => [
+                $t->getId(),
+                $t->getNom(),
+                $t->getAdr1(),
+                (string) $t->getVille(),
+                (string) $t->getPays(),
+                $t->getTel(),
+                $t->getEmail(),
+                (string) $t->getTarif(),
+            ],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'tiers_internes_' . date('Y-m-d_His') . '.xlsx',
+            'Tiers internes',
+            $headers,
+            $rows
+        );
+    }
+
+    #[Route('/depots', name: 'export.depots')]
+    public function exportDepots(DepotRepository $repo): BinaryFileResponse
+    {
+        $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
+        $headers = ['ID', 'Libelle', 'Tiers interne', 'Adresse', 'Ville', 'Pays'];
+        $rows = array_map(
+            fn($d) => [
+                $d->getId(),
+                $d->getLibelle(),
+                (string) $d->getTiersInterne(),
+                $d->getAdr1(),
+                (string) $d->getVille(),
+                (string) $d->getPays(),
+            ],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'depots_' . date('Y-m-d_His') . '.xlsx',
+            'Depots',
+            $headers,
+            $rows
+        );
+    }
+
+    #[Route('/natures-production', name: 'export.nature_production')]
+    public function exportNatureProduction(NatureProductionRepository $repo): BinaryFileResponse
+    {
+        $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
+        $headers = ['ID', 'Libelle', 'Type'];
+        $rows = array_map(
+            fn($n) => [
+                $n->getId(),
+                $n->getLibelle(),
+                $n->getType()->value,
+            ],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'natures_production_' . date('Y-m-d_His') . '.xlsx',
+            'Natures de production',
             $headers,
             $rows
         );
@@ -235,6 +336,31 @@ class ExportController extends AbstractController
         return $this->exportService->exportListToExcel(
             'tarifs_' . date('Y-m-d_His') . '.xlsx',
             'Tarifs',
+            $headers,
+            $rows
+        );
+    }
+
+    #[Route('/tarifs-vente', name: 'export.tarifs_vente')]
+    public function exportTarifsVente(TarifventeRepository $repo): BinaryFileResponse
+    {
+        $items = $repo->getSearchQueryBuilder()->getQuery()->getResult();
+        $headers = ['ID', 'Tarif', 'Client', 'Article', 'Devise', 'Date effet', 'Prix'];
+        $rows = array_map(
+            fn($tv) => [
+                $tv->getId(),
+                (string) $tv->getTarif(),
+                (string) $tv->getClient(),
+                (string) $tv->getArticle(),
+                (string) $tv->getDevise(),
+                $tv->getDateeffet() ? $tv->getDateeffet()->format('d/m/Y') : '',
+                $tv->getPrix(),
+            ],
+            $items
+        );
+        return $this->exportService->exportListToExcel(
+            'tarifs_vente_' . date('Y-m-d_His') . '.xlsx',
+            'Tarifs de vente',
             $headers,
             $rows
         );

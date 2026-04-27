@@ -3,18 +3,23 @@
 namespace App\Controller;
 
 use App\Entity\Clients;
+use App\Entity\Depot;
 use App\Entity\Devises;
 use App\Entity\Dossier;
 use App\Entity\Entetepiece;
+use App\Entity\Fournisseur;
+use App\Entity\NatureProduction;
 use App\Entity\Pays;
 use App\Entity\Prospects;
 use App\Entity\Reglement;
 use App\Entity\Tarifs;
 use App\Entity\Tarifvente;
+use App\Entity\TiersInterne;
 use App\Entity\Unite;
 use App\Entity\User;
 use App\Entity\Ville;
 use Doctrine\Persistence\ManagerRegistry;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -184,6 +189,130 @@ class CrudTableController extends AbstractController
         ]);
     }
 
+    #[Route('/api/crud/{resource}/import', name: 'api.crud.import', methods: ['POST'])]
+    public function import(string $resource, Request $request, ManagerRegistry $doctrine): Response
+    {
+        $definition = $this->getResourceDefinition($resource);
+        if ($definition === null || ($definition['simpleCrud'] ?? false) !== true) {
+            return $this->json(['success' => false, 'message' => 'Import indisponible pour cette ressource.'], 404);
+        }
+
+        if (!$this->isCsrfTokenValid('crud_import_' . $resource, (string) $request->request->get('_token'))) {
+            return $this->json(['success' => false, 'message' => 'Jeton de securite invalide.'], 403);
+        }
+
+        $currentDossier = $this->getCurrentDossier();
+        if (($definition['scope'] ?? 'global') === 'dossier' && !$currentDossier instanceof Dossier) {
+            return $this->json(['success' => false, 'message' => 'Aucun dossier courant selectionne.'], 403);
+        }
+
+        $file = $request->files->get('file');
+        if ($file === null || !$file->isValid()) {
+            return $this->json(['success' => false, 'message' => 'Veuillez selectionner un fichier valide.'], 422);
+        }
+
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+        if (!in_array($extension, ['csv', 'txt', 'xls', 'xlsx'], true)) {
+            return $this->json(['success' => false, 'message' => 'Format non supporte. Utilisez CSV, XLS ou XLSX.'], 422);
+        }
+
+        try {
+            $rows = $this->parseImportedRows((string) $file->getRealPath(), $definition);
+        } catch (\Throwable $exception) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Impossible de lire ce fichier d import. Verifiez le format et les en-tetes.',
+            ], 422);
+        }
+
+        if ($rows === []) {
+            return $this->json(['success' => false, 'message' => 'Aucune ligne exploitable trouvee dans le fichier.'], 422);
+        }
+
+        $manager = $doctrine->getManager();
+        $createdCount = 0;
+        $updatedCount = 0;
+        $errors = [];
+
+        foreach ($rows as $index => $rowPayload) {
+            $lineNumber = $index + 2;
+            $id = isset($rowPayload['id']) ? (int) $rowPayload['id'] : 0;
+
+            if ($id > 0) {
+                $entity = $this->findScopedEntity($resource, $id, $doctrine);
+                if ($entity === null) {
+                    $errors[] = sprintf('Ligne %d: element #%d introuvable.', $lineNumber, $id);
+                    continue;
+                }
+
+                foreach ($definition['fields'] as $fieldName => $fieldConfig) {
+                    if (array_key_exists($fieldName, $rowPayload)) {
+                        continue;
+                    }
+
+                    $getter = (string) ($fieldConfig['getter'] ?? '');
+                    if ($getter !== '' && method_exists($entity, $getter)) {
+                        $rowPayload[$fieldName] = $entity->{$getter}();
+                    }
+                }
+
+                $updatedCount++;
+            } else {
+                $entityClass = $definition['entity'];
+                $entity = new $entityClass();
+                if (($definition['scope'] ?? 'global') === 'dossier' && method_exists($entity, 'setDossier')) {
+                    $entity->setDossier($currentDossier);
+                }
+                $createdCount++;
+            }
+
+            $error = $this->hydrateEntity($entity, $definition, $rowPayload);
+            if ($error !== null) {
+                $errors[] = sprintf('Ligne %d: %s', $lineNumber, $error);
+                if ($id <= 0) {
+                    $createdCount = max(0, $createdCount - 1);
+                } else {
+                    $updatedCount = max(0, $updatedCount - 1);
+                }
+                continue;
+            }
+
+            $this->applyAuditContext($entity, $doctrine);
+            $manager->persist($entity);
+        }
+
+        if ($createdCount === 0 && $updatedCount === 0) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Aucune ligne importee.',
+                'errors' => $errors,
+            ], 422);
+        }
+
+        try {
+            $manager->flush();
+        } catch (\Throwable $exception) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Erreur lors de l enregistrement des donnees importees.',
+            ], 500);
+        }
+
+        $summary = sprintf('Import termine: %d cree(s), %d mis a jour.', $createdCount, $updatedCount);
+        if ($errors !== []) {
+            $summary .= ' Certaines lignes ont ete ignorees.';
+        }
+
+        return $this->json([
+            'success' => true,
+            'message' => $summary,
+            'createdCount' => $createdCount,
+            'updatedCount' => $updatedCount,
+            'errorCount' => count($errors),
+            'errors' => $errors,
+        ]);
+    }
+
     private function getResourceDefinition(string $resource): ?array
     {
         $definitions = [
@@ -279,6 +408,26 @@ class CrudTableController extends AbstractController
             'entetepiece' => [
                 'entity' => Entetepiece::class,
                 'scope' => 'dossier',
+                'simpleCrud' => false,
+            ],
+            'fournisseur' => [
+                'entity' => Fournisseur::class,
+                'scope' => 'dossier',
+                'simpleCrud' => false,
+            ],
+            'depot' => [
+                'entity' => Depot::class,
+                'scope' => 'dossier',
+                'simpleCrud' => false,
+            ],
+            'tiers_interne' => [
+                'entity' => TiersInterne::class,
+                'scope' => 'dossier',
+                'simpleCrud' => false,
+            ],
+            'nature_production' => [
+                'entity' => NatureProduction::class,
+                'scope' => 'global',
                 'simpleCrud' => false,
             ],
         ];
@@ -395,5 +544,115 @@ class CrudTableController extends AbstractController
         }
 
         return $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
+    }
+
+    private function parseImportedRows(string $filePath, array $definition): array
+    {
+        $spreadsheet = IOFactory::load($filePath);
+        $sheetRows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
+        if (!is_array($sheetRows) || count($sheetRows) < 2) {
+            return [];
+        }
+
+        $headerRow = $sheetRows[0];
+        $fieldAliases = $this->buildImportFieldAliases($definition);
+        $columnToField = [];
+
+        foreach ($headerRow as $colIndex => $headerValue) {
+            $normalized = $this->normalizeImportKey((string) $headerValue);
+            if ($normalized === '' || !isset($fieldAliases[$normalized])) {
+                continue;
+            }
+            $columnToField[(int) $colIndex] = $fieldAliases[$normalized];
+        }
+
+        if ($columnToField === []) {
+            return [];
+        }
+
+        $rows = [];
+        foreach (array_slice($sheetRows, 1) as $rawRow) {
+            $payload = [];
+            $hasData = false;
+
+            foreach ($columnToField as $colIndex => $fieldName) {
+                $value = $rawRow[$colIndex] ?? null;
+                if (is_string($value)) {
+                    $value = trim($value);
+                }
+
+                if ($fieldName === 'id') {
+                    $payload['id'] = $value;
+                    if ($value !== null && $value !== '') {
+                        $hasData = true;
+                    }
+                    continue;
+                }
+
+                $payload[$fieldName] = $value;
+                if ($value !== null && $value !== '') {
+                    $hasData = true;
+                }
+            }
+
+            if ($hasData) {
+                $rows[] = $payload;
+            }
+        }
+
+        return $rows;
+    }
+
+    private function buildImportFieldAliases(array $definition): array
+    {
+        $aliases = [
+            'id' => 'id',
+            'identifiant' => 'id',
+        ];
+
+        foreach (array_keys($definition['fields'] ?? []) as $fieldName) {
+            $normalizedField = $this->normalizeImportKey($fieldName);
+            if ($normalizedField === '') {
+                continue;
+            }
+            $aliases[$normalizedField] = $fieldName;
+        }
+
+        $customAliases = [
+            'libelle' => 'libelle',
+            'label' => 'libelle',
+            'designation' => 'libelle',
+            'nom' => 'nom',
+            'name' => 'nom',
+            'adresse' => 'adresse',
+            'address' => 'adresse',
+            'code' => 'code',
+            'echeance' => 'echeance',
+            'delai' => 'echeance',
+            'jours' => 'echeance',
+        ];
+
+        foreach ($customAliases as $alias => $fieldName) {
+            if (isset($definition['fields'][$fieldName])) {
+                $aliases[$alias] = $fieldName;
+            }
+        }
+
+        return $aliases;
+    }
+
+    private function normalizeImportKey(string $value): string
+    {
+        $normalized = strtolower(trim($value));
+        if ($normalized === '') {
+            return '';
+        }
+
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $normalized);
+        if (is_string($ascii) && $ascii !== '') {
+            $normalized = strtolower($ascii);
+        }
+
+        return preg_replace('/[^a-z0-9]/', '', $normalized) ?? '';
     }
 }

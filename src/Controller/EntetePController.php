@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Clients;
+use App\Entity\Devises;
 use App\Entity\Dossier;
 use App\Entity\Entetepiece;
 use App\Entity\Fournisseur;
@@ -15,6 +16,7 @@ use App\Form\SearchPieceFormType;
 use App\Model\SearchPiece;
 use App\Repository\EntetepieceRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
@@ -22,6 +24,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('piece')]
@@ -359,6 +362,452 @@ class EntetePController extends AbstractController
         return $this->redirect($this->buildPieceLinesRedirectUrl((int) $newPiece->getId(), $origin));
     }
 
+    #[Route('/create-minimal', name: 'entetepiece.create_minimal', methods: ['POST'])]
+    public function createMinimal(Request $request, ManagerRegistry $doctrine): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid('entetepiece_create_minimal', (string) $request->request->get('_token'))) {
+            return $this->json(['success' => false, 'message' => 'Jeton de securite invalide.'], 403);
+        }
+
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if (!$currentDossier instanceof Dossier) {
+            return $this->json(['success' => false, 'message' => 'Aucun dossier courant selectionne.'], 403);
+        }
+
+        $pieceType = $this->resolveAllowedCreatePieceType((string) $request->request->get('type', 'Facture'));
+        if ($pieceType === null) {
+            return $this->json(['success' => false, 'message' => 'Type de piece invalide.'], 422);
+        }
+
+        $origin = $this->resolvePieceOriginToken((string) $request->request->get('origin', (string) $request->query->get('origin', '')));
+        $allowedTierTypes = $this->resolveAllowedTierTypesForOrigin($origin);
+        $tierType = $this->resolveAllowedTierType((string) $request->request->get('typet', ''), $allowedTierTypes);
+        if ($tierType === null) {
+            $tierType = $allowedTierTypes[0] ?? null;
+        }
+        if ($tierType === null) {
+            return $this->json(['success' => false, 'message' => 'Type de tiers invalide.'], 422);
+        }
+
+        $tierIdRaw = trim((string) $request->request->get('tierId', ''));
+        if ($tierIdRaw === '' || !ctype_digit($tierIdRaw)) {
+            return $this->json(['success' => false, 'message' => 'Le tiers est obligatoire.'], 422);
+        }
+
+        $tierClass = $this->resolveTierClass($tierType);
+        if ($tierClass === null) {
+            return $this->json(['success' => false, 'message' => 'Type de tiers invalide.'], 422);
+        }
+
+        $tier = $doctrine->getRepository($tierClass)->findOneBy([
+            'id' => (int) $tierIdRaw,
+            'dossier' => $currentDossier,
+        ]);
+        if ($tier === null) {
+            return $this->json(['success' => false, 'message' => 'Le tiers selectionne est introuvable.'], 422);
+        }
+
+        $pieceRef = trim((string) $request->request->get('pieceref', ''));
+        $remiseRaw = trim((string) $request->request->get('remise', '0'));
+        if ($remiseRaw !== '' && !is_numeric($remiseRaw)) {
+            return $this->json(['success' => false, 'message' => 'La remise doit etre numerique.'], 422);
+        }
+        $remise = $remiseRaw === '' ? 0.0 : round((float) $remiseRaw, 2);
+        if ($remise < 0) {
+            return $this->json(['success' => false, 'message' => 'La remise ne peut pas etre negative.'], 422);
+        }
+
+        $status = $this->resolveEditableStatusValue((string) $request->request->get('statut', 'Brouillon'));
+        if ($status === null) {
+            return $this->json(['success' => false, 'message' => 'Le statut est invalide.'], 422);
+        }
+
+        $statusCheck = $this->validateStatusProgression(
+            'Brouillon',
+            $status,
+            0,
+            0
+        );
+        if (!$statusCheck['allowed']) {
+            return $this->json(['success' => false, 'message' => (string) ($statusCheck['reason'] ?? 'Statut invalide.')], 422);
+        }
+
+        $dateRaw = trim((string) $request->request->get('datep', ''));
+        if ($dateRaw !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateRaw)) {
+            return $this->json(['success' => false, 'message' => 'La date est invalide.'], 422);
+        }
+        $datep = $dateRaw !== ''
+            ? \DateTimeImmutable::createFromFormat('Y-m-d', $dateRaw) ?: null
+            : new \DateTimeImmutable('today');
+        if (!$datep instanceof \DateTimeImmutable) {
+            return $this->json(['success' => false, 'message' => 'La date est invalide.'], 422);
+        }
+
+        $devise = $currentDossier->getDevise();
+        $deviseIdRaw = trim((string) $request->request->get('deviseId', ''));
+        if ($deviseIdRaw !== '') {
+            if (!ctype_digit($deviseIdRaw)) {
+                return $this->json(['success' => false, 'message' => 'La devise est invalide.'], 422);
+            }
+            $resolvedDevise = $doctrine->getRepository(Devises::class)->find((int) $deviseIdRaw);
+            if (!$resolvedDevise instanceof Devises) {
+                return $this->json(['success' => false, 'message' => 'La devise selectionnee est introuvable.'], 422);
+            }
+            $devise = $resolvedDevise;
+        }
+
+        $reglement = null;
+        $reglementIdRaw = trim((string) $request->request->get('reglementId', ''));
+        if ($reglementIdRaw !== '') {
+            if (!ctype_digit($reglementIdRaw)) {
+                return $this->json(['success' => false, 'message' => 'Le reglement est invalide.'], 422);
+            }
+            $resolvedReglement = $doctrine->getRepository(Reglement::class)->find((int) $reglementIdRaw);
+            if (!$resolvedReglement instanceof Reglement) {
+                return $this->json(['success' => false, 'message' => 'Le reglement selectionne est introuvable.'], 422);
+            }
+            $reglement = $resolvedReglement;
+        } else {
+            $reglement = $this->extractTierReglement($tier);
+        }
+
+        $piece = new Entetepiece();
+        $piece->setDossier($currentDossier);
+        $piece->setType($pieceType);
+        $piece->setTypet($tierType);
+        $piece->setTierId((int) $tierIdRaw);
+        $piece->setPieceno($this->getAndIncrementDossierCounter($pieceType, $currentDossier));
+        $piece->setPieceref($pieceRef !== '' ? $pieceRef : null);
+        $piece->setDevise($devise instanceof Devises ? $devise : null);
+        $piece->setDatep($datep);
+        $piece->setStatut($status);
+        $piece->setRemise($remise);
+        $piece->setReglement($reglement instanceof Reglement ? $reglement : null);
+        $piece->setMontant(0.0);
+        $piece->setResolvedTierName($this->extractTierName($tier));
+
+        $manager = $doctrine->getManager();
+        $manager->persist($piece);
+        $manager->flush();
+
+        $lineStats = ['lineCount' => 0, 'invalidLineCount' => 0];
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Piece creee avec succes.',
+            'item' => $this->serializePieceListItem($piece, $doctrine, $origin, $lineStats),
+        ]);
+    }
+
+    #[Route('/import', name: 'entetepiece.import', methods: ['POST'])]
+    public function importPieces(Request $request, ManagerRegistry $doctrine): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid('entetepiece_import', (string) $request->request->get('_token'))) {
+            return $this->json(['success' => false, 'message' => 'Jeton de securite invalide.'], 403);
+        }
+
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if (!$currentDossier instanceof Dossier) {
+            return $this->json(['success' => false, 'message' => 'Aucun dossier courant selectionne.'], 403);
+        }
+
+        $file = $request->files->get('file');
+        if (!$file instanceof UploadedFile || !$file->isValid()) {
+            return $this->json(['success' => false, 'message' => 'Fichier invalide.'], 422);
+        }
+
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+        if (!in_array($extension, ['csv', 'txt', 'xls', 'xlsx'], true)) {
+            return $this->json(['success' => false, 'message' => 'Format non supporte. Utilisez CSV, XLS ou XLSX.'], 422);
+        }
+
+        try {
+            $sheet = IOFactory::load((string) $file->getPathname())->getActiveSheet();
+            $rows = $sheet->toArray(null, true, true, true);
+        } catch (\Throwable) {
+            return $this->json(['success' => false, 'message' => 'Lecture du fichier impossible.'], 422);
+        }
+
+        if (count($rows) < 2) {
+            return $this->json(['success' => false, 'message' => 'Le fichier ne contient aucune ligne a importer.'], 422);
+        }
+
+        $headerRow = array_shift($rows) ?: [];
+        $headers = [];
+        foreach ($headerRow as $col => $label) {
+            $headers[(string) $col] = $this->normalizeToken((string) $label);
+        }
+
+        $origin = $this->resolvePieceOriginToken((string) $request->request->get('origin', (string) $request->query->get('origin', '')));
+        $allowedTierTypes = $this->resolveAllowedTierTypesForOrigin($origin);
+        $defaultTierType = $allowedTierTypes[0] ?? 'Client';
+
+        $createdCount = 0;
+        $errors = [];
+        $manager = $doctrine->getManager();
+
+        foreach ($rows as $index => $rawRow) {
+            $lineNumber = $index + 2;
+            $normalized = [];
+            foreach ($rawRow as $col => $value) {
+                $key = $headers[(string) $col] ?? '';
+                if ($key === '') {
+                    continue;
+                }
+                $normalized[$key] = is_string($value) ? trim($value) : $value;
+            }
+
+            $tierIdRaw = trim((string) ($normalized['tierid'] ?? $normalized['tiersid'] ?? ''));
+            if ($tierIdRaw === '' || !ctype_digit($tierIdRaw)) {
+                $errors[] = sprintf('Ligne %d: tierId manquant ou invalide.', $lineNumber);
+                continue;
+            }
+
+            $pieceType = $this->resolveAllowedCreatePieceType((string) ($normalized['type'] ?? 'Facture'));
+            if ($pieceType === null) {
+                $errors[] = sprintf('Ligne %d: type de piece invalide.', $lineNumber);
+                continue;
+            }
+
+            $tierType = $this->resolveAllowedTierType((string) ($normalized['typet'] ?? $defaultTierType), $allowedTierTypes);
+            if ($tierType === null) {
+                $errors[] = sprintf('Ligne %d: type de tiers invalide.', $lineNumber);
+                continue;
+            }
+
+            $tierClass = $this->resolveTierClass($tierType);
+            if ($tierClass === null) {
+                $errors[] = sprintf('Ligne %d: type de tiers invalide.', $lineNumber);
+                continue;
+            }
+
+            $tier = $doctrine->getRepository($tierClass)->findOneBy([
+                'id' => (int) $tierIdRaw,
+                'dossier' => $currentDossier,
+            ]);
+            if ($tier === null) {
+                $errors[] = sprintf('Ligne %d: tiers introuvable dans le dossier.', $lineNumber);
+                continue;
+            }
+
+            $status = $this->resolveEditableStatusValue((string) ($normalized['statut'] ?? 'Brouillon'));
+            if ($status === null) {
+                $errors[] = sprintf('Ligne %d: statut invalide.', $lineNumber);
+                continue;
+            }
+
+            $remiseRaw = trim((string) ($normalized['remise'] ?? '0'));
+            if ($remiseRaw !== '' && !is_numeric($remiseRaw)) {
+                $errors[] = sprintf('Ligne %d: remise invalide.', $lineNumber);
+                continue;
+            }
+            $remise = $remiseRaw === '' ? 0.0 : max(0.0, round((float) $remiseRaw, 2));
+
+            $dateRaw = trim((string) ($normalized['datep'] ?? ''));
+            $datep = new \DateTimeImmutable('today');
+            if ($dateRaw !== '') {
+                $parsedDate = \DateTimeImmutable::createFromFormat('Y-m-d', $dateRaw);
+                if (!$parsedDate instanceof \DateTimeImmutable) {
+                    $errors[] = sprintf('Ligne %d: date invalide (format attendu YYYY-MM-DD).', $lineNumber);
+                    continue;
+                }
+                $datep = $parsedDate;
+            }
+
+            $piece = new Entetepiece();
+            $piece->setDossier($currentDossier);
+            $piece->setType($pieceType);
+            $piece->setTypet($tierType);
+            $piece->setTierId((int) $tierIdRaw);
+            $piece->setPieceno($this->getAndIncrementDossierCounter($pieceType, $currentDossier));
+            $piece->setPieceref(($normalized['pieceref'] ?? '') !== '' ? (string) $normalized['pieceref'] : null);
+            $piece->setDevise($currentDossier->getDevise());
+            $piece->setDatep($datep);
+            $piece->setStatut($status);
+            $piece->setRemise($remise);
+            $piece->setReglement($this->extractTierReglement($tier));
+            $piece->setMontant(0.0);
+            $piece->setResolvedTierName($this->extractTierName($tier));
+
+            $manager->persist($piece);
+            ++$createdCount;
+        }
+
+        if ($createdCount === 0 && $errors !== []) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Aucune piece importee. ' . $errors[0],
+                'errors' => $errors,
+            ], 422);
+        }
+
+        $manager->flush();
+
+        $message = sprintf('%d piece(s) importee(s).', $createdCount);
+        if ($errors !== []) {
+            $message .= sprintf(' %d ligne(s) ignoree(s).', count($errors));
+        }
+
+        return $this->json([
+            'success' => true,
+            'message' => $message,
+            'createdCount' => $createdCount,
+            'errorCount' => count($errors),
+            'errors' => array_slice($errors, 0, 20),
+        ]);
+    }
+
+    #[Route('/inline-update/{id<\d+>}', name: 'entetepiece.inline_update', methods: ['POST'])]
+    public function inlineUpdate(Request $request, ManagerRegistry $doctrine, int $id): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid('entetepiece_inline_update', (string) $request->request->get('_token'))) {
+            return $this->json(['success' => false, 'message' => 'Jeton de securite invalide.'], 403);
+        }
+
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if (!$currentDossier instanceof Dossier) {
+            return $this->json(['success' => false, 'message' => 'Aucun dossier courant selectionne.'], 403);
+        }
+
+        $piece = $doctrine->getRepository(Entetepiece::class)->findOneBy([
+            'id' => $id,
+            'dossier' => $currentDossier,
+        ]);
+        if (!$piece instanceof Entetepiece) {
+            return $this->json(['success' => false, 'message' => 'Piece introuvable.'], 404);
+        }
+
+        if ($this->isPerimeeStatus($piece->getStatut())) {
+            return $this->json(['success' => false, 'message' => 'Cette piece est perimee et ne peut plus etre modifiee.'], 422);
+        }
+
+        $origin = $this->resolvePieceOriginToken((string) $request->query->get('origin', (string) $request->request->get('origin', '')));
+        $lineStats = $this->buildLineStats($doctrine->getRepository(Lignepiece::class)->findBy(['piece' => $piece]));
+
+        $pieceTypeRaw = trim((string) $request->request->get('type', (string) ($piece->getType() ?? '')));
+        $resolvedPieceType = $this->resolveAllowedCreatePieceType($pieceTypeRaw);
+        if ($resolvedPieceType === null) {
+            return $this->json(['success' => false, 'message' => 'Type de piece invalide.'], 422);
+        }
+        if ($this->normalizePieceType($resolvedPieceType) !== $this->normalizePieceType($piece->getType())) {
+            if (($lineStats['lineCount'] ?? 0) > 0) {
+                return $this->json(['success' => false, 'message' => 'Le type est verrouille quand la piece contient des lignes. Utilisez la conversion.'], 422);
+            }
+            $piece->setType($resolvedPieceType);
+            $piece->setPieceno($this->getAndIncrementDossierCounter($resolvedPieceType, $currentDossier));
+        }
+
+        $allowedTierTypes = $this->resolveAllowedTierTypesForOrigin($origin);
+        $tierType = $this->resolveAllowedTierType(
+            (string) $request->request->get('typet', (string) $piece->getTypet()),
+            $allowedTierTypes
+        );
+        if ($tierType === null) {
+            return $this->json(['success' => false, 'message' => 'Type de tiers invalide.'], 422);
+        }
+
+        $tierIdRaw = trim((string) $request->request->get('tierId', (string) ($piece->getTierId() ?? '')));
+        if ($tierIdRaw === '' || !ctype_digit($tierIdRaw)) {
+            return $this->json(['success' => false, 'message' => 'Le tiers est obligatoire.'], 422);
+        }
+
+        $tierClass = $this->resolveTierClass($tierType);
+        if ($tierClass === null) {
+            return $this->json(['success' => false, 'message' => 'Type de tiers invalide.'], 422);
+        }
+
+        $tier = $doctrine->getRepository($tierClass)->findOneBy([
+            'id' => (int) $tierIdRaw,
+            'dossier' => $currentDossier,
+        ]);
+        if ($tier === null) {
+            return $this->json(['success' => false, 'message' => 'Le tiers selectionne est introuvable.'], 422);
+        }
+
+        $pieceRef = trim((string) $request->request->get('pieceref', (string) ($piece->getPieceref() ?? '')));
+        $remiseRaw = trim((string) $request->request->get('remise', (string) ($piece->getRemise() ?? '0')));
+        if ($remiseRaw !== '' && !is_numeric($remiseRaw)) {
+            return $this->json(['success' => false, 'message' => 'La remise doit etre numerique.'], 422);
+        }
+        $remise = $remiseRaw === '' ? 0.0 : round((float) $remiseRaw, 2);
+        if ($remise < 0) {
+            return $this->json(['success' => false, 'message' => 'La remise ne peut pas etre negative.'], 422);
+        }
+
+        $status = $this->resolveEditableStatusValue((string) $request->request->get('statut', (string) ($piece->getStatut() ?? '')));
+        if ($status === null) {
+            return $this->json(['success' => false, 'message' => 'Le statut est invalide.'], 422);
+        }
+
+        $statusCheck = $this->validateStatusProgression(
+            (string) ($piece->getStatut() ?? 'Brouillon'),
+            $status,
+            (int) ($lineStats['lineCount'] ?? 0),
+            (int) ($lineStats['invalidLineCount'] ?? 0)
+        );
+        if (!$statusCheck['allowed']) {
+            return $this->json(['success' => false, 'message' => (string) ($statusCheck['reason'] ?? 'Statut invalide.')], 422);
+        }
+
+        $deviseIdRaw = trim((string) $request->request->get('deviseId', ''));
+        if ($deviseIdRaw !== '') {
+            if (!ctype_digit($deviseIdRaw)) {
+                return $this->json(['success' => false, 'message' => 'La devise est invalide.'], 422);
+            }
+            $devise = $doctrine->getRepository(Devises::class)->find((int) $deviseIdRaw);
+            if (!$devise instanceof Devises) {
+                return $this->json(['success' => false, 'message' => 'La devise selectionnee est introuvable.'], 422);
+            }
+            $piece->setDevise($devise);
+        }
+
+        $yearRaw = trim((string) $request->request->get('annee', ''));
+        if ($yearRaw !== '') {
+            if (!ctype_digit($yearRaw)) {
+                return $this->json(['success' => false, 'message' => 'L annee est invalide.'], 422);
+            }
+            $year = (int) $yearRaw;
+            if ($year < 1900 || $year > 2100) {
+                return $this->json(['success' => false, 'message' => 'L annee doit etre comprise entre 1900 et 2100.'], 422);
+            }
+            $baseDate = $piece->getDatep() instanceof \DateTimeInterface
+                ? \DateTimeImmutable::createFromMutable(\DateTime::createFromInterface($piece->getDatep()))
+                : new \DateTimeImmutable('today');
+            $month = (int) $baseDate->format('m');
+            $day = (int) $baseDate->format('d');
+            $maxDay = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+            $safeDay = min($day, $maxDay);
+            $piece->setDatep(new \DateTimeImmutable(sprintf('%04d-%02d-%02d', $year, $month, $safeDay)));
+        } elseif (!$piece->getDatep() instanceof \DateTimeInterface) {
+            $piece->setDatep(new \DateTimeImmutable('today'));
+        }
+
+        if ($piece->getReglement() === null) {
+            $tierReglement = $this->extractTierReglement($tier);
+            if ($tierReglement instanceof Reglement) {
+                $piece->setReglement($tierReglement);
+            }
+        }
+
+        $piece->setTypet($tierType);
+        $piece->setTierId((int) $tierIdRaw);
+        $piece->setPieceref($pieceRef !== '' ? $pieceRef : null);
+        $piece->setRemise($remise);
+        $piece->setStatut($status);
+        $piece->setResolvedTierName($this->extractTierName($tier));
+
+        $doctrine->getManager()->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Piece mise a jour avec succes.',
+            'item' => $this->serializePieceListItem($piece, $doctrine, $origin, $lineStats),
+        ]);
+    }
+
     #[Route('/delete/{id}', name: 'entetepiece.delete')]
     public function deleteEntetePiece(ManagerRegistry $doctrine, Request $request, int $id): RedirectResponse
     {
@@ -445,7 +894,7 @@ class EntetePController extends AbstractController
                 'isPerimee' => $isPerimee,
                 'isInvoiceType' => $isInvoiceType,
                 'showView' => $isPerimee,
-                'showEdit' => !$isPerimee && (!$isInvoiceType || $isActive),
+                'showEdit' => !$isPerimee,
                 'showTransition' => !$isPerimee && !$isInvoiceType && $isValidee,
                 'showEinvoicing' => !$isPerimee && $isValidee,
                 'transitionEnabled' => $transitionEnabled,
@@ -467,6 +916,37 @@ class EntetePController extends AbstractController
             }
         }
 
+        $inlineDevises = array_map(static function (Devises $devise): array {
+            return [
+                'id' => (int) ($devise->getId() ?? 0),
+                'code' => (string) ($devise->getCode() ?? ''),
+                'label' => (string) ($devise->getLibelle() ?? ''),
+            ];
+        }, $this->doctrine2->getRepository(Devises::class)->findBy([], ['code' => 'ASC']));
+
+        $inlineReglements = array_map(static function (Reglement $reglement): array {
+            return [
+                'id' => (int) ($reglement->getId() ?? 0),
+                'label' => (string) ($reglement->getLibelle() ?? ''),
+            ];
+        }, $this->doctrine2->getRepository(Reglement::class)->findBy([], ['libelle' => 'ASC']));
+
+        $originToken = $this->resolvePieceOriginTokenByListRoute($listRoute);
+        $inlineTierTypes = array_map(static fn (string $value): array => [
+            'value' => $value,
+            'label' => $value,
+        ], $this->resolveAllowedTierTypesForOrigin($originToken));
+
+        $inlinePieceTypes = array_map(static fn (string $value): array => [
+            'value' => $value,
+            'label' => $value,
+        ], ['Devis', 'Commande', 'BL', 'Facture']);
+
+        $inlinePieceStatuses = array_map(static fn (string $value): array => [
+            'value' => $value,
+            'label' => $value,
+        ], ['Brouillon', 'Active', 'Validee']);
+
         return $this->render('entetepiece/index.html.twig', [
             'search' => $searchForm->createView(),
             'entetepieces' => $pagination['items'],
@@ -478,8 +958,13 @@ class EntetePController extends AbstractController
             'lineCountByInvoice' => $lineCountByInvoice,
             'workflowByInvoice' => $workflowByInvoice,
             'listRoute' => $listRoute,
-            'origin' => $this->resolvePieceOriginTokenByListRoute($listRoute),
+            'origin' => $originToken,
             'forcedTierLabel' => $forcedTierLabel,
+            'inlineDevises' => $inlineDevises,
+            'inlineReglements' => $inlineReglements,
+            'inlineTierTypes' => $inlineTierTypes,
+            'inlinePieceTypes' => $inlinePieceTypes,
+            'inlinePieceStatuses' => $inlinePieceStatuses,
         ]);
     }
 
@@ -726,6 +1211,17 @@ class EntetePController extends AbstractController
         };
     }
 
+    private function resolveAllowedCreatePieceType(?string $pieceType): ?string
+    {
+        return match ($this->normalizePieceType($pieceType)) {
+            'devis' => 'Devis',
+            'commande' => 'Commande',
+            'bl' => 'BL',
+            'facture' => 'Facture',
+            default => null,
+        };
+    }
+
     /**
      * @param array<int, string> $allowedTargets
      */
@@ -805,6 +1301,119 @@ class EntetePController extends AbstractController
             'perimee', 'perime', 'archivee', 'archive' => 'Perimee',
             default => trim((string) $status) !== '' ? (string) $status : '-',
         };
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function resolveAllowedTierTypesForOrigin(?string $origin): array
+    {
+        return $origin === 'fournisseur'
+            ? ['Fournisseur']
+            : ['Client', 'Prospect'];
+    }
+
+    /**
+     * @param array<int, string> $allowedTierTypes
+     */
+    private function resolveAllowedTierType(?string $tierType, array $allowedTierTypes): ?string
+    {
+        $normalizedTierType = $this->normalizeTierType($tierType);
+        if ($normalizedTierType === '') {
+            return null;
+        }
+
+        foreach ($allowedTierTypes as $allowedTierType) {
+            if ($this->normalizeTierType($allowedTierType) === $normalizedTierType) {
+                return $allowedTierType;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveEditableStatusValue(?string $status): ?string
+    {
+        return match ($this->normalizeStatus($status)) {
+            'brouillon' => 'Brouillon',
+            'active' => 'Active',
+            'validee', 'valide' => 'Validee',
+            default => null,
+        };
+    }
+
+    /**
+     * @param array{lineCount: int, invalidLineCount: int} $lineStats
+     * @return array<string, mixed>
+     */
+    private function serializePieceListItem(
+        Entetepiece $piece,
+        ManagerRegistry $doctrine,
+        ?string $origin,
+        array $lineStats
+    ): array {
+        $lineCount = (int) ($lineStats['lineCount'] ?? 0);
+        $invalidLineCount = (int) ($lineStats['invalidLineCount'] ?? 0);
+        $statusKey = $this->normalizeStatus($piece->getStatut());
+        $isPerimee = $this->isPerimeeStatus($piece->getStatut());
+        $isInvoiceType = $this->isInvoiceType($piece->getType());
+        $isValidee = $this->isValideeStatus($piece->getStatut());
+        $transitionTargets = $this->getTransitionTargetsForType($piece->getType());
+        $transitionReason = null;
+        $transitionEnabled = false;
+
+        if (!$isPerimee && !$isInvoiceType && $isValidee) {
+            $transitionReason = $this->getTransitionDisabledReason($piece, $lineCount, $invalidLineCount);
+            $transitionEnabled = $transitionReason === null && $transitionTargets !== [];
+        }
+
+        $tierLabel = trim((string) $piece->getTierName($doctrine));
+        if ($tierLabel === '' || strtoupper($tierLabel) === 'N/A') {
+            $tierLabel = '____';
+        }
+
+        $datep = $piece->getDatep();
+
+        return [
+            'id' => (int) ($piece->getId() ?? 0),
+            'type' => (string) ($piece->getType() ?? ''),
+            'typet' => (string) ($piece->getTypet() ?? ''),
+            'tierId' => $piece->getTierId() !== null ? (int) $piece->getTierId() : null,
+            'tier' => $tierLabel,
+            'pieceno' => (int) ($piece->getPieceno() ?? 0),
+            'pieceref' => (string) ($piece->getPieceref() ?? ''),
+            'piecerefDisplay' => (string) ($piece->getPieceref() ?? '____'),
+            'remise' => (float) ($piece->getRemise() ?? 0),
+            'remiseDisplay' => number_format((float) ($piece->getRemise() ?? 0), 2, ',', ' ') . '%',
+            'montant' => (float) ($piece->getMontant() ?? 0),
+            'montantDisplay' => number_format((float) ($piece->getMontant() ?? 0), 2, ',', ' '),
+            'lignes' => $lineCount,
+            'statut' => (string) ($piece->getStatut() ?? ''),
+            'statutLabel' => $this->getStatusDisplayLabel($piece->getStatut()),
+            'statusKey' => $statusKey,
+            'deviseId' => $piece->getDevise()?->getId(),
+            'devise' => (string) ($piece->getDevise()?->getCode() ?? ''),
+            'annee' => $datep ? $datep->format('Y') : '-',
+            'lineCount' => $lineCount,
+            'canEdit' => !$isPerimee,
+            'canView' => $isPerimee,
+            'canOpenEinvoicing' => !$isPerimee && $isValidee,
+            'transitionTargets' => $transitionTargets,
+            'transitionEnabled' => $transitionEnabled,
+            'transitionDisabledReason' => $transitionReason,
+            'inlineUpdateUrl' => $this->generateUrl('entetepiece.inline_update', array_merge(
+                ['id' => (int) ($piece->getId() ?? 0)],
+                $this->buildPieceOriginQueryParams($origin)
+            )),
+            'editUrl' => $this->generateUrl('entetepiece.edit', array_merge(
+                ['id' => (int) ($piece->getId() ?? 0)],
+                $this->buildPieceOriginQueryParams($origin)
+            )),
+            'deleteUrl' => $this->generateUrl('entetepiece.delete', array_merge(
+                ['id' => (int) ($piece->getId() ?? 0)],
+                $this->buildPieceOriginQueryParams($origin)
+            )),
+        ];
     }
 
     /**

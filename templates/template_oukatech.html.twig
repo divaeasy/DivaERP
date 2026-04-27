@@ -115,6 +115,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            transition: margin-left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         #wrapper #accordionSidebar + #content-wrapper {
             margin-left: var(--sidebar-width, 92px) !important;
@@ -643,6 +644,7 @@
 
         /* ===== UNIFIED ACTION BAR (Search + Create Button) ===== */
         .action-bar {
+            position: relative;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -653,6 +655,7 @@
             padding: 15px 20px;
             border-radius: 8px;
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            min-height: 56px;
         }
         .action-bar .btn-add {
             background: linear-gradient(180deg, var(--theme-primary) 10%, var(--theme-secondary) 100%);
@@ -700,6 +703,155 @@
             display: inline-flex;
             align-items: center;
             gap: 0.42rem;
+        }
+        .action-bar .action-tools {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-left: auto;
+        }
+        .action-bar .table-bulk-actions {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, calc(-50% + 14px));
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.22s ease, opacity 0.22s ease;
+            z-index: 8;
+            width: min(52vw, 560px);
+            min-width: 320px;
+            max-width: 560px;
+            margin: 0;
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.36);
+            background: #fff;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+            color: #0f172a;
+            overflow: hidden;
+        }
+        .action-bar .table-bulk-actions.is-visible {
+            transform: translate(-50%, -50%);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .table-bulk-actions__content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .table-bulk-actions__left {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .table-bulk-actions__badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(37, 99, 235, 0.12);
+            color: #1e40af;
+            border-radius: 999px;
+            padding: 0.34rem 0.62rem;
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+        .table-bulk-actions__label {
+            font-size: 0.88rem;
+            color: #475569;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .table-bulk-actions__buttons {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+        .table-bulk-actions__delete-btn,
+        .table-bulk-actions__clear-btn {
+            border-radius: 8px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .table-bulk-actions__delete-btn {
+            color: #fff;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: 0;
+            box-shadow: 0 8px 18px rgba(220, 38, 38, 0.22);
+        }
+        .table-bulk-actions__clear-btn {
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            background: #fff;
+        }
+        .table-container .commercial-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table-container .commercial-table thead th,
+        .table-container .commercial-table tbody td {
+            padding: 0.72rem 0.5rem;
+            font-size: 0.86rem;
+            vertical-align: middle;
+        }
+        .table-container .commercial-table .row-selector-head,
+        .table-container .commercial-table .row-selector-cell {
+            width: 42px;
+            text-align: center;
+        }
+        .table-container .commercial-table [data-column-key="actions"] {
+            position: sticky;
+            right: 0;
+            z-index: 3;
+            background: #fff;
+        }
+        .table-container .commercial-table thead [data-column-key="actions"] {
+            z-index: 5;
+            background: var(--theme-primary);
+        }
+        .table-container .commercial-table tbody tr.is-selected {
+            background: rgba(37, 99, 235, 0.08);
+        }
+        .table-container .commercial-table tbody td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @media (max-width: 992px) {
+            .action-bar .table-bulk-actions {
+                position: static;
+                transform: none;
+                opacity: 0;
+                pointer-events: auto;
+                width: 100%;
+                min-width: 0;
+                max-width: none;
+                margin-top: 0.55rem;
+                display: none;
+            }
+            .action-bar .table-bulk-actions.is-visible {
+                display: block;
+                transform: none;
+                opacity: 1;
+                margin-top: 0.55rem;
+            }
+            .table-bulk-actions__content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .table-bulk-actions__buttons {
+                justify-content: flex-end;
+            }
+            .action-bar .action-tools {
+                width: 100%;
+                justify-content: flex-start;
+            }
         }
 
         /* ===== NAVIGATION SEARCH DROPDOWN ===== */
@@ -1050,7 +1202,7 @@
 
 </head>
 
-<body id="page-top" class="js-loading">
+<body id="page-top" class="js-loading has-double-sidebar{% if app.request.attributes.get('_route') == 'app_dash_bord' %} sidebar-subnav-collapsed{% endif %}">
     {% set fallbackPalette = {
         'primary':'#475569',
         'secondary':'#334155',
@@ -1076,6 +1228,8 @@
             --app-bg: #f8fafc;
             --theme-surface: #ffffff;
             --theme-border: rgba(0,0,0,0.06);
+            --sidebar-rail-width: 52px;
+            --sidebar-panel-width: 178px;
             --sidebar-width-collapsed: 74px;
             --sidebar-width-expanded: 236px;
             --sidebar-width: var(--sidebar-width-collapsed);
@@ -1084,6 +1238,12 @@
         }
         body { background: var(--app-bg); color: var(--theme-text); }
         body.sidebar-expanded { --sidebar-width: var(--sidebar-width-expanded); }
+        body.has-double-sidebar {
+            --sidebar-width: calc(var(--sidebar-rail-width) + var(--sidebar-panel-width));
+        }
+        body.has-double-sidebar.sidebar-subnav-collapsed {
+            --sidebar-width: var(--sidebar-rail-width);
+        }
         #content-wrapper { background: var(--app-bg); }
         .bg-gradient-primary { background: var(--theme-primary) !important; }
         .lucide {
@@ -1887,10 +2047,11 @@
         }
         #accordionSidebar.double-sidebar .sidebar-layout {
             display: grid;
-            grid-template-columns: var(--sidebar-rail-width) minmax(0, 1fr);
+            grid-template-columns: var(--sidebar-rail-width) minmax(0, var(--sidebar-panel-width));
             width: 100%;
             height: 100%;
             min-height: 0;
+            transition: grid-template-columns 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         #accordionSidebar.double-sidebar .sidebar-rail {
             display: flex;
@@ -1902,10 +2063,34 @@
         #accordionSidebar.double-sidebar .sidebar-panel {
             display: flex;
             flex-direction: column;
+            width: var(--sidebar-panel-width);
             min-width: 0;
             min-height: 0;
             background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
             border-right: 1px solid rgba(148, 163, 184, 0.22);
+            overflow: hidden;
+            opacity: 1;
+            transform: translateX(0);
+            transition: width 0.34s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.24s ease, transform 0.24s ease, border-color 0.22s ease;
+        }
+        #accordionSidebar.double-sidebar .sidebar-panel > * {
+            opacity: 1;
+            transform: translateX(0);
+            transition: opacity 0.2s ease, transform 0.26s ease;
+        }
+        #accordionSidebar.double-sidebar[data-subnav-state="collapsed"] .sidebar-layout {
+            grid-template-columns: var(--sidebar-rail-width) minmax(0, 0);
+        }
+        #accordionSidebar.double-sidebar[data-subnav-state="collapsed"] .sidebar-panel {
+            width: 0;
+            opacity: 0;
+            transform: translateX(-16px);
+            border-right-color: transparent;
+            pointer-events: none;
+        }
+        #accordionSidebar.double-sidebar[data-subnav-state="collapsed"] .sidebar-panel > * {
+            opacity: 0;
+            transform: translateX(-10px);
         }
         #accordionSidebar.double-sidebar .sidebar-brand {
             min-height: 64px;
@@ -1946,39 +2131,50 @@
         #accordionSidebar.double-sidebar .sidebar-group-caret {
             display: none !important;
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action,
         #accordionSidebar.double-sidebar .sidebar-icon-link,
-        #accordionSidebar.double-sidebar .sidebar-panel-toggle {
+        #accordionSidebar.double-sidebar .sidebar-panel-toggle,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle {
             width: var(--sidebar-link-size) !important;
             height: var(--sidebar-link-size) !important;
             min-width: var(--sidebar-link-size) !important;
             max-width: var(--sidebar-link-size) !important;
             border-radius: 13px;
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            color: rgba(226, 232, 240, 0.76) !important;
+            background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)) !important;
+            border: 1px solid rgba(226, 232, 240, 0.22) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 16px rgba(2, 6, 23, 0.16) !important;
+            color: rgba(241, 245, 249, 0.8) !important;
             padding: 0 !important;
             gap: 0;
             display: inline-grid !important;
             place-items: center !important;
             position: relative;
-            transition: color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+            text-decoration: none;
+            transition: transform 0.18s ease, color 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action::after,
         #accordionSidebar.double-sidebar .sidebar-icon-link::after,
-        #accordionSidebar.double-sidebar .sidebar-panel-toggle::after {
-            content: '';
+        #accordionSidebar.double-sidebar .sidebar-panel-toggle::after,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle::after {
+            content: '' !important;
+            display: block !important;
             position: absolute;
             inset: 0;
             border-radius: inherit;
-            background: transparent;
+            background: linear-gradient(145deg, rgba(255,255,255,0.36), rgba(255,255,255,0.04));
             opacity: 0;
-            transition: opacity 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+            transform: scale(0.96);
+            transition: opacity 0.18s ease, transform 0.2s ease;
             pointer-events: none;
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action i,
         #accordionSidebar.double-sidebar .sidebar-icon-link i,
         #accordionSidebar.double-sidebar .sidebar-panel-toggle i,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle i,
+        #accordionSidebar.double-sidebar .sidebar-rail-action .lucide,
         #accordionSidebar.double-sidebar .sidebar-icon-link .lucide,
-        #accordionSidebar.double-sidebar .sidebar-panel-toggle .lucide {
+        #accordionSidebar.double-sidebar .sidebar-panel-toggle .lucide,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle .lucide {
             width: 16px;
             height: 16px;
             font-size: 14px;
@@ -1987,51 +2183,271 @@
             line-height: 1;
             margin: 0;
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action .lucide,
         #accordionSidebar.double-sidebar .sidebar-icon-link .lucide,
-        #accordionSidebar.double-sidebar .sidebar-panel-toggle .lucide {
+        #accordionSidebar.double-sidebar .sidebar-panel-toggle .lucide,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle .lucide {
             stroke-width: 1.95;
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action:hover,
+        #accordionSidebar.double-sidebar .sidebar-rail-action:focus,
         #accordionSidebar.double-sidebar .sidebar-icon-link:hover,
         #accordionSidebar.double-sidebar .sidebar-icon-link:focus,
         #accordionSidebar.double-sidebar .sidebar-panel-toggle:hover,
-        #accordionSidebar.double-sidebar .sidebar-panel-toggle:focus {
+        #accordionSidebar.double-sidebar .sidebar-panel-toggle:focus,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:hover,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:focus {
+            transform: translateY(-1px);
+            background: linear-gradient(155deg, rgba(255,255,255,0.19), rgba(255,255,255,0.08)) !important;
+            border-color: rgba(226, 232, 240, 0.42) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.23), 0 12px 22px rgba(2, 6, 23, 0.2) !important;
             color: #ffffff !important;
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action:hover::after,
+        #accordionSidebar.double-sidebar .sidebar-rail-action:focus::after,
         #accordionSidebar.double-sidebar .sidebar-icon-link:hover::after,
         #accordionSidebar.double-sidebar .sidebar-icon-link:focus::after,
         #accordionSidebar.double-sidebar .sidebar-panel-toggle:hover::after,
-        #accordionSidebar.double-sidebar .sidebar-panel-toggle:focus::after {
-            opacity: 0;
-            background: transparent;
-            box-shadow: none;
+        #accordionSidebar.double-sidebar .sidebar-panel-toggle:focus::after,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:hover::after,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:focus::after {
+            opacity: 0.6;
+            transform: scale(1);
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action.active,
         #accordionSidebar.double-sidebar .sidebar-icon-link.active,
-        #accordionSidebar.double-sidebar .sidebar-panel-toggle.active {
-            background: transparent !important;
-            box-shadow: none !important;
+        #accordionSidebar.double-sidebar .sidebar-panel-toggle.active,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle[aria-expanded="true"] {
+            transform: translateY(-1px);
+            background: linear-gradient(160deg, rgba(255,255,255,0.42), rgba(255,255,255,0.18)) !important;
+            border-color: rgba(226, 232, 240, 0.72) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 16px 26px rgba(2, 6, 23, 0.28), 0 0 0 1px rgba(255,255,255,0.12) !important;
             color: #ffffff !important;
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action.active::after,
         #accordionSidebar.double-sidebar .sidebar-icon-link.active::after,
-        #accordionSidebar.double-sidebar .sidebar-panel-toggle.active::after {
-            opacity: 0;
-            background: transparent;
-            box-shadow: none;
+        #accordionSidebar.double-sidebar .sidebar-panel-toggle.active::after,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle[aria-expanded="true"]::after {
+            opacity: 1;
+            transform: scale(1);
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action:focus-visible,
         #accordionSidebar.double-sidebar .sidebar-icon-link:focus-visible,
-        #accordionSidebar.double-sidebar .sidebar-panel-toggle:focus-visible {
+        #accordionSidebar.double-sidebar .sidebar-panel-toggle:focus-visible,
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:focus-visible {
             outline: 2px solid rgba(191, 219, 254, 0.68);
             outline-offset: 2px;
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action.nav-disabled,
         #accordionSidebar.double-sidebar .sidebar-icon-link.nav-disabled,
         #accordionSidebar.double-sidebar .sidebar-panel-toggle.nav-disabled {
-            background: transparent !important;
-            border: none !important;
+            background: linear-gradient(160deg, rgba(15, 23, 42, 0.18), rgba(15, 23, 42, 0.1)) !important;
+            border-color: rgba(148, 163, 184, 0.22) !important;
             box-shadow: none !important;
-            opacity: 0.34 !important;
+            opacity: 0.35 !important;
         }
+        #accordionSidebar.double-sidebar .sidebar-rail-action.nav-disabled::after,
         #accordionSidebar.double-sidebar .sidebar-icon-link.nav-disabled::after,
         #accordionSidebar.double-sidebar .sidebar-panel-toggle.nav-disabled::after {
             display: none;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions {
+            padding: 0.2rem 0 0.54rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.42rem;
+            align-items: center;
+            overflow: visible;
+        }
+        #accordionSidebar.double-sidebar,
+        #accordionSidebar.double-sidebar .sidebar-utility-actions,
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown,
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .nav-item {
+            overflow: visible !important;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .nav-item {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            position: relative;
+            overflow: visible;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle {
+            position: relative;
+            transition: all 0.2s ease;
+            border-radius: 12px;
+            padding: 0.42rem 0.5rem;
+            margin: 0.1rem 0;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:hover {
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--theme-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:focus {
+            outline: 2px solid var(--theme-primary);
+            outline-offset: 2px;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle:active {
+            transform: translateY(0);
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-toggle .badge-counter {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            transform: translate(30%, -30%);
+            font-size: 0.55rem;
+            line-height: 1;
+            padding: 0.22rem 0.3rem;
+            border-radius: 999px;
+            box-shadow: 0 4px 10px rgba(2, 6, 23, 0.25);
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+        @keyframes badgePulse {
+            0%, 100% {
+                transform: translate(30%, -30%) scale(1);
+            }
+            50% {
+                transform: translate(30%, -30%) scale(1.08);
+            }
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-menu {
+            position: fixed !important;
+            left: -9999px;
+            top: -9999px;
+            right: auto !important;
+            bottom: auto !important;
+            margin: 0 !important;
+            max-height: min(70vh, 440px);
+            overflow-y: auto;
+            width: 286px;
+            min-width: 286px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            box-shadow: 0 18px 42px rgba(2, 6, 23, 0.24), 0 8px 18px rgba(2, 6, 23, 0.1);
+            z-index: 2147483000;
+            animation: slideInSidebarDropdown 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: left center;
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.99);
+            pointer-events: auto !important;
+            padding: 0;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-menu::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 18px;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-left: 1px solid rgba(148, 163, 184, 0.22);
+            border-top: 1px solid rgba(148, 163, 184, 0.22);
+            transform: rotate(-45deg);
+            z-index: -1;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-menu.is-position-left::before {
+            left: auto;
+            right: -6px;
+            transform: rotate(135deg);
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-list .dropdown-header {
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            font-size: 0.72rem;
+            padding: 0.56rem 0.8rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-list .dropdown-item {
+            padding: 0.62rem 0.78rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+            color: #334155;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-list .dropdown-item:last-child {
+            border-bottom: none;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            font-weight: 600;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-item {
+            gap: 0.62rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-item__icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 30px;
+            font-size: 0.8rem;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-item__body {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.12rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-item__title {
+            font-size: 0.76rem;
+            line-height: 1.3;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-item__meta {
+            font-size: 0.68rem;
+            color: #64748b;
+            line-height: 1.2;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 30px;
+            font-size: 0.67rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #fff;
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            box-shadow: 0 4px 10px rgba(30, 64, 175, 0.2);
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-footer-link {
+            color: var(--theme-primary) !important;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.56rem 0.78rem;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-footer-link:hover,
+        #accordionSidebar.double-sidebar .sidebar-utility-footer-link:focus {
+            background: rgba(37, 99, 235, 0.08);
+            color: var(--theme-secondary) !important;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown.show > .sidebar-utility-toggle {
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--theme-primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.16);
+        }
+        @keyframes slideInSidebarDropdown {
+            from {
+                opacity: 0;
+                transform: scale(0.94) translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
         #accordionSidebar.double-sidebar .sidebar-footer {
             margin-top: auto;
@@ -2865,21 +3281,24 @@
         }
         .topbar .nav-item .nav-link:hover,
         .topbar .nav-item .nav-link:focus {
-            background: rgba(15, 23, 42, 0.06);
+            background: rgba(37, 99, 235, 0.08);
             color: var(--theme-primary) !important;
-            transform: translateY(-1px);
-            box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
         }
         .topbar-divider {
             margin-left: 0.35rem !important;
             margin-right: 0.4rem !important;
             border-color: rgba(15, 23, 42, 0.12) !important;
         }
-        .topbar .dropdown-item {
-            transition: background-color 0.18s ease, color 0.18s ease, padding-left 0.18s ease;
+        .topbar .dropdown-item,
+        .sidebar-utility-actions .dropdown-item {
+            transition: background-color 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
         }
         .topbar .dropdown-item:hover,
-        .topbar .dropdown-item:focus {
+        .topbar .dropdown-item:focus,
+        .sidebar-utility-actions .dropdown-item:hover,
+        .sidebar-utility-actions .dropdown-item:focus {
             background: rgba(37, 99, 235, 0.08);
             color: var(--theme-primary);
             padding-left: 1.15rem;
@@ -3407,6 +3826,8 @@
         {% set accountingRoutes = ['entetepiece.list', 'entetepiece.client_list', 'entetepiece.fournisseur_list', 'entetepiece.edit', 'reglement.list', 'reglement.edit', 'devise.list', 'devise.edit', 'unite.list', 'unite.edit'] %}
         {% set administrationRoutes = ['dossier.list', 'dossier.edit', 'pays.list', 'pays.edit', 'ville.list', 'ville.edit', 'app_nature_production_index', 'app_nature_production_new', 'app_nature_production_edit', 'app_nature_production_show', 'app_depot_index', 'app_depot_new', 'app_depot_edit', 'app_depot_show'] %}
         {% set initialSidebarPanel = '' %}
+        {% set isDashboardRoute = currentRoute == 'app_dash_bord' %}
+        {% set initialSidebarSubnavState = isDashboardRoute ? 'collapsed' : 'expanded' %}
         {% set currentDossier = app.user and app.user.currentDossier ? app.user.currentDossier : null %}
         {% set currentDossierLocation = '' %}
         {% if currentRoute in commercialRoutes %}
@@ -3473,7 +3894,7 @@
                 {% set currentDossierLocation = currentDossierLocation ? currentDossierLocation ~ ', ' ~ currentDossier.pays : currentDossier.pays %}
             {% endif %}
         {% endif %}
-        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark double-sidebar" id="accordionSidebar" data-initial-panel="{{ initialSidebarPanel }}">
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark double-sidebar" id="accordionSidebar" data-initial-panel="{{ initialSidebarPanel }}" data-initial-subnav-state="{{ initialSidebarSubnavState }}" data-subnav-state="{{ initialSidebarSubnavState }}">
             <div class="sidebar-layout">
                 <div class="sidebar-rail">
                     <a class="sidebar-brand d-flex align-items-center justify-content-center nav-loading"
@@ -3500,7 +3921,7 @@
 
                     <div class="sidebar-scroll-container">
                         <li class="nav-item">
-                            <a class="nav-link nav-loading sidebar-icon-link {% if currentRoute == 'app_dash_bord' %}active{% endif %}"
+                            <a class="nav-link nav-loading sidebar-icon-link sidebar-rail-action sidebar-dashboard-link"
                                href="{{ path('app_dash_bord') }}"
                                data-nav-label="Dashboard"
                                data-nav-shortcut-key="1"
@@ -3511,7 +3932,7 @@
                         </li>
 
                         <li class="nav-item">
-                            <button class="nav-link sidebar-panel-toggle {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if initialSidebarPanel == 'commercial' %}active{% endif %}"
+                            <button class="nav-link sidebar-panel-toggle sidebar-rail-action {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if initialSidebarPanel == 'commercial' %}active{% endif %}"
                                     type="button"
                                     data-sidebar-panel="commercial"
                                     data-nav-label="Commercial"
@@ -3524,7 +3945,7 @@
                         </li>
 
                         <li class="nav-item">
-                            <button class="nav-link sidebar-panel-toggle {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if initialSidebarPanel == 'accounting' %}active{% endif %}"
+                            <button class="nav-link sidebar-panel-toggle sidebar-rail-action {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if initialSidebarPanel == 'accounting' %}active{% endif %}"
                                     type="button"
                                     data-sidebar-panel="accounting"
                                     data-nav-label="Comptabilité"
@@ -3537,7 +3958,7 @@
                         </li>
 
                         <li class="nav-item">
-                            <button class="nav-link sidebar-panel-toggle {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if initialSidebarPanel == 'administration' %}active{% endif %}"
+                            <button class="nav-link sidebar-panel-toggle sidebar-rail-action {% if not is_granted('ROLE_ADMIN') %}nav-disabled{% endif %} {% if initialSidebarPanel == 'administration' %}active{% endif %}"
                                     type="button"
                                     data-sidebar-panel="administration"
                                     data-nav-label="Administration"
@@ -3548,6 +3969,98 @@
                                 <span class="sidebar-link-text">Administration</span>
                             </button>
                         </li>
+                    </div>
+
+                    <div class="sidebar-utility-actions">
+                        <div class="nav-item dropdown no-arrow">
+                            <a class="nav-link dropdown-toggle sidebar-rail-action sidebar-utility-toggle"
+                               href="#"
+                               id="alertsDropdown"
+                               role="button"
+                               data-toggle="dropdown"
+                               data-nav-label="Notifications"
+                               aria-haspopup="true"
+                               aria-expanded="false"
+                               aria-label="Notifications">
+                                <i class="fas fa-bell fa-fw"></i>
+                                <span class="badge badge-danger badge-counter">3+</span>
+                            </a>
+                            <div class="dropdown-list dropdown-menu shadow animated--grow-in sidebar-utility-dropdown-menu sidebar-utility-dropdown-menu--alerts" aria-labelledby="alertsDropdown">
+                                <h6 class="dropdown-header">
+                                    Notifications
+                                </h6>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item" href="#">
+                                    <span class="sidebar-utility-item__icon bg-primary">
+                                        <i class="fas fa-file-alt text-white"></i>
+                                    </span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Rapport mensuel disponible</span>
+                                        <span class="sidebar-utility-item__meta">Il y a 4 min</span>
+                                    </span>
+                                </a>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item" href="#">
+                                    <span class="sidebar-utility-item__icon bg-success">
+                                        <i class="fas fa-receipt text-white"></i>
+                                    </span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Paiement client enregistre</span>
+                                        <span class="sidebar-utility-item__meta">Il y a 32 min</span>
+                                    </span>
+                                </a>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item" href="#">
+                                    <span class="sidebar-utility-item__icon bg-warning">
+                                        <i class="fas fa-exclamation-triangle text-white"></i>
+                                    </span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Piece en attente de validation</span>
+                                        <span class="sidebar-utility-item__meta">Il y a 1 h</span>
+                                    </span>
+                                </a>
+                                <a class="dropdown-item text-center small sidebar-utility-footer-link" href="#">Voir toutes les notifications</a>
+                            </div>
+                        </div>
+
+                        <div class="nav-item dropdown no-arrow">
+                            <a class="nav-link dropdown-toggle sidebar-rail-action sidebar-utility-toggle"
+                               href="#"
+                               id="messagesDropdown"
+                               role="button"
+                               data-toggle="dropdown"
+                               data-nav-label="Messages"
+                               aria-haspopup="true"
+                               aria-expanded="false"
+                               aria-label="Messages">
+                                <i class="fas fa-envelope fa-fw"></i>
+                                <span class="badge badge-danger badge-counter">7</span>
+                            </a>
+                            <div class="dropdown-list dropdown-menu shadow animated--grow-in sidebar-utility-dropdown-menu sidebar-utility-dropdown-menu--messages" aria-labelledby="messagesDropdown">
+                                <h6 class="dropdown-header">
+                                    Messages
+                                </h6>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item sidebar-utility-item--message" href="#">
+                                    <span class="sidebar-utility-avatar">AM</span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Ahmed M. a commente une facture</span>
+                                        <span class="sidebar-utility-item__meta">Il y a 9 min</span>
+                                    </span>
+                                </a>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item sidebar-utility-item--message" href="#">
+                                    <span class="sidebar-utility-avatar">SF</span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Sara F. a partage un nouveau devis</span>
+                                        <span class="sidebar-utility-item__meta">Il y a 26 min</span>
+                                    </span>
+                                </a>
+                                <a class="dropdown-item d-flex align-items-center sidebar-utility-item sidebar-utility-item--message" href="#">
+                                    <span class="sidebar-utility-avatar">LB</span>
+                                    <span class="sidebar-utility-item__body">
+                                        <span class="sidebar-utility-item__title">Lea B. demande une confirmation de prix</span>
+                                        <span class="sidebar-utility-item__meta">Aujourd'hui</span>
+                                    </span>
+                                </a>
+                                <a class="dropdown-item text-center small sidebar-utility-footer-link" href="#">Voir tous les messages</a>
+                            </div>
+                        </div>
                     </div>
 
                     {% if app.user %}
@@ -3949,123 +4462,6 @@
                         </li>
                         {% endif %}
 
-                        <!-- Nav Item - Alerts -->
-                        <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-bell fa-fw"></i>
-                                <!-- Counter - Alerts -->
-                                <span class="badge badge-danger badge-counter">3+</span>
-                            </a>
-                            <!-- Dropdown - Alerts -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="alertsDropdown">
-                                <h6 class="dropdown-header">
-                                    Alerts Center
-                                </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-primary">
-                                            <i class="fas fa-file-alt text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 12, 2019</div>
-                                        <span class="font-weight-bold">A new monthly report is ready to download!</span>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-success">
-                                            <i class="fas fa-donate text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 7, 2019</div>
-                                        $290.29 has been deposited into your account!
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-warning">
-                                            <i class="fas fa-exclamation-triangle text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 2, 2019</div>
-                                        Spending Alert: We've noticed unusually high spending for your account.
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
-                            </div>
-                        </li>
-
-                        <!-- Nav Item - Messages -->
-                        <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-envelope fa-fw"></i>
-                                <!-- Counter - Messages -->
-                                <span class="badge badge-danger badge-counter">7</span>
-                            </a>
-                            <!-- Dropdown - Messages -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="messagesDropdown">
-                                <h6 class="dropdown-header">
-                                    Message Center
-                                </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_1.svg"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div class="font-weight-bold">
-                                        <div class="text-truncate">Hi there! I am wondering if you can help me with a
-                                            problem I've been having.</div>
-                                        <div class="small text-gray-500">Emily Fowler · 58m</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_2.svg"
-                                            alt="...">
-                                        <div class="status-indicator"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">I have the photos that you ordered last month, how
-                                            would you like them sent to you?</div>
-                                        <div class="small text-gray-500">Jae Chun · 1d</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_3.svg"
-                                            alt="...">
-                                        <div class="status-indicator bg-warning"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Last month's report looks great, I am very happy with
-                                            the progress so far, keep up the good work!</div>
-                                        <div class="small text-gray-500">Morgan Alvarez · 2d</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Am I a good boy? The reason I ask is because someone
-                                            told me that people say this to all dogs, even if they aren't good...</div>
-                                        <div class="small text-gray-500">Chicken the Dog · 2w</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
-                            </div>
-                        </li>
-
                         {% if not app.user %}
                         <!-- Auth Links (when not logged in) -->
                         <li class="nav-item d-flex align-items-center ml-2">
@@ -4346,6 +4742,7 @@
     <script src="/assets/js/chart-pie-demo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="{{ asset('js/crud-list-enhancements.js') }}"></script>
     
     <!-- Global ERP Scripts -->
     <script>
@@ -4686,6 +5083,87 @@
                 positionSidebarProfileMenu();
             });
 
+            var $sidebarUtilityToggles = $('.sidebar-utility-actions .sidebar-utility-toggle');
+
+            var closeSidebarUtilityMenus = function() {
+                $('.sidebar-utility-actions .dropdown').removeClass('show');
+                $('.sidebar-utility-actions .dropdown-menu').removeClass('show is-position-left').css({ left: '', top: '', right: '', bottom: '' });
+                $sidebarUtilityToggles.attr('aria-expanded', 'false');
+            };
+
+            var positionSidebarUtilityMenu = function($toggle, $menu) {
+                if (!$toggle || !$toggle.length || !$menu || !$menu.length || !$menu.hasClass('show')) {
+                    return;
+                }
+
+                var toggleRect = $toggle[0].getBoundingClientRect();
+                var menuElement = $menu[0];
+                var previousVisibility = menuElement.style.visibility;
+
+                menuElement.style.visibility = 'hidden';
+                var menuWidth = menuElement.offsetWidth || 286;
+                var menuHeight = menuElement.offsetHeight || 240;
+
+                var gap = 10;
+                var viewportPadding = 8;
+                var left = toggleRect.right + gap;
+                var top = toggleRect.top + ((toggleRect.height - menuHeight) / 2);
+                var positionLeft = false;
+
+                if ((left + menuWidth) > (window.innerWidth - viewportPadding)) {
+                    left = Math.max(viewportPadding, toggleRect.left - menuWidth - gap);
+                    positionLeft = true;
+                }
+                if (top < viewportPadding) {
+                    top = viewportPadding;
+                }
+                if ((top + menuHeight) > (window.innerHeight - viewportPadding)) {
+                    top = Math.max(viewportPadding, window.innerHeight - menuHeight - viewportPadding);
+                }
+
+                $menu.toggleClass('is-position-left', positionLeft).css({
+                    left: Math.round(left) + 'px',
+                    top: Math.round(top) + 'px',
+                    right: 'auto',
+                    bottom: 'auto'
+                });
+
+                menuElement.style.visibility = previousVisibility;
+            };
+
+            $sidebarUtilityToggles.off('click.sidebarUtilityDropdown').on('click.sidebarUtilityDropdown', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                var $toggle = $(this);
+                var $menu = $toggle.siblings('.dropdown-menu').first();
+                var $dropdown = $toggle.closest('.dropdown');
+                var isOpen = $menu.hasClass('show');
+
+                closeSidebarUtilityMenus();
+                if ($sidebarProfileToggle.length) {
+                    $sidebarProfileToggle.attr('aria-expanded', 'false');
+                    $sidebarProfileMenu.removeClass('show').css({ left: '', top: '', right: '', bottom: '' });
+                }
+
+                if (isOpen) {
+                    return;
+                }
+
+                $dropdown.addClass('show');
+                $menu.addClass('show');
+                $toggle.attr('aria-expanded', 'true');
+                positionSidebarUtilityMenu($toggle, $menu);
+            });
+
+            $(window).on('resize.sidebarUtilityDropdown', function() {
+                $('.sidebar-utility-actions .dropdown-menu.show').each(function() {
+                    var $menu = $(this);
+                    var $toggle = $menu.siblings('.sidebar-utility-toggle').first();
+                    positionSidebarUtilityMenu($toggle, $menu);
+                });
+            });
+
             // ===== SIDEBAR COLLAPSE/EXPAND =====
             var $body = $('body');
             var $sidebar = $('#accordionSidebar');
@@ -4703,6 +5181,7 @@
                 if (hoverCardElement) {
                     hoverCardElement.classList.remove('show');
                 }
+                closeSidebarUtilityMenus();
                 if ($sidebarProfileToggle.length) {
                     $sidebarProfileToggle.attr('aria-expanded', 'false');
                     $sidebarProfileMenu.removeClass('show').css({ left: '', top: '', right: '', bottom: '' });
@@ -4769,6 +5248,47 @@
             var routeModuleLabel = String($sidebarPanelBreadcrumb.data('routeModule') || '').trim();
             var routeSectionLabel = String($sidebarPanelBreadcrumb.data('routeSection') || '').trim();
             var routePageLabel = String($sidebarPanelBreadcrumb.data('routePage') || '').trim();
+            var routeSubnavState = String($sidebar.data('initial-subnav-state') || '').trim();
+            var sidebarSubnavStorageKey = 'diva_erp.sidebar.subnav.collapsed';
+            var $dashboardLink = $('.sidebar-dashboard-link').first();
+
+            var getStoredSubnavState = function() {
+                try {
+                    var storedValue = window.localStorage.getItem(sidebarSubnavStorageKey);
+                    if (storedValue === '1') {
+                        return true;
+                    }
+                    if (storedValue === '0') {
+                        return false;
+                    }
+                } catch (storageReadError) {
+                    // Ignore storage read failures.
+                }
+                return null;
+            };
+
+            var clearPrimarySidebarActiveState = function() {
+                $dashboardLink.removeClass('active').removeAttr('aria-current');
+                $sidebarPanelToggles.removeClass('active').attr('aria-pressed', 'false');
+            };
+
+            var setSidebarSubnavCollapsed = function(collapsed, persistState) {
+                $body.toggleClass('sidebar-subnav-collapsed', collapsed);
+                $sidebar.attr('data-subnav-state', collapsed ? 'collapsed' : 'expanded');
+
+                if (collapsed) {
+                    clearPrimarySidebarActiveState();
+                    $sidebarPanelContents.removeClass('is-active');
+                }
+
+                if (persistState !== false) {
+                    try {
+                        window.localStorage.setItem(sidebarSubnavStorageKey, collapsed ? '1' : '0');
+                    } catch (storageError) {
+                        // Ignore storage failures.
+                    }
+                }
+            };
 
             var getRecentSectionForPanel = function(panelId) {
                 var $panel = $sidebarPanelContents.filter('[data-sidebar-panel="' + panelId + '"]').first();
@@ -4865,6 +5385,34 @@
                 return allowedTokens.join(' ');
             };
 
+            var extractLucideNameFromElement = function(el) {
+                if (!el) {
+                    return '';
+                }
+                var attrValue = String(el.getAttribute('data-lucide') || '').trim();
+                if (attrValue !== '') {
+                    return attrValue;
+                }
+                var className = String(el.getAttribute('class') || '');
+                var match = className.match(/(?:^|\s)lucide-([a-z0-9-]+)(?:\s|$)/i);
+                return match ? String(match[1] || '').trim() : '';
+            };
+
+            var getIconNameFromLink = function($link) {
+                if (!$link || !$link.length) {
+                    return 'file-text';
+                }
+                var iconName = '';
+                var iconEl = $link.find('i[data-lucide], i.lucide, svg[data-lucide], svg.lucide').first()[0] || null;
+                if (iconEl) {
+                    iconName = extractLucideNameFromElement(iconEl);
+                }
+                if (iconName === '' || iconName === 'circle') {
+                    iconName = 'file-text';
+                }
+                return iconName;
+            };
+
             var buildRecentItemFromLink = function($link, panelId, overrideName) {
                 if (!$link || !$link.length) {
                     return null;
@@ -4881,7 +5429,7 @@
                 }
 
                 var normalizedPanelId = String(panelId || '').trim() || String($link.closest('.sidebar-panel-content').data('sidebarPanel') || '').trim();
-                var itemIcon = String($link.find('i[data-lucide]').first().attr('data-lucide') || 'circle').trim() || 'circle';
+                var itemIcon = getIconNameFromLink($link);
                 var itemSection = getSectionLabelFromLink($link);
 
                 return {
@@ -4933,7 +5481,7 @@
 
                     routeMetaByPath[canonicalPath] = {
                         name: String($link.find('span').last().text() || '').trim(),
-                        icon: String($link.find('i[data-lucide]').first().attr('data-lucide') || 'circle').trim() || 'circle',
+                        icon: getIconNameFromLink($link),
                         section: getSectionLabelFromLink($link),
                         linkClass: normalizeRecentLinkClass($link.attr('class') || '')
                     };
@@ -4951,7 +5499,7 @@
                 var buildMetaFromLink = function($link) {
                     return {
                         name: String($link.find('span').last().text() || '').trim(),
-                        icon: String($link.find('i[data-lucide]').first().attr('data-lucide') || 'file-text').trim() || 'file-text',
+                        icon: getIconNameFromLink($link),
                         section: getSectionLabelFromLink($link),
                         linkClass: normalizeRecentLinkClass($link.attr('class') || ''),
                         panel: String($link.closest('.sidebar-panel-content').data('sidebarPanel') || '').trim()
@@ -4990,10 +5538,7 @@
                     return { icon: 'file-text', linkClass: '' };
                 }
 
-                var icon = String($link.find('i[data-lucide]').first().attr('data-lucide') || '').trim();
-                if (icon === '' || icon === 'circle') {
-                    icon = 'file-text';
-                }
+                var icon = getIconNameFromLink($link);
 
                 return {
                     icon: icon,
@@ -5017,7 +5562,7 @@
                 }
 
                 var $firstLink = $sectionLinks.first();
-                var icon = String($firstLink.find('i[data-lucide]').first().attr('data-lucide') || '').trim();
+                var icon = getIconNameFromLink($firstLink);
                 if (icon === '' || icon === 'circle') {
                     icon = getPanelFallbackLinkMeta(panelId).icon;
                 }
@@ -5388,7 +5933,8 @@
                     return;
                 }
 
-                $sidebarPanelToggles.removeClass('active').attr('aria-pressed', 'false');
+                setSidebarSubnavCollapsed(false, persistState);
+                clearPrimarySidebarActiveState();
                 $sidebarPanelContents.removeClass('is-active');
 
                 $targetToggle.addClass('active').attr('aria-pressed', 'true');
@@ -5422,9 +5968,25 @@
                     preferredPanel = String($sidebarPanelToggles.not('.nav-disabled').first().data('sidebarPanel') || '').trim();
                 }
 
-                setSidebarPanel(preferredPanel, false);
-                recordCurrentPageAsRecent(preferredPanel);
-                renderRecentItems(preferredPanel);
+                var storedSubnavState = getStoredSubnavState();
+                var shouldStartCollapsed = false;
+
+                if (routePanel !== '') {
+                    shouldStartCollapsed = false;
+                } else if (routeSubnavState === 'collapsed') {
+                    shouldStartCollapsed = true;
+                } else if (storedSubnavState !== null) {
+                    shouldStartCollapsed = storedSubnavState;
+                }
+
+                if (shouldStartCollapsed || preferredPanel === '') {
+                    setSidebarSubnavCollapsed(true, false);
+                    renderRecentItems('');
+                } else {
+                    setSidebarPanel(preferredPanel, false);
+                    recordCurrentPageAsRecent(preferredPanel);
+                    renderRecentItems(preferredPanel);
+                }
 
                 $sidebarPanelToggles.on('click', function(e) {
                     e.preventDefault();
@@ -5436,6 +5998,12 @@
 
                     setSidebarPanel(String($toggle.data('sidebarPanel') || '').trim(), true);
                 });
+
+                if ($dashboardLink.length) {
+                    $dashboardLink.on('click', function() {
+                        setSidebarSubnavCollapsed(true, true);
+                    });
+                }
 
                 $('.sidebar-panel-link').not('.nav-disabled').on('click', function() {
                     var $link = $(this);
@@ -5470,8 +6038,10 @@
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('.dropdown').length) {
                     $('.dropdown-menu.show').removeClass('show');
+                    $('.dropdown.show').removeClass('show');
                     $('.dropdown-toggle').attr('aria-expanded', 'false');
                     $sidebarProfileMenu.css({ left: '', top: '', right: '', bottom: '' });
+                    $('.sidebar-utility-actions .dropdown-menu').removeClass('is-position-left').css({ left: '', top: '', right: '', bottom: '' });
                 }
             });
 
@@ -5906,7 +6476,11 @@
                 var itemName = $(this).data('item-name') || 'cet élèment';
                 
                 $('#deleteModalItemName').text(itemName);
-                $('#confirmDeleteBtn').attr('href', deleteUrl);
+                $('#confirmDeleteBtn')
+                    .attr('href', deleteUrl)
+                    .removeAttr('data-crud-bulk-delete')
+                    .removeClass('bulk-delete-loading')
+                    .css('pointer-events', '');
                 $('#deleteConfirmModal').modal('show');
             });
 
@@ -6055,6 +6629,24 @@
             $(window).on('beforeunload', function() {
                 $('.toast-container').hide();
             });
+
+            // ===== SIDEBAR UTILITY DROPDOWN STABILITY =====
+            (function() {
+                function initSidebarUtilityDropdowns() {
+                    $(document).off('click.sidebarUtility').on('click.sidebarUtility', '.sidebar-utility-actions', function(e) {
+                        e.stopPropagation();
+                    });
+                }
+                
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initSidebarUtilityDropdowns);
+                } else {
+                    initSidebarUtilityDropdowns();
+                }
+                
+                document.addEventListener('turbo:load', initSidebarUtilityDropdowns);
+                document.addEventListener('turbo:render', initSidebarUtilityDropdowns);
+            })();
 
             // ===== INITIALIZE SELECT2 WITH IMPROVED STYLING =====
             if ($.fn.select2) {
@@ -6351,7 +6943,7 @@
                 };
 
                 document.addEventListener('mouseover', function(event) {
-                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link, .sidebar-panel-toggle') : null;
+                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link, .sidebar-panel-toggle, .sidebar-utility-toggle') : null;
                     if (!link) {
                         return;
                     }
@@ -6365,7 +6957,7 @@
                 }, true);
 
                 document.addEventListener('mouseout', function(event) {
-                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link, .sidebar-panel-toggle') : null;
+                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link, .sidebar-panel-toggle, .sidebar-utility-toggle') : null;
                     if (!link) {
                         return;
                     }
@@ -6379,14 +6971,14 @@
                 }, true);
 
                 document.addEventListener('focusin', function(event) {
-                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link, .sidebar-panel-toggle') : null;
+                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link, .sidebar-panel-toggle, .sidebar-utility-toggle') : null;
                     if (link) {
                         showHoverCard(link);
                     }
                 });
 
                 document.addEventListener('focusout', function(event) {
-                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link, .sidebar-panel-toggle') : null;
+                    var link = event.target.closest ? event.target.closest('.sidebar-icon-link, .sidebar-panel-toggle, .sidebar-utility-toggle') : null;
                     if (link) {
                         hideHoverCard();
                     }
