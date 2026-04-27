@@ -14,12 +14,15 @@
 
 <div class="action-bar">
     <div class="action-buttons">
-        <a class="btn-add" href="{{ path('app_tiers_interne_new') }}">
+        <button type="button" class="btn-add no-loading" data-toggle="modal" data-target="#tiersInterneQuickCreateModal">
             <i class="fas fa-plus"></i> Nouveau tiers interne
-        </a>
+        </button>
         <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.tiers_internes') }}" title="Exporter CSV">
             <i class="fas fa-file-csv mr-1"></i> Exporter
         </a>
+        <button type="button" class="btn btn-sm btn-outline-primary ml-2 no-loading" data-toggle="modal" data-target="#tiersInterneImportModal">
+            <i class="fas fa-file-import fa-md"></i> Importer
+        </button>
     </div>
     <div class="table-bulk-actions" id="tiersInternesBulkActions" data-bulk-bar-for="tiers-internes">
         <div class="table-bulk-actions__content">
@@ -48,12 +51,23 @@
 </div>
 
 <div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
     {% if tiersInternes|length > 0 %}
     <table class="table js-crud-list-table commercial-table"
            id="tiersInternesTable"
            data-table-id="tiers-internes"
            data-crud-resource="tiers_interne"
            data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_tiers_interne') }}"
+           data-update-token="{{ csrf_token('crud_update_tiers_interne') }}"
+           data-create-token="{{ csrf_token('crud_create_tiers_interne') }}"
+           data-import-token="{{ csrf_token('crud_import_tiers_interne') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
            data-placeholder="____">
         <thead>
             <tr>
@@ -63,12 +77,12 @@
                     </div>
                 </th>
                 <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
-                <th data-sort-key="nom" data-column-key="nom">Nom</th>
-                <th data-sort-key="adresse" data-column-key="adresse">Adresse</th>
+                <th data-sort-key="nom" data-column-key="nom" data-field="nom" data-required="1">Nom</th>
+                <th data-sort-key="adresse" data-column-key="adresse" data-field="adr1" data-required="1">Adresse</th>
                 <th data-sort-key="ville" data-column-key="ville">Ville</th>
                 <th data-sort-key="pays" data-column-key="pays">Pays</th>
-                <th data-sort-key="telephone" data-column-key="telephone">Telephone</th>
-                <th data-sort-key="email" data-column-key="email">Email</th>
+                <th data-sort-key="telephone" data-column-key="telephone" data-field="tel" data-type="digits">Telephone</th>
+                <th data-sort-key="email" data-column-key="email" data-field="email">Email</th>
                 <th data-sort-key="tarif" data-column-key="tarif">Tarif</th>
                 <th class="text-center" style="width: 170px;" data-column-key="actions">Actions</th>
             </tr>
@@ -82,12 +96,12 @@
                     </div>
                 </td>
                 <td data-column-key="id"><strong>#{{ tiersInterne.id }}</strong></td>
-                <td data-column-key="nom">{{ tiersInterne.nom|default('____') }}</td>
-                <td data-column-key="adresse">{{ tiersInterne.adr1|default('____') }}</td>
+                <td data-column-key="nom" data-field="nom">{{ tiersInterne.nom|default('____') }}</td>
+                <td data-column-key="adresse" data-field="adr1">{{ tiersInterne.adr1|default('____') }}</td>
                 <td data-column-key="ville">{{ tiersInterne.ville|default('____') }}</td>
                 <td data-column-key="pays">{{ tiersInterne.pays|default('____') }}</td>
-                <td data-column-key="telephone">{{ tiersInterne.tel|default('____') }}</td>
-                <td data-column-key="email">{{ tiersInterne.email|default('____') }}</td>
+                <td data-column-key="telephone" data-field="tel">{{ tiersInterne.tel|default('____') }}</td>
+                <td data-column-key="email" data-field="email">{{ tiersInterne.email|default('____') }}</td>
                 <td data-column-key="tarif">{{ tiersInterne.tarif|default('____') }}</td>
                 <td class="text-center" data-role="actions" data-column-key="actions">
                     <a href="{{ path('app_tiers_interne_show', {id: tiersInterne.id}) }}" class="btn btn-action btn-view" title="Voir">

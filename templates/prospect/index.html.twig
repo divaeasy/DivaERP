@@ -16,12 +16,15 @@
 
 <div class="action-bar">
     <div class="action-buttons">
-        <a class="btn-add" href="{{ path('prospect.edit') }}">
+        <button type="button" class="btn-add no-loading" data-toggle="modal" data-target="#prospectQuickCreateModal">
             <i class="fas fa-plus"></i> Nouveau Prospect
-        </a>
+        </button>
         <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.prospects') }}" title="Exporter CSV">
             <i class="fas fa-file-csv mr-1"></i> Exporter
         </a>
+        <button type="button" class="btn btn-sm btn-outline-primary ml-2 no-loading" data-toggle="modal" data-target="#prospectImportModal">
+            <i class="fas fa-file-import fa-md"></i> Importer
+        </button>
     </div>
     <div class="table-bulk-actions" id="prospectsBulkActions" data-bulk-bar-for="prospects">
         <div class="table-bulk-actions__content">
@@ -50,12 +53,23 @@
 </div>
 
 <div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
     {% if prospects|length > 0 %}
     <table class="table js-crud-list-table commercial-table"
            id="prospectsTable"
            data-table-id="prospects"
            data-crud-resource="prospect"
            data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_prospect') }}"
+           data-update-token="{{ csrf_token('crud_update_prospect') }}"
+           data-create-token="{{ csrf_token('crud_create_prospect') }}"
+           data-import-token="{{ csrf_token('crud_import_prospect') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
            data-placeholder="____">
         <thead>
             <tr>
@@ -65,12 +79,12 @@
                     </div>
                 </th>
                 <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
-                <th data-sort-key="nom" data-column-key="nom">Nom</th>
-                <th data-sort-key="adresse" data-column-key="adresse">Adresse</th>
+                <th data-sort-key="nom" data-column-key="nom" data-field="nom" data-required="1">Nom</th>
+                <th data-sort-key="adresse" data-column-key="adresse" data-field="adr1" data-required="1">Adresse</th>
                 <th data-sort-key="ville" data-column-key="ville">Ville</th>
                 <th data-sort-key="pays" data-column-key="pays">Pays</th>
-                <th data-sort-key="tel" data-column-key="tel">Telephone</th>
-                <th data-sort-key="email" data-column-key="email">Email</th>
+                <th data-sort-key="tel" data-column-key="tel" data-field="tel" data-type="digits">Telephone</th>
+                <th data-sort-key="email" data-column-key="email" data-field="email">Email</th>
                 <th class="text-center" style="width: 190px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
@@ -83,12 +97,12 @@
                     </div>
                 </td>
                 <td data-column-key="id"><strong>#{{ prospect.id }}</strong></td>
-                <td data-column-key="nom">{{ prospect.nom|default('____') }}</td>
-                <td data-column-key="adresse">{{ prospect.adr1|default('____') }}</td>
+                <td data-column-key="nom" data-field="nom">{{ prospect.nom|default('____') }}</td>
+                <td data-column-key="adresse" data-field="adr1">{{ prospect.adr1|default('____') }}</td>
                 <td data-column-key="ville">{{ prospect.ville|default('____') }}</td>
                 <td data-column-key="pays">{{ prospect.pays|default('____') }}</td>
-                <td data-column-key="tel">{{ prospect.tel|default('____') }}</td>
-                <td data-column-key="email">{{ prospect.email|default('____') }}</td>
+                <td data-column-key="tel" data-field="tel">{{ prospect.tel|default('____') }}</td>
+                <td data-column-key="email" data-field="email">{{ prospect.email|default('____') }}</td>
                 <td class="text-center" data-role="actions" data-column-key="actions">
                     <button type="button" class="btn btn-action btn-convert convert-prospect-btn"
                             title="Convertir en client"

@@ -50,6 +50,12 @@
 </div>
 
 <div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
     {% if tarifs|length > 0 %}
     <table class="table js-crud-list-table commercial-table"
            id="tarifsTable"

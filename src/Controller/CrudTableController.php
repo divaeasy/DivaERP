@@ -174,7 +174,7 @@ class CrudTableController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Element introuvable.'], 404);
         }
 
-        $error = $this->hydrateEntity($entity, $definition, $payload);
+        $error = $this->hydrateEntity($entity, $definition, $payload, true);
         if ($error !== null) {
             return $this->json(['success' => false, 'message' => $error], 422);
         }
@@ -393,41 +393,112 @@ class CrudTableController extends AbstractController
             'client' => [
                 'entity' => Clients::class,
                 'scope' => 'dossier',
-                'simpleCrud' => false,
+                'simpleCrud' => true,
+                'edit_route' => 'client.edit',
+                'delete_route' => 'client.delete',
+                'fields' => [
+                    'nom' => ['setter' => 'setNom', 'getter' => 'getNom', 'type' => 'string', 'required' => true],
+                    'adr1' => ['setter' => 'setAdr1', 'getter' => 'getAdr1', 'type' => 'string', 'required' => true],
+                    'adr2' => ['setter' => 'setAdr2', 'getter' => 'getAdr2', 'type' => 'string', 'required' => false],
+                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => true],
+                    'codepostal' => ['setter' => 'setCodepostal', 'getter' => 'getCodepostal', 'type' => 'int', 'required' => false],
+                    'tel' => ['setter' => 'setTel', 'getter' => 'getTel', 'type' => 'string', 'required' => false],
+                    'email' => ['setter' => 'setEmail', 'getter' => 'getEmail', 'type' => 'string', 'required' => false],
+                    'web' => ['setter' => 'setWeb', 'getter' => 'getWeb', 'type' => 'string', 'required' => false],
+                    'linkedin' => ['setter' => 'setLinkedin', 'getter' => 'getLinkedin', 'type' => 'string', 'required' => false],
+                ],
             ],
             'prospect' => [
                 'entity' => Prospects::class,
                 'scope' => 'dossier',
-                'simpleCrud' => false,
-            ],
-            'tarifvente' => [
-                'entity' => Tarifvente::class,
-                'scope' => 'dossier',
-                'simpleCrud' => false,
-            ],
-            'entetepiece' => [
-                'entity' => Entetepiece::class,
-                'scope' => 'dossier',
-                'simpleCrud' => false,
+                'simpleCrud' => true,
+                'edit_route' => 'prospect.edit',
+                'delete_route' => 'prospect.delete',
+                'fields' => [
+                    'nom' => ['setter' => 'setNom', 'getter' => 'getNom', 'type' => 'string', 'required' => true],
+                    'adr1' => ['setter' => 'setAdr1', 'getter' => 'getAdr1', 'type' => 'string', 'required' => true],
+                    'adr2' => ['setter' => 'setAdr2', 'getter' => 'getAdr2', 'type' => 'string', 'required' => false],
+                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => true],
+                    'codepostal' => ['setter' => 'setCodepostal', 'getter' => 'getCodepostal', 'type' => 'int', 'required' => false],
+                    'tel' => ['setter' => 'setTel', 'getter' => 'getTel', 'type' => 'string', 'required' => false],
+                    'email' => ['setter' => 'setEmail', 'getter' => 'getEmail', 'type' => 'string', 'required' => false],
+                    'web' => ['setter' => 'setWeb', 'getter' => 'getWeb', 'type' => 'string', 'required' => false],
+                    'linkedin' => ['setter' => 'setLinkedin', 'getter' => 'getLinkedin', 'type' => 'string', 'required' => false],
+                ],
             ],
             'fournisseur' => [
                 'entity' => Fournisseur::class,
                 'scope' => 'dossier',
-                'simpleCrud' => false,
+                'simpleCrud' => true,
+                'edit_route' => 'fournisseur.edit',
+                'delete_route' => 'fournisseur.delete',
+                'fields' => [
+                    'nom' => ['setter' => 'setNom', 'getter' => 'getNom', 'type' => 'string', 'required' => true],
+                    'adr1' => ['setter' => 'setAdr1', 'getter' => 'getAdr1', 'type' => 'string', 'required' => true],
+                    'adr2' => ['setter' => 'setAdr2', 'getter' => 'getAdr2', 'type' => 'string', 'required' => false],
+                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => true],
+                    'codepostal' => ['setter' => 'setCodepostal', 'getter' => 'getCodepostal', 'type' => 'int', 'required' => false],
+                    'tel' => ['setter' => 'setTel', 'getter' => 'getTel', 'type' => 'string', 'required' => false],
+                    'email' => ['setter' => 'setEmail', 'getter' => 'getEmail', 'type' => 'string', 'required' => false],
+                    'web' => ['setter' => 'setWeb', 'getter' => 'getWeb', 'type' => 'string', 'required' => false],
+                    'linkedin' => ['setter' => 'setLinkedin', 'getter' => 'getLinkedin', 'type' => 'string', 'required' => false],
+                ],
+            ],
+            'tarifvente' => [
+                'entity' => Tarifvente::class,
+                'scope' => 'dossier',
+                'simpleCrud' => true,
+                'edit_route' => 'tarifvente.edit',
+                'delete_route' => 'tarifvente.delete',
+                'fields' => [
+                    'prix' => ['setter' => 'setPrix', 'getter' => 'getPrix', 'type' => 'float', 'required' => false],
+                ],
             ],
             'depot' => [
                 'entity' => Depot::class,
                 'scope' => 'dossier',
-                'simpleCrud' => false,
+                'simpleCrud' => true,
+                'edit_route' => 'app_depot_edit',
+                'delete_route' => 'app_depot_delete',
+                'fields' => [
+                    'libelle' => ['setter' => 'setLibelle', 'getter' => 'getLibelle', 'type' => 'string', 'required' => true],
+                    'adr1' => ['setter' => 'setAdr1', 'getter' => 'getAdr1', 'type' => 'string', 'required' => false],
+                    'adr2' => ['setter' => 'setAdr2', 'getter' => 'getAdr2', 'type' => 'string', 'required' => false],
+                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => false],
+                    'codepostal' => ['setter' => 'setCodepostal', 'getter' => 'getCodepostal', 'type' => 'string', 'required' => false],
+                ],
             ],
             'tiers_interne' => [
                 'entity' => TiersInterne::class,
                 'scope' => 'dossier',
-                'simpleCrud' => false,
+                'simpleCrud' => true,
+                'edit_route' => 'app_tiers_interne_edit',
+                'delete_route' => 'app_tiers_interne_delete',
+                'fields' => [
+                    'nom' => ['setter' => 'setNom', 'getter' => 'getNom', 'type' => 'string', 'required' => true],
+                    'adr1' => ['setter' => 'setAdr1', 'getter' => 'getAdr1', 'type' => 'string', 'required' => true],
+                    'adr2' => ['setter' => 'setAdr2', 'getter' => 'getAdr2', 'type' => 'string', 'required' => false],
+                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => true],
+                    'codepostal' => ['setter' => 'setCodepostal', 'getter' => 'getCodepostal', 'type' => 'int', 'required' => false],
+                    'tel' => ['setter' => 'setTel', 'getter' => 'getTel', 'type' => 'string', 'required' => false],
+                    'email' => ['setter' => 'setEmail', 'getter' => 'getEmail', 'type' => 'string', 'required' => false],
+                    'web' => ['setter' => 'setWeb', 'getter' => 'getWeb', 'type' => 'string', 'required' => false],
+                    'linkedin' => ['setter' => 'setLinkedin', 'getter' => 'getLinkedin', 'type' => 'string', 'required' => false],
+                ],
             ],
             'nature_production' => [
                 'entity' => NatureProduction::class,
                 'scope' => 'global',
+                'simpleCrud' => true,
+                'edit_route' => 'app_nature_production_edit',
+                'delete_route' => 'app_nature_production_delete',
+                'fields' => [
+                    'libelle' => ['setter' => 'setLibelle', 'getter' => 'getLibelle', 'type' => 'string', 'required' => true],
+                ],
+            ],
+            'entetepiece' => [
+                'entity' => Entetepiece::class,
+                'scope' => 'dossier',
                 'simpleCrud' => false,
             ],
         ];
@@ -455,11 +526,15 @@ class CrudTableController extends AbstractController
         return $user instanceof User ? $user->getCurrentDossier() : null;
     }
 
-    private function hydrateEntity(object $entity, array $definition, array $payload): ?string
+    private function hydrateEntity(object $entity, array $definition, array $payload, bool $partialUpdate = false): ?string
     {
         foreach ($definition['fields'] as $fieldName => $fieldConfig) {
             $setter = (string) $fieldConfig['setter'];
             if (!method_exists($entity, $setter)) {
+                continue;
+            }
+
+            if ($partialUpdate && !array_key_exists($fieldName, $payload)) {
                 continue;
             }
 
@@ -480,7 +555,16 @@ class CrudTableController extends AbstractController
                 } else {
                     $value = (int) $value;
                 }
+            } elseif ($type === 'float') {
+                if ($value === null || $value === '') {
+                    $value = null;
+                } elseif (!is_numeric((string) $value)) {
+                    return sprintf('Le champ %s doit etre numerique.', $fieldName);
+                } else {
+                    $value = (float) $value;
+                }
             } elseif ($type === 'string') {
+
                 $value = $value === null ? null : (string) $value;
                 if ($value === '' && !$isRequired) {
                     $value = null;

@@ -1,0 +1,149 @@
+/* ============================================
+   CRUD List Columns - Shared Column Controls
+   ============================================ */
+
+/* ---------- Column Settings (Gear Icon) ---------- */
+.column-settings {
+    position: relative;
+    display: inline-flex;
+}
+
+.column-settings__trigger {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    background: #ffffff;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.column-settings__trigger:hover,
+.column-settings__trigger:focus {
+    background: #f8fafc;
+    border-color: rgba(37, 99, 235, 0.4);
+    color: var(--theme-primary, #475569);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    outline: none;
+}
+
+.column-settings__trigger i {
+    font-size: 14px;
+}
+
+/* ---------- Column Settings Menu ---------- */
+.column-settings__menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 200px;
+    max-width: 280px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15);
+    padding: 10px 6px;
+    z-index: 1050;
+    display: none;
+}
+
+.column-settings__menu::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 12px;
+    width: 12px;
+    height: 12px;
+    background: #ffffff;
+    border-left: 1px solid rgba(148, 163, 184, 0.3);
+    border-top: 1px solid rgba(148, 163, 184, 0.3);
+    transform: rotate(45deg);
+}
+
+.column-settings__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #475569;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.column-settings__item:hover {
+    background: rgba(37, 99, 235, 0.06);
+}
+
+.column-settings__item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: var(--theme-primary, #475569);
+    cursor: pointer;
+}
+
+.column-settings__item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------- Column Resize Handle ---------- */
+.column-resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 10;
+    background: transparent;
+    transition: background-color 0.15s ease;
+}
+
+.column-resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    right: 1px;
+    width: 2px;
+    height: 70%;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 1px;
+    transition: background-color 0.15s ease;
+}
+
+th:hover .column-resize-handle::after {
+    background: rgba(255, 255, 255, 0.65);
+}
+
+.is-resizing-column .column-resize-handle::after {
+    background: rgba(37, 99, 235, 0.8) !important;
+}
+
+.is-resizing-column {
+    user-select: none;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+    .column-settings__menu {
+        right: auto;
+        left: 0;
+    }
+    .column-settings__menu::before {
+        right: auto;
+        left: 12px;
+    }
+}

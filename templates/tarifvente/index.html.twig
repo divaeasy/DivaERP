@@ -16,12 +16,15 @@
 
 <div class="action-bar">
     <div class="action-buttons">
-        <a class="btn-add" href="{{ path('tarifvente.edit') }}">
+        <button type="button" class="btn-add no-loading" data-toggle="modal" data-target="#tarifventeQuickCreateModal">
             <i class="fas fa-plus"></i> Nouveau Tarif de Vente
-        </a>
+        </button>
         <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.tarifs_vente') }}" title="Exporter CSV">
             <i class="fas fa-file-csv mr-1"></i> Exporter
         </a>
+        <button type="button" class="btn btn-sm btn-outline-primary ml-2 no-loading" data-toggle="modal" data-target="#tarifventeImportModal">
+            <i class="fas fa-file-import fa-md"></i> Importer
+        </button>
     </div>
     <div class="table-bulk-actions" id="tarifventesBulkActions" data-bulk-bar-for="tarifventes">
         <div class="table-bulk-actions__content">
@@ -50,12 +53,22 @@
 </div>
 
 <div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
     {% if tarifventes|length > 0 %}
     <table class="table js-crud-list-table commercial-table"
            id="tarifventesTable"
            data-table-id="tarifventes"
            data-crud-resource="tarifvente"
            data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_tarifvente') }}"
+           data-create-token="{{ csrf_token('crud_create_tarifvente') }}"
+           data-import-token="{{ csrf_token('crud_import_tarifvente') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
            data-placeholder="____">
         <thead>
             <tr>
@@ -70,7 +83,7 @@
                 <th data-sort-key="article" data-column-key="article">Article</th>
                 <th data-sort-key="devise" data-column-key="devise">Devise</th>
                 <th data-sort-key="dateeffet" data-sort-type="date" data-column-key="dateeffet">Date effet</th>
-                <th data-sort-key="prix" data-sort-type="number" class="text-right" data-column-key="prix">Prix</th>
+                <th data-sort-key="prix" data-sort-type="number" data-type="number" class="text-right" data-column-key="prix">Prix</th>
                 <th class="text-center" style="width: 140px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
