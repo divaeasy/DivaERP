@@ -53,16 +53,24 @@
                 importToken: String($table.data('importToken') || '').trim(),
                 enableQuickCreate: String($table.data('enableQuickCreate') || '') === '1',
                 enableImport: String($table.data('enableImport') || '') === '1',
+                enableInlineEdit: isInlineEditEnabled($table),
                 placeholder: String($table.data('placeholder') || '____'),
                 rowSelector: 'tr[data-row-id]'
             };
+
+            // Prevent loader lock only where edit is intercepted inline.
+            if (config.enableInlineEdit && config.updateToken !== '') {
+                $table.find('.btn-edit').addClass('no-loading');
+            } else {
+                $table.find('.btn-edit').removeClass('no-loading');
+            }
 
             if (config.bulkDeleteToken !== '') {
                 setupRowSelection($table, config);
                 setupBulkDeletion($table, config);
             }
 
-            if (config.updateToken !== '') {
+            if (config.enableInlineEdit && config.updateToken !== '') {
                 setupInlineEditing($table, config);
             }
 
@@ -160,7 +168,7 @@
             });
 
             $table.on('click', 'tbody tr[data-row-id]', function(event) {
-                if ($(event.target).closest('a, button, input, select, textarea, label, [contenteditable="true"]').length > 0) {
+                if ($(event.target).closest('a, button, input, select, textarea, label, [contenteditable="true"], .inline-dropdown-shell, .inline-dropdown-menu, .inline-dropdown-option, .inline-dropdown-trigger').length > 0) {
                     return;
                 }
 
@@ -557,6 +565,39 @@
                 saveInlineEdit($row, editableFields, config);
             });
 
+            $table.on('click', '.inline-dropdown-trigger, .inline-dropdown-label', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                var $shell = $(this).closest('.inline-dropdown-shell');
+                if ($shell.length === 0) {
+                    return;
+                }
+
+                if ($shell.hasClass('is-open')) {
+                    $shell.removeClass('is-open');
+                    return;
+                }
+
+                openInlineDropdownShell($table, $shell);
+            });
+
+            $table.on('click', '.inline-dropdown-option', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                var $option = $(this);
+                var $shell = $option.closest('.inline-dropdown-shell');
+                if ($shell.length === 0) {
+                    return;
+                }
+
+                var value = String($option.attr('data-value') || '');
+                var label = String($option.attr('data-label') || $option.text() || '');
+                setInlineDropdownValue($shell, value, label);
+                $shell.removeClass('is-open');
+            });
+
             $table.on('keydown', '.js-inline-editor', function(event) {
                 var $editor = $(this);
                 var editorType = String($editor.attr('data-type') || 'string').toLowerCase();
@@ -601,6 +642,9 @@
 
                 var $target = $(event.target);
                 if ($target.closest($activeRow).length > 0) {
+                    if ($target.closest('.inline-dropdown-shell').length === 0 && $target.closest('.inline-dropdown-menu').length === 0) {
+                        $table.find('.inline-dropdown-shell.is-open').removeClass('is-open');
+                    }
                     return;
                 }
 
@@ -692,19 +736,12 @@
                 };
                 values[fieldMeta.field] = currentValue;
 
-                var escapedValue = escapeHtml(currentValue);
-                var escapedPlaceholder = escapeHtml(config.placeholder || '____');
-                var editorType = escapeHtml(String(fieldMeta.type || 'string').toLowerCase());
-                $cell.html(
-                    '<span class="js-inline-editor" contenteditable="true" spellcheck="false" data-field="' + escapeHtml(fieldMeta.field) + '" data-type="' + editorType + '" data-placeholder="' + escapedPlaceholder + '">' +
-                        escapedValue +
-                    '</span>'
-                );
+                $cell.html(buildInlineEditorHtml(fieldMeta, currentValue, config.placeholder || '____'));
             });
 
             var $actionsCell = findActionsCell($row);
             if ($actionsCell.length > 0) {
-                $actionsCell.find('.btn-edit, .btn-delete').addClass('d-none');
+                $actionsCell.children().addClass('d-none js-inline-hidden-action');
                 $actionsCell.append(
                     '<span class="js-inline-actions">' +
                         '<button type="button" class="btn btn-action btn-view js-inline-save-btn" title="Enregistrer"><i class="fas fa-check"></i></button>' +
@@ -805,7 +842,7 @@
 
             var $actionsCell = findActionsCell($row);
             $actionsCell.find('.js-inline-actions').remove();
-            $actionsCell.find('.btn-edit, .btn-delete').removeClass('d-none');
+            $actionsCell.find('.js-inline-hidden-action').removeClass('d-none js-inline-hidden-action');
 
             setRowSelectionAvailability($row, true);
             $row
@@ -828,12 +865,25 @@
 
                 var value = String(payload[fieldName] || '').trim();
                 $cell.attr('data-field-value', value);
-                $cell.text(value === '' ? String(config.placeholder || '____') : value);
+                if (isSelectEditorType(fieldMeta.type)) {
+                    var label = value;
+                    var options = Array.isArray(fieldMeta.options) ? fieldMeta.options : [];
+                    for (var i = 0; i < options.length; i += 1) {
+                        var option = options[i] || {};
+                        if (String(option.value || '').trim() === value) {
+                            label = String(option.label || value).trim();
+                            break;
+                        }
+                    }
+                    $cell.text(label === '' ? String(config.placeholder || '____') : label);
+                } else {
+                    $cell.text(value === '' ? String(config.placeholder || '____') : value);
+                }
             });
 
             var $actionsCell = findActionsCell($row);
             $actionsCell.find('.js-inline-actions').remove();
-            $actionsCell.find('.btn-edit, .btn-delete').removeClass('d-none');
+            $actionsCell.find('.js-inline-hidden-action').removeClass('d-none js-inline-hidden-action');
 
             setRowSelectionAvailability($row, true);
             $row
@@ -843,6 +893,18 @@
         }
 
         function normalizeInlineEditorValue($editor) {
+            if ($editor.hasClass('inline-dropdown-shell')) {
+                return String($editor.attr('data-value') || '').trim();
+            }
+
+            if ($editor.is('select')) {
+                return String($editor.val() || '').trim();
+            }
+
+            if ($editor.is('input, textarea')) {
+                return String($editor.val() || '').trim();
+            }
+
             var placeholder = String($editor.attr('data-placeholder') || '____').trim();
             var value = String($editor.text() || '')
                 .replace(/\u00a0/g, ' ')
@@ -858,6 +920,17 @@
 
         function focusInlineEditor($editor) {
             if (!$editor || $editor.length === 0) {
+                return;
+            }
+
+            if ($editor.hasClass('inline-dropdown-shell')) {
+                openInlineDropdownShell($editor.closest('table'), $editor);
+                $editor.find('.inline-dropdown-trigger').trigger('focus');
+                return;
+            }
+
+            if ($editor.is('select, input, textarea')) {
+                $editor.trigger('focus');
                 return;
             }
 
@@ -898,6 +971,8 @@
 
         function getEditableFields($table) {
             var fields = [];
+            var fieldMap = {};
+
             $table.find('thead th[data-field]').each(function() {
                 var $th = $(this);
                 var field = String($th.data('field') || '').trim();
@@ -905,14 +980,191 @@
                     return;
                 }
 
-                fields.push({
+                var meta = {
                     field: field,
                     label: String($th.text() || field).trim(),
                     required: String($th.data('required') || '') === '1',
                     type: String($th.data('type') || 'string').trim()
-                });
+                };
+
+                if (isSelectEditorType(meta.type)) {
+                    meta.options = collectFieldOptions($table, field, String($table.data('placeholder') || '____'));
+                }
+
+                fields.push(meta);
+                fieldMap[field] = meta;
             });
+
+            $table.find('tbody tr').first().find('td[data-field]').each(function() {
+                var $cell = $(this);
+                var field = String($cell.data('field') || '').trim();
+                if (field === '' || fieldMap[field]) {
+                    return;
+                }
+
+                var columnKey = String($cell.data('columnKey') || '').trim();
+                var $header = columnKey !== '' ? $table.find('thead th[data-column-key="' + columnKey + '"]').first() : $();
+                var inferredType = $header.length > 0 ? String($header.data('type') || 'string').trim() : 'string';
+                var inferredRequired = $header.length > 0 ? String($header.data('required') || '') === '1' : false;
+                var inferredLabel = $header.length > 0 ? String($header.text() || field).trim() : field;
+
+                var inferredMeta = {
+                    field: field,
+                    label: inferredLabel,
+                    required: inferredRequired,
+                    type: inferredType
+                };
+
+                if (isSelectEditorType(inferredMeta.type)) {
+                    inferredMeta.options = collectFieldOptions($table, field, String($table.data('placeholder') || '____'));
+                }
+
+                fields.push(inferredMeta);
+                fieldMap[field] = inferredMeta;
+            });
+
             return fields;
+        }
+
+        function buildInlineEditorHtml(fieldMeta, currentValue, placeholder) {
+            var normalizedType = String(fieldMeta.type || 'string').toLowerCase();
+            var escapedField = escapeHtml(String(fieldMeta.field || '').trim());
+            var escapedType = escapeHtml(normalizedType);
+            var safePlaceholder = String(placeholder || '____');
+
+            if (isSelectEditorType(normalizedType)) {
+                var options = Array.isArray(fieldMeta.options) ? fieldMeta.options.slice() : [];
+                var optionMap = {};
+                options.forEach(function(option) {
+                    var key = String((option && option.value) || '').trim().toLowerCase();
+                    if (key !== '') {
+                        optionMap[key] = true;
+                    }
+                });
+
+                var currentKey = String(currentValue || '').trim().toLowerCase();
+                if (currentKey !== '' && !optionMap[currentKey]) {
+                    options.push({ value: currentValue, label: currentValue });
+                }
+
+                var selectedValue = String(currentValue || '').trim();
+                var selectedLabel = selectedValue;
+                for (var i = 0; i < options.length; i += 1) {
+                    var currentOption = options[i] || {};
+                    if (String(currentOption.value || '').trim() === selectedValue) {
+                        selectedLabel = String(currentOption.label || selectedValue).trim();
+                        break;
+                    }
+                }
+
+                var html =
+                    '<div class="inline-dropdown-shell js-inline-editor" data-field="' + escapedField + '" data-type="' + escapedType + '" data-value="' + escapeHtml(selectedValue) + '">' +
+                        '<span class="inline-dropdown-label">' + escapeHtml(selectedLabel === '' ? safePlaceholder : selectedLabel) + '</span>' +
+                        '<button type="button" class="inline-dropdown-trigger" aria-label="Ouvrir la liste"><i class="fas fa-chevron-down"></i></button>' +
+                        '<div class="inline-dropdown-menu">';
+
+                var emptyActive = selectedValue === '' ? ' is-active' : '';
+                html += '<button type="button" class="inline-dropdown-option' + emptyActive + '" data-value="" data-label="' + escapeHtml(safePlaceholder) + '">' + escapeHtml(safePlaceholder) + '</button>';
+                options.forEach(function(option) {
+                    var value = String((option && option.value) || '').trim();
+                    var label = String((option && option.label) || value).trim();
+                    if (value === '') {
+                        return;
+                    }
+                    var isActiveClass = value === selectedValue ? ' is-active' : '';
+                    html += '<button type="button" class="inline-dropdown-option' + isActiveClass + '" data-value="' + escapeHtml(value) + '" data-label="' + escapeHtml(label) + '">' + escapeHtml(label) + '</button>';
+                });
+
+                html += '</div></div>';
+                return html;
+            }
+
+            return '<span class="js-inline-editor" contenteditable="true" spellcheck="false" data-field="' + escapedField + '" data-type="' + escapedType + '" data-placeholder="' + escapeHtml(safePlaceholder) + '">' +
+                escapeHtml(currentValue) +
+            '</span>';
+        }
+
+        function isSelectEditorType(type) {
+            var normalized = String(type || '').toLowerCase().trim();
+            return normalized === 'entity' || normalized === 'enum' || normalized === 'select';
+        }
+
+        function collectFieldOptions($table, fieldName, placeholder) {
+            var options = [];
+            var valueMap = {};
+            var ph = String(placeholder || '____').trim().toLowerCase();
+
+            $table.find('tbody td[data-field="' + fieldName + '"]').each(function() {
+                var $cell = $(this);
+                var rawValue = String($cell.attr('data-field-value') || '').trim();
+                var label = String($cell.text() || '').replace(/\s+/g, ' ').trim();
+
+                if (rawValue === '') {
+                    rawValue = normalizeDisplayValue(label, placeholder);
+                }
+
+                if (label === '' || label.toLowerCase() === ph) {
+                    label = rawValue;
+                }
+
+                var normalized = String(rawValue || '').trim();
+                if (normalized === '' || normalized.toLowerCase() === ph) {
+                    return;
+                }
+
+                var key = normalized.toLowerCase();
+                if (valueMap[key]) {
+                    return;
+                }
+                valueMap[key] = true;
+                options.push({ value: normalized, label: label || normalized });
+            });
+
+            options.sort(function(a, b) {
+                return String(a.label || '').localeCompare(String(b.label || ''), 'fr');
+            });
+
+            return options;
+        }
+
+        function isInlineEditEnabled($table) {
+            var rawAttr = String($table.attr('data-enable-inline-edit') || '').trim();
+            if (rawAttr === '') {
+                return true;
+            }
+
+            var normalized = rawAttr.toLowerCase();
+            if (normalized === '0' || normalized === 'false' || normalized === 'off' || normalized === 'no') {
+                return false;
+            }
+            return true;
+        }
+
+        function openInlineDropdownShell($table, $shell) {
+            if (!$shell || $shell.length === 0) {
+                return;
+            }
+
+            var $ctxTable = $table && $table.length ? $table : $shell.closest('table');
+            if ($ctxTable && $ctxTable.length) {
+                $ctxTable.find('.inline-dropdown-shell.is-open').not($shell).removeClass('is-open');
+            }
+            $shell.addClass('is-open');
+        }
+
+        function setInlineDropdownValue($shell, value, label) {
+            if (!$shell || $shell.length === 0) {
+                return;
+            }
+
+            var normalizedValue = String(value || '');
+            var normalizedLabel = String(label || '');
+            $shell.attr('data-value', normalizedValue);
+            $shell.find('.inline-dropdown-label').text(normalizedLabel);
+            $shell.find('.inline-dropdown-option').removeClass('is-active');
+            $shell.find('.inline-dropdown-option').filter(function() {
+                return String($(this).attr('data-value') || '') === normalizedValue;
+            }).first().addClass('is-active');
         }
 
         function setupQuickCreateTrigger($table, config) {
@@ -953,15 +1205,39 @@
 
             editableFields.forEach(function(fieldMeta) {
                 var normalizedType = String(fieldMeta.type || 'string').toLowerCase();
-                var inputType = (normalizedType === 'int' || normalizedType === 'number') ? 'number' : 'text';
+                var inputType = (normalizedType === 'int' || normalizedType === 'number' || normalizedType === 'float') ? 'number' : 'text';
                 var requiredHtml = fieldMeta.required ? ' <span class="text-danger">*</span>' : '';
                 var requiredAttr = fieldMeta.required ? ' required' : '';
-                var extraAttrs = normalizedType === 'digits' ? ' inputmode="numeric" pattern="[0-9]*"' : '';
+                var extraAttrs = '';
+                if (normalizedType === 'digits') {
+                    extraAttrs = ' inputmode="numeric" pattern="[0-9]*"';
+                } else if (normalizedType === 'float') {
+                    extraAttrs = ' step="any"';
+                }
+
+                var controlHtml = '';
+                if (isSelectEditorType(normalizedType)) {
+                    controlHtml = '<select class="form-control js-quick-create-input" data-field="' + escapeHtml(fieldMeta.field) + '" data-type="' + escapeHtml(normalizedType) + '"' + requiredAttr + '>' +
+                        '<option value="">' + escapeHtml(config.placeholder || '____') + '</option>';
+
+                    var selectOptions = Array.isArray(fieldMeta.options) ? fieldMeta.options : [];
+                    selectOptions.forEach(function(option) {
+                        var optionValue = String((option && option.value) || '').trim();
+                        if (optionValue === '') {
+                            return;
+                        }
+                        var optionLabel = String((option && option.label) || optionValue).trim();
+                        controlHtml += '<option value="' + escapeHtml(optionValue) + '">' + escapeHtml(optionLabel) + '</option>';
+                    });
+                    controlHtml += '</select>';
+                } else {
+                    controlHtml = '<input type="' + inputType + '" class="form-control js-quick-create-input" data-field="' + escapeHtml(fieldMeta.field) + '" data-type="' + escapeHtml(normalizedType) + '"' + requiredAttr + extraAttrs + '>';
+                }
 
                 var fieldHtml =
                     '<div class="form-group">' +
                         '<label>' + escapeHtml(fieldMeta.label) + requiredHtml + '</label>' +
-                        '<input type="' + inputType + '" class="form-control js-quick-create-input" data-field="' + fieldMeta.field + '" data-type="' + escapeHtml(normalizedType) + '"' + requiredAttr + extraAttrs + '>' +
+                        controlHtml +
                     '</div>';
 
                 $fieldsWrap.append(fieldHtml);
@@ -985,6 +1261,18 @@
                     }
 
                     if (inputType === 'digits' && value !== '' && !/^\d+$/.test(value)) {
+                        $input.addClass('is-invalid');
+                        hasError = true;
+                        return;
+                    }
+
+                    if ((inputType === 'int' || inputType === 'number') && value !== '' && !/^-?\d+$/.test(value)) {
+                        $input.addClass('is-invalid');
+                        hasError = true;
+                        return;
+                    }
+
+                    if (inputType === 'float' && value !== '' && !/^-?\d+(?:[.,]\d+)?$/.test(value)) {
                         $input.addClass('is-invalid');
                         hasError = true;
                         return;

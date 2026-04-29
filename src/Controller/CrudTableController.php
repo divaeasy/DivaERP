@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Clients;
+use App\Entity\Article;
 use App\Entity\Depot;
 use App\Entity\Devises;
 use App\Entity\Dossier;
@@ -18,6 +19,7 @@ use App\Entity\TiersInterne;
 use App\Entity\Unite;
 use App\Entity\User;
 use App\Entity\Ville;
+use App\Enum\NatureProductionType;
 use Doctrine\Persistence\ManagerRegistry;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -138,7 +140,7 @@ class CrudTableController extends AbstractController
             $entity->setDossier($currentDossier);
         }
 
-        $error = $this->hydrateEntity($entity, $definition, $payload);
+        $error = $this->hydrateEntity($entity, $definition, $payload, $doctrine);
         if ($error !== null) {
             return $this->json(['success' => false, 'message' => $error], 422);
         }
@@ -174,7 +176,7 @@ class CrudTableController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Element introuvable.'], 404);
         }
 
-        $error = $this->hydrateEntity($entity, $definition, $payload, true);
+        $error = $this->hydrateEntity($entity, $definition, $payload, $doctrine, true);
         if ($error !== null) {
             return $this->json(['success' => false, 'message' => $error], 422);
         }
@@ -266,7 +268,7 @@ class CrudTableController extends AbstractController
                 $createdCount++;
             }
 
-            $error = $this->hydrateEntity($entity, $definition, $rowPayload);
+            $error = $this->hydrateEntity($entity, $definition, $rowPayload, $doctrine);
             if ($error !== null) {
                 $errors[] = sprintf('Ligne %d: %s', $lineNumber, $error);
                 if ($id <= 0) {
@@ -400,12 +402,15 @@ class CrudTableController extends AbstractController
                     'nom' => ['setter' => 'setNom', 'getter' => 'getNom', 'type' => 'string', 'required' => true],
                     'adr1' => ['setter' => 'setAdr1', 'getter' => 'getAdr1', 'type' => 'string', 'required' => true],
                     'adr2' => ['setter' => 'setAdr2', 'getter' => 'getAdr2', 'type' => 'string', 'required' => false],
-                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => true],
+                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => false, 'fallbackFrom' => 'adr1'],
                     'codepostal' => ['setter' => 'setCodepostal', 'getter' => 'getCodepostal', 'type' => 'int', 'required' => false],
+                    'ville' => ['setter' => 'setVille', 'getter' => 'getVille', 'type' => 'entity', 'entity' => Ville::class, 'lookup' => 'libelle', 'required' => false],
+                    'pays' => ['setter' => 'setPays', 'getter' => 'getPays', 'type' => 'entity', 'entity' => Pays::class, 'lookup' => 'libelle', 'required' => false],
                     'tel' => ['setter' => 'setTel', 'getter' => 'getTel', 'type' => 'string', 'required' => false],
                     'email' => ['setter' => 'setEmail', 'getter' => 'getEmail', 'type' => 'string', 'required' => false],
                     'web' => ['setter' => 'setWeb', 'getter' => 'getWeb', 'type' => 'string', 'required' => false],
                     'linkedin' => ['setter' => 'setLinkedin', 'getter' => 'getLinkedin', 'type' => 'string', 'required' => false],
+                    'tarif' => ['setter' => 'setTarif', 'getter' => 'getTarif', 'type' => 'entity', 'entity' => Tarifs::class, 'lookup' => 'libelle', 'scope' => 'dossier', 'required' => false],
                 ],
             ],
             'prospect' => [
@@ -418,8 +423,10 @@ class CrudTableController extends AbstractController
                     'nom' => ['setter' => 'setNom', 'getter' => 'getNom', 'type' => 'string', 'required' => true],
                     'adr1' => ['setter' => 'setAdr1', 'getter' => 'getAdr1', 'type' => 'string', 'required' => true],
                     'adr2' => ['setter' => 'setAdr2', 'getter' => 'getAdr2', 'type' => 'string', 'required' => false],
-                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => true],
+                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => false, 'fallbackFrom' => 'adr1'],
                     'codepostal' => ['setter' => 'setCodepostal', 'getter' => 'getCodepostal', 'type' => 'int', 'required' => false],
+                    'ville' => ['setter' => 'setVille', 'getter' => 'getVille', 'type' => 'entity', 'entity' => Ville::class, 'lookup' => 'libelle', 'required' => false],
+                    'pays' => ['setter' => 'setPays', 'getter' => 'getPays', 'type' => 'entity', 'entity' => Pays::class, 'lookup' => 'libelle', 'required' => true],
                     'tel' => ['setter' => 'setTel', 'getter' => 'getTel', 'type' => 'string', 'required' => false],
                     'email' => ['setter' => 'setEmail', 'getter' => 'getEmail', 'type' => 'string', 'required' => false],
                     'web' => ['setter' => 'setWeb', 'getter' => 'getWeb', 'type' => 'string', 'required' => false],
@@ -436,12 +443,15 @@ class CrudTableController extends AbstractController
                     'nom' => ['setter' => 'setNom', 'getter' => 'getNom', 'type' => 'string', 'required' => true],
                     'adr1' => ['setter' => 'setAdr1', 'getter' => 'getAdr1', 'type' => 'string', 'required' => true],
                     'adr2' => ['setter' => 'setAdr2', 'getter' => 'getAdr2', 'type' => 'string', 'required' => false],
-                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => true],
+                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => false, 'fallbackFrom' => 'adr1'],
                     'codepostal' => ['setter' => 'setCodepostal', 'getter' => 'getCodepostal', 'type' => 'int', 'required' => false],
+                    'ville' => ['setter' => 'setVille', 'getter' => 'getVille', 'type' => 'entity', 'entity' => Ville::class, 'lookup' => 'libelle', 'required' => false],
+                    'pays' => ['setter' => 'setPays', 'getter' => 'getPays', 'type' => 'entity', 'entity' => Pays::class, 'lookup' => 'libelle', 'required' => false],
                     'tel' => ['setter' => 'setTel', 'getter' => 'getTel', 'type' => 'string', 'required' => false],
                     'email' => ['setter' => 'setEmail', 'getter' => 'getEmail', 'type' => 'string', 'required' => false],
                     'web' => ['setter' => 'setWeb', 'getter' => 'getWeb', 'type' => 'string', 'required' => false],
                     'linkedin' => ['setter' => 'setLinkedin', 'getter' => 'getLinkedin', 'type' => 'string', 'required' => false],
+                    'tarif' => ['setter' => 'setTarif', 'getter' => 'getTarif', 'type' => 'entity', 'entity' => Tarifs::class, 'lookup' => 'libelle', 'scope' => 'dossier', 'required' => false],
                 ],
             ],
             'tarifvente' => [
@@ -451,6 +461,11 @@ class CrudTableController extends AbstractController
                 'edit_route' => 'tarifvente.edit',
                 'delete_route' => 'tarifvente.delete',
                 'fields' => [
+                    'tarif' => ['setter' => 'setTarif', 'getter' => 'getTarif', 'type' => 'entity', 'entity' => Tarifs::class, 'lookup' => 'libelle', 'scope' => 'dossier', 'required' => false],
+                    'client' => ['setter' => 'setClient', 'getter' => 'getClient', 'type' => 'entity', 'entity' => Clients::class, 'lookup' => 'nom', 'scope' => 'dossier', 'required' => true],
+                    'article' => ['setter' => 'setArticle', 'getter' => 'getArticle', 'type' => 'entity', 'entity' => Article::class, 'lookup' => 'libelle', 'scope' => 'dossier', 'required' => true],
+                    'devise' => ['setter' => 'setDevise', 'getter' => 'getDevise', 'type' => 'entity', 'entity' => Devises::class, 'lookup' => 'libelle', 'required' => false],
+                    'dateeffet' => ['setter' => 'setDateeffet', 'getter' => 'getDateeffet', 'type' => 'date', 'required' => false],
                     'prix' => ['setter' => 'setPrix', 'getter' => 'getPrix', 'type' => 'float', 'required' => false],
                 ],
             ],
@@ -462,10 +477,13 @@ class CrudTableController extends AbstractController
                 'delete_route' => 'app_depot_delete',
                 'fields' => [
                     'libelle' => ['setter' => 'setLibelle', 'getter' => 'getLibelle', 'type' => 'string', 'required' => true],
+                    'tiersInterne' => ['setter' => 'setTiersInterne', 'getter' => 'getTiersInterne', 'type' => 'entity', 'entity' => TiersInterne::class, 'lookup' => 'nom', 'scope' => 'dossier', 'required' => false],
                     'adr1' => ['setter' => 'setAdr1', 'getter' => 'getAdr1', 'type' => 'string', 'required' => false],
                     'adr2' => ['setter' => 'setAdr2', 'getter' => 'getAdr2', 'type' => 'string', 'required' => false],
                     'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => false],
                     'codepostal' => ['setter' => 'setCodepostal', 'getter' => 'getCodepostal', 'type' => 'string', 'required' => false],
+                    'ville' => ['setter' => 'setVille', 'getter' => 'getVille', 'type' => 'entity', 'entity' => Ville::class, 'lookup' => 'libelle', 'required' => false],
+                    'pays' => ['setter' => 'setPays', 'getter' => 'getPays', 'type' => 'entity', 'entity' => Pays::class, 'lookup' => 'libelle', 'required' => false],
                 ],
             ],
             'tiers_interne' => [
@@ -478,12 +496,15 @@ class CrudTableController extends AbstractController
                     'nom' => ['setter' => 'setNom', 'getter' => 'getNom', 'type' => 'string', 'required' => true],
                     'adr1' => ['setter' => 'setAdr1', 'getter' => 'getAdr1', 'type' => 'string', 'required' => true],
                     'adr2' => ['setter' => 'setAdr2', 'getter' => 'getAdr2', 'type' => 'string', 'required' => false],
-                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => true],
+                    'rue' => ['setter' => 'setRue', 'getter' => 'getRue', 'type' => 'string', 'required' => false, 'fallbackFrom' => 'adr1'],
                     'codepostal' => ['setter' => 'setCodepostal', 'getter' => 'getCodepostal', 'type' => 'int', 'required' => false],
+                    'ville' => ['setter' => 'setVille', 'getter' => 'getVille', 'type' => 'entity', 'entity' => Ville::class, 'lookup' => 'libelle', 'required' => false],
+                    'pays' => ['setter' => 'setPays', 'getter' => 'getPays', 'type' => 'entity', 'entity' => Pays::class, 'lookup' => 'libelle', 'required' => false],
                     'tel' => ['setter' => 'setTel', 'getter' => 'getTel', 'type' => 'string', 'required' => false],
                     'email' => ['setter' => 'setEmail', 'getter' => 'getEmail', 'type' => 'string', 'required' => false],
                     'web' => ['setter' => 'setWeb', 'getter' => 'getWeb', 'type' => 'string', 'required' => false],
                     'linkedin' => ['setter' => 'setLinkedin', 'getter' => 'getLinkedin', 'type' => 'string', 'required' => false],
+                    'tarif' => ['setter' => 'setTarif', 'getter' => 'getTarif', 'type' => 'entity', 'entity' => Tarifs::class, 'lookup' => 'libelle', 'scope' => 'dossier', 'required' => false],
                 ],
             ],
             'nature_production' => [
@@ -494,6 +515,7 @@ class CrudTableController extends AbstractController
                 'delete_route' => 'app_nature_production_delete',
                 'fields' => [
                     'libelle' => ['setter' => 'setLibelle', 'getter' => 'getLibelle', 'type' => 'string', 'required' => true],
+                    'type' => ['setter' => 'setType', 'getter' => 'getType', 'type' => 'enum', 'enumClass' => NatureProductionType::class, 'required' => true],
                 ],
             ],
             'entetepiece' => [
@@ -526,8 +548,10 @@ class CrudTableController extends AbstractController
         return $user instanceof User ? $user->getCurrentDossier() : null;
     }
 
-    private function hydrateEntity(object $entity, array $definition, array $payload, bool $partialUpdate = false): ?string
+    private function hydrateEntity(object $entity, array $definition, array $payload, ManagerRegistry $doctrine, bool $partialUpdate = false): ?string
     {
+        $currentDossier = $this->getCurrentDossier();
+
         foreach ($definition['fields'] as $fieldName => $fieldConfig) {
             $setter = (string) $fieldConfig['setter'];
             if (!method_exists($entity, $setter)) {
@@ -540,6 +564,12 @@ class CrudTableController extends AbstractController
 
             $rawValue = $payload[$fieldName] ?? null;
             $value = is_string($rawValue) ? trim($rawValue) : $rawValue;
+            $fallbackFrom = (string) ($fieldConfig['fallbackFrom'] ?? '');
+            if (($value === null || $value === '') && $fallbackFrom !== '' && array_key_exists($fallbackFrom, $payload)) {
+                $fallbackValue = $payload[$fallbackFrom];
+                $value = is_string($fallbackValue) ? trim($fallbackValue) : $fallbackValue;
+            }
+
             $isRequired = (bool) ($fieldConfig['required'] ?? false);
             $type = (string) ($fieldConfig['type'] ?? 'string');
 
@@ -550,28 +580,101 @@ class CrudTableController extends AbstractController
             if ($type === 'int') {
                 if ($value === null || $value === '') {
                     $value = null;
-                } elseif (!is_numeric((string) $value)) {
-                    return sprintf('Le champ %s doit etre numerique.', $fieldName);
                 } else {
-                    $value = (int) $value;
+                    $normalized = $this->normalizeNumber((string) $value);
+                    if (!is_numeric($normalized)) {
+                        return sprintf('Le champ %s doit etre numerique.', $fieldName);
+                    }
+                    $value = (int) $normalized;
                 }
             } elseif ($type === 'float') {
                 if ($value === null || $value === '') {
                     $value = null;
-                } elseif (!is_numeric((string) $value)) {
-                    return sprintf('Le champ %s doit etre numerique.', $fieldName);
                 } else {
-                    $value = (float) $value;
+                    $normalized = $this->normalizeNumber((string) $value);
+                    if (!is_numeric($normalized)) {
+                        return sprintf('Le champ %s doit etre numerique.', $fieldName);
+                    }
+                    $value = (float) $normalized;
+                }
+            } elseif ($type === 'date') {
+                if ($value === null || $value === '') {
+                    $value = null;
+                } else {
+                    $parsedDate = $this->parseFlexibleDate((string) $value);
+                    if (!$parsedDate instanceof \DateTimeInterface) {
+                        return sprintf('Le champ %s contient une date invalide.', $fieldName);
+                    }
+                    $value = $parsedDate;
+                }
+            } elseif ($type === 'entity') {
+                $entityClass = (string) ($fieldConfig['entity'] ?? '');
+                if ($entityClass === '') {
+                    return sprintf('Configuration invalide pour le champ %s.', $fieldName);
+                }
+
+                if ($value === null || $value === '') {
+                    if ($isRequired) {
+                        return sprintf('Le champ %s est obligatoire.', $fieldName);
+                    }
+                    $value = null;
+                } else {
+                    $resolvedEntity = $this->resolveEntityReference(
+                        (string) $value,
+                        $entityClass,
+                        (string) ($fieldConfig['lookup'] ?? 'libelle'),
+                        (string) ($fieldConfig['scope'] ?? ''),
+                        $currentDossier,
+                        $doctrine
+                    );
+
+                    if ($resolvedEntity === null) {
+                        return sprintf('Valeur invalide pour le champ %s.', $fieldName);
+                    }
+
+                    $value = $resolvedEntity;
+                }
+            } elseif ($type === 'enum') {
+                $enumClass = (string) ($fieldConfig['enumClass'] ?? '');
+                if ($enumClass === '' || !enum_exists($enumClass)) {
+                    return sprintf('Configuration invalide pour le champ %s.', $fieldName);
+                }
+
+                if ($value === null || $value === '') {
+                    if ($isRequired) {
+                        return sprintf('Le champ %s est obligatoire.', $fieldName);
+                    }
+                    $value = null;
+                } else {
+                    $resolvedEnum = $this->resolveEnumValue((string) $value, $enumClass);
+                    if ($resolvedEnum === null) {
+                        return sprintf('Valeur invalide pour le champ %s.', $fieldName);
+                    }
+                    $value = $resolvedEnum;
                 }
             } elseif ($type === 'string') {
-
                 $value = $value === null ? null : (string) $value;
                 if ($value === '' && !$isRequired) {
                     $value = null;
                 }
             }
 
-            $entity->{$setter}($value);
+            if ($isRequired && $value === null) {
+                return sprintf('Le champ %s est obligatoire.', $fieldName);
+            }
+
+            if ($value === null && $this->setterDisallowsNull($entity, $setter)) {
+                if ($isRequired) {
+                    return sprintf('Le champ %s est obligatoire.', $fieldName);
+                }
+                $value = '';
+            }
+
+            try {
+                $entity->{$setter}($value);
+            } catch (\TypeError $typeError) {
+                return sprintf('Valeur invalide pour le champ %s.', $fieldName);
+            }
         }
 
         return null;
@@ -585,6 +688,13 @@ class CrudTableController extends AbstractController
         foreach ($definition['fields'] as $fieldName => $fieldConfig) {
             $getter = (string) $fieldConfig['getter'];
             $value = method_exists($entity, $getter) ? $entity->{$getter}() : null;
+            if ($value instanceof \DateTimeInterface) {
+                $value = $value->format('Y-m-d');
+            } elseif ($value instanceof \BackedEnum) {
+                $value = $value->value;
+            } elseif (is_object($value)) {
+                $value = method_exists($value, '__toString') ? (string) $value : null;
+            }
             $fields[$fieldName] = $value;
         }
 
@@ -628,6 +738,129 @@ class CrudTableController extends AbstractController
         }
 
         return $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
+    }
+
+    private function resolveEntityReference(
+        string $rawValue,
+        string $entityClass,
+        string $lookupField,
+        string $scope,
+        ?Dossier $currentDossier,
+        ManagerRegistry $doctrine
+    ): ?object {
+        $value = trim($rawValue);
+        if ($value === '') {
+            return null;
+        }
+
+        $repository = $doctrine->getRepository($entityClass);
+        $scopeCriteria = [];
+        if ($scope === 'dossier') {
+            if (!$currentDossier instanceof Dossier) {
+                return null;
+            }
+            $scopeCriteria['dossier'] = $currentDossier;
+        }
+
+        if (is_numeric($value)) {
+            $id = (int) $value;
+            if ($id <= 0) {
+                return null;
+            }
+            $criteria = array_merge(['id' => $id], $scopeCriteria);
+            $foundById = $repository->findOneBy($criteria);
+            if ($foundById !== null) {
+                return $foundById;
+            }
+        }
+
+        $lookup = trim($lookupField);
+        if ($lookup === '') {
+            $lookup = 'libelle';
+        }
+
+        $criteria = array_merge([$lookup => $value], $scopeCriteria);
+        return $repository->findOneBy($criteria);
+    }
+
+    private function resolveEnumValue(string $rawValue, string $enumClass): ?\BackedEnum
+    {
+        $value = trim($rawValue);
+        if ($value === '') {
+            return null;
+        }
+
+        $upper = strtoupper($value);
+        foreach ($enumClass::cases() as $case) {
+            if ($case instanceof \BackedEnum) {
+                $caseValue = strtoupper((string) $case->value);
+                if ($caseValue === $upper) {
+                    return $case;
+                }
+            }
+
+            if (strtoupper($case->name) === $upper) {
+                return $case;
+            }
+        }
+
+        return null;
+    }
+
+    private function parseFlexibleDate(string $rawValue): ?\DateTimeImmutable
+    {
+        $value = trim($rawValue);
+        if ($value === '') {
+            return null;
+        }
+
+        $formats = ['d/m/Y', 'Y-m-d', 'd-m-Y', 'd.m.Y', 'Y/m/d'];
+        foreach ($formats as $format) {
+            $date = \DateTimeImmutable::createFromFormat($format, $value);
+            if ($date instanceof \DateTimeImmutable) {
+                return $date;
+            }
+        }
+
+        $timestamp = strtotime($value);
+        if ($timestamp === false) {
+            return null;
+        }
+
+        return (new \DateTimeImmutable())->setTimestamp($timestamp);
+    }
+
+    private function normalizeNumber(string $rawValue): string
+    {
+        $value = trim($rawValue);
+        if ($value === '') {
+            return '';
+        }
+
+        $value = str_replace([' ', "\xc2\xa0"], '', $value);
+        if (substr_count($value, ',') > 0 && substr_count($value, '.') === 0) {
+            $value = str_replace(',', '.', $value);
+        } else {
+            $value = str_replace(',', '', $value);
+        }
+
+        return $value;
+    }
+
+    private function setterDisallowsNull(object $entity, string $setter): bool
+    {
+        try {
+            $method = new \ReflectionMethod($entity, $setter);
+        } catch (\ReflectionException $exception) {
+            return false;
+        }
+
+        $parameters = $method->getParameters();
+        if ($parameters === [] || !isset($parameters[0])) {
+            return false;
+        }
+
+        return !$parameters[0]->allowsNull();
     }
 
     private function parseImportedRows(string $filePath, array $definition): array
@@ -708,13 +941,33 @@ class CrudTableController extends AbstractController
             'designation' => 'libelle',
             'nom' => 'nom',
             'name' => 'nom',
-            'adresse' => 'adresse',
-            'address' => 'adresse',
+            'rue' => 'rue',
+            'codepostal' => 'codepostal',
+            'cp' => 'codepostal',
             'code' => 'code',
             'echeance' => 'echeance',
             'delai' => 'echeance',
             'jours' => 'echeance',
+            'ville' => 'ville',
+            'pays' => 'pays',
+            'tarif' => 'tarif',
+            'client' => 'client',
+            'article' => 'article',
+            'devise' => 'devise',
+            'prix' => 'prix',
+            'dateeffet' => 'dateeffet',
+            'type' => 'type',
+            'tiersinterne' => 'tiersInterne',
         ];
+
+        if (isset($definition['fields']['adresse'])) {
+            $aliases['adresse'] = 'adresse';
+            $aliases['address'] = 'adresse';
+        }
+        if (isset($definition['fields']['adr1'])) {
+            $aliases['adresse'] = 'adr1';
+            $aliases['address'] = 'adr1';
+        }
 
         foreach ($customAliases as $alias => $fieldName) {
             if (isset($definition['fields'][$fieldName])) {

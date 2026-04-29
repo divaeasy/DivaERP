@@ -227,22 +227,22 @@
                 </div>
             </section>
 
-            <section class="form-card dossier-panel dossier-panel--compact mt-4">
-                <div class="dossier-panel__head">
+            <section class="form-card dossier-panel dossier-panel--compact mt-4 dossier-stock-panel">
+                <div class="dossier-panel__head dossier-stock-panel__head">
                     <h5><i class="fas fa-warehouse mr-2"></i>Gestion des stocks</h5>
                     <p>Activez la gestion de stock et definissez le comportement par defaut du dossier.</p>
                 </div>
 
-                <div class="row">
+                <div class="row dossier-stock-fields">
                     <div class="col-md-6">
-                        <div class="form-group">
+                        <div class="form-group dossier-stock-field">
                             {{ form_label(dossier.natureStock, 'Nature de stock') }}
                             {{ form_widget(dossier.natureStock, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
                             {{ form_errors(dossier.natureStock) }}
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">
+                        <div class="form-group dossier-stock-field">
                             {{ form_label(dossier.sortiStockDefaut, 'Sortie de stock par defaut') }}
                             {{ form_widget(dossier.sortiStockDefaut, {'attr': {'class': 'form-control'}}) }}
                             {{ form_errors(dossier.sortiStockDefaut) }}
@@ -250,10 +250,10 @@
                     </div>
                 </div>
 
-                <div class="row mb-0">
+                <div class="row mb-0 dossier-stock-toggles">
                     <div class="col-md-6">
-                        <div class="form-group mb-0">
-                            <div class="form-check">
+                        <div class="form-group mb-0 dossier-stock-toggle">
+                            <div class="form-check dossier-stock-toggle__control">
                                 {{ form_widget(dossier.gererStocks, {'attr': {'class': 'form-check-input'}}) }}
                                 {{ form_label(dossier.gererStocks, 'Gerer les stocks', {'label_attr': {'class': 'form-check-label'}}) }}
                             </div>
@@ -261,8 +261,8 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group mb-0">
-                            <div class="form-check">
+                        <div class="form-group mb-0 dossier-stock-toggle">
+                            <div class="form-check dossier-stock-toggle__control">
                                 {{ form_widget(dossier.autoriserStockNegatif, {'attr': {'class': 'form-check-input'}}) }}
                                 {{ form_label(dossier.autoriserStockNegatif, 'Autoriser le stock negatif', {'label_attr': {'class': 'form-check-label'}}) }}
                             </div>
@@ -1551,6 +1551,67 @@
         color: #64748b;
         font-size: 0.92rem;
         line-height: 1.55;
+    }
+
+    .dossier-stock-panel {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border-color: rgba(148, 163, 184, 0.24);
+    }
+
+    .dossier-stock-panel__head h5 i {
+        color: var(--theme-primary);
+    }
+
+    .dossier-stock-fields {
+        row-gap: 0.35rem;
+    }
+
+    .dossier-stock-field {
+        margin-bottom: 0;
+        padding: 0.65rem 0.75rem 0.8rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+
+    .dossier-stock-field label {
+        margin-bottom: 0.45rem;
+        font-weight: 600;
+        font-size: 0.78rem;
+        letter-spacing: 0.01em;
+        color: #475569;
+    }
+
+    .dossier-stock-toggles {
+        margin-top: 0.85rem;
+    }
+
+    .dossier-stock-toggle {
+        margin-bottom: 0;
+        padding: 0.6rem 0.75rem;
+        border-radius: 10px;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .dossier-stock-toggle__control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+    }
+
+    .dossier-stock-toggle__control .form-check-input {
+        position: static;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .dossier-stock-toggle__control .form-check-label {
+        margin: 0;
+        font-weight: 600;
+        color: #334155;
     }
 
     .theme-settings-trigger {

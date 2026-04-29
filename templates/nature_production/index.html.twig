@@ -79,7 +79,7 @@
                     </th>
                     <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
                     <th data-sort-key="libelle" data-column-key="libelle" data-field="libelle" data-required="1">Libelle</th>
-                    <th data-sort-key="type" data-column-key="type">Type</th>
+                    <th data-sort-key="type" data-column-key="type" data-field="type" data-type="enum">Type</th>
                     <th class="text-center" style="width: 150px;" data-column-key="actions">Actions</th>
                 </tr>
             </thead>
@@ -94,7 +94,7 @@
                         <td data-column-key="id"><strong>#{{ natureProduction.id }}</strong></td>
 <td data-column-key="libelle" data-field="libelle">{{ natureProduction.libelle }}</td>
 
-                        <td data-column-key="type"><span class="badge badge-primary">{{ natureProduction.type.value|capitalize }}</span></td>
+                        <td data-column-key="type" data-field="type"><span class="badge badge-primary">{{ natureProduction.type.value|capitalize }}</span></td>
                         <td class="text-center" data-role="actions" data-column-key="actions">
                             <a href="{{ path('app_nature_production_show', {id: natureProduction.id}) }}" class="btn btn-action btn-view" title="Voir">
                                 <i class="fas fa-eye"></i>

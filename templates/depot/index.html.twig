@@ -78,10 +78,10 @@
                 </th>
                 <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
                 <th data-sort-key="libelle" data-column-key="libelle" data-field="libelle" data-required="1">Libelle</th>
-                <th data-sort-key="tiers_interne" data-column-key="tiers_interne">Tiers interne</th>
+                <th data-sort-key="tiers_interne" data-column-key="tiers_interne" data-field="tiersInterne" data-type="entity">Tiers interne</th>
                 <th data-sort-key="adresse" data-column-key="adresse" data-field="adr1">Adresse</th>
-                <th data-sort-key="ville" data-column-key="ville">Ville</th>
-                <th data-sort-key="pays" data-column-key="pays">Pays</th>
+                <th data-sort-key="ville" data-column-key="ville" data-field="ville" data-type="entity">Ville</th>
+                <th data-sort-key="pays" data-column-key="pays" data-field="pays" data-type="entity">Pays</th>
                 <th class="text-center" style="width: 150px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
@@ -96,11 +96,11 @@
                 <td data-column-key="id"><strong>#{{ depot.id }}</strong></td>
                 <td data-column-key="libelle" data-field="libelle">{{ depot.libelle ?: '____' }}</td>
 
-                <td data-column-key="tiers_interne">{{ depot.tiersInterne ?: '____' }}</td>
+                <td data-column-key="tiers_interne" data-field="tiersInterne">{{ depot.tiersInterne ?: '____' }}</td>
                 <td data-column-key="adresse" data-field="adr1">{{ depot.adr1 ?: '____' }}</td>
 
-                <td data-column-key="ville">{{ depot.ville ?: '____' }}</td>
-                <td data-column-key="pays">{{ depot.pays ?: '____' }}</td>
+                <td data-column-key="ville" data-field="ville">{{ depot.ville ?: '____' }}</td>
+                <td data-column-key="pays" data-field="pays">{{ depot.pays ?: '____' }}</td>
                 <td class="text-center" data-role="actions" data-column-key="actions">
                     <a href="{{ path('app_depot_show', {id: depot.id}) }}" class="btn btn-action btn-view" title="Voir">
                         <i class="fas fa-eye"></i>

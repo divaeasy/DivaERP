@@ -65,6 +65,7 @@
            data-table-id="tarifventes"
            data-crud-resource="tarifvente"
            data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_tarifvente') }}"
+           data-update-token="{{ csrf_token('crud_update_tarifvente') }}"
            data-create-token="{{ csrf_token('crud_create_tarifvente') }}"
            data-import-token="{{ csrf_token('crud_import_tarifvente') }}"
            data-enable-quick-create="1"
@@ -78,12 +79,12 @@
                     </div>
                 </th>
                 <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
-                <th data-sort-key="tarif" data-column-key="tarif">Tarif</th>
-                <th data-sort-key="client" data-column-key="client">Client</th>
-                <th data-sort-key="article" data-column-key="article">Article</th>
-                <th data-sort-key="devise" data-column-key="devise">Devise</th>
-                <th data-sort-key="dateeffet" data-sort-type="date" data-column-key="dateeffet">Date effet</th>
-                <th data-sort-key="prix" data-sort-type="number" data-type="number" class="text-right" data-column-key="prix">Prix</th>
+                <th data-sort-key="tarif" data-column-key="tarif" data-field="tarif" data-type="entity">Tarif</th>
+                <th data-sort-key="client" data-column-key="client" data-field="client" data-required="1" data-type="entity">Client</th>
+                <th data-sort-key="article" data-column-key="article" data-field="article" data-required="1" data-type="entity">Article</th>
+                <th data-sort-key="devise" data-column-key="devise" data-field="devise" data-type="entity">Devise</th>
+                <th data-sort-key="dateeffet" data-sort-type="date" data-column-key="dateeffet" data-field="dateeffet" data-type="date">Date effet</th>
+                <th data-sort-key="prix" data-sort-type="number" data-type="float" data-field="prix" class="text-right" data-column-key="prix">Prix</th>
                 <th class="text-center" style="width: 140px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
@@ -96,12 +97,12 @@
                     </div>
                 </td>
                 <td data-column-key="id"><strong>#{{ tarifvente.id }}</strong></td>
-                <td data-column-key="tarif">{{ tarifvente.tarif }}</td>
-                <td data-column-key="client">{{ tarifvente.client }}</td>
-                <td data-column-key="article">{{ tarifvente.article }}</td>
-                <td data-column-key="devise"><span class="badge badge-info badge-lg">{{ tarifvente.devise }}</span></td>
-                <td data-column-key="dateeffet">{{ tarifvente.dateeffet|date('d/m/Y') }}</td>
-                <td class="text-right" data-column-key="prix"><strong>{{ tarifvente.prix|number_format(2, ',', ' ') }}</strong></td>
+                <td data-column-key="tarif" data-field="tarif">{{ tarifvente.tarif }}</td>
+                <td data-column-key="client" data-field="client">{{ tarifvente.client }}</td>
+                <td data-column-key="article" data-field="article">{{ tarifvente.article }}</td>
+                <td data-column-key="devise" data-field="devise"><span class="badge badge-info badge-lg">{{ tarifvente.devise }}</span></td>
+                <td data-column-key="dateeffet" data-field="dateeffet" data-field-value="{{ tarifvente.dateeffet ? tarifvente.dateeffet|date('Y-m-d') : '' }}">{{ tarifvente.dateeffet ? tarifvente.dateeffet|date('d/m/Y') : '____' }}</td>
+                <td class="text-right" data-column-key="prix" data-field="prix" data-field-value="{{ tarifvente.prix is not null ? tarifvente.prix : '' }}"><strong>{{ tarifvente.prix is not null ? tarifvente.prix|number_format(2, ',', ' ') : '____' }}</strong></td>
                 <td class="text-center" data-role="actions" data-column-key="actions">
                     <a href="{{ path('tarifvente.edit', {id: tarifvente.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>

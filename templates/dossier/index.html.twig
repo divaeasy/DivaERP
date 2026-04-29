@@ -33,11 +33,11 @@
     <table class="table js-crud-list-table"
            data-crud-resource="dossier"
            data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_dossier') }}"
-           data-update-token="{{ csrf_token('crud_update_dossier') }}"
            data-create-token="{{ csrf_token('crud_create_dossier') }}"
            data-import-token="{{ csrf_token('crud_import_dossier') }}"
            data-enable-quick-create="1"
            data-enable-import="1"
+           data-enable-inline-edit="false"
            data-placeholder="____">
         <thead>
             <tr>
@@ -57,7 +57,7 @@
             {% for dossier in dossiers %}
             {% set dossierTheme = dossier.theme %}
             {% set themeColor = dossierTheme ? dossierTheme.primaryColor : '#475569' %}
-            {% set themeLabel = dossierTheme ? dossierTheme.name : 'Thème non défini' %}
+            {% set themeLabel = dossierTheme ? dossierTheme.name : 'ThÃ¨me non dÃ©fini' %}
             <tr data-row-id="{{ dossier.id }}">
                 <td><strong>#{{ dossier.id }}</strong></td>
                 <td data-field="nom" data-field-value="{{ dossier.nom|default('') }}">{{ dossier.nom|default('____') }}</td>
@@ -157,5 +157,3 @@
     }
 </style>
 {% endblock %}
-
-

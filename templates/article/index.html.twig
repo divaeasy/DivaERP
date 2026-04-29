@@ -1501,6 +1501,9 @@
                     <a href="{{ path('article.detail', {id: article.id}) }}" class="btn btn-action btn-view" title="Voir">
                         <i class="fas fa-eye"></i>
                     </a>
+                    <button type="button" class="btn btn-action btn-edit js-article-inline-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </button>
                     <button type="button" class="btn btn-action btn-delete delete-btn"
                             data-delete-url="{{ path('article.delete', {id: article.id}) }}"
                             data-item-name="{{ article.libelle }}"
@@ -2776,12 +2779,14 @@
             var $viewBtn = $('<a class="btn btn-action btn-view" title="Voir"></a>')
                 .attr('href', rowDetailUrl)
                 .append('<i class="fas fa-eye"></i>');
+            var $editBtn = $('<button type="button" class="btn btn-action btn-edit js-article-inline-edit" title="Modifier"></button>')
+                .append('<i class="fas fa-edit"></i>');
             var $deleteBtn = $('<button type="button" class="btn btn-action btn-delete delete-btn" title="Supprimer"></button>')
                 .attr('data-delete-url', rowDeleteUrl)
                 .attr('data-item-name', rowLibelle)
                 .append('<i class="fas fa-trash-alt"></i>');
 
-            $actionsCell.append($viewBtn, $deleteBtn);
+            $actionsCell.append($viewBtn, $editBtn, $deleteBtn);
             $selectorCell.attr('data-column-key', 'selector');
             $idCell.attr('data-column-key', 'id');
             $imageCell.attr('data-column-key', 'image');
@@ -3044,6 +3049,12 @@
         $articlesTable.on('click', '.delete-btn', function(event) {
             event.preventDefault();
             openDeleteModal($(this));
+        });
+
+        $articlesTable.on('click', '.js-article-inline-edit', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            beginInlineEdit($(this).closest('.article-row'), 'libelle');
         });
 
         $articlesTable.on('click', '.js-inline-image-trigger', function(event) {
