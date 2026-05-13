@@ -8,6 +8,17 @@
     var crudBulkDeleteState = null;
     var crudGlobalHandlersBound = false;
     var crudUnsavedConfirmAction = null;
+    var crudDetailState = {
+        $table: null,
+        $row: null,
+        config: null,
+        editableFields: [],
+        mode: 'view',
+        charts: {
+            completion: null,
+            profile: null
+        }
+    };
 
     function bootCrudListEnhancements() {
         var $tables = $('table.js-crud-list-table[data-crud-resource]');
@@ -21,6 +32,7 @@
         if (!crudGlobalHandlersBound) {
             bindCrudBulkDeleteConfirmHandler();
             bindUnsavedChangesConfirmHandler();
+            bindCrudDetailModalHandlers();
             crudGlobalHandlersBound = true;
         }
 
@@ -74,6 +86,10 @@
                 setupInlineEditing($table, config);
             }
 
+            if (hasViewDetailAction($table)) {
+                setupDetailModal($table, config);
+            }
+
             if (config.enableQuickCreate && config.createToken !== '') {
                 setupQuickCreateTrigger($table, config);
             }
@@ -81,6 +97,13 @@
             if (config.enableImport && config.importToken !== '') {
                 setupImportTrigger($table, config);
             }
+        }
+
+        function hasViewDetailAction($table) {
+            if (!$table || !$table.length) {
+                return false;
+            }
+            return $table.find('tbody a.btn-view').length > 0;
         }
 
         function setupRowSelection($table, config) {
@@ -715,6 +738,1003 @@
             });
         }
 
+        function setupDetailModal($table, config) {
+            if (!$table || !$table.length) {
+                return;
+            }
+
+            var editableFields = getEditableFields($table);
+            var canEditInModal = config.enableInlineEdit && config.updateToken !== '' && editableFields.length > 0;
+
+            $table.find('a.btn-view').addClass('no-loading');
+
+            $table.off('click.crudDetailView', 'a.btn-view').on('click.crudDetailView', 'a.btn-view', function(event) {
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    return;
+                }
+
+                var $row = $(this).closest('tr[data-row-id]');
+                if ($row.length === 0) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                var openModalAction = function() {
+                    openCrudDetailModal($table, config, editableFields, $row, canEditInModal);
+                };
+
+                var $activeRow = getActiveEditingRow($table);
+                if (!$activeRow.length) {
+                    openModalAction();
+                    return;
+                }
+
+                if (!hasUnsavedChanges($activeRow, editableFields, config)) {
+                    cancelInlineEdit($activeRow);
+                    openModalAction();
+                    return;
+                }
+
+                openUnsavedChangesDialog(function() {
+                    cancelInlineEdit($activeRow);
+                    openModalAction();
+                }, 'Des modifications non enregistrees seront perdues. Continuer ?');
+            });
+        }
+
+        function openCrudDetailModal($table, config, editableFields, $row, canEditInModal) {
+            var $modal = $('#crudDetailModal');
+            if ($modal.length === 0) {
+                var href = String($row.find('a.btn-view').first().attr('href') || '').trim();
+                if (href !== '') {
+                    window.location.href = href;
+                }
+                return;
+            }
+
+            var rowId = String($row.attr('data-row-id') || $row.attr('data-item-id') || '').trim();
+            var rowData = buildCrudDetailRowData($table, $row, editableFields, String(config.placeholder || '____'), String(config.resource || ''));
+            var title = rowData.primaryValue !== '' ? rowData.primaryValue : (config.resource + ' #' + rowId);
+
+            crudDetailState.$table = $table;
+            crudDetailState.$row = $row;
+            crudDetailState.config = config;
+            crudDetailState.editableFields = editableFields.slice();
+            crudDetailState.mode = 'view';
+
+            $modal.find('.js-crud-detail-title').text('Details - ' + title);
+            $modal.find('.js-crud-detail-subtitle').text('Element #' + rowId);
+
+            renderCrudDetailView(rowData);
+            renderCrudDetailEdit(rowData, canEditInModal);
+            setCrudDetailMode('view', canEditInModal);
+            destroyCrudDetailCharts();
+            renderCrudDetailCharts(rowData);
+
+            $modal.modal('show');
+        }
+
+        function buildCrudDetailRowData($table, $row, editableFields, placeholder, resourceName) {
+            var safePlaceholder = String(placeholder || '____');
+            var fields = [];
+            var fieldMap = Object.create(null);
+            var editableMap = Object.create(null);
+            var primaryValue = '';
+            var firstRequired = null;
+
+            editableFields.forEach(function(meta) {
+                var key = String((meta && meta.field) || '').trim();
+                if (key !== '') {
+                    editableMap[key] = meta;
+                }
+            });
+
+            function getRawCellValue($cell) {
+                var raw = String($cell.attr('data-field-value') || '').trim();
+                if (raw === '') {
+                    raw = normalizeDisplayValue($cell.text(), safePlaceholder);
+                }
+                return raw;
+            }
+
+            function inferFieldTypeFromValue(fieldKey, value) {
+                var key = String(fieldKey || '').toLowerCase().trim();
+                var normalizedValue = String(value || '').trim();
+                if (key.indexOf('date') >= 0 || key.indexOf('annee') >= 0) {
+                    return 'date';
+                }
+                if (key.indexOf('email') >= 0) {
+                    return 'string';
+                }
+                if (key.indexOf('tel') >= 0 || key.indexOf('phone') >= 0) {
+                    return 'digits';
+                }
+                if (/^-?\d+$/.test(normalizedValue)) {
+                    return 'int';
+                }
+                if (/^-?\d+(?:[.,]\d+)?$/.test(normalizedValue)) {
+                    return 'float';
+                }
+                return 'string';
+            }
+
+            function pushField(fieldKey, fieldMeta, rawValue) {
+                var normalizedKey = String(fieldKey || '').trim();
+                if (normalizedKey === '' || fieldMap[normalizedKey]) {
+                    return;
+                }
+
+                var meta = fieldMeta || {};
+                var label = String(meta.label || normalizedKey).trim();
+                var type = String(meta.type || inferFieldTypeFromValue(normalizedKey, rawValue)).trim();
+                var required = !!meta.required;
+                var editable = !!meta.editable;
+                var displayValue = String(rawValue || '').trim() === '' ? safePlaceholder : String(rawValue);
+
+                fields.push({
+                    meta: {
+                        field: normalizedKey,
+                        label: label,
+                        required: required,
+                        type: type,
+                        editable: editable,
+                        options: Array.isArray(meta.options) ? meta.options : []
+                    },
+                    value: String(rawValue || ''),
+                    display: displayValue
+                });
+                fieldMap[normalizedKey] = true;
+
+                if (firstRequired === null && required) {
+                    firstRequired = rawValue;
+                }
+            }
+
+            $row.find('td[data-field], td[data-column-key]').each(function() {
+                var $cell = $(this);
+                var fieldName = String($cell.attr('data-field') || '').trim();
+                var columnKey = String($cell.attr('data-column-key') || '').trim();
+                var resolvedKey = fieldName !== '' ? fieldName : columnKey;
+
+                if (resolvedKey === '' || resolvedKey === 'selector' || resolvedKey === 'actions' || resolvedKey === 'settings') {
+                    return;
+                }
+
+                var resolvedMeta = editableMap[resolvedKey] || null;
+                var $header = $();
+                if (columnKey !== '' && $table && $table.length) {
+                    $header = $table.find('thead th[data-column-key="' + columnKey + '"]').first();
+                }
+                if ($header.length === 0 && fieldName !== '' && $table && $table.length) {
+                    $header = $table.find('thead th[data-field="' + fieldName + '"]').first();
+                }
+
+                if (!resolvedMeta) {
+                    resolvedMeta = {
+                        field: resolvedKey,
+                        label: $header.length > 0 ? String($header.text() || resolvedKey).trim() : resolvedKey,
+                        required: $header.length > 0 ? String($header.attr('data-required') || '') === '1' : false,
+                        type: $header.length > 0 ? String($header.attr('data-type') || 'string').trim() : 'string',
+                        editable: false
+                    };
+                }
+
+                pushField(resolvedKey, resolvedMeta, getRawCellValue($cell));
+            });
+
+            editableFields.forEach(function(meta) {
+                var fieldName = String((meta && meta.field) || '').trim();
+                if (fieldName === '' || fieldMap[fieldName]) {
+                    return;
+                }
+
+                var $cell = $row.find('td[data-field="' + fieldName + '"]').first();
+                var rawValue = $cell.length > 0 ? getRawCellValue($cell) : '';
+                var mergedMeta = $.extend({}, meta, { editable: true });
+                pushField(fieldName, mergedMeta, rawValue);
+            });
+
+            if (firstRequired !== null && String(firstRequired).trim() !== '') {
+                primaryValue = String(firstRequired).trim();
+            } else if (fields.length > 0 && String(fields[0].value || '').trim() !== '') {
+                primaryValue = String(fields[0].value || '').trim();
+            }
+
+            return {
+                resource: String(resourceName || '').trim(),
+                rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || '').trim(),
+                primaryValue: primaryValue,
+                fields: fields,
+                placeholder: safePlaceholder
+            };
+        }
+
+        function getCrudDetailCompletionStats(rowData) {
+            var filledCount = 0;
+            var totalCount = rowData.fields.length;
+            var requiredCount = 0;
+            var requiredFilled = 0;
+
+            rowData.fields.forEach(function(fieldItem) {
+                var isRequired = !!(fieldItem.meta && fieldItem.meta.required);
+                var hasValue = String(fieldItem.value || '').trim() !== '';
+
+                if (hasValue) {
+                    filledCount += 1;
+                }
+                if (isRequired) {
+                    requiredCount += 1;
+                    if (hasValue) {
+                        requiredFilled += 1;
+                    }
+                }
+            });
+
+            var completionPct = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
+            var optionalTotal = Math.max(0, totalCount - requiredCount);
+            var optionalFilled = Math.max(0, filledCount - requiredFilled);
+
+            return {
+                filledCount: filledCount,
+                totalCount: totalCount,
+                requiredCount: requiredCount,
+                requiredFilled: requiredFilled,
+                completionPct: completionPct,
+                optionalTotal: optionalTotal,
+                optionalFilled: optionalFilled
+            };
+        }
+
+        function renderCrudDetailView(rowData) {
+            var $list = $('#crudDetailViewList');
+            if ($list.length === 0) {
+                return;
+            }
+
+            var html = '';
+            rowData.fields.forEach(function(fieldItem) {
+                var label = String((fieldItem.meta && fieldItem.meta.label) || (fieldItem.meta && fieldItem.meta.field) || 'Champ').trim();
+                var value = String(fieldItem.display || rowData.placeholder);
+                html += '<dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(value) + '</dd>';
+            });
+            $list.html(html);
+
+            var stats = getCrudDetailCompletionStats(rowData);
+            $('#crudDetailStatValue1').text(stats.completionPct + '%');
+            $('#crudDetailStatValue2').text(stats.optionalFilled + '/' + stats.optionalTotal);
+            $('#crudDetailStatValue3').text(stats.optionalTotal > 0 ? (stats.optionalFilled + '/' + stats.optionalTotal) : 'N/A');
+        }
+
+        function renderCrudDetailEdit(rowData, canEditInModal) {
+            var $form = $('#crudDetailEditFields');
+            var $metrics = $('#crudDetailEditMetrics');
+            var $switchBtn = $('#crudDetailSwitchToEditBtn');
+            var $saveBtn = $('#crudDetailSaveBtn');
+
+            if (!$form.length) {
+                return;
+            }
+
+            if (!canEditInModal) {
+                $form.html(
+                    '<div class="crud-detail-edit-empty">' +
+                        '<i class="fas fa-lock"></i>' +
+                        '<h6>Edition non disponible</h6>' +
+                        '<p>Cette liste ne prend pas en charge l edition depuis ce panneau.</p>' +
+                    '</div>'
+                );
+                if ($metrics.length) {
+                    $metrics.empty();
+                }
+                if ($switchBtn.length) {
+                    $switchBtn.hide();
+                }
+                if ($saveBtn.length) {
+                    $saveBtn.hide();
+                }
+                return;
+            }
+
+            var editableItems = rowData.fields.filter(function(item) {
+                return !!(item && item.meta && item.meta.editable);
+            });
+            if (editableItems.length === 0) {
+                $form.html(
+                    '<div class="crud-detail-edit-empty">' +
+                        '<i class="fas fa-lock"></i>' +
+                        '<h6>Aucun champ modifiable</h6>' +
+                        '<p>Cette fiche ne contient pas de champ editable depuis cette vue.</p>' +
+                    '</div>'
+                );
+                if ($metrics.length) {
+                    $metrics.empty();
+                }
+                if ($saveBtn.length) {
+                    $saveBtn.hide();
+                }
+                return;
+            }
+
+            var html = '';
+            var totalFields = editableItems.length;
+            var requiredCount = 0;
+            editableItems.forEach(function(fieldItem, index) {
+                var meta = fieldItem.meta || {};
+                var fieldName = String(meta.field || '').trim();
+                var fieldLabel = String(meta.label || fieldName || 'Champ').trim();
+                var fieldType = String(meta.type || 'string').toLowerCase().trim();
+                var requiredAttr = meta.required ? ' required' : '';
+                var requiredLabel = meta.required ? '<span class="crud-detail-edit-required">*</span>' : '';
+                var value = String(fieldItem.value || '');
+                var safeFieldId = 'crudDetailField_' + String(fieldName || ('field_' + index)).replace(/[^a-zA-Z0-9_-]/g, '_');
+                var requirementLabel = meta.required ? 'Obligatoire' : 'Optionnel';
+                var requirementClass = meta.required ? ' is-required' : '';
+                var typeLabel = getCrudDetailFieldTypeLabel(fieldType);
+                var hintText = getCrudDetailFieldHint(fieldType);
+
+                if (meta.required) {
+                    requiredCount += 1;
+                }
+
+                html += '<div class="crud-detail-edit-field' + requirementClass + '" data-field-card="' + escapeHtml(fieldName) + '">';
+                html += '<div class="crud-detail-edit-head">';
+                html += '<label class="crud-detail-edit-label" for="' + escapeHtml(safeFieldId) + '">' + escapeHtml(fieldLabel) + requiredLabel + '</label>';
+                html += '<div class="crud-detail-edit-badges">';
+                html += '<span class="crud-detail-edit-badge' + requirementClass + '">' + escapeHtml(requirementLabel) + '</span>';
+                html += '<span class="crud-detail-edit-badge">' + escapeHtml(typeLabel) + '</span>';
+                html += '</div>';
+                html += '</div>';
+
+                if (isSelectEditorType(fieldType)) {
+                    html += '<select id="' + escapeHtml(safeFieldId) + '" class="form-control js-crud-detail-input" data-field="' + escapeHtml(fieldName) + '" data-type="' + escapeHtml(fieldType) + '"' + requiredAttr + '>';
+                    html += '<option value="">' + escapeHtml(rowData.placeholder) + '</option>';
+
+                    var options = Array.isArray(meta.options) ? meta.options : [];
+                    options.forEach(function(option) {
+                        var optionValue = String((option && option.value) || '').trim();
+                        if (optionValue === '') {
+                            return;
+                        }
+                        var optionLabel = String((option && option.label) || optionValue).trim();
+                        var selected = optionValue === value ? ' selected' : '';
+                        html += '<option value="' + escapeHtml(optionValue) + '"' + selected + '>' + escapeHtml(optionLabel) + '</option>';
+                    });
+
+                    html += '</select>';
+                } else {
+                    var inputType = (fieldType === 'int' || fieldType === 'number' || fieldType === 'digits') ? 'text' : 'text';
+                    html += '<input id="' + escapeHtml(safeFieldId) + '" type="' + inputType + '" class="form-control js-crud-detail-input" data-field="' + escapeHtml(fieldName) + '" data-type="' + escapeHtml(fieldType) + '" value="' + escapeHtml(value) + '" placeholder="' + escapeHtml(rowData.placeholder) + '"' + requiredAttr + '>';
+                }
+                html += '<p class="crud-detail-edit-hint">' + escapeHtml(hintText) + '</p>';
+                html += '<div class="crud-detail-edit-error">Valeur invalide pour ce champ.</div>';
+                html += '</div>';
+            });
+
+            if ($metrics.length) {
+                $metrics.html(
+                    '<span class="crud-detail-edit-chip"><strong>' + totalFields + '</strong> champs</span>' +
+                    '<span class="crud-detail-edit-chip"><strong>' + requiredCount + '</strong> obligatoires</span>' +
+                    '<span class="crud-detail-edit-chip"><strong>' + Math.max(0, totalFields - requiredCount) + '</strong> optionnels</span>'
+                );
+            }
+
+            $form.html(html);
+            if ($switchBtn.length) {
+                $switchBtn.show();
+            }
+            if ($saveBtn.length) {
+                $saveBtn.show();
+            }
+        }
+
+        function setCrudDetailMode(mode, canEditInModal) {
+            var normalized = mode === 'edit' ? 'edit' : 'view';
+            crudDetailState.mode = normalized;
+
+            var isEdit = normalized === 'edit' && canEditInModal;
+            $('#crudDetailViewPane').toggleClass('is-active', !isEdit);
+            $('#crudDetailEditPane').toggleClass('is-active', isEdit);
+            $('#crudDetailModeViewBtn').toggleClass('is-active', !isEdit);
+            $('#crudDetailModeEditBtn').toggleClass('is-active', isEdit);
+            $('#crudDetailSaveBtn').toggle(isEdit && canEditInModal);
+            $('#crudDetailSwitchToEditBtn').toggle(!isEdit && canEditInModal);
+        }
+
+        function destroyCrudDetailCharts() {
+            if (crudDetailState.charts.completion) {
+                crudDetailState.charts.completion.destroy();
+                crudDetailState.charts.completion = null;
+            }
+            if (crudDetailState.charts.profile) {
+                crudDetailState.charts.profile.destroy();
+                crudDetailState.charts.profile = null;
+            }
+        }
+
+        function renderCrudDetailCharts(rowData) {
+            if (typeof Chart === 'undefined') {
+                return;
+            }
+
+            var insight = buildCrudDetailInsight(rowData);
+            applyCrudDetailInsightCards(insight);
+            applyCrudDetailInsightTitles(insight);
+
+            var completionCanvas = document.getElementById('crudDetailCompletionChart');
+            if (completionCanvas && insight.chartA) {
+                crudDetailState.charts.completion = new Chart(completionCanvas.getContext('2d'), insight.chartA);
+            }
+
+            var profileCanvas = document.getElementById('crudDetailProfileChart');
+            if (profileCanvas && insight.chartB) {
+                crudDetailState.charts.profile = new Chart(profileCanvas.getContext('2d'), insight.chartB);
+            }
+        }
+
+        function buildCrudDetailInsight(rowData) {
+            var stats = getCrudDetailCompletionStats(rowData);
+            var resource = String(rowData.resource || '').toLowerCase().trim();
+
+            if (resource === 'article') {
+                return buildArticleDetailInsight(rowData, stats);
+            }
+            if (resource === 'entetepiece' || resource === 'pieces' || resource === 'piece') {
+                return buildPieceDetailInsight(rowData, stats);
+            }
+            if (resource === 'tarifvente') {
+                return buildTarifVenteDetailInsight(rowData, stats);
+            }
+            if (resource === 'client' || resource === 'fournisseur' || resource === 'prospect' || resource === 'tiers_interne' || resource === 'depot') {
+                return buildContactDetailInsight(rowData, stats);
+            }
+            return buildDefaultDetailInsight(rowData, stats);
+        }
+
+        function buildDefaultDetailInsight(rowData, stats) {
+            var completionData = [stats.filledCount, Math.max(0, stats.totalCount - stats.filledCount)];
+            var labels = [];
+            var values = [];
+            rowData.fields.slice(0, 8).forEach(function(fieldItem) {
+                labels.push(shortCrudDetailLabel((fieldItem.meta && fieldItem.meta.label) || (fieldItem.meta && fieldItem.meta.field) || 'Champ', 14));
+                values.push(String(fieldItem.value || '').trim() !== '' ? 100 : 0);
+            });
+
+            return {
+                cards: [
+                    { label: 'Completion', value: stats.completionPct + '%' },
+                    { label: 'Optionnels', value: stats.optionalFilled + '/' + stats.optionalTotal },
+                    { label: 'Profil', value: stats.optionalTotal > 0 ? (stats.optionalFilled + '/' + stats.optionalTotal) : 'N/A' }
+                ],
+                chartATitle: 'Completion',
+                chartBTitle: 'Couverture des champs',
+                chartA: createCrudDoughnutChart(['Renseigne', 'Manquant'], completionData, ['#2563eb', '#e2e8f0']),
+                chartB: createCrudPercentBarChart(labels, values, 'Couverture')
+            };
+        }
+
+        function buildArticleDetailInsight(rowData, stats) {
+            var salesField = findCrudDetailField(rowData, ['ventes', 'vente', 'qtevendue', 'quantitevendue', 'ca', 'chiffreaffaire']);
+            var salesValue = salesField ? parseCrudNumber(salesField.value || salesField.display) : null;
+            var salesBenchmark = salesField ? getCrudTableNumericBenchmark(salesField.meta.field) : null;
+            var averageSales = salesBenchmark && salesBenchmark.count > 0 ? salesBenchmark.avg : null;
+
+            var priceField = findCrudDetailField(rowData, ['tarif', 'prix', 'prixvente', 'price']);
+            var priceValue = priceField ? parseCrudNumber(priceField.value || priceField.display) : null;
+            var priceBenchmark = priceField ? getCrudTableNumericBenchmark(priceField.meta.field) : null;
+            var averagePrice = priceBenchmark && priceBenchmark.count > 0 ? priceBenchmark.avg : null;
+
+            var stockField = findCrudDetailField(rowData, ['sortistock', 'stock', 'suivistock']);
+            var stockValue = stockField ? String(stockField.display || stockField.value || '').toLowerCase() : '';
+            var hasStockTracking = stockValue.indexOf('oui') >= 0 || stockValue.indexOf('yes') >= 0 || stockValue.indexOf('true') >= 0 || stockValue.indexOf('1') >= 0;
+
+            var identityScore = computeCrudGroupFillScore(rowData, ['libelle', 'unite', 'code']);
+            var managementScore = computeCrudGroupFillScore(rowData, ['modegestion', 'modesuivi', 'natureproduction']);
+            var supplyScore = computeCrudGroupFillScore(rowData, ['fournisseurhabituel', 'sortistock']);
+
+            var cards = [
+                { label: 'Tarif', value: priceValue === null ? rowData.placeholder : formatCrudNumber(priceValue, 2) },
+                {
+                    label: salesValue !== null ? 'Ventes' : 'Position',
+                    value: salesValue !== null
+                        ? formatCrudNumber(salesValue, 0)
+                        : ((priceValue !== null && averagePrice !== null && averagePrice > 0) ? formatCrudDelta(((priceValue - averagePrice) / averagePrice) * 100) : 'N/A')
+                },
+                { label: 'Suivi stock', value: stockField ? (hasStockTracking ? 'Actif' : 'Inactif') : 'N/A' }
+            ];
+
+            var chartA = null;
+            var chartATitle = 'Positionnement tarifaire';
+            if (salesValue !== null || averageSales !== null) {
+                chartATitle = 'Ventes article vs moyenne';
+                chartA = createCrudMetricBarChart(['Article', 'Moyenne'], [salesValue !== null ? salesValue : 0, averageSales !== null ? averageSales : 0], 'Ventes');
+            } else if (priceValue !== null || averagePrice !== null) {
+                chartA = createCrudMetricBarChart(['Article', 'Moyenne'], [priceValue !== null ? priceValue : 0, averagePrice !== null ? averagePrice : 0], 'Tarif');
+            } else {
+                chartA = createCrudDoughnutChart(['Renseigne', 'Manquant'], [stats.filledCount, Math.max(0, stats.totalCount - stats.filledCount)], ['#2563eb', '#e2e8f0']);
+            }
+
+            return {
+                cards: cards,
+                chartATitle: chartATitle,
+                chartBTitle: 'Maturite de la fiche article',
+                chartA: chartA,
+                chartB: createCrudRadarChart(
+                    ['Identite', 'Gestion', 'Approvisionnement'],
+                    [identityScore, managementScore, supplyScore],
+                    'Score'
+                )
+            };
+        }
+
+        function buildPieceDetailInsight(rowData, stats) {
+            var amountField = findCrudDetailField(rowData, ['montant', 'total', 'totalttc']);
+            var linesField = findCrudDetailField(rowData, ['lignes', 'nbreligne', 'nombrelignes']);
+            var discountField = findCrudDetailField(rowData, ['remise']);
+
+            var amount = amountField ? parseCrudNumber(amountField.value || amountField.display) : null;
+            var lines = linesField ? parseCrudNumber(linesField.value || linesField.display) : null;
+            var discount = discountField ? parseCrudNumber(discountField.value || discountField.display) : null;
+
+            var amountBenchmark = amountField ? getCrudTableNumericBenchmark(amountField.meta.field) : null;
+            var avgAmount = amountBenchmark && amountBenchmark.count > 0 ? amountBenchmark.avg : null;
+            var maxAmount = amountBenchmark && amountBenchmark.max > 0 ? amountBenchmark.max : null;
+            var maxLines = linesField ? (getCrudTableNumericBenchmark(linesField.meta.field).max || null) : null;
+
+            var discountRate = null;
+            if (discount !== null) {
+                if (discount <= 100) {
+                    discountRate = clampCrudPercent(discount);
+                } else if (amount !== null && amount > 0) {
+                    discountRate = clampCrudPercent((discount / amount) * 100);
+                }
+            }
+
+            var cards = [
+                { label: 'Montant', value: amount === null ? rowData.placeholder : formatCrudNumber(amount, 2) },
+                { label: 'Remise', value: discountRate === null ? (discount === null ? 'N/A' : formatCrudNumber(discount, 2)) : formatCrudNumber(discountRate, 1) + '%' },
+                { label: 'Lignes', value: lines === null ? '0' : String(Math.round(lines)) }
+            ];
+
+            var amountScore = (amount !== null && maxAmount && maxAmount > 0) ? clampCrudPercent((amount / maxAmount) * 100) : stats.completionPct;
+            var complexityScore = (lines !== null && maxLines && maxLines > 0) ? clampCrudPercent((lines / maxLines) * 100) : stats.completionPct;
+            var controlScore = discountRate === null ? stats.completionPct : clampCrudPercent(100 - discountRate);
+
+            return {
+                cards: cards,
+                chartATitle: 'Montant vs moyenne',
+                chartBTitle: 'Profil de la piece',
+                chartA: createCrudMetricBarChart(['Piece', 'Moyenne'], [amount !== null ? amount : 0, avgAmount !== null ? avgAmount : 0], 'Montant'),
+                chartB: createCrudRadarChart(['Valeur', 'Complexite', 'Remise maitrisee'], [amountScore, complexityScore, controlScore], 'Indice')
+            };
+        }
+
+        function buildTarifVenteDetailInsight(rowData, stats) {
+            var priceField = findCrudDetailField(rowData, ['prix']);
+            var effectDateField = findCrudDetailField(rowData, ['dateeffet', 'date']);
+            var price = priceField ? parseCrudNumber(priceField.value || priceField.display) : null;
+            var benchmark = priceField ? getCrudTableNumericBenchmark(priceField.meta.field) : null;
+            var avgPrice = benchmark && benchmark.count > 0 ? benchmark.avg : null;
+
+            var ageDays = null;
+            if (effectDateField) {
+                var dt = parseCrudDate(effectDateField.value || effectDateField.display);
+                if (dt) {
+                    var ms = (new Date()).getTime() - dt.getTime();
+                    ageDays = Math.max(0, Math.floor(ms / 86400000));
+                }
+            }
+            var freshness = ageDays === null ? null : clampCrudPercent(100 - (ageDays / 365) * 100);
+
+            return {
+                cards: [
+                    { label: 'Prix', value: price === null ? rowData.placeholder : formatCrudNumber(price, 2) },
+                    { label: 'Ecart', value: (price !== null && avgPrice !== null && avgPrice > 0) ? formatCrudDelta(((price - avgPrice) / avgPrice) * 100) : 'N/A' },
+                    { label: 'Age tarif', value: ageDays === null ? 'N/A' : (ageDays + ' j') }
+                ],
+                chartATitle: 'Prix vs moyenne',
+                chartBTitle: 'Fraicheur du tarif',
+                chartA: createCrudMetricBarChart(['Tarif', 'Moyenne'], [price !== null ? price : 0, avgPrice !== null ? avgPrice : 0], 'Prix'),
+                chartB: createCrudDoughnutChart(
+                    ['Actuel', 'A rafraichir'],
+                    [freshness === null ? stats.completionPct : freshness, freshness === null ? (100 - stats.completionPct) : (100 - freshness)],
+                    ['#0f766e', '#e2e8f0']
+                )
+            };
+        }
+
+        function buildContactDetailInsight(rowData, stats) {
+            var hasPhone = hasCrudFieldValue(rowData, ['tel', 'telephone', 'phone']);
+            var hasEmail = hasCrudFieldValue(rowData, ['email']);
+            var hasAddress = hasCrudFieldValue(rowData, ['adr1', 'adresse']);
+            var hasCity = hasCrudFieldValue(rowData, ['ville']);
+            var hasCountry = hasCrudFieldValue(rowData, ['pays']);
+            var hasTarif = hasCrudFieldValue(rowData, ['tarif']);
+            var contactReady = (hasPhone ? 1 : 0) + (hasEmail ? 1 : 0) + (hasAddress ? 1 : 0);
+
+            return {
+                cards: [
+                    { label: 'Completion', value: stats.completionPct + '%' },
+                    { label: 'Canaux contact', value: contactReady + '/3' },
+                    { label: 'Localisation', value: ((hasCity ? 1 : 0) + (hasCountry ? 1 : 0)) + '/2' }
+                ],
+                chartATitle: 'Disponibilite des contacts',
+                chartBTitle: 'Qualite du profil',
+                chartA: createCrudDoughnutChart(
+                    ['Renseigne', 'Manquant'],
+                    [contactReady, Math.max(0, 3 - contactReady)],
+                    ['#16a34a', '#e2e8f0']
+                ),
+                chartB: createCrudPercentBarChart(
+                    ['Telephone', 'Email', 'Adresse', 'Ville', 'Pays', 'Tarif'],
+                    [hasPhone ? 100 : 0, hasEmail ? 100 : 0, hasAddress ? 100 : 0, hasCity ? 100 : 0, hasCountry ? 100 : 0, hasTarif ? 100 : 0],
+                    'Disponibilite'
+                )
+            };
+        }
+
+        function applyCrudDetailInsightCards(insight) {
+            var cards = Array.isArray(insight && insight.cards) ? insight.cards : [];
+            for (var i = 0; i < 3; i += 1) {
+                var card = cards[i] || {};
+                $('#crudDetailStatLabel' + (i + 1)).text(String(card.label || 'Indicateur'));
+                $('#crudDetailStatValue' + (i + 1)).text(String(card.value || 'N/A'));
+            }
+        }
+
+        function applyCrudDetailInsightTitles(insight) {
+            $('#crudDetailChartATitle').text(String((insight && insight.chartATitle) || 'Indicateur'));
+            $('#crudDetailChartBTitle').text(String((insight && insight.chartBTitle) || 'Analyse'));
+        }
+
+        function findCrudDetailField(rowData, keys) {
+            var wanted = Array.isArray(keys) ? keys.map(function(key) { return String(key || '').toLowerCase().trim(); }) : [];
+            for (var i = 0; i < rowData.fields.length; i += 1) {
+                var item = rowData.fields[i];
+                var fieldKey = String((item.meta && item.meta.field) || '').toLowerCase().trim();
+                if (wanted.indexOf(fieldKey) >= 0) {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+        function hasCrudFieldValue(rowData, keys) {
+            var item = findCrudDetailField(rowData, keys);
+            return !!(item && String(item.value || '').trim() !== '');
+        }
+
+        function computeCrudGroupFillScore(rowData, keys) {
+            var used = 0;
+            var filled = 0;
+            (keys || []).forEach(function(key) {
+                var item = findCrudDetailField(rowData, [key]);
+                if (!item) {
+                    return;
+                }
+                used += 1;
+                if (String(item.value || '').trim() !== '') {
+                    filled += 1;
+                }
+            });
+            if (used === 0) {
+                return 0;
+            }
+            return Math.round((filled / used) * 100);
+        }
+
+        function parseCrudNumber(value) {
+            var input = String(value || '').replace(/\u00A0/g, ' ').trim();
+            if (input === '') {
+                return null;
+            }
+            var cleaned = input.replace(/[^\d,.\-]/g, '');
+            if (cleaned === '' || cleaned === '-' || cleaned === ',' || cleaned === '.') {
+                return null;
+            }
+
+            var lastComma = cleaned.lastIndexOf(',');
+            var lastDot = cleaned.lastIndexOf('.');
+            if (lastComma > lastDot) {
+                cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+            } else {
+                cleaned = cleaned.replace(/,/g, '');
+            }
+
+            var parsed = parseFloat(cleaned);
+            if (!isFinite(parsed)) {
+                return null;
+            }
+            return parsed;
+        }
+
+        function parseCrudDate(value) {
+            var raw = String(value || '').trim();
+            if (raw === '') {
+                return null;
+            }
+            var date = null;
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+                date = new Date(raw + 'T00:00:00');
+            } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+                var parts = raw.split('/');
+                date = new Date(parts[2] + '-' + parts[1] + '-' + parts[0] + 'T00:00:00');
+            } else {
+                date = new Date(raw);
+            }
+            if (isNaN(date.getTime())) {
+                return null;
+            }
+            return date;
+        }
+
+        function getCrudTableNumericBenchmark(fieldKey) {
+            if (!crudDetailState.$table || !crudDetailState.$table.length) {
+                return { count: 0, avg: null, min: null, max: null };
+            }
+            var selector = 'td[data-field="' + fieldKey + '"],td[data-column-key="' + fieldKey + '"]';
+            var values = [];
+            crudDetailState.$table.find('tbody tr[data-row-id]').each(function() {
+                var $cell = $(this).find(selector).first();
+                if (!$cell.length) {
+                    return;
+                }
+                var raw = String($cell.attr('data-field-value') || '').trim();
+                if (raw === '') {
+                    raw = normalizeDisplayValue($cell.text(), String(crudDetailState.config && crudDetailState.config.placeholder ? crudDetailState.config.placeholder : '____'));
+                }
+                var num = parseCrudNumber(raw);
+                if (num !== null) {
+                    values.push(num);
+                }
+            });
+            if (values.length === 0) {
+                return { count: 0, avg: null, min: null, max: null };
+            }
+            var sum = values.reduce(function(acc, current) { return acc + current; }, 0);
+            return {
+                count: values.length,
+                avg: sum / values.length,
+                min: Math.min.apply(null, values),
+                max: Math.max.apply(null, values)
+            };
+        }
+
+        function shortCrudDetailLabel(label, maxLen) {
+            var text = String(label || '').replace(/\s+/g, ' ').trim();
+            if (text.length <= maxLen) {
+                return text;
+            }
+            return text.slice(0, maxLen) + '...';
+        }
+
+        function formatCrudNumber(value, digits) {
+            if (value === null || !isFinite(value)) {
+                return 'N/A';
+            }
+            return Number(value).toLocaleString('fr-FR', {
+                minimumFractionDigits: digits || 0,
+                maximumFractionDigits: digits || 0
+            });
+        }
+
+        function formatCrudDelta(value) {
+            if (!isFinite(value)) {
+                return 'N/A';
+            }
+            var rounded = Math.round(value * 10) / 10;
+            return (rounded > 0 ? '+' : '') + formatCrudNumber(rounded, 1) + '%';
+        }
+
+        function clampCrudPercent(value) {
+            var numeric = Number(value);
+            if (!isFinite(numeric)) {
+                return 0;
+            }
+            if (numeric < 0) {
+                return 0;
+            }
+            if (numeric > 100) {
+                return 100;
+            }
+            return Math.round(numeric);
+        }
+
+        function createCrudDoughnutChart(labels, values, colors) {
+            return {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: ['#ffffff', '#ffffff', '#ffffff', '#ffffff']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutoutPercentage: 68,
+                    legend: { position: 'bottom' }
+                }
+            };
+        }
+
+        function createCrudMetricBarChart(labels, values, seriesName) {
+            return {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: seriesName || 'Valeur',
+                        data: values,
+                        backgroundColor: ['#1d4ed8', '#93c5fd']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    legend: { display: false },
+                    scales: {
+                        yAxes: [{
+                            ticks: { beginAtZero: true },
+                            gridLines: { color: 'rgba(148, 163, 184, 0.25)' }
+                        }],
+                        xAxes: [{ gridLines: { display: false } }]
+                    }
+                }
+            };
+        }
+
+        function createCrudPercentBarChart(labels, values, seriesName) {
+            return {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: seriesName || 'Taux',
+                        data: values,
+                        backgroundColor: '#1d4ed8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    legend: { display: false },
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true,
+                                max: 100,
+                                callback: function(value) { return value + '%'; }
+                            },
+                            gridLines: { color: 'rgba(148, 163, 184, 0.25)' }
+                        }],
+                        xAxes: [{ gridLines: { display: false } }]
+                    }
+                }
+            };
+        }
+
+        function createCrudRadarChart(labels, values, seriesName) {
+            return {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: seriesName || 'Indice',
+                        data: values,
+                        backgroundColor: 'rgba(37, 99, 235, 0.20)',
+                        borderColor: '#1d4ed8',
+                        pointBackgroundColor: '#1d4ed8',
+                        pointBorderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    legend: { display: false },
+                    scale: {
+                        ticks: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            };
+        }
+
+        function submitCrudDetailSave() {
+            if (!crudDetailState.$row || !crudDetailState.$row.length || !crudDetailState.config) {
+                return;
+            }
+
+            var config = crudDetailState.config;
+            var rowId = parseInt(String(crudDetailState.$row.attr('data-row-id') || ''), 10);
+            if (!rowId || !config.updateToken) {
+                return;
+            }
+
+            var payload = { _token: config.updateToken };
+            var hasError = false;
+
+            $('#crudDetailEditFields').find('.js-crud-detail-input').each(function() {
+                var $input = $(this);
+                var $fieldCard = $input.closest('.crud-detail-edit-field');
+                var field = String($input.data('field') || '').trim();
+                var type = String($input.data('type') || 'string').toLowerCase();
+                var required = $input.prop('required');
+                var value = String($input.val() || '').trim();
+
+                $input.removeClass('is-invalid');
+                $fieldCard.removeClass('is-invalid');
+
+                if (required && value === '') {
+                    hasError = true;
+                    $input.addClass('is-invalid');
+                    $fieldCard.addClass('is-invalid');
+                    return;
+                }
+                if (type === 'digits' && value !== '' && !/^\d+$/.test(value)) {
+                    hasError = true;
+                    $input.addClass('is-invalid');
+                    $fieldCard.addClass('is-invalid');
+                    return;
+                }
+                if ((type === 'int' || type === 'number') && value !== '' && !/^-?\d+$/.test(value)) {
+                    hasError = true;
+                    $input.addClass('is-invalid');
+                    $fieldCard.addClass('is-invalid');
+                    return;
+                }
+                if (type === 'float' && value !== '' && !/^-?\d+(?:[.,]\d+)?$/.test(value)) {
+                    hasError = true;
+                    $input.addClass('is-invalid');
+                    $fieldCard.addClass('is-invalid');
+                    return;
+                }
+                payload[field] = value;
+            });
+
+            if (hasError) {
+                showToast('Merci de verifier les champs obligatoires et numeriques.', 'error');
+                $('#crudDetailEditFields').find('.js-crud-detail-input.is-invalid').first().trigger('focus');
+                return;
+            }
+
+            $('#crudDetailSaveBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Enregistrement...');
+
+            $.ajax({
+                url: '/api/crud/' + encodeURIComponent(config.resource) + '/' + rowId + '/update',
+                method: 'POST',
+                dataType: 'json',
+                data: payload
+            }).done(function(response) {
+                if (!response || response.success !== true) {
+                    showToast((response && response.message) ? response.message : 'Mise a jour impossible.', 'error');
+                    return;
+                }
+
+                applyInlineSavedValues(crudDetailState.$row, crudDetailState.editableFields, payload, config);
+                var updatedData = buildCrudDetailRowData(crudDetailState.$table, crudDetailState.$row, crudDetailState.editableFields, String(config.placeholder || '____'), String(config.resource || ''));
+                renderCrudDetailView(updatedData);
+                renderCrudDetailEdit(updatedData, true);
+                destroyCrudDetailCharts();
+                renderCrudDetailCharts(updatedData);
+                setCrudDetailMode('view', true);
+                showToast(response.message || 'Element mis a jour.', 'success');
+            }).fail(function(xhr) {
+                var message = 'Mise a jour impossible.';
+                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                showToast(message, 'error');
+            }).always(function() {
+                $('#crudDetailSaveBtn').prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Enregistrer');
+            });
+        }
+
         function beginInlineEdit($row, editableFields, config) {
             var snapshot = {};
             var values = {};
@@ -1089,6 +2109,43 @@
             return normalized === 'entity' || normalized === 'enum' || normalized === 'select';
         }
 
+        function getCrudDetailFieldTypeLabel(type) {
+            var normalized = String(type || '').toLowerCase().trim();
+            if (normalized === 'digits') {
+                return 'Numerique';
+            }
+            if (normalized === 'int' || normalized === 'number') {
+                return 'Entier';
+            }
+            if (normalized === 'float') {
+                return 'Decimal';
+            }
+            if (normalized === 'date' || normalized === 'datetime') {
+                return 'Date';
+            }
+            if (isSelectEditorType(normalized)) {
+                return 'Liste';
+            }
+            return 'Texte';
+        }
+
+        function getCrudDetailFieldHint(type) {
+            var normalized = String(type || '').toLowerCase().trim();
+            if (normalized === 'digits') {
+                return 'Utilisez uniquement les chiffres 0-9.';
+            }
+            if (normalized === 'int' || normalized === 'number') {
+                return 'Valeurs entieres autorisees.';
+            }
+            if (normalized === 'float') {
+                return 'Valeurs decimales autorisees.';
+            }
+            if (isSelectEditorType(normalized)) {
+                return 'Choisissez une valeur dans la liste.';
+            }
+            return 'Saisissez une valeur conforme au champ.';
+        }
+
         function collectFieldOptions($table, fieldName, placeholder) {
             var options = [];
             var valueMap = {};
@@ -1301,7 +2358,7 @@
                         return;
                     }
 
-                    showToast(response.message || 'Element cree avec succes.', 'success');
+                    queueToastForReload('success', response.message || 'Element cree avec succes.');
                     $modal.modal('hide');
                     window.location.reload();
                 }).fail(function(xhr) {
@@ -1446,7 +2503,7 @@
                         return;
                     }
 
-                    showToast(response.message || 'Import termine.', 'success');
+                    queueToastForReload('success', response.message || 'Import termine.');
                     $modal.modal('hide');
                     window.location.reload();
                 }).fail(function(xhr) {
@@ -1687,7 +2744,148 @@
         $modal.modal('show');
     }
 
+    function bindCrudDetailModalHandlers() {
+        $(document).off('click.crudDetailModeView', '#crudDetailModeViewBtn');
+        $(document).on('click.crudDetailModeView', '#crudDetailModeViewBtn', function(event) {
+            event.preventDefault();
+            setCrudDetailMode('view', true);
+        });
+
+        $(document).off('click.crudDetailModeEdit', '#crudDetailModeEditBtn, #crudDetailSwitchToEditBtn');
+        $(document).on('click.crudDetailModeEdit', '#crudDetailModeEditBtn, #crudDetailSwitchToEditBtn', function(event) {
+            event.preventDefault();
+            setCrudDetailMode('edit', true);
+            window.setTimeout(function() {
+                $('#crudDetailEditFields').find('.js-crud-detail-input').first().trigger('focus');
+            }, 80);
+        });
+
+        $(document).off('click.crudDetailSave', '#crudDetailSaveBtn');
+        $(document).on('click.crudDetailSave', '#crudDetailSaveBtn', function(event) {
+            event.preventDefault();
+            submitCrudDetailSave();
+        });
+
+        $('#crudDetailModal').off('hidden.bs.modal.crudDetail').on('hidden.bs.modal.crudDetail', function() {
+            destroyCrudDetailCharts();
+            crudDetailState.$table = null;
+            crudDetailState.$row = null;
+            crudDetailState.config = null;
+            crudDetailState.editableFields = [];
+            crudDetailState.mode = 'view';
+            $('#crudDetailSaveBtn').prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Enregistrer');
+        });
+    }
+
     function ensureCrudEnhancerModals() {
+        if ($('#crudDetailModalStyles').length === 0) {
+            $('head').append(
+                '<style id="crudDetailModalStyles">' +
+                '.crud-detail-modal .modal-dialog{max-width:1080px;}' +
+                '.crud-detail-modal .modal-content{border:none;border-radius:14px;box-shadow:0 28px 56px rgba(15,23,42,.2);overflow:hidden;}' +
+                '.crud-detail-modal .modal-header{border-bottom:1px solid #e2e8f0;padding:.9rem 1.2rem;background:linear-gradient(180deg,#fff 0%,#f8fbff 100%);}' +
+                '.crud-detail-mode-switch{display:inline-flex;align-items:center;gap:.35rem;margin-left:auto;margin-right:.9rem;padding:.2rem;border-radius:999px;border:1px solid #dbe3ec;background:#f8fafc;}' +
+                '.crud-detail-mode-btn{border:none;background:transparent;color:#475569;border-radius:999px;padding:.38rem .78rem;font-size:.78rem;font-weight:700;transition:all .2s ease;}' +
+                '.crud-detail-mode-btn.is-active{color:#fff;background:linear-gradient(135deg,var(--theme-primary) 0%,var(--theme-secondary) 100%);box-shadow:0 10px 18px rgba(30,64,175,.2);}' +
+                '.crud-detail-pane{display:none;}' +
+                '.crud-detail-pane.is-active{display:block;}' +
+                '.crud-detail-report-hero{padding:.95rem;border-radius:12px;border:1px solid #dbe3ec;background:linear-gradient(135deg,rgba(241,245,249,.92) 0%,rgba(255,255,255,.95) 70%);margin-bottom:.85rem;}' +
+                '.crud-detail-report-title{margin:0;font-size:1.05rem;font-weight:800;color:#0f172a;}' +
+                '.crud-detail-report-subtitle{margin:.25rem 0 0;color:#64748b;font-size:.85rem;line-height:1.45;}' +
+                '.crud-detail-report-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin-bottom:.9rem;}' +
+                '.crud-detail-stat-card{border:1px solid #dbe3ec;border-radius:10px;background:#fff;padding:.66rem .75rem;}' +
+                '.crud-detail-stat-label{margin:0;color:#64748b;font-size:.73rem;font-weight:700;text-transform:uppercase;}' +
+                '.crud-detail-stat-value{margin:.24rem 0 0;color:#0f172a;font-size:1.12rem;font-weight:800;}' +
+                '.crud-detail-report-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;}' +
+                '.crud-detail-report-card{border:1px solid #dbe3ec;border-radius:11px;background:#fff;padding:.75rem .8rem;min-width:0;}' +
+                '.crud-detail-report-card h6{margin:0 0 .62rem;font-size:.82rem;font-weight:800;color:#1e293b;text-transform:uppercase;}' +
+                '.crud-detail-report-list{margin:0;display:grid;grid-template-columns:minmax(120px,170px) minmax(0,1fr);gap:.42rem .7rem;}' +
+                '.crud-detail-report-list dt{margin:0;font-size:.77rem;font-weight:700;color:#64748b;}' +
+                '.crud-detail-report-list dd{margin:0;font-size:.82rem;color:#0f172a;word-break:break-word;}' +
+                '.crud-detail-chart-wrap{height:220px;position:relative;}' +
+                '.crud-detail-chart-wrap canvas{width:100%!important;height:100%!important;}' +
+                '.crud-detail-edit-shell{background:linear-gradient(180deg,#f8fbff 0%,#ffffff 72%);border:1px solid #dbe3ec;border-radius:14px;padding:1rem .95rem;}' +
+                '.crud-detail-edit-hero{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin-bottom:.9rem;padding:.2rem .15rem;}' +
+                '.crud-detail-edit-title{margin:0;color:#0f172a;font-size:.98rem;font-weight:800;}' +
+                '.crud-detail-edit-subtitle{margin:.2rem 0 0;color:#64748b;font-size:.82rem;}' +
+                '.crud-detail-edit-metrics{display:flex;gap:.45rem;flex-wrap:wrap;}' +
+                '.crud-detail-edit-chip{display:inline-flex;align-items:center;gap:.2rem;background:#ffffff;border:1px solid #dbe3ec;border-radius:999px;padding:.28rem .55rem;color:#475569;font-size:.73rem;font-weight:600;}' +
+                '.crud-detail-edit-chip strong{color:#0f172a;font-weight:800;}' +
+                '.crud-detail-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:.78rem .9rem;max-height:50vh;overflow:auto;padding-right:.22rem;}' +
+                '.crud-detail-edit-field{border:1px solid #dbe3ec;background:#ffffff;border-radius:12px;padding:.75rem .75rem .7rem;box-shadow:0 4px 12px rgba(15,23,42,.05);transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;}' +
+                '.crud-detail-edit-field:focus-within{border-color:#60a5fa;box-shadow:0 10px 26px rgba(37,99,235,.15);transform:translateY(-1px);}' +
+                '.crud-detail-edit-field.is-invalid{border-color:#fca5a5;box-shadow:0 0 0 1px rgba(220,38,38,.08);}' +
+                '.crud-detail-edit-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.45rem;margin-bottom:.46rem;}' +
+                '.crud-detail-edit-label{display:block;margin:0;color:#0f172a;font-size:.82rem;font-weight:700;line-height:1.35;}' +
+                '.crud-detail-edit-required{color:#dc2626;margin-left:.22rem;font-weight:800;}' +
+                '.crud-detail-edit-badges{display:flex;gap:.3rem;flex-wrap:wrap;justify-content:flex-end;}' +
+                '.crud-detail-edit-badge{display:inline-flex;align-items:center;background:#f8fafc;border:1px solid #dbe3ec;border-radius:999px;padding:.16rem .46rem;color:#64748b;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.02em;}' +
+                '.crud-detail-edit-badge.is-required{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;}' +
+                '.crud-detail-edit-field .form-control{height:40px;border-radius:10px;border-color:#cbd5e1;font-size:.84rem;}' +
+                '.crud-detail-edit-field .form-control:focus{border-color:#60a5fa;box-shadow:0 0 0 .2rem rgba(37,99,235,.12);}' +
+                '.crud-detail-edit-hint{margin:.44rem 0 0;color:#64748b;font-size:.72rem;line-height:1.35;}' +
+                '.crud-detail-edit-error{display:none;margin-top:.32rem;color:#b91c1c;font-size:.72rem;font-weight:600;}' +
+                '.crud-detail-edit-field.is-invalid .crud-detail-edit-error{display:block;}' +
+                '.crud-detail-edit-empty{padding:1.1rem 1rem;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;text-align:center;color:#475569;}' +
+                '.crud-detail-edit-empty i{font-size:1.1rem;color:#64748b;display:block;margin-bottom:.4rem;}' +
+                '.crud-detail-edit-empty h6{margin:0;color:#0f172a;font-size:.9rem;font-weight:800;}' +
+                '.crud-detail-edit-empty p{margin:.3rem 0 0;font-size:.8rem;line-height:1.4;}' +
+                '@media (max-width:768px){.crud-detail-report-stats{grid-template-columns:1fr;}.crud-detail-report-grid{grid-template-columns:1fr;}.crud-detail-report-list{grid-template-columns:1fr;}.crud-detail-edit-grid{grid-template-columns:1fr;max-height:none;padding-right:0;}.crud-detail-edit-shell{padding:.88rem .75rem;}}' +
+                '</style>'
+            );
+        }
+
+        if ($('#crudDetailModal').length === 0) {
+            $('body').append(
+                '<div class="modal fade crud-detail-modal" id="crudDetailModal" tabindex="-1" role="dialog" aria-hidden="true">' +
+                    '<div class="modal-dialog modal-dialog-centered modal-lg" role="document">' +
+                        '<div class="modal-content">' +
+                            '<div class="modal-header">' +
+                                '<h5 class="modal-title js-crud-detail-title">Details</h5>' +
+                                '<div class="crud-detail-mode-switch">' +
+                                    '<button type="button" class="crud-detail-mode-btn is-active" id="crudDetailModeViewBtn">Vue rapport</button>' +
+                                    '<button type="button" class="crud-detail-mode-btn" id="crudDetailModeEditBtn">Edition</button>' +
+                                '</div>' +
+                                '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+                            '</div>' +
+                            '<div class="modal-body">' +
+                                '<div class="crud-detail-pane is-active" id="crudDetailViewPane">' +
+                                    '<div class="crud-detail-report-hero"><h4 class="crud-detail-report-title js-crud-detail-subtitle">Element</h4><p class="crud-detail-report-subtitle">Rapport de synthese: informations principales et taux de completion.</p></div>' +
+                                    '<div class="crud-detail-report-stats">' +
+                                        '<div class="crud-detail-stat-card"><p class="crud-detail-stat-label" id="crudDetailStatLabel1">Completion</p><p class="crud-detail-stat-value" id="crudDetailStatValue1">0%</p></div>' +
+                                        '<div class="crud-detail-stat-card"><p class="crud-detail-stat-label" id="crudDetailStatLabel2">Optionnels</p><p class="crud-detail-stat-value" id="crudDetailStatValue2">0/0</p></div>' +
+                                        '<div class="crud-detail-stat-card"><p class="crud-detail-stat-label" id="crudDetailStatLabel3">Profil</p><p class="crud-detail-stat-value" id="crudDetailStatValue3">N/A</p></div>' +
+                                    '</div>' +
+                                    '<div class="crud-detail-report-grid">' +
+                                        '<section class="crud-detail-report-card"><h6>Donnees</h6><dl class="crud-detail-report-list" id="crudDetailViewList"></dl></section>' +
+                                        '<section class="crud-detail-report-card"><h6 id="crudDetailChartATitle">Completion</h6><div class="crud-detail-chart-wrap"><canvas id="crudDetailCompletionChart"></canvas></div></section>' +
+                                        '<section class="crud-detail-report-card"><h6 id="crudDetailChartBTitle">Couverture des champs</h6><div class="crud-detail-chart-wrap"><canvas id="crudDetailProfileChart"></canvas></div></section>' +
+                                    '</div>' +
+                                '</div>' +
+                                '<div class="crud-detail-pane" id="crudDetailEditPane">' +
+                                    '<div class="crud-detail-edit-shell">' +
+                                        '<div class="crud-detail-edit-hero">' +
+                                            '<div>' +
+                                                '<h6 class="crud-detail-edit-title">Edition directe</h6>' +
+                                                '<p class="crud-detail-edit-subtitle">Mettez a jour les champs puis enregistrez sans quitter la fiche.</p>' +
+                                            '</div>' +
+                                            '<div class="crud-detail-edit-metrics" id="crudDetailEditMetrics"></div>' +
+                                        '</div>' +
+                                        '<div class="crud-detail-edit-grid" id="crudDetailEditFields"></div>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="modal-footer">' +
+                                '<button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>' +
+                                '<button type="button" class="btn btn-outline-primary" id="crudDetailSwitchToEditBtn"><i class="fas fa-pen mr-1"></i>Passer en edition</button>' +
+                                '<button type="button" class="btn btn-primary" id="crudDetailSaveBtn"><i class="fas fa-save mr-1"></i>Enregistrer</button>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            );
+        }
+
         if ($('#crudQuickCreateModal').length === 0) {
             $('body').append(
                 '<div class="modal fade crud-quick-modal" id="crudQuickCreateModal" tabindex="-1" role="dialog" aria-hidden="true">' +
@@ -1754,6 +2952,14 @@
                 return;
             }
             window.alert(message);
+        }
+
+        function queueToastForReload(type, message) {
+            if (typeof window.queueAppToastForReload === 'function') {
+                window.queueAppToastForReload({ type: type || 'info', message: message });
+                return;
+            }
+            showToast(message, type || 'info');
         }
 
         function escapeHtml(value) {

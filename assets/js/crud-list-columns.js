@@ -15,6 +15,8 @@
     var resizeStartWidth = 0;
     var resizeTableId = '';
     var globalHandlersBound = false;
+    var MAX_VISIBLE_COLUMNS = 10;
+    var LIMIT_EXCLUDED_TABLE_IDS = { pieces: true };
 
     function init() {
         initColumnMenus();
@@ -42,6 +44,17 @@
         return 'crud_columns_' + tableId + '_' + suffix;
     }
 
+    function isLimitEnabled(tableId, $table) {
+        var normalizedTableId = String(tableId || '').trim().toLowerCase();
+        if (normalizedTableId !== '' && LIMIT_EXCLUDED_TABLE_IDS[normalizedTableId]) {
+            return false;
+        }
+        if ($table && $table.length && String($table.attr('data-disable-column-limit') || '').trim() === '1') {
+            return false;
+        }
+        return true;
+    }
+
     function getColumnPrefs(tableId) {
         try {
             return JSON.parse(localStorage.getItem(getStorageKey(tableId, 'visible')) || '{}');
@@ -54,6 +67,108 @@
         var prefs = getColumnPrefs(tableId);
         prefs[key] = visible;
         localStorage.setItem(getStorageKey(tableId, 'visible'), JSON.stringify(prefs));
+    }
+
+    function showToast(message, type) {
+        if (typeof window.showAppToast === 'function') {
+            window.showAppToast({ message: message, type: type || 'info' });
+            return;
+        }
+        window.alert(String(message || ''));
+    }
+
+    function getMandatoryColumns($table) {
+        var mandatory = Object.create(null);
+        mandatory.selector = true;
+        mandatory.id = true;
+        mandatory.actions = true;
+
+        $table.find('thead th[data-column-key][data-required="1"]').each(function() {
+            var key = String($(this).data('columnKey') || '').trim();
+            if (key !== '') {
+                mandatory[key] = true;
+            }
+        });
+
+        return mandatory;
+    }
+
+    function getAllOrderedColumnKeys($table) {
+        var keys = [];
+        $table.find('thead tr th[data-column-key]').each(function() {
+            var key = String($(this).data('columnKey') || '').trim();
+            if (key === '' || keys.indexOf(key) >= 0) {
+                return;
+            }
+            keys.push(key);
+        });
+        return keys;
+    }
+
+    function getOptionalColumnKeysOrdered($table) {
+        var mandatory = getMandatoryColumns($table);
+        return getAllOrderedColumnKeys($table).filter(function(key) {
+            return !mandatory[key];
+        });
+    }
+
+    function getMandatoryVisibleCount($table) {
+        var mandatory = getMandatoryColumns($table);
+        return getAllOrderedColumnKeys($table).filter(function(key) {
+            return !!mandatory[key];
+        }).length;
+    }
+
+    function getOptionalVisibleSlots($table) {
+        var tableId = String($table.data('tableId') || '').trim();
+        if (!isLimitEnabled(tableId, $table)) {
+            return Number.MAX_SAFE_INTEGER;
+        }
+        return Math.max(0, MAX_VISIBLE_COLUMNS - getMandatoryVisibleCount($table));
+    }
+
+    function enforceColumnVisibilityLimit($table, prefs) {
+        var nextPrefs = $.extend({}, prefs || {});
+        var optionalKeys = getOptionalColumnKeysOrdered($table);
+        var optionalSlots = getOptionalVisibleSlots($table);
+        var visibleCount = 0;
+
+        optionalKeys.forEach(function(key) {
+            var isVisible = nextPrefs.hasOwnProperty(key) ? !!nextPrefs[key] : true;
+            if (!isVisible) {
+                nextPrefs[key] = false;
+                return;
+            }
+
+            if (visibleCount >= optionalSlots) {
+                nextPrefs[key] = false;
+                return;
+            }
+
+            nextPrefs[key] = true;
+            visibleCount += 1;
+        });
+
+        return nextPrefs;
+    }
+
+    function countVisibleColumns($table, prefs) {
+        var mandatory = getMandatoryColumns($table);
+        var keys = getAllOrderedColumnKeys($table);
+        var total = 0;
+
+        keys.forEach(function(key) {
+            if (mandatory[key]) {
+                total += 1;
+                return;
+            }
+            var visible = prefs.hasOwnProperty(key) ? !!prefs[key] : true;
+            if (visible) {
+                total += 1;
+            }
+        });
+
+        return total;
     }
 
     function initColumnMenus() {
@@ -93,25 +208,18 @@
     }
 
     function generateMenuItems($table, tableId, $menu) {
-        var prefs = getColumnPrefs(tableId);
+        var storedPrefs = getColumnPrefs(tableId);
+        var prefs = enforceColumnVisibilityLimit($table, storedPrefs);
         var staticItems = [];
         var toggleItems = [];
-        var idToggleId = sanitizeDomId(tableId + '_column_id');
-
-        if ($table.find('thead th[data-column-key="id"]').length > 0) {
-            staticItems.push(
-                '<div class="crud-column-settings__item is-static">' +
-                    '<span>ID</span>' +
-                    '<small>Obligatoire</small>' +
-                    '<input type="checkbox" id="' + escapeHtml(idToggleId) + '" checked disabled>' +
-                '</div>'
-            );
-        }
+        var mandatory = getMandatoryColumns($table);
+        var optionalSlots = getOptionalVisibleSlots($table);
+        var visibleOptionalCount = 0;
 
         $table.find('thead tr th[data-column-key]').each(function() {
             var $th = $(this);
             var key = String($th.data('columnKey') || '').trim();
-            if (!key || key === 'selector' || key === 'actions' || key === 'id') {
+            if (!key) {
                 return;
             }
 
@@ -120,7 +228,24 @@
                 label = key;
             }
 
-            var isVisible = prefs.hasOwnProperty(key) ? !!prefs[key] : $th.is(':visible');
+            if (mandatory[key]) {
+                var staticToggleId = sanitizeDomId(tableId + '_column_static_' + key);
+                staticItems.push(
+                    '<div class="crud-column-settings__item is-static">' +
+                        '<span>' + escapeHtml(label) + '</span>' +
+                        '<small>Obligatoire</small>' +
+                        '<input type="checkbox" id="' + escapeHtml(staticToggleId) + '" checked disabled>' +
+                    '</div>'
+                );
+                return;
+            }
+
+            var hasStoredPref = Object.prototype.hasOwnProperty.call(storedPrefs, key);
+            var isVisible = hasStoredPref ? !!prefs[key] : (visibleOptionalCount < optionalSlots);
+            prefs[key] = isVisible;
+            if (isVisible) {
+                visibleOptionalCount += 1;
+            }
             var inputId = sanitizeDomId(tableId + '_column_' + key);
 
             toggleItems.push(
@@ -141,16 +266,24 @@
             if (staticItems.length > 0) {
                 html += '<div class="crud-column-settings__divider"></div>';
             }
-            html += '<div class="crud-column-settings__group">' + toggleItems.join('') + '</div>';
+            html += '<div class="crud-column-settings__group">' + toggleItems.join('') + '</div>' +
+                '<div class="crud-column-settings__hint js-crud-columns-hint"></div>';
         } else {
             html += '<div class="crud-column-settings__empty">Aucune colonne configurable</div>';
         }
 
         $menu.html(html);
+        syncMenuState($table, tableId, $menu);
+        if (JSON.stringify(storedPrefs) !== JSON.stringify(prefs)) {
+            localStorage.setItem(getStorageKey(tableId, 'visible'), JSON.stringify(prefs));
+        }
     }
 
     function syncMenuState($table, tableId, $menu) {
-        var prefs = getColumnPrefs(tableId);
+        var prefs = enforceColumnVisibilityLimit($table, getColumnPrefs(tableId));
+        var visibleCount = countVisibleColumns($table, prefs);
+        var hasLimit = isLimitEnabled(tableId, $table);
+        var atLimit = hasLimit && visibleCount >= MAX_VISIBLE_COLUMNS;
 
         $menu.find('[data-column-toggle]').each(function() {
             var $input = $(this);
@@ -164,7 +297,20 @@
                 : $table.find('thead th[data-column-key="' + key + '"]').is(':visible');
 
             $input.prop('checked', visible);
+            $input.prop('disabled', atLimit && !visible);
+            $input.closest('.crud-column-settings__item').toggleClass('is-disabled', atLimit && !visible);
         });
+
+        var $hint = $menu.find('.js-crud-columns-hint').first();
+        if ($hint.length > 0) {
+            if (!hasLimit) {
+                $hint.removeClass('is-warning').text('');
+            } else {
+                $hint
+                    .toggleClass('is-warning', atLimit)
+                    .text('Colonnes visibles: ' + visibleCount + '/' + MAX_VISIBLE_COLUMNS + (atLimit ? ' (masquez une colonne optionnelle pour en afficher une autre)' : ''));
+            }
+        }
     }
 
     function bindGlobalMenuHandlers() {
@@ -223,8 +369,22 @@
                 return;
             }
 
+            if (visible && isLimitEnabled(tableId, $table)) {
+                var prefsBefore = enforceColumnVisibilityLimit($table, getColumnPrefs(tableId));
+                var nextPrefs = $.extend({}, prefsBefore);
+                nextPrefs[key] = true;
+                nextPrefs = enforceColumnVisibilityLimit($table, nextPrefs);
+                if (!nextPrefs[key]) {
+                    $input.prop('checked', false);
+                    syncMenuState($table, tableId, $input.closest('.crud-column-settings__menu'));
+                    showToast('Maximum ' + MAX_VISIBLE_COLUMNS + ' colonnes visibles. Masquez une colonne optionnelle avant d en afficher une nouvelle.', 'warning');
+                    return;
+                }
+            }
+
             toggleColumn($table, key, visible);
             setColumnPref(tableId, key, visible);
+            syncMenuState($table, tableId, $input.closest('.crud-column-settings__menu'));
         });
     }
 
@@ -236,13 +396,20 @@
                 return;
             }
 
-            var prefs = getColumnPrefs(tableId);
+            var prefs = enforceColumnVisibilityLimit($table, getColumnPrefs(tableId));
             Object.keys(prefs).forEach(function(key) {
-                if (key === 'id') {
+                var mandatory = getMandatoryColumns($table);
+                if (mandatory[key]) {
                     return;
                 }
                 toggleColumn($table, key, !!prefs[key]);
             });
+
+            localStorage.setItem(getStorageKey(tableId, 'visible'), JSON.stringify(prefs));
+            var $menu = $('.crud-column-settings__menu[data-table-id="' + tableId + '"]').first();
+            if ($menu.length > 0) {
+                syncMenuState($table, tableId, $menu);
+            }
         });
     }
 
@@ -251,7 +418,8 @@
             return;
         }
 
-        if (key === 'id') {
+        var mandatory = getMandatoryColumns($table);
+        if (mandatory[key]) {
             visible = true;
         }
 

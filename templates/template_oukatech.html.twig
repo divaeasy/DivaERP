@@ -917,6 +917,11 @@
             background: #f5f5f5;
             color: #333;
         }
+        .crud-column-settings__item.is-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
         .crud-column-settings__item.is-static {
             cursor: default;
             background: transparent;
@@ -936,6 +941,16 @@
             margin: 0;
             accent-color: var(--theme-primary);
             flex: 0 0 auto;
+        }
+        .crud-column-settings__hint {
+            border-top: 1px solid #eef2f7;
+            padding: 0.45rem 0.8rem 0.6rem;
+            font-size: 0.72rem;
+            color: #64748b;
+            line-height: 1.35;
+        }
+        .crud-column-settings__hint.is-warning {
+            color: #b45309;
         }
 
         .unsaved-changes-modal .modal-content {
@@ -1295,7 +1310,7 @@
             position: fixed;
             top: 80px;
             right: 24px;
-            z-index: 1019;
+            z-index: 1085;
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -1504,7 +1519,7 @@
             position: relative;
             user-select: none;
             transition: background 0.15s ease;
-            padding-right: 28px !important;
+            padding-right: 34px !important;
         }
         th[data-sort-key]:hover {
             background: var(--theme-secondary) !important;
@@ -1515,7 +1530,7 @@
             font-weight: 300;
             font-weight: 900;
             position: absolute;
-            right: 10px;
+            right: calc(var(--table-resize-handle-width, 7px) + 10px);
             top: 50%;
             transform: translateY(-50%);
             font-size: 11px;
@@ -1536,6 +1551,44 @@
         th[data-sort-key].sort-asc,
         th[data-sort-key].sort-desc {
             background: var(--theme-primary) !important;
+        }
+
+        /* Unify header resize separators across all tables */
+        .table thead th .column-resize-handle,
+        .table thead th .article-column-resize-handle,
+        .table thead th .piece-column-resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0 !important;
+            left: auto !important;
+            width: var(--table-resize-handle-width, 7px) !important;
+            height: 100% !important;
+            cursor: col-resize;
+            background: transparent;
+            z-index: 10;
+        }
+        .table thead th .column-resize-handle::after,
+        .table thead th .article-column-resize-handle::after,
+        .table thead th .piece-column-resize-handle::after {
+            content: '';
+            position: absolute;
+            top: var(--table-resize-separator-top, 12%);
+            right: var(--table-resize-separator-right, 2px);
+            width: var(--table-resize-separator-width, 2px);
+            height: var(--table-resize-separator-height, 76%);
+            border-radius: 1px;
+            background: rgba(255, 255, 255, 0.46);
+            transition: background-color 0.15s ease;
+        }
+        .table thead th:hover .column-resize-handle::after,
+        .table thead th:hover .article-column-resize-handle::after,
+        .table thead th:hover .piece-column-resize-handle::after {
+            background: rgba(255, 255, 255, 0.68);
+        }
+        .is-resizing-column .column-resize-handle::after,
+        .article-column-resize-handle.is-dragging::after,
+        .piece-column-resize-handle.is-dragging::after {
+            background: rgba(37, 99, 235, 0.82) !important;
         }
     </style>
     
@@ -1578,6 +1631,11 @@
             --sidebar-width: var(--sidebar-width-collapsed);
             --sidebar-link-size: clamp(38px, 4.1vh, 44px);
             --sidebar-tooltip-bg: rgba(15, 23, 42, 0.96);
+            --table-resize-handle-width: 7px;
+            --table-resize-separator-width: 2px;
+            --table-resize-separator-height: 76%;
+            --table-resize-separator-top: 12%;
+            --table-resize-separator-right: 2px;
         }
         body { background: var(--app-bg); color: var(--theme-text); }
         body.sidebar-expanded { --sidebar-width: var(--sidebar-width-expanded); }
@@ -2617,16 +2675,19 @@
         }
         #accordionSidebar.double-sidebar .sidebar-utility-toggle {
             position: relative;
-            transition: all 0.2s ease;
+            transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
             border-radius: 12px;
             padding: 0.42rem 0.5rem;
             margin: 0.1rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            background: rgba(255, 255, 255, 0.08) !important;
         }
         #accordionSidebar.double-sidebar .sidebar-utility-toggle:hover {
-            background: rgba(37, 99, 235, 0.12);
-            color: var(--theme-primary);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
+            background: rgba(255, 255, 255, 0.16) !important;
+            border-color: rgba(255, 255, 255, 0.34) !important;
+            color: #ffffff !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 6px 12px rgba(2, 6, 23, 0.14) !important;
+            transform: none;
         }
         #accordionSidebar.double-sidebar .sidebar-utility-toggle:focus {
             outline: 2px solid var(--theme-primary);
@@ -2656,6 +2717,7 @@
             }
         }
         #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-menu {
+            --utility-arrow-offset: 18px;
             position: fixed !important;
             left: -9999px;
             top: -9999px;
@@ -2672,16 +2734,21 @@
             z-index: 2147483000;
             animation: slideInSidebarDropdown 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform-origin: left center;
+            transform: none !important;
             backdrop-filter: blur(8px);
             background: rgba(255, 255, 255, 0.99);
             pointer-events: auto !important;
             padding: 0;
+            display: none;
+        }
+        #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-menu.show {
+            display: block !important;
         }
         #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown-menu::before {
             content: '';
             position: absolute;
             left: -6px;
-            top: 18px;
+            top: var(--utility-arrow-offset, 18px);
             width: 12px;
             height: 12px;
             background: #fff;
@@ -2777,10 +2844,12 @@
             color: var(--theme-secondary) !important;
         }
         #accordionSidebar.double-sidebar .sidebar-utility-actions .dropdown.show > .sidebar-utility-toggle {
-            background: rgba(37, 99, 235, 0.12);
-            color: var(--theme-primary);
+            background: rgba(255, 255, 255, 0.2) !important;
+            border-color: rgba(255, 255, 255, 0.42) !important;
+            color: #ffffff !important;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.16);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.24), 0 8px 14px rgba(2, 6, 23, 0.16) !important;
+            transform: none;
         }
         @keyframes slideInSidebarDropdown {
             from {
@@ -2848,6 +2917,8 @@
             padding: 0.78rem var(--sidebar-panel-header-pad-x) 0.78rem;
             border-bottom: 1px solid rgba(226, 232, 240, 0.84);
             background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            z-index: 40;
+            overflow: visible;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-header__eyebrow {
             font-size: 0.6rem;
@@ -2936,6 +3007,7 @@
             flex: 1 1 auto;
             width: 100%;
             min-width: 0;
+            z-index: 60;
         }
         #accordionSidebar.double-sidebar .sidebar-dossier-switcher__toggle {
             width: 100%;
@@ -3034,7 +3106,7 @@
             border: 1px solid rgba(148, 163, 184, 0.2);
             background: #ffffff;
             box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
-            z-index: 1080;
+            z-index: 2300;
             transform: none !important;
         }
         #accordionSidebar.double-sidebar .sidebar-dossier-switcher .dropdown-menu.animated--grow-in {
@@ -3127,6 +3199,8 @@
             overflow-y: auto;
             overflow-x: hidden;
             padding: 0.72rem 0.58rem 0.82rem;
+            position: relative;
+            z-index: 1;
         }
         #accordionSidebar.double-sidebar .sidebar-panel-recent {
             margin-bottom: 0.62rem;
@@ -3646,6 +3720,10 @@
             color: var(--theme-primary);
             padding-left: 1.15rem;
         }
+        .sidebar-utility-actions .dropdown-item:hover,
+        .sidebar-utility-actions .dropdown-item:focus {
+            padding-left: 0.78rem;
+        }
         .dropdown-item.active,
         .dropdown-item:active { background: var(--theme-primary); color: #fff; }
         .btn-link { color: var(--theme-primary) !important; }
@@ -3823,10 +3901,10 @@
             border-bottom: 0;
         }
         #content > .container-fluid th[data-sort-key] {
-            padding-right: 26px !important;
+            padding-right: 34px !important;
         }
         #content > .container-fluid th[data-sort-key]::after {
-            right: 8px;
+            right: calc(var(--table-resize-handle-width, 7px) + 10px);
             font-size: 10px;
         }
         #content > .container-fluid .table tbody td,
@@ -4316,12 +4394,11 @@
 
                     <div class="sidebar-utility-actions">
                         <div class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle sidebar-rail-action sidebar-utility-toggle"
+                            <a class="nav-link sidebar-rail-action sidebar-utility-toggle"
                                href="#"
                                id="alertsDropdown"
                                role="button"
-                               data-toggle="dropdown"
-                               data-nav-label="Notifications"
+                               data-nav-label="Notifications 1"
                                aria-haspopup="true"
                                aria-expanded="false"
                                aria-label="Notifications">
@@ -4364,11 +4441,10 @@
                         </div>
 
                         <div class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle sidebar-rail-action sidebar-utility-toggle"
+                            <a class="nav-link sidebar-rail-action sidebar-utility-toggle"
                                href="#"
                                id="messagesDropdown"
                                role="button"
-                               data-toggle="dropdown"
                                data-nav-label="Messages"
                                aria-haspopup="true"
                                aria-expanded="false"
@@ -5427,16 +5503,22 @@
                 positionSidebarProfileMenu();
             });
 
-            var $sidebarUtilityToggles = $('.sidebar-utility-actions .sidebar-utility-toggle');
+            var sidebarUtilityToggleSelector = '.sidebar-utility-actions .sidebar-utility-toggle';
 
             var closeSidebarUtilityMenus = function() {
                 $('.sidebar-utility-actions .dropdown').removeClass('show');
-                $('.sidebar-utility-actions .dropdown-menu').removeClass('show is-position-left').css({ left: '', top: '', right: '', bottom: '' });
-                $sidebarUtilityToggles.attr('aria-expanded', 'false');
+                $('.sidebar-utility-actions .dropdown-menu').removeClass('show is-position-left').css({
+                    left: '-9999px',
+                    top: '-9999px',
+                    right: 'auto',
+                    bottom: 'auto',
+                    '--utility-arrow-offset': '18px'
+                });
+                $(sidebarUtilityToggleSelector).attr('aria-expanded', 'false');
             };
 
             var positionSidebarUtilityMenu = function($toggle, $menu) {
-                if (!$toggle || !$toggle.length || !$menu || !$menu.length || !$menu.hasClass('show')) {
+                if (!$toggle || !$toggle.length || !$menu || !$menu.length) {
                     return;
                 }
 
@@ -5465,19 +5547,35 @@
                     top = Math.max(viewportPadding, window.innerHeight - menuHeight - viewportPadding);
                 }
 
+                var toggleCenterY = toggleRect.top + (toggleRect.height / 2);
+                var arrowOffset = Math.round(toggleCenterY - top - 6);
+                var minArrowOffset = 12;
+                var maxArrowOffset = Math.max(minArrowOffset, Math.round(menuHeight) - 24);
+                if (arrowOffset < minArrowOffset) {
+                    arrowOffset = minArrowOffset;
+                } else if (arrowOffset > maxArrowOffset) {
+                    arrowOffset = maxArrowOffset;
+                }
+
                 $menu.toggleClass('is-position-left', positionLeft).css({
                     left: Math.round(left) + 'px',
                     top: Math.round(top) + 'px',
                     right: 'auto',
-                    bottom: 'auto'
+                    bottom: 'auto',
+                    '--utility-arrow-offset': arrowOffset + 'px'
                 });
 
                 menuElement.style.visibility = previousVisibility;
             };
 
-            $sidebarUtilityToggles.off('click.sidebarUtilityDropdown').on('click.sidebarUtilityDropdown', function(e) {
+            $(document).off('click.sidebarUtilityDropdownToggle', sidebarUtilityToggleSelector).on('click.sidebarUtilityDropdownToggle', sidebarUtilityToggleSelector, function(e) {
                 e.preventDefault();
+                e.stopImmediatePropagation();
                 e.stopPropagation();
+                var hoverCardElement = document.getElementById('sidebarHoverCard');
+                if (hoverCardElement) {
+                    hoverCardElement.classList.remove('show');
+                }
 
                 var $toggle = $(this);
                 var $menu = $toggle.siblings('.dropdown-menu').first();
@@ -5498,6 +5596,9 @@
                 $menu.addClass('show');
                 $toggle.attr('aria-expanded', 'true');
                 positionSidebarUtilityMenu($toggle, $menu);
+                window.setTimeout(function() {
+                    positionSidebarUtilityMenu($toggle, $menu);
+                }, 0);
             });
 
             $(window).on('resize.sidebarUtilityDropdown', function() {
@@ -6385,7 +6486,13 @@
                     $('.dropdown.show').removeClass('show');
                     $('.dropdown-toggle').attr('aria-expanded', 'false');
                     $sidebarProfileMenu.css({ left: '', top: '', right: '', bottom: '' });
-                    $('.sidebar-utility-actions .dropdown-menu').removeClass('is-position-left').css({ left: '', top: '', right: '', bottom: '' });
+                    $('.sidebar-utility-actions .dropdown-menu').removeClass('is-position-left').css({
+                        left: '-9999px',
+                        top: '-9999px',
+                        right: 'auto',
+                        bottom: 'auto',
+                        '--utility-arrow-offset': '18px'
+                    });
                 }
             });
 
@@ -6855,6 +6962,8 @@
             });
 
             // ===== TOAST NOTIFICATIONS =====
+            var queuedToastStorageKey = 'diva_erp.pending_toast';
+
             function getOrCreateToastContainer() {
                 var container = $('.toast-container').first();
                 if (container.length) {
@@ -6869,6 +6978,39 @@
                 container = $('<div class="toast-container"></div>');
                 host.prepend(container);
                 return container;
+            }
+
+            function consumeQueuedToast() {
+                if (typeof window.sessionStorage === 'undefined') {
+                    return;
+                }
+
+                var raw = '';
+                try {
+                    raw = String(window.sessionStorage.getItem(queuedToastStorageKey) || '');
+                    if (raw !== '') {
+                        window.sessionStorage.removeItem(queuedToastStorageKey);
+                    }
+                } catch (storageReadError) {
+                    return;
+                }
+
+                if (raw === '') {
+                    return;
+                }
+
+                var parsed = null;
+                try {
+                    parsed = JSON.parse(raw);
+                } catch (parseError) {
+                    parsed = null;
+                }
+
+                if (!parsed || typeof parsed !== 'object') {
+                    return;
+                }
+
+                window.showAppToast(parsed);
             }
 
             function dismissToast(toast) {
@@ -6965,9 +7107,39 @@
                 bindToastLifecycle(toast);
             };
 
+            window.queueAppToastForReload = function(configOrMessage, typeArg) {
+                var config = (typeof configOrMessage === 'object' && configOrMessage !== null)
+                    ? configOrMessage
+                    : { message: configOrMessage, type: typeArg };
+
+                var message = String((config && config.message) ? config.message : '').trim();
+                if (!message) {
+                    return;
+                }
+
+                var payload = {
+                    message: message,
+                    type: String((config && config.type) ? config.type : 'info'),
+                    title: config && config.title ? String(config.title) : ''
+                };
+
+                if (typeof window.sessionStorage !== 'undefined') {
+                    try {
+                        window.sessionStorage.setItem(queuedToastStorageKey, JSON.stringify(payload));
+                        return;
+                    } catch (storageWriteError) {
+                        // Fallback to immediate toast when storage is unavailable.
+                    }
+                }
+
+                window.showAppToast(payload);
+            };
+
             $('.toast-notification').each(function() {
                 bindToastLifecycle($(this));
             });
+
+            consumeQueuedToast();
 
             // Auto-close toasts on page navigation
             $(window).on('beforeunload', function() {
@@ -7264,6 +7436,10 @@
 
                 var showHoverCard = function(link) {
                     if (!link || link.classList.contains('nav-disabled') || isCompactViewport() || isSidebarExpanded()) {
+                        hideHoverCard();
+                        return;
+                    }
+                    if (link.classList.contains('sidebar-utility-toggle') && link.getAttribute('aria-expanded') === 'true') {
                         hideHoverCard();
                         return;
                     }

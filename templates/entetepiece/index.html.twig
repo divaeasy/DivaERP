@@ -2467,22 +2467,39 @@
     .piece-column-resize-handle {
         position: absolute;
         top: 0;
-        width: 5px;
+        width: 7px;
         height: 100%;
         cursor: col-resize;
         user-select: none;
         background: transparent;
-        transition: background 0.2s ease;
-        z-index: 5;
+        transition: background-color 0.2s ease;
+        z-index: 10;
+    }
+    .piece-column-resize-handle::after {
+        content: '';
+        position: absolute;
+        top: 12%;
+        right: 2px;
+        width: 2px;
+        height: 76%;
+        border-radius: 1px;
+        background: rgba(255, 255, 255, 0.46);
+        transition: background-color 0.2s ease;
     }
     .piece-column-resize-handle:hover {
-        background: rgba(37, 99, 235, 0.3);
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .piece-column-resize-handle:hover::after {
+        background: rgba(255, 255, 255, 0.68);
     }
     .piece-column-resize-handle.is-dragging {
-        background: rgba(37, 99, 235, 0.6);
+        background: rgba(37, 99, 235, 0.22);
+    }
+    .piece-column-resize-handle.is-dragging::after {
+        background: rgba(37, 99, 235, 0.82);
     }
     .piece-column-resize-handle.right {
-        right: -2.5px;
+        right: 0;
     }
     .piece-actions {
         display: inline-flex;
