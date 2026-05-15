@@ -377,7 +377,6 @@
                 if (!nextPrefs[key]) {
                     $input.prop('checked', false);
                     syncMenuState($table, tableId, $input.closest('.crud-column-settings__menu'));
-                    showToast('Maximum ' + MAX_VISIBLE_COLUMNS + ' colonnes visibles. Masquez une colonne optionnelle avant d en afficher une nouvelle.', 'warning');
                     return;
                 }
             }
