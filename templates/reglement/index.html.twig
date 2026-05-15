@@ -29,8 +29,16 @@
 </div>
 
 <div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
+
     {% if reglements|length > 0 %}
     <table class="table js-crud-list-table"
+           data-table-id="reglement"
            data-crud-resource="reglement"
            data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_reglement') }}"
            data-update-token="{{ csrf_token('crud_update_reglement') }}"
@@ -41,19 +49,19 @@
            data-placeholder="____">
         <thead>
             <tr>
-                <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="libelle" data-field="libelle" data-required="1">Libelle</th>
-                <th data-sort-key="echeance" data-sort-type="number" data-field="echeance" data-type="int">Echeance</th>
-                <th class="text-center" style="width: 120px;">Actions</th>
+                <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
+                <th data-sort-key="libelle" data-field="libelle" data-required="1" data-column-key="libelle">Libelle</th>
+                <th data-sort-key="echeance" data-sort-type="number" data-field="echeance" data-type="int" data-column-key="echeance">Echeance</th>
+                <th class="text-center" style="width: 120px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for reglement in reglements %}
             <tr data-row-id="{{ reglement.id }}">
-                <td><strong>#{{ reglement.id }}</strong></td>
-                <td data-field="libelle" data-field-value="{{ reglement.libelle|default('') }}">{{ reglement.libelle|default('____') }}</td>
-                <td data-field="echeance" data-field-value="{{ reglement.echeance|default('') }}"><span class="badge badge-warning badge-lg">{{ reglement.echeance|default('____') }} jours</span></td>
-                <td class="text-center" data-role="actions">
+                <td data-column-key="id"><strong>#{{ reglement.id }}</strong></td>
+                <td data-column-key="libelle" data-field="libelle" data-field-value="{{ reglement.libelle|default('') }}">{{ reglement.libelle|default('____') }}</td>
+                <td data-column-key="echeance" data-field="echeance" data-field-value="{{ reglement.echeance|default('') }}"><span class="badge badge-warning badge-lg">{{ reglement.echeance|default('____') }} jours</span></td>
+                <td class="text-center" data-column-key="actions" data-role="actions">
                     <a href="{{ path('reglement.edit', {id: reglement.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>

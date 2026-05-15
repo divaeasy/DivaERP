@@ -29,8 +29,16 @@
 </div>
 
 <div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
+
     {% if villes|length > 0 %}
     <table class="table js-crud-list-table"
+           data-table-id="ville"
            data-crud-resource="ville"
            data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_ville') }}"
            data-update-token="{{ csrf_token('crud_update_ville') }}"
@@ -41,17 +49,17 @@
            data-placeholder="____">
         <thead>
             <tr>
-                <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="libelle" data-field="libelle" data-required="1">Libelle</th>
-                <th class="text-center" style="width: 120px;">Actions</th>
+                <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
+                <th data-sort-key="libelle" data-field="libelle" data-required="1" data-column-key="libelle">Libelle</th>
+                <th class="text-center" style="width: 120px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for ville in villes %}
             <tr data-row-id="{{ ville.id }}">
-                <td><strong>#{{ ville.id }}</strong></td>
-                <td data-field="libelle" data-field-value="{{ ville.libelle|default('') }}">{{ ville.libelle|default('____') }}</td>
-                <td class="text-center" data-role="actions">
+                <td data-column-key="id"><strong>#{{ ville.id }}</strong></td>
+                <td data-column-key="libelle" data-field="libelle" data-field-value="{{ ville.libelle|default('') }}">{{ ville.libelle|default('____') }}</td>
+                <td class="text-center" data-column-key="actions" data-role="actions">
                     <a href="{{ path('ville.edit', {id: ville.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>

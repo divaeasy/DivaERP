@@ -1,4 +1,4 @@
-{% extends 'template_oukatech.html.twig' %}
+﻿{% extends 'template_oukatech.html.twig' %}
 
 {% block PageTitle %}
     Gestion des Dossiers
@@ -29,8 +29,16 @@
 </div>
 
 <div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
+
     {% if dossiers|length > 0 %}
     <table class="table js-crud-list-table"
+           data-table-id="dossier"
            data-crud-resource="dossier"
            data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_dossier') }}"
            data-create-token="{{ csrf_token('crud_create_dossier') }}"
@@ -41,16 +49,16 @@
            data-placeholder="____">
         <thead>
             <tr>
-                <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="nom" data-field="nom" data-required="1">Nom</th>
-                <th data-sort-key="adresse" data-field="adresse">Adresse</th>
-                <th>CP / Ville / Pays</th>
-                <th data-sort-key="rc">RC</th>
-                <th>Logo</th>
-                <th class="dossier-theme-col">Theme</th>
-                <th data-sort-key="devise">Devise</th>
-                <th>Numerotations</th>
-                <th class="text-center" style="width: 120px;">Actions</th>
+                <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
+                <th data-sort-key="nom" data-field="nom" data-required="1" data-column-key="nom">Nom</th>
+                <th data-sort-key="adresse" data-field="adresse" data-column-key="adresse">Adresse</th>
+                <th data-column-key="codepostville">CP / Ville / Pays</th>
+                <th data-sort-key="rc" data-column-key="rc">RC</th>
+                <th data-column-key="logo">Logo</th>
+                <th class="dossier-theme-col" data-column-key="theme">Theme</th>
+                <th data-sort-key="devise" data-column-key="devise">Devise</th>
+                <th data-column-key="numerotations">Numerotations</th>
+                <th class="text-center" style="width: 120px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -59,34 +67,34 @@
             {% set themeColor = dossierTheme ? dossierTheme.primaryColor : '#475569' %}
             {% set themeLabel = dossierTheme ? dossierTheme.name : 'Thème non défini' %}
             <tr data-row-id="{{ dossier.id }}">
-                <td><strong>#{{ dossier.id }}</strong></td>
-                <td data-field="nom" data-field-value="{{ dossier.nom|default('') }}">{{ dossier.nom|default('____') }}</td>
-                <td data-field="adresse" data-field-value="{{ dossier.adresse|default('') }}">{{ dossier.adresse|default('____') }}</td>
-                <td>
+                <td data-column-key="id"><strong>#{{ dossier.id }}</strong></td>
+                <td data-column-key="nom" data-field="nom" data-field-value="{{ dossier.nom|default('') }}">{{ dossier.nom|default('____') }}</td>
+                <td data-column-key="adresse" data-field="adresse" data-field-value="{{ dossier.adresse|default('') }}">{{ dossier.adresse|default('____') }}</td>
+                <td data-column-key="codepostville">
                     {{ dossier.codepostal ?: '-' }}
                     {{ dossier.ville ?: '' }}
                     {% if dossier.pays %}<br><small class="text-muted">{{ dossier.pays }}</small>{% endif %}
                 </td>
-                <td>{{ dossier.rc|default('____') }}</td>
-                <td>
+                <td data-column-key="rc">{{ dossier.rc|default('____') }}</td>
+                <td data-column-key="logo">
                     {% if dossier.logo %}
                         <img src="{{ dossier.logo }}" alt="Logo" style="height:32px; width:32px; object-fit:cover; border-radius:6px;">
                     {% else %}
                         <span class="text-muted">-</span>
                     {% endif %}
                 </td>
-                <td class="dossier-theme-col">
+                <td class="dossier-theme-col" data-column-key="theme">
                     <span class="dossier-theme-badge" title="{{ themeLabel }}">
                         <span class="dossier-theme-badge__swatch" style="background:{{ themeColor }};"></span>
                         <small class="text-muted dossier-theme-badge__label">{{ themeLabel }}</small>
                     </span>
                 </td>
-                <td>{{ dossier.devise }}</td>
-                <td>
+                <td data-column-key="devise">{{ dossier.devise }}</td>
+                <td data-column-key="numerotations">
                     <small class="text-muted d-block">DV: {{ dossier.devisno ?? 0 }} | CMD: {{ dossier.cmdno ?? 0 }}</small>
                     <small class="text-muted d-block">BL: {{ dossier.blno ?? 0 }} | FAC: {{ dossier.factureno ?? 0 }}</small>
                 </td>
-                <td class="text-center" data-role="actions">
+                <td class="text-center" data-column-key="actions" data-role="actions">
                     <a href="{{ path('dossier.edit', {id: dossier.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>

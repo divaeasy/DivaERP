@@ -26,8 +26,16 @@
 </div>
 
 <div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
+
     {% if pays|length > 0 %}
     <table class="table js-crud-list-table"
+           data-table-id="pays"
            data-crud-resource="pays"
            data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_pays') }}"
            data-update-token="{{ csrf_token('crud_update_pays') }}"
@@ -38,17 +46,17 @@
            data-placeholder="____">
         <thead>
             <tr>
-                <th data-sort-key="id" data-sort-type="number">ID</th>
-                <th data-sort-key="libelle" data-field="libelle" data-required="1">Libelle</th>
-                <th class="text-center" style="width: 120px;">Actions</th>
+                <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
+                <th data-sort-key="libelle" data-field="libelle" data-required="1" data-column-key="libelle">Libelle</th>
+                <th class="text-center" style="width: 120px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for p in pays %}
             <tr data-row-id="{{ p.id }}">
-                <td><strong>#{{ p.id }}</strong></td>
-                <td data-field="libelle" data-field-value="{{ p.libelle|default('') }}">{{ p.libelle|default('____') }}</td>
-                <td class="text-center" data-role="actions">
+                <td data-column-key="id"><strong>#{{ p.id }}</strong></td>
+                <td data-column-key="libelle" data-field="libelle" data-field-value="{{ p.libelle|default('') }}">{{ p.libelle|default('____') }}</td>
+                <td class="text-center" data-column-key="actions" data-role="actions">
                     <a href="{{ path('pays.edit', {id: p.id}) }}" class="btn btn-action btn-edit" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </a>
