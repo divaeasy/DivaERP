@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\SensEnum;
 use App\Repository\LignepieceRepository;
 use App\Traits\TimeStampTrait;
 use Doctrine\ORM\Mapping as ORM;
@@ -43,6 +44,9 @@ class Lignepiece
     #[ORM\JoinColumn(nullable: false)]
     private ?Dossier $dossier = null;
 
+    #[ORM\Column(length: 20, enumType: SensEnum::class, nullable: true)]
+    private ?SensEnum $sens = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -68,6 +72,10 @@ class Lignepiece
     public function setPiece(?Entetepiece $piece): static
     {
         $this->piece = $piece;
+
+        if ($this->sens === null && $piece?->getCodeOperation() !== null) {
+            $this->sens = $piece->getCodeOperation()->getSens();
+        }
 
         return $this;
     }
@@ -153,5 +161,31 @@ class Lignepiece
     public function getPu(): ?float
     {
         return $this->pub;
+    }
+
+    public function getSens(): ?SensEnum
+    {
+        return $this->sens;
+    }
+
+    public function setSens(?SensEnum $sens): static
+    {
+        $this->sens = $sens;
+
+        return $this;
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function syncSensFromPiece(): void
+    {
+        if ($this->sens !== null) {
+            return;
+        }
+
+        $pieceOperation = $this->piece?->getCodeOperation();
+        if ($pieceOperation !== null) {
+            $this->sens = $pieceOperation->getSens();
+        }
     }
 }

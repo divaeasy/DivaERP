@@ -4,10 +4,12 @@ namespace App\Command;
 
 use App\Entity\Article;
 use App\Entity\Clients;
+use App\Entity\CodeOperation;
 use App\Entity\Dossier;
 use App\Entity\Entetepiece;
 use App\Entity\Lignepiece;
 use App\Entity\Reglement;
+use App\Enum\SensEnum;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -34,6 +36,7 @@ class LoadTestDataCommand extends Command
             // Clear existing data
             $this->entityManager->getConnection()->executeStatement('DELETE FROM lignepiece');
             $this->entityManager->getConnection()->executeStatement('DELETE FROM entetepiece');
+            $this->entityManager->getConnection()->executeStatement('DELETE FROM code_operation');
             $this->entityManager->getConnection()->executeStatement('DELETE FROM article');
             $this->entityManager->getConnection()->executeStatement('DELETE FROM clients');
             $this->entityManager->getConnection()->executeStatement('DELETE FROM dossier');
@@ -114,6 +117,14 @@ class LoadTestDataCommand extends Command
             $output->writeln('✓ Created reglement type');
 
             // Create Invoices for 2025 and 2026
+            $venteStandard = new CodeOperation();
+            $venteStandard->setLibelle('Vente Standard');
+            $venteStandard->setSens(SensEnum::CREDIT);
+            $venteStandard->setIsActive(true);
+            $venteStandard->setPieceTypeFacture(true);
+            $this->entityManager->persist($venteStandard);
+            $this->entityManager->flush();
+
             $months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
             $years = [2025, 2026];
             $invoiceCount = 0;
@@ -129,6 +140,7 @@ class LoadTestDataCommand extends Command
                         $invoice = new Entetepiece();
                         $invoice->setType('Facture');
                         $invoice->setTypet('Client');
+                        $invoice->setCodeOperation($venteStandard);
                         $randomClient = $clients[array_rand($clients)];
                         $invoice->setTierId($randomClient->getId());
                         $invoice->setPieceno(rand(1000, 9999));
@@ -165,6 +177,7 @@ class LoadTestDataCommand extends Command
                             $line->setQte($quantity);
                             $line->setPub($unitPrice);
                             $line->setMontant($quantity * $unitPrice);
+                            $line->setSens($venteStandard->getSens());
                             
                             $this->entityManager->persist($line);
                             $lineCount--;

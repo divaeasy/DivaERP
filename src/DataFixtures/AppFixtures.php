@@ -4,10 +4,12 @@ namespace App\DataFixtures;
 
 use App\Entity\Article;
 use App\Entity\Clients;
+use App\Entity\CodeOperation;
 use App\Entity\Dossier;
 use App\Entity\Entetepiece;
 use App\Entity\Lignepiece;
 use App\Entity\Reglement;
+use App\Enum\SensEnum;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use DateTime;
@@ -87,6 +89,14 @@ class AppFixtures extends Fixture
         $manager->flush();
 
         // Create Invoices for 2025 and 2026
+        $venteStandard = new CodeOperation();
+        $venteStandard->setLibelle('Vente Standard');
+        $venteStandard->setSens(SensEnum::CREDIT);
+        $venteStandard->setIsActive(true);
+        $venteStandard->setPieceTypeFacture(true);
+        $manager->persist($venteStandard);
+        $manager->flush();
+
         $months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
         $years = [2025, 2026];
 
@@ -102,6 +112,7 @@ class AppFixtures extends Fixture
                     $invoice = new Entetepiece();
                     $invoice->setType('Facture');
                     $invoice->setTypet('Client');
+                    $invoice->setCodeOperation($venteStandard);
                     $randomClient = $clients[array_rand($clients)];
                     $invoice->setTierId($randomClient->getId());
                     $invoice->setPieceno(rand(1000, 9999));
@@ -141,6 +152,7 @@ class AppFixtures extends Fixture
                         $line->setQte($quantity);
                         $line->setPub($unitPrice);
                         $line->setMontant($lineAmount);
+                        $line->setSens($venteStandard->getSens());
                         
                         $manager->persist($line);
                         $lineCount--;

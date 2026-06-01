@@ -8,9 +8,16 @@
 <div class="dashboard-shell">
     <div class="dashboard-head mb-4">
         <h2 class="dashboard-title mb-0">Tableau de bord</h2>
-        <a href="{{ path('export.dashboard.excel') }}" class="btn btn-sm btn-primary no-loading dashboard-export-btn" title="Exporter en Excel">
-            <i class="fas fa-file-excel mr-2"></i>Exporter Excel
-        </a>
+        <div class="d-flex align-items-center" style="gap: .5rem;">
+            {% if is_granted('ROLE_COMPTABLE') %}
+                <a href="{{ path('admin.code_operation_migration') }}" class="btn btn-sm btn-outline-secondary no-loading dashboard-export-btn" title="Code opération">
+                    <i class="fas fa-database mr-2"></i>Code opération
+                </a>
+            {% endif %}
+            <a href="{{ path('export.dashboard.excel') }}" class="btn btn-sm btn-primary no-loading dashboard-export-btn" title="Exporter en Excel">
+                <i class="fas fa-file-excel mr-2"></i>Exporter Excel
+            </a>
+        </div>
     </div>
 
     <div class="kpi-grid mb-4">

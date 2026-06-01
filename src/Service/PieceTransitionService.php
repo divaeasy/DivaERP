@@ -123,6 +123,8 @@ class PieceTransitionService
         $newPiece->setType($nextType);
         $newPiece->setTypet($piece->getTypet());
         $newPiece->setTierId($piece->getTierId());
+        $newPiece->setCodeOperation($piece->getCodeOperation());
+        $newPiece->setTierDestination($piece->getTierDestination());
         $newPiece->setDevise($piece->getDevise());
         $newPiece->setReglement($piece->getReglement());
         $newPiece->setDossier($piece->getDossier());

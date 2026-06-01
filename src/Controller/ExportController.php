@@ -18,6 +18,7 @@ use App\Repository\TarifventeRepository;
 use App\Repository\TiersInterneRepository;
 use App\Repository\UniteRepository;
 use App\Repository\VilleRepository;
+use App\Service\AccountingEntryGeneratorService;
 use App\Service\DashboardService;
 use App\Service\ExportService;
 use Doctrine\Persistence\ManagerRegistry;
@@ -29,7 +30,11 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/export')]
 class ExportController extends AbstractController
 {
-    public function __construct(private ExportService $exportService) {}
+    public function __construct(
+        private ExportService $exportService,
+        private AccountingEntryGeneratorService $accountingEntryGenerator,
+    ) {
+    }
 
     #[Route('/clients', name: 'export.clients')]
     public function exportClients(ClientsRepository $repo): BinaryFileResponse
@@ -252,6 +257,37 @@ class ExportController extends AbstractController
             'factures_' . date('Y-m-d_His') . '.xlsx',
             'Factures',
             $headers,
+            $rows
+        );
+    }
+
+    #[Route('/ecritures-comptables', name: 'export.accounting_entries')]
+    public function exportAccountingEntries(EntetepieceRepository $repo): StreamedResponse
+    {
+        $pieces = $repo->getSearchQueryBuilder()->getQuery()->getResult();
+        $rows = [];
+
+        foreach ($pieces as $piece) {
+            $entries = $this->accountingEntryGenerator->generateForPiece($piece);
+            foreach ($entries as $entry) {
+                $rows[] = [
+                    $entry['pieceId'] ?? '',
+                    $entry['pieceRef'] ?? '',
+                    $entry['pieceType'] ?? '',
+                    $entry['codeOperation'] ?? '',
+                    $entry['sens'] ?? '',
+                    $entry['tierSource'] ?? '',
+                    $entry['tierDestination'] ?? '',
+                    $entry['debit'] ?? 0,
+                    $entry['credit'] ?? 0,
+                    $entry['libelle'] ?? '',
+                ];
+            }
+        }
+
+        return $this->exportService->exportCsv(
+            'ecritures_comptables_' . date('Y-m-d_His') . '.csv',
+            ['PieceId', 'Reference', 'Type', 'CodeOperation', 'Sens', 'TierSource', 'TierDestination', 'Debit', 'Credit', 'Libelle'],
             $rows
         );
     }

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Clients;
 use App\Entity\Article;
+use App\Entity\CodeOperation;
 use App\Entity\Depot;
 use App\Entity\Devises;
 use App\Entity\Dossier;
@@ -143,6 +144,50 @@ class CrudTableController extends AbstractController
         $error = $this->hydrateEntity($entity, $definition, $payload, $doctrine);
         if ($error !== null) {
             return $this->json(['success' => false, 'message' => $error], 422);
+        }
+
+        // Special handling for Entetepiece: auto-generate pieceno, validate code operation, and set default statut
+        if ($resource === 'entetepiece' && $entity instanceof Entetepiece && $currentDossier instanceof Dossier) {
+            if ($entity->getPieceno() === null) {
+                $lastPieceNo = $doctrine->getRepository(Entetepiece::class)
+                    ->createQueryBuilder('e')
+                    ->select('MAX(e.pieceno)')
+                    ->where('e.dossier = :dossier')
+                    ->setParameter('dossier', $currentDossier)
+                    ->getQuery()
+                    ->getSingleScalarResult();
+                $nextPieceNo = ($lastPieceNo ?? 0) + 1;
+                $entity->setPieceno($nextPieceNo);
+            }
+            if ($entity->getStatut() === null) {
+                $entity->setStatut('Brouillon');
+            }
+            
+            // Auto-resolve code operation if invalid or not set
+            $codeOp = $entity->getCodeOperation();
+            if ($codeOp === null || !$codeOp->getIsActive()) {
+                $pieceType = $entity->getType();
+                $tierType = $entity->getTypet();
+                
+                // Find the appropriate code operation based on tier type
+                $coRepo = $doctrine->getRepository(\App\Entity\CodeOperation::class);
+                $operationLibelle = null;
+                
+                if (in_array(strtolower($tierType), ['client', 'prospect'], true)) {
+                    $operationLibelle = 'Vente Standard';
+                } elseif (strtolower($tierType) === 'fournisseur') {
+                    $operationLibelle = 'Achat Standard';
+                } elseif (in_array(strtolower($tierType), ['interne', 'tiersinterne', 'tiers interne'], true)) {
+                    $operationLibelle = 'Transfert Interne Sortie';
+                }
+                
+                if ($operationLibelle !== null) {
+                    $resolvedCodeOp = $coRepo->findOneBy(['libelle' => $operationLibelle, 'is_active' => true]);
+                    if ($resolvedCodeOp !== null) {
+                        $entity->setCodeOperation($resolvedCodeOp);
+                    }
+                }
+            }
         }
 
         $this->applyAuditContext($entity, $doctrine);
@@ -521,7 +566,20 @@ class CrudTableController extends AbstractController
             'entetepiece' => [
                 'entity' => Entetepiece::class,
                 'scope' => 'dossier',
-                'simpleCrud' => false,
+                'simpleCrud' => true,
+                'edit_route' => 'entetepiece.edit',
+                'delete_route' => 'entetepiece.delete',
+                'fields' => [
+                    'type' => ['setter' => 'setType', 'getter' => 'getType', 'type' => 'string', 'required' => true],
+                    'typet' => ['setter' => 'setTypet', 'getter' => 'getTypet', 'type' => 'string', 'required' => true],
+                    'client' => ['setter' => 'setClient', 'getter' => 'getClient', 'type' => 'entity', 'entity' => Clients::class, 'lookup' => 'nom', 'scope' => 'dossier', 'required' => true],
+                    'code_operation' => ['setter' => 'setCodeOperation', 'getter' => 'getCodeOperation', 'type' => 'entity', 'entity' => CodeOperation::class, 'lookup' => 'libelle', 'required' => true],
+                    'pieceref' => ['setter' => 'setPieceref', 'getter' => 'getPieceref', 'type' => 'string', 'required' => false],
+                    'remise' => ['setter' => 'setRemise', 'getter' => 'getRemise', 'type' => 'float', 'required' => false],
+                    'devise' => ['setter' => 'setDevise', 'getter' => 'getDevise', 'type' => 'entity', 'entity' => Devises::class, 'lookup' => 'libelle', 'required' => false],
+                    'reglement' => ['setter' => 'setReglement', 'getter' => 'getReglement', 'type' => 'entity', 'entity' => Reglement::class, 'lookup' => 'libelle', 'required' => false],
+                    'statut' => ['setter' => 'setStatut', 'getter' => 'getStatut', 'type' => 'string', 'required' => false],
+                ],
             ],
         ];
 

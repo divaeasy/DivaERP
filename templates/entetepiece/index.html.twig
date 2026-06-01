@@ -26,6 +26,9 @@
         <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.factures') }}" title="Exporter Excel">
             <i class="fas fa-file-excel fa-md"></i> Exporter
         </a>
+        <a class="btn btn-sm btn-outline-info ml-2 no-loading" href="{{ path('export.accounting_entries') }}" title="Exporter ecritures comptables">
+            <i class="fas fa-file-csv fa-md"></i> Ecritures
+        </a>
         <button type="button" class="btn btn-sm btn-outline-primary ml-2 no-loading" data-toggle="modal" data-target="#pieceImportModal">
             <i class="fas fa-file-import fa-md"></i> Importer
         </button>
@@ -110,6 +113,10 @@
                     <span>Statut</span>
                     <input type="checkbox" id="pieceColumnToggle_statut" data-column-toggle="statut" checked>
                 </label>
+                <label class="piece-column-settings__item" for="pieceColumnToggle_codeoperation">
+                    <span>Code operation</span>
+                    <input type="checkbox" id="pieceColumnToggle_codeoperation" data-column-toggle="codeoperation">
+                </label>
                 <label class="piece-column-settings__item" for="pieceColumnToggle_devise">
                     <span>Devise</span>
                     <input type="checkbox" id="pieceColumnToggle_devise" data-column-toggle="devise" checked>
@@ -142,6 +149,7 @@
                 <th data-column-key="montant" data-sort-key="montant" data-sort-type="number" class="text-right">Montant</th>
                 <th data-column-key="lignes" data-sort-key="lignes" data-sort-type="number" class="text-center">Lignes</th>
                 <th data-column-key="statut" data-sort-key="statut">Statut</th>
+                <th data-column-key="codeoperation" data-sort-key="codeoperation">Code operation</th>
                 <th data-column-key="devise" data-sort-key="devise">Devise</th>
                 <th data-column-key="annee" data-sort-key="annee" data-sort-type="number">Annee</th>
                 <th class="text-center" style="width: 220px;" data-column-key="actions">Actions</th>
@@ -192,6 +200,9 @@
                 data-tier-type="{{ entetepiece.typet|default('') }}"
                 data-tier-id="{{ entetepiece.tierId is not null ? entetepiece.tierId : '' }}"
                 data-tier-label="{{ entetepiece.tierName|default('____') }}"
+                data-code-operation-id="{{ entetepiece.codeOperation ? entetepiece.codeOperation.id : '' }}"
+                data-code-operation-label="{{ entetepiece.codeOperation ? entetepiece.codeOperation.libelle : '' }}"
+                data-code-operation-sens="{{ entetepiece.codeOperation ? entetepiece.codeOperation.sens.label : '' }}"
                 data-statut-value="{{ entetepiece.statut|default('') }}"
                 data-statut-label="{{ wf.statusLabel|default(entetepiece.statut|default('-')) }}"
                 data-devise-id="{{ entetepiece.devise ? entetepiece.devise.id : '' }}"
@@ -226,6 +237,17 @@
                         <span class="badge badge-danger badge-lg">{{ wf.statusLabel|default(entetepiece.statut) }}</span>
                     {% else %}
                         <span class="badge badge-warning badge-lg">{{ wf.statusLabel|default(entetepiece.statut|default('-')) }}</span>
+                    {% endif %}
+                </td>
+                <td data-column-key="codeoperation">
+                    {% set opLabel = entetepiece.codeOperation ? entetepiece.codeOperation.libelle : '____' %}
+                    {% set opSens = entetepiece.codeOperation ? entetepiece.codeOperation.sens.label : '' %}
+                    {% if opSens == 'Entree' %}
+                        <span class="piece-sens-badge piece-sens-badge--debit"><i class="fas fa-arrow-down"></i>{{ opLabel }}</span>
+                    {% elseif opSens == 'Sortie' %}
+                        <span class="piece-sens-badge piece-sens-badge--credit"><i class="fas fa-arrow-up"></i>{{ opLabel }}</span>
+                    {% else %}
+                        <span class="piece-sens-badge">{{ opLabel }}</span>
                     {% endif %}
                 </td>
                 <td data-field="devise" data-column-key="devise">{{ entetepiece.devise }}</td>
@@ -321,7 +343,7 @@
             {% endfor %}
         </tbody>
     </table>
-    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: listRoute|default('entetepiece.list'), routeParams: {}} %}
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: listRoute|default('entetepiece.list'), routeParams: routeParams|default({})} %}
     {% else %}
     <div class="empty-state">
         <div class="empty-state-icon">
@@ -411,6 +433,23 @@
                         <label for="pieceQuickTierId">Tiers <span class="text-danger">*</span></label>
                         <select id="pieceQuickTierId" name="tierId" class="form-control piece-quick-input" required>
                             <option value="">Selectionner un tiers</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="pieceQuickTierDestinationGroup" style="display:none;">
+                        <label for="pieceQuickTierDestination">Tiers destination <span class="text-danger">*</span></label>
+                        <select id="pieceQuickTierDestination" name="tierDestinationId" class="form-control piece-quick-input">
+                            <option value="">Selectionner une destination interne</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pieceQuickCodeOperation">Code operation</label>
+                        <select id="pieceQuickCodeOperation" name="codeOperationId" class="form-control piece-quick-input">
+                            <option value="">Auto</option>
+                            {% for item in inlineCodeOperations|default([]) %}
+                                <option value="{{ item.id }}">{{ item.label }} ({{ item.sens }})</option>
+                            {% endfor %}
                         </select>
                     </div>
 
@@ -631,7 +670,7 @@
             var $columnSettingsToggle = $('#pieceColumnSettingsToggle');
             var pieceColumnStorageKey = 'piece-table-columns:{{ app.user ? app.user.id : "guest" }}:{{ app.user and app.user.currentDossier ? app.user.currentDossier.id : "0" }}';
             var mandatoryColumnKeys = ['selector', 'id', 'type', 'tier', 'actions'];
-            var optionalColumnKeys = ['pieceno', 'pieceref', 'remise', 'montant', 'lignes', 'statut', 'devise', 'annee'];
+            var optionalColumnKeys = ['pieceno', 'pieceref', 'remise', 'montant', 'lignes', 'statut', 'codeoperation', 'devise', 'annee'];
             var columnPrefs = Object.create(null);
             var activeInlineRow = null;
             var rowClickTimer = null;
@@ -641,6 +680,10 @@
             var inlinePieceStatuses = {{ inlinePieceStatuses|default([])|json_encode|raw }};
             var inlineDevises = {{ inlineDevises|default([])|json_encode|raw }};
             var inlineTierTypes = {{ inlineTierTypes|default([])|json_encode|raw }};
+            var sensDisplayMap = {
+                Entree: { className: 'piece-sens-badge piece-sens-badge--debit', icon: 'fa-arrow-down' },
+                Sortie: { className: 'piece-sens-badge piece-sens-badge--credit', icon: 'fa-arrow-up' }
+            };
             var bulkDeletePending = null;
             var isBulkDeleteSubmitting = false;
 
@@ -815,6 +858,17 @@
                     return 'badge badge-danger badge-lg';
                 }
                 return 'badge badge-warning badge-lg';
+            }
+
+            function buildCodeOperationBadgeHtml(label, sens) {
+                var displayLabel = fallbackDisplay(label);
+                var safeLabel = escapeHtml(displayLabel);
+                var sensLabel = String(sens || '').trim();
+                var config = sensDisplayMap[sensLabel] || null;
+                if (!config) {
+                    return '<span class="piece-sens-badge">' + safeLabel + '</span>';
+                }
+                return '<span class="' + escapeHtml(config.className) + '"><i class="fas ' + escapeHtml(config.icon) + '"></i>' + safeLabel + '</span>';
             }
 
             function getTierTypeOptions() {
@@ -1135,6 +1189,8 @@
                 var statutLabel = String(item.statutLabel || item.statut || '');
                 var deviseLabel = String(item.devise || '');
                 var anneeValue = String(item.annee || '');
+                var codeOperationLabel = String(item.codeOperationLabel || '');
+                var codeOperationSens = String(item.sens || '');
 
                 $row.attr('data-inline-editable', item.canEdit ? '1' : '0');
                 $row.attr('data-inline-update-url', String(item.inlineUpdateUrl || $row.attr('data-inline-update-url') || ''));
@@ -1142,6 +1198,9 @@
                 $row.attr('data-tier-type', String(item.typet || ''));
                 $row.attr('data-tier-id', String(item.tierId || ''));
                 $row.attr('data-tier-label', tierLabel);
+                $row.attr('data-code-operation-id', String(item.codeOperationId || ''));
+                $row.attr('data-code-operation-label', codeOperationLabel);
+                $row.attr('data-code-operation-sens', codeOperationSens);
                 $row.attr('data-piece-ref-value', pieceRefValue);
                 $row.attr('data-remise-value', remiseValue.toFixed(2));
                 $row.attr('data-statut-value', String(item.statut || ''));
@@ -1164,6 +1223,7 @@
                     var lineBadgeClass = lineCount > 0 ? 'badge badge-success' : 'badge badge-warning';
                     $row.find('td[data-column-key="lignes"]').html('<span class="' + lineBadgeClass + '">' + lineCount + '</span>');
                 }
+                $row.find('td[data-column-key="codeoperation"]').html(buildCodeOperationBadgeHtml(codeOperationLabel, codeOperationSens));
                 if (item.deleteUrl) {
                     $row.find('.delete-btn').attr('data-delete-url', item.deleteUrl);
                 }
@@ -1329,6 +1389,7 @@
                 $row.addClass('is-saving');
                 $row.find('.js-piece-inline-save, .js-piece-inline-cancel, .inline-dropdown-trigger, .inline-dropdown-option').prop('disabled', true);
 
+                var currentCodeOperationId = String($row.attr('data-code-operation-id') || '').trim();
                 $.ajax({
                     url: updateUrl,
                     method: 'POST',
@@ -1342,7 +1403,8 @@
                         remise: remise.toFixed(2),
                         statut: values.statut,
                         deviseId: values.deviseId,
-                        annee: annee
+                        annee: annee,
+                        codeOperationId: currentCodeOperationId
                     },
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
@@ -1407,6 +1469,9 @@
                         ' data-tier-type="' + escapeHtml(String(item.typet || '')) + '"' +
                         ' data-tier-id="' + escapeHtml(String(item.tierId || '')) + '"' +
                         ' data-tier-label="' + escapeHtml(String(item.tier || '')) + '"' +
+                        ' data-code-operation-id="' + escapeHtml(String(item.codeOperationId || '')) + '"' +
+                        ' data-code-operation-label="' + escapeHtml(String(item.codeOperationLabel || '')) + '"' +
+                        ' data-code-operation-sens="' + escapeHtml(String(item.sens || '')) + '"' +
                         ' data-piece-ref-value="' + escapeHtml(String(item.pieceref || '')) + '"' +
                         ' data-remise-value="' + escapeHtml(String(parseNumber(item.remise).toFixed(2))) + '"' +
                         ' data-statut-value="' + escapeHtml(String(item.statut || '')) + '"' +
@@ -1425,6 +1490,7 @@
                         '<td class="text-right" data-column-key="montant"><strong>' + escapeHtml(String(item.montantDisplay || formatNumber(item.montant || 0))) + '</strong></td>',
                         '<td class="text-center" data-column-key="lignes"><span class="' + ((parseInt(item.lignes, 10) || 0) > 0 ? 'badge badge-success' : 'badge badge-warning') + '">' + escapeHtml(String(item.lignes || 0)) + '</span></td>',
                         '<td data-field="statut" data-column-key="statut"><span class="' + resolveStatusBadgeClass(item.statut) + '">' + escapeHtml(fallbackDisplay(item.statutLabel || item.statut || '-')) + '</span></td>',
+                        '<td data-column-key="codeoperation">' + buildCodeOperationBadgeHtml(item.codeOperationLabel || '', item.sens || '') + '</td>',
                         '<td data-field="devise" data-column-key="devise">' + escapeHtml(fallbackDisplay(item.devise || '')) + '</td>',
                         '<td data-field="annee" data-column-key="annee">' + escapeHtml(String(item.annee || '-')) + '</td>',
                         '<td class="text-center piece-actions-cell" data-column-key="actions" data-role="actions">' + buildPieceActionsCell(item) + '</td>',
@@ -1478,6 +1544,9 @@
                 } catch (error) {
                     columnPrefs = Object.create(null);
                 }
+                if (!Object.prototype.hasOwnProperty.call(columnPrefs, 'codeoperation')) {
+                    columnPrefs.codeoperation = false;
+                }
             }
 
             function writeColumnPrefs() {
@@ -1515,6 +1584,39 @@
 
             function initColumnResizing() {
                 $table.find('.piece-column-resize-handle').remove();
+                $(document).off('.pieceResize');
+                $(window).off('.pieceResize');
+
+                var activeResize = null;
+
+                function stopResize() {
+                    if (!activeResize) {
+                        return;
+                    }
+
+                    $(document).off('mousemove.pieceResize mouseup.pieceResize');
+                    $(window).off('blur.pieceResize mouseleave.pieceResize');
+                    $('body').removeClass('piece-resize-active');
+                    activeResize.$handle.removeClass('is-dragging');
+                    activeResize = null;
+                }
+
+                function applyWidth(index, $th, newWidth) {
+                    var safeWidth = Math.max(72, newWidth);
+                    $th.css({
+                        width: safeWidth + 'px',
+                        minWidth: safeWidth + 'px',
+                        maxWidth: safeWidth + 'px'
+                    });
+
+                    $tbody.find('tr').each(function() {
+                        $(this).find('td').eq(index).css({
+                            width: safeWidth + 'px',
+                            minWidth: safeWidth + 'px',
+                            maxWidth: safeWidth + 'px'
+                        });
+                    });
+                }
 
                 $table.find('thead th').each(function(index) {
                     var $th = $(this);
@@ -1529,34 +1631,31 @@
                     $handle.on('mousedown.pieceResize', function(event) {
                         event.preventDefault();
                         event.stopPropagation();
-
-                        var startX = event.pageX;
-                        var startWidth = $th.outerWidth();
+                        stopResize();
+                        activeResize = {
+                            index: index,
+                            $th: $th,
+                            $handle: $handle,
+                            startX: event.pageX,
+                            startWidth: $th.outerWidth()
+                        };
+                        $('body').addClass('piece-resize-active');
                         $handle.addClass('is-dragging');
 
                         $(document).on('mousemove.pieceResize', function(moveEvent) {
-                            var diff = moveEvent.pageX - startX;
-                            var newWidth = Math.max(72, startWidth + diff);
-
-                            $th.css({
-                                width: newWidth + 'px',
-                                minWidth: newWidth + 'px',
-                                maxWidth: newWidth + 'px'
-                            });
-
-                            $tbody.find('tr').each(function() {
-                                $(this).find('td').eq(index).css({
-                                    width: newWidth + 'px',
-                                    minWidth: newWidth + 'px',
-                                    maxWidth: newWidth + 'px'
-                                });
-                            });
+                            if (!activeResize) {
+                                return;
+                            }
+                            if (typeof moveEvent.buttons === 'number' && moveEvent.buttons === 0) {
+                                stopResize();
+                                return;
+                            }
+                            var diff = moveEvent.pageX - activeResize.startX;
+                            applyWidth(activeResize.index, activeResize.$th, activeResize.startWidth + diff);
                         });
 
-                        $(document).on('mouseup.pieceResize', function() {
-                            $(document).off('mousemove.pieceResize mouseup.pieceResize');
-                            $handle.removeClass('is-dragging');
-                        });
+                        $(document).on('mouseup.pieceResize', stopResize);
+                        $(window).on('blur.pieceResize mouseleave.pieceResize', stopResize);
                     });
                 });
             }
@@ -1576,26 +1675,6 @@
                         getRowCheckbox($(this)).prop('checked', isChecked);
                     });
                     updateSelectionUi();
-                });
-
-                $table.on('click.pieceList', '.piece-row', function(event) {
-                    var $row = $(this);
-                    if ($row.hasClass('is-editing')) {
-                        return;
-                    }
-                    if ($(event.target).closest('a, button, input, select, textarea, label, .dropdown-menu, .dropdown-toggle, [contenteditable="true"], .inline-dropdown-menu, .inline-dropdown-trigger, .inline-dropdown-option').length > 0) {
-                        return;
-                    }
-                    if (rowClickTimer) {
-                        window.clearTimeout(rowClickTimer);
-                        rowClickTimer = null;
-                    }
-                    rowClickTimer = window.setTimeout(function() {
-                        var $checkbox = getRowCheckbox($row);
-                        $checkbox.prop('checked', !$checkbox.is(':checked'));
-                        updateSelectionUi();
-                        rowClickTimer = null;
-                    }, 220);
                 });
 
                 $table.on('dblclick.pieceList', '.piece-row', function(event) {
@@ -1697,16 +1776,42 @@
             if ($quickCreateForm.length) {
                 var $quickTierType = $('#pieceQuickTierType');
                 var $quickTierId = $('#pieceQuickTierId');
+                var $quickTierDestination = $('#pieceQuickTierDestination');
+                var $quickTierDestinationGroup = $('#pieceQuickTierDestinationGroup');
                 var $quickRef = $('#pieceQuickReference');
+
+                function refreshQuickTierDestinationOptions() {
+                    if (!$quickTierType.length || !$quickTierDestination.length || !$quickTierDestinationGroup.length) {
+                        return;
+                    }
+
+                    var normalizedType = normalizeToken(String($quickTierType.val() || ''));
+                    var isInternalType = normalizedType === 'interne' || normalizedType === 'tiersinterne' || normalizedType === 'tierinterne';
+                    if (!isInternalType) {
+                        $quickTierDestinationGroup.hide();
+                        $quickTierDestination.empty().append('<option value="">Selectionner une destination interne</option>');
+                        return;
+                    }
+
+                    $quickTierDestinationGroup.show();
+                    fetchTierOptions(String($quickTierType.val() || 'Interne'), true).done(function(options) {
+                        $quickTierDestination.empty().append('<option value="">Selectionner une destination interne</option>');
+                        options.forEach(function(option) {
+                            $quickTierDestination.append($('<option></option>').attr('value', option.value).text(option.label));
+                        });
+                    });
+                }
 
                 if ($quickTierType.length) {
                     $quickTierType.off('change.pieceQuickCreate').on('change.pieceQuickCreate', function() {
                         loadQuickCreateTiers('');
+                        refreshQuickTierDestinationOptions();
                     });
                 }
 
                 $quickCreateModal.off('shown.bs.modal.pieceQuickCreate').on('shown.bs.modal.pieceQuickCreate', function() {
                     loadQuickCreateTiers('');
+                    refreshQuickTierDestinationOptions();
                     if ($quickRef.length) {
                         $quickRef.trigger('focus');
                     }
@@ -1720,6 +1825,16 @@
                         showPieceToast('Le tiers est obligatoire.', 'error');
                         $quickTierId.trigger('focus');
                         return;
+                    }
+                    var normalizedType = normalizeToken(String($quickTierType.val() || ''));
+                    var isInternalType = normalizedType === 'interne' || normalizedType === 'tiersinterne' || normalizedType === 'tierinterne';
+                    if (isInternalType) {
+                        var tierDestinationId = String($quickTierDestination.val() || '').trim();
+                        if (tierDestinationId === '') {
+                            showPieceToast('Le tiers destination est obligatoire pour une piece interne.', 'error');
+                            $quickTierDestination.trigger('focus');
+                            return;
+                        }
                     }
 
                     $quickCreateSubmit.prop('disabled', true);
@@ -1763,8 +1878,15 @@
                     if ($quickCreateForm[0]) {
                         $quickCreateForm[0].reset();
                     }
+                    if ($quickTierDestinationGroup.length) {
+                        $quickTierDestinationGroup.hide();
+                    }
                     if ($quickTierType.length && getTierTypeOptions().length <= 1) {
                         $quickTierType.val(getDefaultTierTypeValue());
+                    }
+                    // Clean up orphaned backdrop
+                    if (typeof window.syncSingleModalBackdrop === 'function') {
+                        window.syncSingleModalBackdrop(true);
                     }
                 });
             }
@@ -2067,7 +2189,7 @@
         opacity: 0;
         pointer-events: none;
         transition: transform 0.22s ease, opacity 0.22s ease;
-        z-index: 8;
+        z-index: 9998;
         padding: 8px 10px;
         border-radius: 12px;
         border: 1px solid rgba(148, 163, 184, 0.36);
@@ -2467,7 +2589,7 @@
     .piece-column-resize-handle {
         position: absolute;
         top: 0;
-        width: 7px;
+        width: 6px;
         height: 100%;
         cursor: col-resize;
         user-select: none;
@@ -2500,6 +2622,11 @@
     }
     .piece-column-resize-handle.right {
         right: 0;
+    }
+    body.piece-resize-active,
+    body.piece-resize-active * {
+        cursor: col-resize !important;
+        user-select: none !important;
     }
     .piece-actions {
         display: inline-flex;
@@ -2534,6 +2661,25 @@
         background: rgba(8, 145, 178, 0.12) !important;
         color: #0e7490 !important;
         transform: translateY(-1px) !important;
+    }
+    .piece-sens-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #334155;
+        background: #f1f5f9;
+    }
+    .piece-sens-badge--debit {
+        color: #065f46;
+        background: #d1fae5;
+    }
+    .piece-sens-badge--credit {
+        color: #7f1d1d;
+        background: #fee2e2;
     }
     @media (max-width: 992px) {
         .piece-quick-modal-body {

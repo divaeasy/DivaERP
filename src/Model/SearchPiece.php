@@ -15,4 +15,10 @@ class SearchPiece
 
     /** @var string */
     public string $typet = '';
+
+    /** @var string */
+    public string $codeOperationId = '';
+
+    /** @var string */
+    public string $sens = '';
 }

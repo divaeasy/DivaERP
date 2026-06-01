@@ -9,6 +9,7 @@ use App\Entity\Lignepiece;
 use App\Entity\Tarifvente;
 use App\Entity\User;
 use App\Form\LignepieceFormType;
+use App\Service\CodeOperationService;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,6 +21,10 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('lignepiece')]
 class LignePController extends AbstractController
 {
+    public function __construct(private readonly CodeOperationService $codeOperationService)
+    {
+    }
+
     private function computeMontant(Lignepiece $lignepiece): float
     {
         $qte = (float) ($lignepiece->getQte() ?? 0.0);
@@ -65,6 +70,11 @@ class LignePController extends AbstractController
 
             return $this->redirect($this->buildPieceRedirectUrl((int) ($lignepiece->getPiece()?->getId() ?? $pceId), $origin));
         }
+        if ($lignepiece instanceof Lignepiece && $this->isInternalPiece($lignepiece->getPiece()) && !$this->canManageInternalPieces()) {
+            $this->addFlash('error', 'La gestion des pieces internes est reservee aux roles Admin ou Comptable.');
+
+            return $this->redirect($this->buildPieceRedirectUrl((int) ($lignepiece->getPiece()?->getId() ?? $pceId), $origin));
+        }
 
         $new = false;
         if (!$lignepiece) {
@@ -87,6 +97,7 @@ class LignePController extends AbstractController
                 $lignepiece->setDossier($lignepiece->getPiece()->getDossier());
             }
 
+            $lignepiece->setSens($this->codeOperationService->resolveLineSensFromPiece($lignepiece->getPiece()));
             $lignepiece->setMontant($this->computeMontant($lignepiece));
             $entityManager = $doctrine->getManager();
             $entityManager->persist($lignepiece);
@@ -130,6 +141,11 @@ class LignePController extends AbstractController
 
             return $this->redirect($this->buildPieceRedirectUrl((int) $entetePiece->getId(), $origin));
         }
+        if ($this->isInternalPiece($entetePiece) && !$this->canManageInternalPieces()) {
+            $this->addFlash('error', 'La gestion des pieces internes est reservee aux roles Admin ou Comptable.');
+
+            return $this->redirectToRoute($backRoute);
+        }
 
         $lignepiece = new Lignepiece();
         $lignepiece->doctrine = $doctrine;
@@ -141,6 +157,7 @@ class LignePController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $lignepiece->setSens($this->codeOperationService->resolveLineSensFromPiece($entetePiece));
             $lignepiece->setMontant($this->computeMontant($lignepiece));
 
             $entityManager = $doctrine->getManager();
@@ -177,6 +194,15 @@ class LignePController extends AbstractController
 
         if ($lignepiece) {
             $pieceId = $lignepiece->getPiece()?->getId();
+            if ($this->isInternalPiece($lignepiece->getPiece()) && !$this->canManageInternalPieces()) {
+                $this->addFlash('error', 'La gestion des pieces internes est reservee aux roles Admin ou Comptable.');
+
+                if ($pieceId !== null) {
+                    return $this->redirect($this->buildPieceRedirectUrl($pieceId, $origin));
+                }
+
+                return $this->redirectToRoute($backRoute);
+            }
             if ($this->isPieceReadOnly($lignepiece->getPiece())) {
                 $this->addFlash('warning', 'Cette pièce est périmée et ses lignes sont en lecture seule.');
 
@@ -410,6 +436,7 @@ class LignePController extends AbstractController
     {
         return match ($this->normalizeToken($origin)) {
             'fournisseur' => 'fournisseur',
+            'interne', 'tierinterne', 'tiersinterne' => 'interne',
             'client', 'prospect' => 'client',
             default => null,
         };
@@ -425,7 +452,11 @@ class LignePController extends AbstractController
 
     private function resolvePieceListRoute(?string $origin): string
     {
-        return $origin === 'fournisseur' ? 'entetepiece.fournisseur_list' : 'entetepiece.client_list';
+        return match ($origin) {
+            'fournisseur' => 'entetepiece.fournisseur_list',
+            'interne' => 'entetepiece.interne_list',
+            default => 'entetepiece.client_list',
+        };
     }
 
     private function isPieceReadOnly(?Entetepiece $piece): bool
@@ -453,6 +484,20 @@ class LignePController extends AbstractController
         ]);
 
         return (string) preg_replace('/[^a-z0-9]/', '', $normalized);
+    }
+
+    private function canManageInternalPieces(): bool
+    {
+        return $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_COMPTABLE');
+    }
+
+    private function isInternalPiece(?Entetepiece $piece): bool
+    {
+        if (!$piece instanceof Entetepiece) {
+            return false;
+        }
+
+        return in_array($this->normalizeToken($piece->getTypet()), ['interne', 'tiersinterne', 'tierinterne'], true);
     }
 }
 

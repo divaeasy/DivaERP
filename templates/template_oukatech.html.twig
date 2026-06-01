@@ -4254,7 +4254,7 @@
         <!-- Sidebar -->
         {% set currentRoute = app.request.attributes.get('_route') %}
         {% set commercialRoutes = ['client.list', 'client.edit', 'prospect.list', 'prospect.edit', 'fournisseur.list', 'fournisseur.edit', 'article.list', 'article.edit', 'tarif.list', 'tarif.edit', 'tarifvente.list', 'tarifvente.edit', 'app_tiers_interne_index', 'app_tiers_interne_new', 'app_tiers_interne_edit', 'app_tiers_interne_show'] %}
-        {% set accountingRoutes = ['entetepiece.list', 'entetepiece.client_list', 'entetepiece.fournisseur_list', 'entetepiece.edit', 'reglement.list', 'reglement.edit', 'devise.list', 'devise.edit', 'unite.list', 'unite.edit'] %}
+        {% set accountingRoutes = ['entetepiece.list', 'entetepiece.client_list', 'entetepiece.fournisseur_list', 'entetepiece.interne_list', 'entetepiece.edit', 'reglement.list', 'reglement.edit', 'devise.list', 'devise.edit', 'unite.list', 'unite.edit', 'admin.code_operation_migration'] %}
         {% set administrationRoutes = ['dossier.list', 'dossier.edit', 'pays.list', 'pays.edit', 'ville.list', 'ville.edit', 'app_nature_production_index', 'app_nature_production_new', 'app_nature_production_edit', 'app_nature_production_show', 'app_depot_index', 'app_depot_new', 'app_depot_edit', 'app_depot_show'] %}
         {% set initialSidebarPanel = '' %}
         {% set isDashboardRoute = currentRoute == 'app_dash_bord' %}
@@ -4289,6 +4289,7 @@
             'entetepiece.list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Liste des pièces'},
             'entetepiece.client_list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Pièces client'},
             'entetepiece.fournisseur_list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Pièces fournisseur'},
+            'entetepiece.interne_list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Pièces interne'},
             'entetepiece.edit': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Fiche pièce'},
             'entetepiece.add': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Nouvelle pièce'},
             'reglement.list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Liste des règlements'},
@@ -4297,6 +4298,7 @@
             'devise.edit': {'module': 'Comptabilité', 'section': 'Référentiels', 'page': 'Fiche devise'},
             'unite.list': {'module': 'Comptabilité', 'section': 'Référentiels', 'page': 'Liste des unités'},
             'unite.edit': {'module': 'Comptabilité', 'section': 'Référentiels', 'page': 'Fiche unité'},
+            'admin.code_operation_migration': {'module': 'Comptabilité', 'section': 'Référentiels', 'page': 'Code opération'},
             'dossier.list': {'module': 'Administration', 'section': 'Organisation', 'page': 'Liste des dossiers'},
             'dossier.edit': {'module': 'Administration', 'section': 'Organisation', 'page': 'Fiche dossier'},
             'app_nature_production_index': {'module': 'Administration', 'section': 'Organisation', 'page': 'Liste des natures de production'},
@@ -4708,6 +4710,11 @@
                                         <i data-lucide="truck"></i>
                                         <span>Pièce fournisseur</span>
                                     </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces sidebar-panel-link--pieces-interne {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute == 'entetepiece.interne_list' %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('entetepiece.interne_list') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="building-2"></i>
+                                        <span>Pièce interne</span>
+                                    </a>
                                     <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--reglements {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute in ['reglement.list', 'reglement.edit'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('reglement.list') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="banknote"></i>
@@ -4732,6 +4739,11 @@
                                        href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('unite.list') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="scale"></i>
                                         <span>Unités</span>
+                                    </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute == 'admin.code_operation_migration' %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('admin.code_operation_migration') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="database"></i>
+                                        <span>Code opération</span>
                                     </a>
                                 </div>
                                 </div>
@@ -7241,6 +7253,7 @@
                 { name: 'Articles - Nouveau', url: '{{ path('article.edit') }}', icon: 'fas fa-box' },
                 { name: 'Pièces client - Liste', url: '{{ path('entetepiece.client_list') }}', icon: 'fas fa-file-invoice' },
                 { name: 'Pièces fournisseur - Liste', url: '{{ path('entetepiece.fournisseur_list') }}', icon: 'fas fa-file-invoice' },
+                { name: 'Pièces interne - Liste', url: '{{ path('entetepiece.interne_list') }}', icon: 'fas fa-file-invoice' },
                 { name: 'Pièces - Nouvelle', url: '{{ path('entetepiece.edit') }}', icon: 'fas fa-file-invoice' },
                 { name: 'Règlements - Liste', url: '{{ path('reglement.list') }}', icon: 'fas fa-money-bill-wave' },
                 { name: 'Règlements - Nouveau', url: '{{ path('reglement.edit') }}', icon: 'fas fa-money-bill-wave' },
@@ -7260,6 +7273,7 @@
                 { name: 'Tarifs Vente - Nouveau', url: '{{ path('tarifvente.edit') }}', icon: 'fas fa-tag' },
                 { name: 'Unités - Liste', url: '{{ path('unite.list') }}', icon: 'fas fa-balance-scale' },
                 { name: 'Unités - Nouvelle', url: '{{ path('unite.edit') }}', icon: 'fas fa-balance-scale' },
+                { name: 'Code opération', url: '{{ path('admin.code_operation_migration') }}', icon: 'fas fa-database' },
                 { name: 'Pays - Liste', url: '{{ path('pays.list') }}', icon: 'fas fa-globe' },
                 { name: 'Pays - Nouveau', url: '{{ path('pays.edit') }}', icon: 'fas fa-globe' },
                 { name: 'Villes - Liste', url: '{{ path('ville.list') }}', icon: 'fas fa-city' },

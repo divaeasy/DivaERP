@@ -324,7 +324,7 @@
         gap: 0.75rem;
         margin-left: auto;
         position: relative;
-        z-index: 12;
+        z-index: 5;
     }
 
     .article-column-settings-floating {
@@ -522,21 +522,33 @@
         gap: 0.5rem;
     }
 
+    .modal.article-detail-modal {
+        z-index: 10060 !important;
+    }
+
     .article-detail-modal .modal-dialog {
         max-width: 1080px;
+        margin: 1rem auto;
+        min-height: calc(100% - 2rem);
+        display: flex;
+        align-items: center;
     }
 
     .article-detail-modal .modal-content {
-        border: none;
-        border-radius: 14px;
-        box-shadow: 0 28px 56px rgba(15, 23, 42, 0.2);
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 18px;
+        box-shadow: 0 30px 74px rgba(15, 23, 42, 0.22);
         overflow: hidden;
+        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+        max-height: calc(100vh - 2rem);
+        display: flex;
+        flex-direction: column;
     }
 
     .article-detail-modal .modal-header {
         border-bottom: 1px solid #e2e8f0;
-        padding: 0.9rem 1.2rem;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        padding: 1rem 1.25rem;
+        background: linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgba(241, 245, 249, 0.94) 100%);
     }
 
     .article-detail-modal .modal-title {
@@ -547,6 +559,13 @@
 
     .article-detail-modal .modal-body {
         padding: 1rem 1.2rem 0.7rem;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .article-detail-modal-open .modal-backdrop {
+        z-index: 10050;
     }
 
     .article-detail-mode-switch {
@@ -555,10 +574,11 @@
         gap: 0.35rem;
         margin-left: auto;
         margin-right: 0.9rem;
-        padding: 0.2rem;
+        padding: 0.22rem;
         border-radius: 999px;
         border: 1px solid #dbe3ec;
-        background: #f8fafc;
+        background: #ffffff;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 3px 10px rgba(15, 23, 42, 0.06);
     }
 
     .article-detail-mode-btn {
@@ -566,7 +586,7 @@
         background: transparent;
         color: #475569;
         border-radius: 999px;
-        padding: 0.38rem 0.78rem;
+        padding: 0.4rem 0.82rem;
         font-size: 0.78rem;
         font-weight: 700;
         transition: all 0.2s ease;
@@ -596,11 +616,12 @@
         grid-template-columns: 108px minmax(0, 1fr);
         gap: 0.9rem;
         align-items: center;
-        padding: 0.95rem;
-        border-radius: 12px;
+        padding: 1rem;
+        border-radius: 13px;
         border: 1px solid #dbe3ec;
-        background: linear-gradient(135deg, rgba(241, 245, 249, 0.92) 0%, rgba(255, 255, 255, 0.95) 70%);
-        margin-bottom: 0.85rem;
+        background: linear-gradient(145deg, rgba(239, 246, 255, 0.9) 0%, rgba(255, 255, 255, 0.98) 70%);
+        margin-bottom: 0.9rem;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
     }
 
     .article-detail-report-image {
@@ -647,9 +668,10 @@
 
     .article-detail-stat-card {
         border: 1px solid #dbe3ec;
-        border-radius: 10px;
+        border-radius: 11px;
         background: #fff;
-        padding: 0.66rem 0.75rem;
+        padding: 0.68rem 0.76rem;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
     }
 
     .article-detail-stat-label {
@@ -663,7 +685,7 @@
 
     .article-detail-stat-value {
         margin: 0.24rem 0 0;
-        color: #0f172a;
+        color: var(--theme-primary);
         font-size: 1.12rem;
         font-weight: 800;
     }
@@ -676,10 +698,11 @@
 
     .article-detail-report-card {
         border: 1px solid #dbe3ec;
-        border-radius: 11px;
+        border-radius: 12px;
         background: #fff;
-        padding: 0.75rem 0.8rem;
+        padding: 0.78rem 0.85rem;
         min-width: 0;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
     }
 
     .article-detail-report-card h6 {
@@ -740,20 +763,22 @@
     }
 
     .article-detail-edit-grid .form-control {
-        border-radius: 9px;
+        border-radius: 10px;
         border: 1px solid #cbd5e1;
         min-height: 40px;
         font-size: 0.9rem;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     }
 
     .article-detail-image-card {
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        padding: 0.65rem;
+        padding: 0.7rem;
         border: 1px solid #dbe3ec;
-        border-radius: 11px;
+        border-radius: 12px;
         background: #f8fafc;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
     }
 
     .article-detail-image-preview {
@@ -790,6 +815,15 @@
     }
 
     @media (max-width: 768px) {
+        .article-detail-modal .modal-dialog {
+            margin: 0.5rem;
+            min-height: calc(100% - 1rem);
+        }
+
+        .article-detail-modal .modal-content {
+            max-height: calc(100vh - 1rem);
+        }
+
         .article-detail-mode-switch {
             margin-right: 0.45rem;
         }
@@ -1005,7 +1039,7 @@
         opacity: 0;
         pointer-events: none;
         transition: transform 0.22s ease, opacity 0.22s ease;
-        z-index: 8;
+        z-index: 9998;
         width: min(52vw, 560px);
         min-width: 360px;
         padding: 8px 10px;
@@ -4205,7 +4239,12 @@
         });
 
         if ($articleDetailModal.length) {
+            if (!$articleDetailModal.parent().is('body')) {
+                $articleDetailModal.appendTo('body');
+            }
+
             $articleDetailModal.on('shown.bs.modal', function() {
+                $('body').addClass('article-detail-modal-open');
                 if (articleDetailState.mode === 'edit') {
                     window.setTimeout(function() {
                         $articleDetailLibelle.trigger('focus');
@@ -4214,6 +4253,7 @@
             });
 
             $articleDetailModal.on('hidden.bs.modal', function() {
+                $('body').removeClass('article-detail-modal-open');
                 articleDetailState.$row = null;
                 articleDetailState.imageFile = null;
                 articleDetailState.mode = 'view';
@@ -4300,6 +4340,10 @@
                 resetQuickCreateImageState();
                 if (window.hideLoading) {
                     window.hideLoading();
+                }
+                // Clean up orphaned backdrop
+                if (typeof window.syncSingleModalBackdrop === 'function') {
+                    window.syncSingleModalBackdrop(true);
                 }
             });
 

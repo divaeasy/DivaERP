@@ -10,11 +10,13 @@ use App\Entity\Fournisseur;
 use App\Entity\Lignepiece;
 use App\Entity\Prospects;
 use App\Entity\Reglement;
+use App\Entity\TiersInterne;
 use App\Entity\User;
 use App\Form\EntetePieceFormType;
 use App\Form\SearchPieceFormType;
 use App\Model\SearchPiece;
 use App\Repository\EntetepieceRepository;
+use App\Service\CodeOperationService;
 use Doctrine\Persistence\ManagerRegistry;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,7 +32,10 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('piece')]
 class EntetePController extends AbstractController
 {
-    public function __construct(private ManagerRegistry $doctrine2)
+    public function __construct(
+        private ManagerRegistry $doctrine2,
+        private CodeOperationService $codeOperationService,
+    )
     {
     }
 
@@ -61,6 +66,22 @@ class EntetePController extends AbstractController
             'Fournisseur',
             'entetepiece.fournisseur_list',
             'Fournisseur'
+        );
+    }
+
+    #[Route('/interne', name: 'entetepiece.interne_list')]
+    public function internePieces(Request $request, EntetepieceRepository $entetepieceRepository): Response
+    {
+        if (!$this->canManageInternalPieces()) {
+            throw $this->createAccessDeniedException('La creation et la consultation des pieces internes sont reservees aux roles Admin ou Comptable.');
+        }
+
+        return $this->renderPieceList(
+            $request,
+            $entetepieceRepository,
+            'Interne',
+            'entetepiece.interne_list',
+            'Interne'
         );
     }
 
@@ -108,6 +129,9 @@ class EntetePController extends AbstractController
     public function addEntetePiece(ManagerRegistry $doctrine, Request $request, int $id): Response
     {
         $origin = $this->resolvePieceOriginToken((string) $request->query->get('origin', ''));
+        if ($origin === 'interne' && !$this->canManageInternalPieces()) {
+            throw $this->createAccessDeniedException('La creation des pieces internes est reservee aux roles Admin ou Comptable.');
+        }
         $backRoute = $this->resolvePieceListRoute($origin);
 
         $repository = $doctrine->getRepository(Entetepiece::class);
@@ -130,6 +154,8 @@ class EntetePController extends AbstractController
             $entetepiece->setStatut('Brouillon');
             if ($origin === 'fournisseur') {
                 $entetepiece->setTypet('Fournisseur');
+            } elseif ($origin === 'interne') {
+                $entetepiece->setTypet('Interne');
             }
             if ($currentDossier !== null) {
                 $entetepiece->setDossier($currentDossier);
@@ -142,6 +168,9 @@ class EntetePController extends AbstractController
             }
         } else {
             $lignepieces = $repositoryLignes->findBy(['piece' => $entetepiece]);
+            if (in_array($this->normalizeTierType($entetepiece->getTypet()), ['interne', 'tiersinterne'], true) && !$this->canManageInternalPieces()) {
+                throw $this->createAccessDeniedException('La gestion des pieces internes est reservee aux roles Admin ou Comptable.');
+            }
         }
 
         $originalType = $new ? null : $entetepiece->getType();
@@ -161,6 +190,11 @@ class EntetePController extends AbstractController
         $entetepiece->doctrine = $doctrine;
         $entetepiece->user = $this->getUser();
         $entetepiece->setResolvedTierName($entetepiece->getTierName($doctrine));
+        if ($entetepiece->getCodeOperation() === null) {
+            $entetepiece->setCodeOperation(
+                $this->codeOperationService->resolveCodeOperationForTierType($entetepiece->getTypet(), $entetepiece->getType())
+            );
+        }
 
         $form = $this->createForm(EntetePieceFormType::class, $entetepiece, [
             'read_only' => $isReadOnly,
@@ -173,8 +207,16 @@ class EntetePController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if (in_array($this->normalizeTierType($entetepiece->getTypet()), ['interne', 'tiersinterne'], true) && !$this->canManageInternalPieces()) {
+                $this->addFlash('error', 'La creation des pieces internes est reservee aux roles Admin ou Comptable.');
+
+                return $this->redirectToRoute($backRoute);
+            }
+
             if ($new && $origin === 'fournisseur') {
                 $entetepiece->setTypet('Fournisseur');
+            } elseif ($new && $origin === 'interne') {
+                $entetepiece->setTypet('Interne');
             }
 
             if (!$new && $originalType !== null && $entetepiece->getType() !== $originalType) {
@@ -217,6 +259,38 @@ class EntetePController extends AbstractController
                 }
             }
 
+            $hasTierDestinationError = false;
+            $normalizedTierType = $this->normalizeTierType($entetepiece->getTypet());
+            if (!in_array($normalizedTierType, ['interne', 'tiersinterne'], true)) {
+                $entetepiece->setTierDestination(null);
+            } elseif (!$entetepiece->getTierDestination() instanceof TiersInterne) {
+                $form->get('tierDestination')->addError(new FormError('Le tiers destination est obligatoire pour une piece interne.'));
+                $hasTierDestinationError = true;
+            }
+
+            $hasOperationError = false;
+            $selectedOperation = $entetepiece->getCodeOperation();
+            $requiresManualOperation = $this->codeOperationService->needsManualCodeOperationChoice($entetepiece->getTypet(), $entetepiece->getType());
+            if ($selectedOperation === null && !$requiresManualOperation) {
+                $selectedOperation = $this->codeOperationService->resolveCodeOperationForTierType($entetepiece->getTypet(), $entetepiece->getType());
+                $entetepiece->setCodeOperation($selectedOperation);
+            }
+
+            if ($selectedOperation === null && $requiresManualOperation) {
+                $form->get('codeOperation')->addError(new FormError('Veuillez selectionner un code operation.'));
+                $hasOperationError = true;
+            } elseif ($selectedOperation === null) {
+                $form->get('codeOperation')->addError(new FormError('Aucun code operation actif ne correspond au type de tiers.'));
+                $hasOperationError = true;
+            } elseif (!$this->codeOperationService->isOperationAllowedForTierType($selectedOperation, $entetepiece->getTypet(), $entetepiece->getType())) {
+                $form->get('codeOperation')->addError(new FormError('Le code operation selectionne ne correspond pas au type de tiers.'));
+                $hasOperationError = true;
+            }
+
+            if ($hasOperationError) {
+                $this->addFlash('warning', 'Veuillez selectionner un code operation valide.');
+            }
+
             $requestedStatus = (string) ($entetepiece->getStatut() ?? 'Brouillon');
             $statusCheck = $this->validateStatusProgression(
                 $originalStatus,
@@ -225,7 +299,9 @@ class EntetePController extends AbstractController
                 $lineStats['invalidLineCount']
             );
 
-            if (!$statusCheck['allowed']) {
+            if ($hasOperationError || $hasTierDestinationError) {
+                // Keep form errors and render the page again.
+            } elseif (!$statusCheck['allowed']) {
                 $form->get('statut')->addError(new FormError((string) $statusCheck['reason']));
                 $this->addFlash('warning', (string) $statusCheck['reason']);
             } else {
@@ -317,6 +393,8 @@ class EntetePController extends AbstractController
         $newPiece->setType($targetType);
         $newPiece->setTypet($piece->getTypet() ?? 'Client');
         $newPiece->setTierId($piece->getTierId());
+        $newPiece->setCodeOperation($piece->getCodeOperation());
+        $newPiece->setTierDestination($piece->getTierDestination());
         $newPiece->setDossier($piece->getDossier());
         $newPiece->setDevise($piece->getDevise());
         $newPiece->setReglement($piece->getReglement());
@@ -341,6 +419,7 @@ class EntetePController extends AbstractController
             $copiedLine->setPub((float) ($sourceLine->getPub() ?? 0));
             $copiedLine->setRemise($sourceLine->getRemise());
             $copiedLine->setMontant((float) ($sourceLine->getMontant() ?? 0));
+            $copiedLine->setSens($sourceLine->getSens() ?? $this->codeOperationService->resolveLineSensFromPiece($newPiece));
             $newAmount += (float) ($sourceLine->getMontant() ?? 0);
             $entityManager->persist($copiedLine);
         }
@@ -390,6 +469,10 @@ class EntetePController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Type de tiers invalide.'], 422);
         }
 
+        if (in_array($this->normalizeTierType($tierType), ['interne', 'tiersinterne'], true) && !$this->canManageInternalPieces()) {
+            return $this->json(['success' => false, 'message' => 'La creation des pieces internes est reservee aux roles Admin ou Comptable.'], 403);
+        }
+
         $tierIdRaw = trim((string) $request->request->get('tierId', ''));
         if ($tierIdRaw === '' || !ctype_digit($tierIdRaw)) {
             return $this->json(['success' => false, 'message' => 'Le tiers est obligatoire.'], 422);
@@ -406,6 +489,51 @@ class EntetePController extends AbstractController
         ]);
         if ($tier === null) {
             return $this->json(['success' => false, 'message' => 'Le tiers selectionne est introuvable.'], 422);
+        }
+
+        $codeOperation = null;
+        $codeOperationIdRaw = trim((string) $request->request->get('codeOperationId', ''));
+        $availableOperations = $this->codeOperationService->getActiveForPiece($tierType, $pieceType);
+        if ($availableOperations === []) {
+            return $this->json(['success' => false, 'message' => 'Aucun code operation actif ne correspond a ce type de piece.'], 422);
+        }
+        $requiresManualOperation = $this->codeOperationService->needsManualCodeOperationChoice($tierType, $pieceType);
+        if ($requiresManualOperation && $codeOperationIdRaw === '') {
+            return $this->json(['success' => false, 'message' => 'Veuillez selectionner un code operation.'], 422);
+        }
+
+        if ($codeOperationIdRaw !== '') {
+            if (!ctype_digit($codeOperationIdRaw)) {
+                return $this->json(['success' => false, 'message' => 'Code operation invalide.'], 422);
+            }
+            $codeOperation = $this->codeOperationService->resolveCodeOperationByIdForTierType((int) $codeOperationIdRaw, $tierType, $pieceType);
+            if ($codeOperation === null) {
+                return $this->json(['success' => false, 'message' => 'Le code operation selectionne est invalide pour ce type de piece.'], 422);
+            }
+        } else {
+            $codeOperation = $this->codeOperationService->resolveCodeOperationForTierType($tierType, $pieceType);
+        }
+
+        if ($codeOperation === null) {
+            return $this->json(['success' => false, 'message' => 'Aucun code operation actif ne correspond a ce type de piece.'], 422);
+        }
+
+        $tierDestination = null;
+        if (in_array($this->normalizeTierType($tierType), ['interne', 'tiersinterne'], true)) {
+            $tierDestinationIdRaw = trim((string) $request->request->get('tierDestinationId', ''));
+            if ($tierDestinationIdRaw === '') {
+                return $this->json(['success' => false, 'message' => 'Le tiers destination est obligatoire pour une piece interne.'], 422);
+            }
+            if (!ctype_digit($tierDestinationIdRaw)) {
+                return $this->json(['success' => false, 'message' => 'Destination interne invalide.'], 422);
+            }
+            $tierDestination = $doctrine->getRepository(TiersInterne::class)->findOneBy([
+                'id' => (int) $tierDestinationIdRaw,
+                'dossier' => $currentDossier,
+            ]);
+            if (!$tierDestination instanceof TiersInterne) {
+                return $this->json(['success' => false, 'message' => 'Destination interne introuvable.'], 422);
+            }
         }
 
         $pieceRef = trim((string) $request->request->get('pieceref', ''));
@@ -477,6 +605,8 @@ class EntetePController extends AbstractController
         $piece->setType($pieceType);
         $piece->setTypet($tierType);
         $piece->setTierId((int) $tierIdRaw);
+        $piece->setCodeOperation($codeOperation);
+        $piece->setTierDestination($tierDestination);
         $piece->setPieceno($this->getAndIncrementDossierCounter($pieceType, $currentDossier));
         $piece->setPieceref($pieceRef !== '' ? $pieceRef : null);
         $piece->setDevise($devise instanceof Devises ? $devise : null);
@@ -576,6 +706,10 @@ class EntetePController extends AbstractController
                 $errors[] = sprintf('Ligne %d: type de tiers invalide.', $lineNumber);
                 continue;
             }
+            if (in_array($this->normalizeTierType($tierType), ['interne', 'tiersinterne'], true) && !$this->canManageInternalPieces()) {
+                $errors[] = sprintf('Ligne %d: creation interne reservee aux roles Admin ou Comptable.', $lineNumber);
+                continue;
+            }
 
             $tierClass = $this->resolveTierClass($tierType);
             if ($tierClass === null) {
@@ -590,6 +724,60 @@ class EntetePController extends AbstractController
             if ($tier === null) {
                 $errors[] = sprintf('Ligne %d: tiers introuvable dans le dossier.', $lineNumber);
                 continue;
+            }
+
+            $availableOperations = $this->codeOperationService->getActiveForPiece($tierType, $pieceType);
+            if ($availableOperations === []) {
+                $errors[] = sprintf('Ligne %d: aucun code operation actif pour ce type de piece.', $lineNumber);
+                continue;
+            }
+
+            $codeOperationIdRaw = trim((string) ($normalized['codeoperationid'] ?? ''));
+            $requiresManualOperation = $this->codeOperationService->needsManualCodeOperationChoice($tierType, $pieceType);
+            if ($requiresManualOperation && $codeOperationIdRaw === '') {
+                $errors[] = sprintf('Ligne %d: codeOperationId obligatoire.', $lineNumber);
+                continue;
+            }
+
+            if ($codeOperationIdRaw !== '') {
+                if (!ctype_digit($codeOperationIdRaw)) {
+                    $errors[] = sprintf('Ligne %d: codeOperationId invalide.', $lineNumber);
+                    continue;
+                }
+
+                $codeOperation = $this->codeOperationService->resolveCodeOperationByIdForTierType((int) $codeOperationIdRaw, $tierType, $pieceType);
+                if ($codeOperation === null) {
+                    $errors[] = sprintf('Ligne %d: code operation invalide pour ce type de piece.', $lineNumber);
+                    continue;
+                }
+            } else {
+                $codeOperation = $this->codeOperationService->resolveCodeOperationForTierType($tierType, $pieceType);
+                if ($codeOperation === null) {
+                    $errors[] = sprintf('Ligne %d: aucun code operation actif pour ce type de tiers.', $lineNumber);
+                    continue;
+                }
+            }
+
+            $tierDestination = null;
+            if (in_array($this->normalizeTierType($tierType), ['interne', 'tiersinterne'], true)) {
+                $tierDestinationIdRaw = trim((string) ($normalized['tierdestinationid'] ?? ''));
+                if ($tierDestinationIdRaw === '') {
+                    $errors[] = sprintf('Ligne %d: tierDestinationId obligatoire pour une piece interne.', $lineNumber);
+                    continue;
+                }
+                if (!ctype_digit($tierDestinationIdRaw)) {
+                    $errors[] = sprintf('Ligne %d: tierDestinationId invalide.', $lineNumber);
+                    continue;
+                }
+
+                $tierDestination = $doctrine->getRepository(TiersInterne::class)->findOneBy([
+                    'id' => (int) $tierDestinationIdRaw,
+                    'dossier' => $currentDossier,
+                ]);
+                if (!$tierDestination instanceof TiersInterne) {
+                    $errors[] = sprintf('Ligne %d: destination interne introuvable.', $lineNumber);
+                    continue;
+                }
             }
 
             $status = $this->resolveEditableStatusValue((string) ($normalized['statut'] ?? 'Brouillon'));
@@ -621,6 +809,8 @@ class EntetePController extends AbstractController
             $piece->setType($pieceType);
             $piece->setTypet($tierType);
             $piece->setTierId((int) $tierIdRaw);
+            $piece->setCodeOperation($codeOperation);
+            $piece->setTierDestination($tierDestination);
             $piece->setPieceno($this->getAndIncrementDossierCounter($pieceType, $currentDossier));
             $piece->setPieceref(($normalized['pieceref'] ?? '') !== '' ? (string) $normalized['pieceref'] : null);
             $piece->setDevise($currentDossier->getDevise());
@@ -708,6 +898,9 @@ class EntetePController extends AbstractController
         if ($tierType === null) {
             return $this->json(['success' => false, 'message' => 'Type de tiers invalide.'], 422);
         }
+        if (in_array($this->normalizeTierType($tierType), ['interne', 'tiersinterne'], true) && !$this->canManageInternalPieces()) {
+            return $this->json(['success' => false, 'message' => 'La creation des pieces internes est reservee aux roles Admin ou Comptable.'], 403);
+        }
 
         $tierIdRaw = trim((string) $request->request->get('tierId', (string) ($piece->getTierId() ?? '')));
         if ($tierIdRaw === '' || !ctype_digit($tierIdRaw)) {
@@ -725,6 +918,55 @@ class EntetePController extends AbstractController
         ]);
         if ($tier === null) {
             return $this->json(['success' => false, 'message' => 'Le tiers selectionne est introuvable.'], 422);
+        }
+
+        $codeOperation = null;
+        $codeOperationIdRaw = trim((string) $request->request->get('codeOperationId', ''));
+        $availableOperations = $this->codeOperationService->getActiveForPiece($tierType, $resolvedPieceType);
+        if ($availableOperations === []) {
+            return $this->json(['success' => false, 'message' => 'Aucun code operation actif ne correspond a ce type de piece.'], 422);
+        }
+        $requiresManualOperation = $this->codeOperationService->needsManualCodeOperationChoice($tierType, $resolvedPieceType);
+        if ($requiresManualOperation && $codeOperationIdRaw === '') {
+            return $this->json(['success' => false, 'message' => 'Veuillez selectionner un code operation.'], 422);
+        }
+
+        if ($codeOperationIdRaw !== '') {
+            if (!ctype_digit($codeOperationIdRaw)) {
+                return $this->json(['success' => false, 'message' => 'Code operation invalide.'], 422);
+            }
+
+            $codeOperation = $this->codeOperationService->resolveCodeOperationByIdForTierType((int) $codeOperationIdRaw, $tierType, $resolvedPieceType);
+            if ($codeOperation === null) {
+                return $this->json(['success' => false, 'message' => 'Le code operation selectionne est invalide pour ce type de tiers.'], 422);
+            }
+        } else {
+            $codeOperation = $piece->getCodeOperation();
+            if ($codeOperation === null || !$this->codeOperationService->isOperationAllowedForTierType($codeOperation, $tierType, $resolvedPieceType)) {
+                $codeOperation = $this->codeOperationService->resolveCodeOperationForTierType($tierType, $resolvedPieceType);
+            }
+        }
+
+        if ($codeOperation === null) {
+            return $this->json(['success' => false, 'message' => 'Aucun code operation actif ne correspond a ce type de piece.'], 422);
+        }
+
+        $tierDestination = null;
+        if (in_array($this->normalizeTierType($tierType), ['interne', 'tiersinterne'], true)) {
+            $tierDestinationIdRaw = trim((string) $request->request->get('tierDestinationId', (string) ($piece->getTierDestination()?->getId() ?? '')));
+            if ($tierDestinationIdRaw === '') {
+                return $this->json(['success' => false, 'message' => 'Le tiers destination est obligatoire pour une piece interne.'], 422);
+            }
+            if (!ctype_digit($tierDestinationIdRaw)) {
+                return $this->json(['success' => false, 'message' => 'Destination interne invalide.'], 422);
+            }
+            $tierDestination = $doctrine->getRepository(TiersInterne::class)->findOneBy([
+                'id' => (int) $tierDestinationIdRaw,
+                'dossier' => $currentDossier,
+            ]);
+            if (!$tierDestination instanceof TiersInterne) {
+                return $this->json(['success' => false, 'message' => 'Destination interne introuvable.'], 422);
+            }
         }
 
         $pieceRef = trim((string) $request->request->get('pieceref', (string) ($piece->getPieceref() ?? '')));
@@ -794,6 +1036,8 @@ class EntetePController extends AbstractController
 
         $piece->setTypet($tierType);
         $piece->setTierId((int) $tierIdRaw);
+        $piece->setCodeOperation($codeOperation);
+        $piece->setTierDestination($tierDestination);
         $piece->setPieceref($pieceRef !== '' ? $pieceRef : null);
         $piece->setRemise($remise);
         $piece->setStatut($status);
@@ -937,6 +1181,13 @@ class EntetePController extends AbstractController
             'label' => $value,
         ], $this->resolveAllowedTierTypesForOrigin($originToken));
 
+        $defaultTierType = $inlineTierTypes[0]['value'] ?? null;
+        $inlineCodeOperations = array_map(static fn ($operation): array => [
+            'id' => (int) ($operation->getId() ?? 0),
+            'label' => (string) ($operation->getLibelle() ?? ''),
+            'sens' => (string) $operation->getSens()->label(),
+        ], $this->codeOperationService->getActiveForPiece(is_string($defaultTierType) ? $defaultTierType : null, 'Facture'));
+
         $inlinePieceTypes = array_map(static fn (string $value): array => [
             'value' => $value,
             'label' => $value,
@@ -946,6 +1197,9 @@ class EntetePController extends AbstractController
             'value' => $value,
             'label' => $value,
         ], ['Brouillon', 'Active', 'Validee']);
+
+        $routeParams = $request->query->all();
+        unset($routeParams['page']);
 
         return $this->render('entetepiece/index.html.twig', [
             'search' => $searchForm->createView(),
@@ -963,8 +1217,10 @@ class EntetePController extends AbstractController
             'inlineDevises' => $inlineDevises,
             'inlineReglements' => $inlineReglements,
             'inlineTierTypes' => $inlineTierTypes,
+            'inlineCodeOperations' => $inlineCodeOperations,
             'inlinePieceTypes' => $inlinePieceTypes,
             'inlinePieceStatuses' => $inlinePieceStatuses,
+            'routeParams' => $routeParams,
         ]);
     }
 
@@ -990,24 +1246,24 @@ class EntetePController extends AbstractController
             return null;
         }
 
-        if (!in_array($tierType, ['client', 'prospect', 'fournisseur'], true)) {
+        if (!in_array($tierType, ['client', 'prospect', 'fournisseur', 'tiersinterne', 'interne'], true)) {
             $form->get('typet')->addError(new FormError('Le type de tiers est invalide.'));
-            $this->addFlash('warning', 'Le type de tiers sélectionné est invalide.');
+            $this->addFlash('warning', 'Le type de tiers sÃ©lectionnÃ© est invalide.');
 
             return false;
         }
 
         if ($piece->getTierId() === null) {
-            $form->get('tierSelector')->addError(new FormError('Veuillez sélectionner un tiers.'));
-            $this->addFlash('warning', 'Veuillez sélectionner un tiers.');
+            $form->get('tierSelector')->addError(new FormError('Veuillez sÃ©lectionner un tiers.'));
+            $this->addFlash('warning', 'Veuillez sÃ©lectionner un tiers.');
 
             return false;
         }
 
         $tier = $this->resolveTierEntity($piece);
         if ($tier === null) {
-            $form->get('tierSelector')->addError(new FormError('Le tiers sélectionné est introuvable dans le dossier courant.'));
-            $this->addFlash('warning', 'Le tiers sélectionné est introuvable dans le dossier courant.');
+            $form->get('tierSelector')->addError(new FormError('Le tiers sÃ©lectionnÃ© est introuvable dans le dossier courant.'));
+            $this->addFlash('warning', 'Le tiers sÃ©lectionnÃ© est introuvable dans le dossier courant.');
 
             return false;
         }
@@ -1073,6 +1329,7 @@ class EntetePController extends AbstractController
             'client' => Clients::class,
             'prospect' => Prospects::class,
             'fournisseur' => Fournisseur::class,
+            'tiersinterne', 'interne' => TiersInterne::class,
             default => null,
         };
     }
@@ -1125,6 +1382,7 @@ class EntetePController extends AbstractController
     {
         return match ($this->normalizeToken($origin)) {
             'fournisseur' => 'fournisseur',
+            'interne', 'tierinterne', 'tiersinterne' => 'interne',
             'client', 'prospect' => 'client',
             default => null,
         };
@@ -1134,6 +1392,7 @@ class EntetePController extends AbstractController
     {
         return match ($listRoute) {
             'entetepiece.fournisseur_list' => 'fournisseur',
+            'entetepiece.interne_list' => 'interne',
             'entetepiece.client_list', 'entetepiece.list' => 'client',
             default => null,
         };
@@ -1141,7 +1400,11 @@ class EntetePController extends AbstractController
 
     private function resolvePieceListRoute(?string $origin): string
     {
-        return $origin === 'fournisseur' ? 'entetepiece.fournisseur_list' : 'entetepiece.client_list';
+        return match ($origin) {
+            'fournisseur' => 'entetepiece.fournisseur_list',
+            'interne' => 'entetepiece.interne_list',
+            default => 'entetepiece.client_list',
+        };
     }
 
     /**
@@ -1277,17 +1540,10 @@ class EntetePController extends AbstractController
     private function normalizeToken(?string $value): string
     {
         $normalized = mb_strtolower(trim((string) $value), 'UTF-8');
-        $normalized = strtr($normalized, [
-            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ä' => 'a', 'ã' => 'a', 'å' => 'a',
-            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
-            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
-            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o',
-            'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
-            'ý' => 'y', 'ÿ' => 'y',
-            'ç' => 'c',
-            'œ' => 'oe',
-            'æ' => 'ae',
-        ]);
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $normalized);
+        if (is_string($ascii) && $ascii !== '') {
+            $normalized = strtolower($ascii);
+        }
 
         return (string) preg_replace('/[^a-z0-9]/', '', $normalized);
     }
@@ -1308,9 +1564,11 @@ class EntetePController extends AbstractController
      */
     private function resolveAllowedTierTypesForOrigin(?string $origin): array
     {
-        return $origin === 'fournisseur'
-            ? ['Fournisseur']
-            : ['Client', 'Prospect'];
+        return match ($origin) {
+            'fournisseur' => ['Fournisseur'],
+            'interne' => ['Interne'],
+            default => ['Client', 'Prospect'],
+        };
     }
 
     /**
@@ -1340,6 +1598,11 @@ class EntetePController extends AbstractController
             'validee', 'valide' => 'Validee',
             default => null,
         };
+    }
+
+    private function canManageInternalPieces(): bool
+    {
+        return $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_COMPTABLE');
     }
 
     /**
@@ -1379,6 +1642,11 @@ class EntetePController extends AbstractController
             'type' => (string) ($piece->getType() ?? ''),
             'typet' => (string) ($piece->getTypet() ?? ''),
             'tierId' => $piece->getTierId() !== null ? (int) $piece->getTierId() : null,
+            'tierDestinationId' => $piece->getTierDestination()?->getId(),
+            'tierDestinationLabel' => $piece->getTierDestination()?->getNom(),
+            'codeOperationId' => $piece->getCodeOperation()?->getId(),
+            'codeOperationLabel' => $piece->getCodeOperation()?->getLibelle(),
+            'sens' => $piece->getCodeOperation()?->getSens()->label(),
             'tier' => $tierLabel,
             'pieceno' => (int) ($piece->getPieceno() ?? 0),
             'pieceref' => (string) ($piece->getPieceref() ?? ''),

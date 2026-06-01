@@ -69,6 +69,19 @@
         </div>
     </div>
 
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.codeOperation, 'Code operation', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(entetepiece.codeOperation, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {% if not isReadOnly|default(false) %}
+                    <div class="invalid-feedback">Le code operation est obligatoire</div>
+                    {{ form_errors(entetepiece.codeOperation) }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
     <div class="card-header-custom mt-4">
         <h5><i class="fas fa-users mr-2"></i>Informations tiers</h5>
     </div>
@@ -83,6 +96,20 @@
                     {{ form_errors(entetepiece.tierSelector) }}
                 {% endif %}
             </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(entetepiece.tierDestination, 'Tiers destination (interne)') }}
+                {{ form_widget(entetepiece.tierDestination, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {% if not isReadOnly|default(false) %}
+                    {{ form_errors(entetepiece.tierDestination) }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
         </div>
         <div class="col-md-6">
             <div class="form-group">
@@ -480,7 +507,7 @@
 
             function typeRequiresTierSelection() {
                 var normalizedType = normalizeTierType($tierType.val());
-                return normalizedType === 'client' || normalizedType === 'prospect' || normalizedType === 'fournisseur';
+                return normalizedType === 'client' || normalizedType === 'prospect' || normalizedType === 'fournisseur' || normalizedType === 'tiersinterne' || normalizedType === 'interne';
             }
 
             function syncTierIdField() {

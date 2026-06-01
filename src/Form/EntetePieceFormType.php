@@ -3,12 +3,16 @@
 namespace App\Form;
 
 use App\Entity\Clients;
+use App\Entity\CodeOperation;
 use App\Entity\Devises;
 use App\Entity\Entetepiece;
 use App\Entity\Fournisseur;
 use App\Entity\Prospects;
 use App\Entity\Reglement;
+use App\Entity\TiersInterne;
 use App\Entity\User;
+use App\Repository\TiersInterneRepository;
+use App\Service\CodeOperationService;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -25,6 +29,7 @@ class EntetePieceFormType extends AbstractType
     public function __construct(
         private Security $security,
         private ManagerRegistry $doctrine,
+        private CodeOperationService $codeOperationService,
     ) {
     }
 
@@ -34,7 +39,7 @@ class EntetePieceFormType extends AbstractType
         $isEdit = $piece instanceof Entetepiece && null !== $piece->getId();
         $readOnly = (bool) ($options['read_only'] ?? false);
         $tierOrigin = $this->normalizeTierOrigin($options['tier_origin'] ?? null);
-        $isNewFournisseurOrigin = !$isEdit && $tierOrigin === 'fournisseur';
+        $isNewFixedTierOrigin = !$isEdit && in_array($tierOrigin, ['fournisseur', 'interne'], true);
         $currentDossier = $this->getCurrentDossier();
         $tierTypeChoices = $this->buildTierTypeChoices($tierOrigin, $isEdit);
         $initialTierType = $piece instanceof Entetepiece ? $piece->getTypet() : null;
@@ -58,10 +63,10 @@ class EntetePieceFormType extends AbstractType
             ])
             ->add('typet', ChoiceType::class, [
                 'choices' => $tierTypeChoices,
-                'placeholder' => ($isEdit || $isNewFournisseurOrigin) ? false : 'Selectionner un type de tiers',
+                'placeholder' => ($isEdit || $isNewFixedTierOrigin) ? false : 'Selectionner un type de tiers',
                 'required' => true,
                 'label' => 'Type de tiers',
-                'disabled' => $readOnly || $isNewFournisseurOrigin,
+                'disabled' => $readOnly || $isNewFixedTierOrigin,
                 'attr' => [
                     'class' => 'js-tier-type',
                 ],
@@ -71,6 +76,23 @@ class EntetePieceFormType extends AbstractType
                 'attr' => [
                     'class' => 'js-tier-id-field',
                 ],
+            ])
+            ->add('tierDestination', EntityType::class, [
+                'class' => TiersInterne::class,
+                'choice_label' => 'nom',
+                'required' => false,
+                'placeholder' => 'Selectionner une destination interne',
+                'label' => 'Tiers destination (interne)',
+                'disabled' => $readOnly,
+                'query_builder' => function (TiersInterneRepository $repository) use ($currentDossier) {
+                    $qb = $repository->createQueryBuilder('t')->orderBy('t.nom', 'ASC');
+                    if ($currentDossier !== null) {
+                        $qb->andWhere('t.dossier = :dossier')->setParameter('dossier', $currentDossier);
+                    } else {
+                        $qb->andWhere('1 = 0');
+                    }
+                    return $qb;
+                },
             ])
             ->add('tierSelector', ChoiceType::class, [
                 'mapped' => false,
@@ -136,6 +158,15 @@ class EntetePieceFormType extends AbstractType
                 'disabled' => $readOnly,
             ]);
 
+        $this->addCodeOperationField(
+            $builder,
+            $piece instanceof Entetepiece ? $piece->getTypet() : null,
+            $piece instanceof Entetepiece ? $piece->getType() : null,
+            $piece instanceof Entetepiece ? $piece->getCodeOperation() : null,
+            $readOnly,
+            $isEdit
+        );
+
         $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) use ($currentDossier, $isEdit, $readOnly): void {
             $data = $event->getData();
             if (!$data instanceof Entetepiece) {
@@ -157,6 +188,15 @@ class EntetePieceFormType extends AbstractType
                     'data-tier-reglements' => json_encode($this->buildTierReglementMap($tierChoices)),
                 ],
             ]);
+
+            $this->addCodeOperationField(
+                $event->getForm(),
+                $data->getTypet(),
+                $data->getType(),
+                $data->getCodeOperation(),
+                $readOnly,
+                $isEdit
+            );
         });
 
         $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event) use ($currentDossier, $isEdit, $readOnly): void {
@@ -166,6 +206,7 @@ class EntetePieceFormType extends AbstractType
             }
 
             $typet = (string) ($data['typet'] ?? $event->getForm()->get('typet')->getData() ?? '');
+            $pieceType = (string) ($data['type'] ?? $event->getForm()->get('type')->getData() ?? 'Facture');
             $tierChoices = $this->getTierChoices($currentDossier, $typet);
             $selectedTier = trim((string) ($data['tierSelector'] ?? $data['tierId'] ?? ''));
 
@@ -186,6 +227,39 @@ class EntetePieceFormType extends AbstractType
             $data['tierId'] = $selectedTier !== '' && ctype_digit($selectedTier)
                 ? (int) $selectedTier
                 : null;
+
+            $selectedCodeOperationId = trim((string) ($data['codeOperation'] ?? ''));
+            if ($selectedCodeOperationId !== '' && ctype_digit($selectedCodeOperationId)) {
+                $selectedOperation = $this->doctrine->getRepository(CodeOperation::class)->find((int) $selectedCodeOperationId);
+                if ($selectedOperation instanceof CodeOperation) {
+                    $this->addCodeOperationField(
+                        $event->getForm(),
+                        $typet,
+                        $pieceType,
+                        $selectedOperation,
+                        $readOnly,
+                        $isEdit
+                    );
+                } else {
+                    $this->addCodeOperationField(
+                        $event->getForm(),
+                        $typet,
+                        $pieceType,
+                        null,
+                        $readOnly,
+                        $isEdit
+                    );
+                }
+            } else {
+                $this->addCodeOperationField(
+                    $event->getForm(),
+                    $typet,
+                    $pieceType,
+                    null,
+                    $readOnly,
+                    $isEdit
+                );
+            }
 
             $event->setData($data);
         });
@@ -219,7 +293,7 @@ class EntetePieceFormType extends AbstractType
         }
 
         $normalizedType = $this->normalizeTierType($typet);
-        if (!in_array($normalizedType, ['client', 'prospect', 'fournisseur'], true)) {
+        if (!in_array($normalizedType, ['client', 'prospect', 'fournisseur', 'tiersinterne', 'interne'], true)) {
             return [];
         }
 
@@ -227,6 +301,7 @@ class EntetePieceFormType extends AbstractType
             'client' => Clients::class,
             'prospect' => Prospects::class,
             'fournisseur' => Fournisseur::class,
+            'tiersinterne', 'interne' => TiersInterne::class,
             default => null,
         };
 
@@ -317,17 +392,10 @@ class EntetePieceFormType extends AbstractType
     private function normalizeTierType(?string $value): string
     {
         $normalized = mb_strtolower(trim((string) $value), 'UTF-8');
-        $normalized = strtr($normalized, [
-            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ä' => 'a', 'ã' => 'a', 'å' => 'a',
-            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
-            'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
-            'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o',
-            'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
-            'ý' => 'y', 'ÿ' => 'y',
-            'ç' => 'c',
-            'œ' => 'oe',
-            'æ' => 'ae',
-        ]);
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $normalized);
+        if (is_string($ascii) && $ascii !== '') {
+            $normalized = strtolower($ascii);
+        }
 
         return (string) preg_replace('/[^a-z0-9]/', '', $normalized);
     }
@@ -342,6 +410,7 @@ class EntetePieceFormType extends AbstractType
                 'Client' => 'Client',
                 'Prospect' => 'Prospect',
                 'Fournisseur' => 'Fournisseur',
+                'Interne' => 'Interne',
                 'VAT' => 'VAT',
             ];
         }
@@ -359,10 +428,17 @@ class EntetePieceFormType extends AbstractType
             ];
         }
 
+        if ($tierOrigin === 'interne') {
+            return [
+                'Interne' => 'Interne',
+            ];
+        }
+
         return [
             'Client' => 'Client',
             'Prospect' => 'Prospect',
             'Fournisseur' => 'Fournisseur',
+            'Interne' => 'Interne',
             'VAT' => 'VAT',
         ];
     }
@@ -371,8 +447,46 @@ class EntetePieceFormType extends AbstractType
     {
         return match ($this->normalizeTierType($value)) {
             'fournisseur' => 'fournisseur',
+            'interne', 'tierinterne', 'tiersinterne' => 'interne',
             'client', 'prospect' => 'client',
             default => null,
         };
+    }
+
+    private function addCodeOperationField(
+        FormBuilderInterface|\Symfony\Component\Form\FormInterface $form,
+        ?string $tierType,
+        ?string $pieceType,
+        ?CodeOperation $selected,
+        bool $readOnly,
+        bool $isEdit
+    ): void {
+        $operations = $this->codeOperationService->getActiveForPiece($tierType, $pieceType);
+        $selected = $selected instanceof CodeOperation ? $selected : null;
+        if (
+            $selected === null
+            && !$this->codeOperationService->needsManualCodeOperationChoice($tierType, $pieceType)
+            && count($operations) === 1
+        ) {
+            $selected = $operations[0];
+        }
+
+        $form->add('codeOperation', EntityType::class, [
+            'class' => CodeOperation::class,
+            'choices' => $operations,
+            'choice_label' => static fn (CodeOperation $operation): string => sprintf(
+                '%s (%s)',
+                (string) $operation->getLibelle(),
+                $operation->getSens()->label()
+            ),
+            'placeholder' => $isEdit ? false : 'Selectionner un code operation',
+            'required' => true,
+            'label' => 'Code operation',
+            'disabled' => $readOnly,
+            'data' => $selected,
+            'attr' => [
+                'class' => 'form-control js-example-basic-single js-code-operation',
+            ],
+        ]);
     }
 }

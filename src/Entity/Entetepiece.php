@@ -32,6 +32,13 @@ class Entetepiece
     #[ORM\Column(nullable: true)]
     private ?int $tierId = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?CodeOperation $codeOperation = null;
+
+    #[ORM\ManyToOne]
+    private ?TiersInterne $tierDestination = null;
+
     private ?string $resolvedTierName = null;
 
     #[ORM\Column]
@@ -185,6 +192,30 @@ class Entetepiece
         return $this;
     }
 
+    public function getCodeOperation(): ?CodeOperation
+    {
+        return $this->codeOperation;
+    }
+
+    public function setCodeOperation(?CodeOperation $codeOperation): static
+    {
+        $this->codeOperation = $codeOperation;
+
+        return $this;
+    }
+
+    public function getTierDestination(): ?TiersInterne
+    {
+        return $this->tierDestination;
+    }
+
+    public function setTierDestination(?TiersInterne $tierDestination): static
+    {
+        $this->tierDestination = $tierDestination;
+
+        return $this;
+    }
+
     public function getTier(?ManagerRegistry $doctrine = null): object|null
     {
         if ($this->tierId === null) {
@@ -200,6 +231,7 @@ class Entetepiece
             'client' => Clients::class,
             'prospect' => Prospects::class,
             'fournisseur' => Fournisseur::class,
+            'tiersinterne', 'interne' => TiersInterne::class,
             default => null,
         };
 

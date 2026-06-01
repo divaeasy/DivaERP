@@ -57,6 +57,7 @@ class EntetepieceRepository extends ServiceEntityRepository
     public function getSearchQueryBuilder(?SearchPiece $searchData = null, string|array|null $forcedTierType = null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('e')
+            ->leftJoin('e.codeOperation', 'co')
             ->orderBy('e.id', 'DESC');
 
         $this->applyDossierFilter($qb, 'e');
@@ -69,6 +70,18 @@ class EntetepieceRepository extends ServiceEntityRepository
         if ($searchData && !empty($searchData->statut)) {
             $qb->andWhere('e.statut LIKE :statut')
                ->setParameter('statut', "%{$searchData->statut}%");
+        }
+
+        $codeOperationId = trim((string) ($searchData?->codeOperationId ?? ''));
+        if ($codeOperationId !== '' && ctype_digit($codeOperationId)) {
+            $qb->andWhere('co.id = :codeOperationId')
+                ->setParameter('codeOperationId', (int) $codeOperationId);
+        }
+
+        $sens = trim((string) ($searchData?->sens ?? ''));
+        if ($sens !== '') {
+            $qb->andWhere('co.sens = :sens')
+                ->setParameter('sens', $sens);
         }
 
         $tierTypes = $this->resolveTierFilters($forcedTierType, $searchData);

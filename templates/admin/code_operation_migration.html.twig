@@ -1,0 +1,524 @@
+﻿{% extends 'template_oukatech.html.twig' %}
+
+{% block PageTitle %}Code op&eacute;ration{% endblock %}
+
+{% block body %}
+{% set missingCount = status.missingDefaultLabels|length %}
+{% set defaultCount = status.defaultOperations|length %}
+{% set pendingPieces = status.piecesWithoutCodeOperation %}
+{% set pendingLines = status.linesWithoutSens %}
+{% set pendingTotal = pendingPieces + pendingLines %}
+<div class="code-op-page">
+    <header class="code-op-hero">
+        <div class="code-op-hero__left">
+            <a href="{{ path('app_dash_bord') }}" class="btn-back code-op-hero__back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <p class="code-op-hero__eyebrow">R&eacute;f&eacute;rentiel comptable</p>
+                <h1 class="code-op-hero__title">Code op&eacute;ration</h1>
+                <p class="code-op-hero__subtitle">
+                    Supervisez la migration, la qualite des donnees, et lancez les corrections en automatique ou en lot.
+                </p>
+            </div>
+        </div>
+        <div class="code-op-hero__right">
+            {% if status.isMigrationComplete %}
+                <span class="code-op-status code-op-status--ok"><i class="fas fa-check"></i>Migration complete</span>
+            {% else %}
+                <span class="code-op-status code-op-status--warn"><i class="fas fa-exclamation-triangle"></i>Migration partielle</span>
+            {% endif %}
+        </div>
+    </header>
+
+    <section class="code-op-kpis">
+        <article class="code-op-kpi">
+            <span class="code-op-kpi__label">Pieces</span>
+            <strong class="code-op-kpi__value">{{ status.totalPieces }}</strong>
+            <span class="code-op-kpi__meta">{{ status.piecesWithoutCodeOperation }} sans code operation</span>
+            <div class="code-op-progress">
+                <div class="code-op-progress__bar" style="width: {{ status.pieceCompletionPercent }}%"></div>
+            </div>
+            <span class="code-op-kpi__percent">{{ status.pieceCompletionPercent }}%</span>
+        </article>
+
+        <article class="code-op-kpi">
+            <span class="code-op-kpi__label">Lignes</span>
+            <strong class="code-op-kpi__value">{{ status.totalLines }}</strong>
+            <span class="code-op-kpi__meta">{{ status.linesWithoutSens }} sans sens</span>
+            <div class="code-op-progress">
+                <div class="code-op-progress__bar" style="width: {{ status.lineCompletionPercent }}%"></div>
+            </div>
+            <span class="code-op-kpi__percent">{{ status.lineCompletionPercent }}%</span>
+        </article>
+
+        <article class="code-op-kpi">
+            <span class="code-op-kpi__label">Codes par defaut</span>
+            <strong class="code-op-kpi__value">{{ defaultCount }}/4</strong>
+            {% if missingCount > 0 %}
+                <span class="code-op-kpi__meta">{{ missingCount }} manquant(s)</span>
+            {% else %}
+                <span class="code-op-kpi__meta">Tous les codes requis sont presents</span>
+            {% endif %}
+            <div class="code-op-pill-row">
+                {% if missingCount > 0 %}
+                    <span class="code-op-pill code-op-pill--warn">A completer</span>
+                {% else %}
+                    <span class="code-op-pill code-op-pill--ok">Conforme</span>
+                {% endif %}
+            </div>
+        </article>
+    </section>
+
+    <section class="code-op-layout">
+        <div class="code-op-card">
+            <div class="code-op-card__head">
+                <h2>Codes op&eacute;ration standards</h2>
+                <p>Liste des codes utilises pour l'assignation automatique des pieces.</p>
+                <div class="code-op-card__stats">
+                    <span class="code-op-pill code-op-pill--neutral">{{ defaultCount }}/4 detectes</span>
+                    {% if missingCount > 0 %}
+                        <span class="code-op-pill code-op-pill--warn">{{ missingCount }} manquant(s)</span>
+                    {% else %}
+                        <span class="code-op-pill code-op-pill--ok">Referentiel complet</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table code-op-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Libelle</th>
+                            <th>Sens</th>
+                            <th>Actif</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in status.defaultOperations %}
+                            <tr>
+                                <td class="text-muted">#{{ item.id }}</td>
+                                <td>
+                                    <strong>{{ item.libelle }}</strong>
+                                    <div class="code-op-row-hint">
+                                        {% if item.libelle == 'Vente Standard' %}
+                                            Affecte les pieces `client`, `prospect`.
+                                        {% elseif item.libelle == 'Achat Standard' %}
+                                            Affecte les pieces `fournisseur`.
+                                        {% elseif item.libelle == 'Transfert Interne Sortie' %}
+                                            Affecte les pieces `interne`, `tiersinterne`, `tiers interne`.
+                                        {% elseif item.libelle == 'Transfert Interne Entree' %}
+                                            Utilise pour la coherence du referentiel interne.
+                                        {% else %}
+                                            Code operation standard.
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.sens == 'Entree' %}
+                                        <span class="code-op-sens code-op-sens--in"><i class="fas fa-arrow-down"></i>Entree</span>
+                                    {% else %}
+                                        <span class="code-op-sens code-op-sens--out"><i class="fas fa-arrow-up"></i>Sortie</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.is_active %}
+                                        <span class="code-op-pill code-op-pill--ok">Oui</span>
+                                    {% else %}
+                                        <span class="code-op-pill">Non</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-muted text-center py-4">Aucun code trouve.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if status.missingDefaultLabels is not empty %}
+                <div class="alert alert-warning mt-3 mb-0">
+                    <strong>Codes manquants :</strong> {{ status.missingDefaultLabels|join(', ') }}.
+                    Lancez une execution pour les creer automatiquement.
+                </div>
+            {% else %}
+                <p class="code-op-note code-op-note--success mb-0">
+                    Les 4 codes standards sont disponibles et prets pour les prochaines migrations.
+                </p>
+            {% endif %}
+        </div>
+
+        <div class="code-op-card">
+            <div class="code-op-card__head">
+                <h2>Ex&eacute;cution</h2>
+                <p>Choisissez le mode selon votre strategie de deploiement.</p>
+            </div>
+
+            <div class="code-op-run-overview">
+                <div class="code-op-run-overview__item">
+                    <span class="code-op-run-overview__label">Pieces a corriger</span>
+                    <strong>{{ pendingPieces }}</strong>
+                </div>
+                <div class="code-op-run-overview__item">
+                    <span class="code-op-run-overview__label">Lignes sans sens</span>
+                    <strong>{{ pendingLines }}</strong>
+                </div>
+                <div class="code-op-run-overview__item">
+                    <span class="code-op-run-overview__label">Total en attente</span>
+                    <strong>{{ pendingTotal }}</strong>
+                </div>
+            </div>
+
+            <div class="code-op-actions">
+                <form method="post" action="{{ path('admin.code_operation_migration_run') }}" class="code-op-action">
+                    <input type="hidden" name="_token" value="{{ csrf_token('run_code_operation_migration') }}">
+                    <input type="hidden" name="mode" value="auto">
+                    <div class="code-op-action__content">
+                        <div>
+                            <h3>Mode automatique</h3>
+                            <p>Execute la migration complete en une seule operation (recommande sur base faible ou moyenne).</p>
+                        </div>
+                        <button class="btn btn-success" type="submit" {% if pendingTotal == 0 and missingCount == 0 %}disabled{% endif %}>
+                            <i class="fas fa-bolt mr-1"></i>Lancer
+                        </button>
+                    </div>
+                </form>
+
+                <form method="post" action="{{ path('admin.code_operation_migration_run') }}" class="code-op-action">
+                    <input type="hidden" name="_token" value="{{ csrf_token('run_code_operation_migration') }}">
+                    <input type="hidden" name="mode" value="manual">
+                    <div class="code-op-action__content code-op-action__content--stack">
+                        <div>
+                            <h3>Mode manuel</h3>
+                            <p>Traite par lot pour un run progressif en production (plus sur en forte volumetrie).</p>
+                        </div>
+                        <div class="code-op-inline">
+                            <label for="migrationLimit" class="mb-0">Lot</label>
+                            <input id="migrationLimit" class="form-control" type="number" name="limit" value="200" min="1" max="2000">
+                            <button class="btn btn-outline-primary" type="submit">
+                                <i class="fas fa-sliders-h mr-1"></i>Lancer
+                            </button>
+                        </div>
+                        <p class="code-op-action__hint mb-0">Limite UI: 1 a 2000. Le service applique aussi ce bornage.</p>
+                    </div>
+                </form>
+            </div>
+
+            <p class="code-op-note mb-0">
+                Recommandation: utilisez le mode manuel (lots de 100 a 500) sur de grosses bases pour limiter l'impact.
+            </p>
+            <ul class="code-op-checklist mb-0">
+                <li>1. Lancez un lot manuel.</li>
+                <li>2. Verifiez la baisse des compteurs "sans code" et "sans sens".</li>
+                <li>3. Relancez jusqu'a 0, puis terminez en mode automatique si besoin.</li>
+            </ul>
+        </div>
+    </section>
+</div>
+
+<style>
+.code-op-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.code-op-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    border-radius: 16px;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid rgba(14, 55, 95, 0.12);
+    background: linear-gradient(120deg, rgba(15, 77, 129, 0.08), rgba(8, 145, 178, 0.04));
+}
+.code-op-hero__left {
+    display: flex;
+    align-items: flex-start;
+    gap: .9rem;
+}
+.code-op-hero__back {
+    margin-top: .18rem;
+}
+.code-op-hero__eyebrow {
+    margin: 0 0 .25rem;
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #3f6a8c;
+    font-weight: 700;
+}
+.code-op-hero__title {
+    margin: 0;
+    font-size: 1.45rem;
+    color: #11263a;
+    font-weight: 800;
+}
+.code-op-hero__subtitle {
+    margin: .35rem 0 0;
+    color: #4a6177;
+    max-width: 700px;
+}
+.code-op-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .78rem;
+    font-weight: 700;
+    padding: .45rem .75rem;
+    border-radius: 999px;
+}
+.code-op-status--ok {
+    color: #0f766e;
+    background: #d1fae5;
+}
+.code-op-status--warn {
+    color: #9a3412;
+    background: #ffedd5;
+}
+.code-op-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .85rem;
+}
+.code-op-kpi {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: #fff;
+    padding: .95rem 1rem;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+.code-op-kpi__label {
+    display: block;
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #64748b;
+    font-weight: 700;
+}
+.code-op-kpi__value {
+    display: block;
+    font-size: 1.35rem;
+    color: #0f172a;
+    line-height: 1.2;
+    margin-top: .15rem;
+}
+.code-op-kpi__meta {
+    display: block;
+    margin-top: .2rem;
+    color: #5c6f82;
+    font-size: .82rem;
+}
+.code-op-progress {
+    margin-top: .55rem;
+    height: 7px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+.code-op-progress__bar {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0f766e, #0891b2);
+}
+.code-op-kpi__percent {
+    display: block;
+    margin-top: .35rem;
+    font-size: .8rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+.code-op-pill-row {
+    margin-top: .45rem;
+}
+.code-op-layout {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: .95rem;
+}
+.code-op-card {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: #fff;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+    padding: 1rem 1rem .95rem;
+}
+.code-op-card__head h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+.code-op-card__head p {
+    margin: .3rem 0 .6rem;
+    color: #5c6f82;
+    font-size: .85rem;
+}
+.code-op-card__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin-bottom: .35rem;
+}
+.code-op-table thead th {
+    border-top: 0;
+    border-bottom: 1px solid #e2e8f0;
+    color: #ffffff !important;
+    font-size: .76rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.code-op-table tbody td {
+    vertical-align: middle;
+}
+.code-op-row-hint {
+    margin-top: .18rem;
+    color: #64748b;
+    font-size: .76rem;
+}
+.code-op-sens {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .24rem .55rem;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 700;
+}
+.code-op-sens--in {
+    background: #dcfce7;
+    color: #166534;
+}
+.code-op-sens--out {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.code-op-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: .2rem .55rem;
+    font-size: .74rem;
+    font-weight: 700;
+    color: #334155;
+    background: #e2e8f0;
+}
+.code-op-pill--ok {
+    color: #166534;
+    background: #dcfce7;
+}
+.code-op-pill--warn {
+    color: #9a3412;
+    background: #ffedd5;
+}
+.code-op-pill--neutral {
+    color: #1e3a8a;
+    background: #dbeafe;
+}
+.code-op-run-overview {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .5rem;
+    margin-bottom: .7rem;
+}
+.code-op-run-overview__item {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: .55rem .6rem;
+    background: #f8fafc;
+}
+.code-op-run-overview__item strong {
+    display: block;
+    color: #0f172a;
+    font-size: 1rem;
+}
+.code-op-run-overview__label {
+    color: #64748b;
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.code-op-actions {
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+}
+.code-op-action {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: .8rem .85rem;
+    background: #f8fafc;
+}
+.code-op-action__content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .85rem;
+}
+.code-op-action__content--stack {
+    flex-direction: column;
+    align-items: stretch;
+}
+.code-op-action h3 {
+    margin: 0;
+    font-size: .95rem;
+    color: #0f172a;
+    font-weight: 800;
+}
+.code-op-action p {
+    margin: .22rem 0 0;
+    color: #64748b;
+    font-size: .82rem;
+}
+.code-op-inline {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+}
+.code-op-inline .form-control {
+    width: 110px;
+}
+.code-op-action__hint {
+    margin-top: .25rem;
+    color: #64748b;
+    font-size: .76rem;
+}
+.code-op-note {
+    margin-top: .8rem;
+    color: #64748b;
+    font-size: .82rem;
+}
+.code-op-note--success {
+    margin-top: .75rem;
+    color: #166534;
+    font-weight: 600;
+}
+.code-op-checklist {
+    margin-top: .55rem;
+    padding-left: 1rem;
+    color: #475569;
+    font-size: .8rem;
+}
+.code-op-checklist li + li {
+    margin-top: .15rem;
+}
+@media (max-width: 991px) {
+    .code-op-kpis {
+        grid-template-columns: 1fr;
+    }
+    .code-op-layout {
+        grid-template-columns: 1fr;
+    }
+    .code-op-run-overview {
+        grid-template-columns: 1fr;
+    }
+    .code-op-action__content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+</style>
+{% endblock %}
