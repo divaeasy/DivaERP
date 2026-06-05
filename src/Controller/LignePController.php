@@ -8,8 +8,10 @@ use App\Entity\Entetepiece;
 use App\Entity\Lignepiece;
 use App\Entity\Tarifvente;
 use App\Entity\User;
+use App\Enum\SensEnum;
 use App\Form\LignepieceFormType;
 use App\Service\CodeOperationService;
+use App\Service\StockMovementService;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,8 +23,10 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('lignepiece')]
 class LignePController extends AbstractController
 {
-    public function __construct(private readonly CodeOperationService $codeOperationService)
-    {
+    public function __construct(
+        private readonly CodeOperationService $codeOperationService,
+        private readonly StockMovementService $stockMovementService,
+    ) {
     }
 
     private function computeMontant(Lignepiece $lignepiece): float
@@ -102,10 +106,14 @@ class LignePController extends AbstractController
             $entityManager = $doctrine->getManager();
             $entityManager->persist($lignepiece);
             $entityManager->flush();
+            $stockWarning = $this->applyStockMovementIfNeeded($lignepiece);
             $this->recalculatePieceAmount($entityManager, $lignepiece->getPiece());
             $entityManager->flush();
 
             $this->addFlash('success', $message);
+            if ($stockWarning !== null) {
+                $this->addFlash('warning', $stockWarning);
+            }
 
             return $this->redirect($this->buildPieceRedirectUrl($pceId, $origin));
         }
@@ -163,10 +171,14 @@ class LignePController extends AbstractController
             $entityManager = $doctrine->getManager();
             $entityManager->persist($lignepiece);
             $entityManager->flush();
+            $stockWarning = $this->applyStockMovementIfNeeded($lignepiece);
             $this->recalculatePieceAmount($entityManager, $entetePiece);
             $entityManager->flush();
 
             $this->addFlash('success', 'La ligne piece est ajoutee avec succes');
+            if ($stockWarning !== null) {
+                $this->addFlash('warning', $stockWarning);
+            }
 
             return $this->redirect($this->buildPieceRedirectUrl($pceId, $origin));
         }
@@ -178,6 +190,191 @@ class LignePController extends AbstractController
             'origin' => $origin,
             'pieceTierId' => $entetePiece->getTierId() ?? 0,
             'pieceTierType' => (string) ($entetePiece->getTypet() ?? ''),
+        ]);
+    }
+
+    #[Route('/api/articles', name: 'lignepiece.api_articles', methods: ['GET'])]
+    public function listArticlesForAjax(ManagerRegistry $doctrine): JsonResponse
+    {
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if ($currentDossier === null) {
+            return $this->json(['success' => false, 'message' => 'Dossier introuvable.'], 403);
+        }
+
+        $articles = $doctrine->getRepository(Article::class)->createQueryBuilder('a')
+            ->where('a.dossier = :dossier')
+            ->setParameter('dossier', $currentDossier)
+            ->orderBy('a.libelle', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $this->json([
+            'success' => true,
+            'items' => array_map(static fn (Article $article): array => [
+                'id' => (int) $article->getId(),
+                'libelle' => (string) $article->getLibelle(),
+            ], $articles),
+        ]);
+    }
+
+    #[Route('/api/piece/{pceId<\d+>}/lignes', name: 'lignepiece.api_list', methods: ['GET'])]
+    public function listPieceLignesForAjax(ManagerRegistry $doctrine, int $pceId): JsonResponse
+    {
+        $piece = $this->findCurrentDossierPiece($doctrine, $pceId);
+        if (!$piece instanceof Entetepiece) {
+            return $this->json(['success' => false, 'message' => "La piece demandee n'existe pas."], 404);
+        }
+
+        $lignes = $doctrine->getRepository(Lignepiece::class)->findBy(['piece' => $piece], ['id' => 'ASC']);
+
+        return $this->json([
+            'success' => true,
+            'items' => array_map(fn (Lignepiece $ligne): array => $this->serializeLigne($ligne), $lignes),
+            'piece' => $this->serializePieceLineSummary($piece, count($lignes)),
+        ]);
+    }
+
+    #[Route('/api/piece/{pceId<\d+>}/lignes', name: 'lignepiece.api_create', methods: ['POST'])]
+    public function createLigneForAjax(ManagerRegistry $doctrine, Request $request, int $pceId): JsonResponse
+    {
+        $piece = $this->findCurrentDossierPiece($doctrine, $pceId);
+        if (!$piece instanceof Entetepiece) {
+            return $this->json(['success' => false, 'message' => "La piece demandee n'existe pas."], 404);
+        }
+        if ($this->isPieceReadOnly($piece)) {
+            return $this->json(['success' => false, 'message' => 'Cette piece est en lecture seule.'], 403);
+        }
+        if ($this->isInternalPiece($piece) && !$this->canManageInternalPieces()) {
+            return $this->json(['success' => false, 'message' => 'La gestion des pieces internes est reservee aux roles Admin ou Comptable.'], 403);
+        }
+
+        $payload = $this->getAjaxPayload($request);
+        $article = $this->resolveArticleFromPayload($doctrine, $payload);
+        if (!$article instanceof Article) {
+            return $this->json(['success' => false, 'message' => 'Article obligatoire ou introuvable.'], 422);
+        }
+
+        $values = $this->validateLignePayload($payload, true);
+        if (isset($values['message'])) {
+            return $this->json(['success' => false, 'message' => $values['message']], 422);
+        }
+
+        $lignepiece = new Lignepiece();
+        $lignepiece->doctrine = $doctrine;
+        $lignepiece->user = $this->getUser();
+        $lignepiece->setPiece($piece);
+        $lignepiece->setDossier($piece->getDossier());
+        $lignepiece->setArticle($article);
+        $lignepiece->setDesignation($article->getLibelle());
+        $lignepiece->setQte($values['qte']);
+        $lignepiece->setPub($values['pub']);
+        $lignepiece->setRemise($values['remise']);
+        $lignepiece->setSens($this->codeOperationService->resolveLineSensFromPiece($piece));
+        $lignepiece->setMontant($this->computeMontant($lignepiece));
+
+        $manager = $doctrine->getManager();
+        $manager->persist($lignepiece);
+        $manager->flush();
+        $stockWarning = $this->applyStockMovementIfNeeded($lignepiece);
+        $this->recalculatePieceAmount($manager, $piece);
+        $manager->flush();
+
+        $lineCount = (int) $doctrine->getRepository(Lignepiece::class)->count(['piece' => $piece]);
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Ligne ajoutee.',
+            'warning' => $stockWarning,
+            'item' => $this->serializeLigne($lignepiece),
+            'piece' => $this->serializePieceLineSummary($piece, $lineCount),
+        ], 201);
+    }
+
+    #[Route('/api/lignes/{id<\d+>}', name: 'lignepiece.api_update', methods: ['POST'])]
+    public function updateLigneForAjax(ManagerRegistry $doctrine, Request $request, int $id): JsonResponse
+    {
+        $lignepiece = $this->findCurrentDossierLigne($doctrine, $id);
+        if (!$lignepiece instanceof Lignepiece) {
+            return $this->json(['success' => false, 'message' => "La ligne demandee n'existe pas."], 404);
+        }
+
+        $piece = $lignepiece->getPiece();
+        if ($this->isPieceReadOnly($piece)) {
+            return $this->json(['success' => false, 'message' => 'Cette piece est en lecture seule.'], 403);
+        }
+        if ($this->isInternalPiece($piece) && !$this->canManageInternalPieces()) {
+            return $this->json(['success' => false, 'message' => 'La gestion des pieces internes est reservee aux roles Admin ou Comptable.'], 403);
+        }
+
+        $payload = $this->getAjaxPayload($request);
+        $article = $this->resolveArticleFromPayload($doctrine, $payload);
+        if ($article instanceof Article) {
+            $lignepiece->setArticle($article);
+            $lignepiece->setDesignation($article->getLibelle());
+        }
+
+        $values = $this->validateLignePayload($payload, false);
+        if (isset($values['message'])) {
+            return $this->json(['success' => false, 'message' => $values['message']], 422);
+        }
+
+        $lignepiece->setQte($values['qte']);
+        $lignepiece->setPub($values['pub']);
+        $lignepiece->setRemise($values['remise']);
+        $lignepiece->setMontant($this->computeMontant($lignepiece));
+
+        $manager = $doctrine->getManager();
+        $manager->persist($lignepiece);
+        $manager->flush();
+        $stockWarning = $this->applyStockMovementIfNeeded($lignepiece);
+        $this->recalculatePieceAmount($manager, $piece);
+        $manager->flush();
+
+        $lineCount = $piece instanceof Entetepiece
+            ? (int) $doctrine->getRepository(Lignepiece::class)->count(['piece' => $piece])
+            : 0;
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Ligne mise a jour.',
+            'warning' => $stockWarning,
+            'item' => $this->serializeLigne($lignepiece),
+            'piece' => $piece instanceof Entetepiece ? $this->serializePieceLineSummary($piece, $lineCount) : null,
+        ]);
+    }
+
+    #[Route('/api/lignes/{id<\d+>}/delete', name: 'lignepiece.api_delete', methods: ['POST', 'DELETE'])]
+    public function deleteLigneForAjax(ManagerRegistry $doctrine, int $id): JsonResponse
+    {
+        $lignepiece = $this->findCurrentDossierLigne($doctrine, $id);
+        if (!$lignepiece instanceof Lignepiece) {
+            return $this->json(['success' => false, 'message' => "La ligne demandee n'existe pas."], 404);
+        }
+
+        $piece = $lignepiece->getPiece();
+        if ($this->isPieceReadOnly($piece)) {
+            return $this->json(['success' => false, 'message' => 'Cette piece est en lecture seule.'], 403);
+        }
+        if ($this->isInternalPiece($piece) && !$this->canManageInternalPieces()) {
+            return $this->json(['success' => false, 'message' => 'La gestion des pieces internes est reservee aux roles Admin ou Comptable.'], 403);
+        }
+
+        $manager = $doctrine->getManager();
+        $manager->remove($lignepiece);
+        $manager->flush();
+
+        $lineCount = 0;
+        if ($piece instanceof Entetepiece) {
+            $this->recalculatePieceAmount($manager, $piece);
+            $manager->flush();
+            $lineCount = (int) $doctrine->getRepository(Lignepiece::class)->count(['piece' => $piece]);
+        }
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Ligne supprimee.',
+            'piece' => $piece instanceof Entetepiece ? $this->serializePieceLineSummary($piece, $lineCount) : null,
         ]);
     }
 
@@ -406,6 +603,160 @@ class LignePController extends AbstractController
         return $this->json(['price' => null], 200);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function getAjaxPayload(Request $request): array
+    {
+        $payload = [];
+        if (str_contains((string) $request->headers->get('Content-Type', ''), 'application/json')) {
+            $decoded = json_decode((string) $request->getContent(), true);
+            if (is_array($decoded)) {
+                $payload = $decoded;
+            }
+        }
+
+        return array_merge($payload, $request->request->all());
+    }
+
+    private function findCurrentDossierPiece(ManagerRegistry $doctrine, int $pieceId): ?Entetepiece
+    {
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if ($currentDossier === null) {
+            return null;
+        }
+
+        $piece = $doctrine->getRepository(Entetepiece::class)->findOneBy([
+            'id' => $pieceId,
+            'dossier' => $currentDossier,
+        ]);
+
+        return $piece instanceof Entetepiece ? $piece : null;
+    }
+
+    private function findCurrentDossierLigne(ManagerRegistry $doctrine, int $ligneId): ?Lignepiece
+    {
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if ($currentDossier === null) {
+            return null;
+        }
+
+        $lignepiece = $doctrine->getRepository(Lignepiece::class)->findOneBy([
+            'id' => $ligneId,
+            'dossier' => $currentDossier,
+        ]);
+
+        return $lignepiece instanceof Lignepiece ? $lignepiece : null;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function resolveArticleFromPayload(ManagerRegistry $doctrine, array $payload): ?Article
+    {
+        $articleRaw = trim((string) ($payload['articleId'] ?? $payload['article'] ?? ''));
+        if ($articleRaw === '' || !ctype_digit($articleRaw)) {
+            return null;
+        }
+
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        if ($currentDossier === null) {
+            return null;
+        }
+
+        $article = $doctrine->getRepository(Article::class)->findOneBy([
+            'id' => (int) $articleRaw,
+            'dossier' => $currentDossier,
+        ]);
+
+        return $article instanceof Article ? $article : null;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{qte?: float, pub?: float, remise?: float, message?: string}
+     */
+    private function validateLignePayload(array $payload, bool $requirePub): array
+    {
+        $qteRaw = trim((string) ($payload['qte'] ?? $payload['qty'] ?? ''));
+        $pubRaw = trim((string) ($payload['pub'] ?? $payload['price'] ?? ''));
+        $remiseRaw = trim((string) ($payload['remise'] ?? '0'));
+
+        if ($qteRaw === '' || !is_numeric($qteRaw) || (float) $qteRaw <= 0) {
+            return ['message' => 'La quantite doit etre superieure a 0.'];
+        }
+
+        if ($pubRaw === '') {
+            if ($requirePub) {
+                return ['message' => 'Le prix unitaire est obligatoire.'];
+            }
+            $pubRaw = '0';
+        }
+        if (!is_numeric($pubRaw) || (float) $pubRaw < 0) {
+            return ['message' => 'Le prix unitaire doit etre positif.'];
+        }
+        if ($requirePub && (float) $pubRaw <= 0) {
+            return ['message' => 'Le prix unitaire doit etre superieur a 0.'];
+        }
+
+        if ($remiseRaw === '') {
+            $remiseRaw = '0';
+        }
+        if (!is_numeric($remiseRaw) || (float) $remiseRaw < 0 || (float) $remiseRaw > 100) {
+            return ['message' => 'La remise doit etre comprise entre 0 et 100.'];
+        }
+
+        return [
+            'qte' => round((float) $qteRaw, 4),
+            'pub' => round((float) $pubRaw, 4),
+            'remise' => round((float) $remiseRaw, 2),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeLigne(Lignepiece $lignepiece): array
+    {
+        $article = $lignepiece->getArticle();
+        $qte = (float) ($lignepiece->getQte() ?? 0);
+        $pub = (float) ($lignepiece->getPub() ?? 0);
+        $remise = (float) ($lignepiece->getRemise() ?? 0);
+        $montant = (float) ($lignepiece->getMontant() ?? $this->computeMontant($lignepiece));
+
+        return [
+            'id' => (int) ($lignepiece->getId() ?? 0),
+            'articleId' => $article?->getId(),
+            'articleText' => (string) ($lignepiece->getDesignation() ?? $article?->getLibelle() ?? ''),
+            'article' => (string) ($lignepiece->getDesignation() ?? $article?->getLibelle() ?? ''),
+            'qte' => $qte,
+            'qty' => $qte,
+            'pub' => $pub,
+            'remise' => $remise,
+            'montant' => $montant,
+            'qteSt' => $lignepiece->getQteSt(),
+            'sens' => $lignepiece->getSens()?->label(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializePieceLineSummary(Entetepiece $piece, int $lineCount): array
+    {
+        $montant = (float) ($piece->getMontant() ?? 0);
+
+        return [
+            'id' => (int) ($piece->getId() ?? 0),
+            'lignes' => $lineCount,
+            'montant' => $montant,
+            'montantDisplay' => number_format($montant, 2, ',', ' '),
+        ];
+    }
+
     private function recalculatePieceAmount(\Doctrine\ORM\EntityManagerInterface $entityManager, ?Entetepiece $piece): void
     {
         if (!$piece instanceof Entetepiece) {
@@ -422,6 +773,34 @@ class LignePController extends AbstractController
 
         $piece->setMontant(round($sum, 2));
         $entityManager->persist($piece);
+    }
+
+    private function applyStockMovementIfNeeded(Lignepiece $lignepiece): ?string
+    {
+        $piece = $lignepiece->getPiece();
+        if (!$piece instanceof Entetepiece) {
+            return null;
+        }
+
+        if (!in_array($piece->getType(), ['BL', 'Facture'], true)) {
+            return null;
+        }
+
+        if ($piece->getCodeOperation()?->getSens() !== SensEnum::CREDIT) {
+            return null;
+        }
+
+        if ($lignepiece->getQteSt() !== null && $lignepiece->getMouvementDeStock() !== null) {
+            return null;
+        }
+
+        try {
+            $this->stockMovementService->consumeStock($lignepiece);
+        } catch (\Throwable $e) {
+            return 'La ligne est enregistree, mais le mouvement de stock n a pas pu etre applique: ' . $e->getMessage();
+        }
+
+        return null;
     }
 
     private function buildPieceRedirectUrl(int $pieceId, ?string $origin = null): string

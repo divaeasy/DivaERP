@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Service\CodeOperationMigrationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -63,5 +64,43 @@ class CodeOperationMigrationController extends AbstractController
         }
 
         return $this->redirectToRoute('admin.code_operation_migration');
+    }
+
+    #[Route('/batch', name: 'admin.code_operation_migration_batch', methods: ['POST'])]
+    public function runBatch(Request $request, CodeOperationMigrationService $migrationService): JsonResponse
+    {
+        $this->denyAccessUnlessGranted('ROLE_COMPTABLE');
+
+        if (!$this->isCsrfTokenValid('run_code_operation_migration', (string) $request->request->get('_token'))) {
+            return $this->json(['success' => false, 'error' => 'Jeton invalide'], Response::HTTP_FORBIDDEN);
+        }
+
+        try {
+            $mode = strtolower(trim((string) $request->request->get('mode', 'auto')));
+            $limit = (int) $request->request->get('limit', 200);
+
+            if ($mode === 'manual') {
+                $result = $migrationService->runManualMigration($limit);
+            } else {
+                // Auto mode: run smaller batches automatically (100 at a time)
+                $result = $migrationService->runManualMigration(100);
+            }
+
+            $status = $migrationService->getStatus();
+
+            return $this->json([
+                'success' => true,
+                'result' => $result,
+                'status' => $status,
+                'isComplete' => $status['isMigrationComplete'],
+                'piecesRemaining' => $status['piecesWithoutCodeOperation'],
+                'linesRemaining' => $status['linesWithoutSens'],
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

@@ -212,6 +212,9 @@
     {{ form_end(entetepiece) }}
 </div>
 
+{# Include ligne creation modal component #}
+{% include "components/_ligne_creation_modal.html.twig" %}
+
 <p class="text-muted small mt-3">
     <i class="fas fa-info-circle mr-1"></i>
     Les champs marques d'un <span class="text-danger">*</span> sont obligatoires.
@@ -403,6 +406,11 @@
 {% endblock %}
 
 {% block javascripts %}
+
+{# Load necessary scripts BEFORE inline initialization code #}
+<script src="{{ asset('js/ligne-creation-modal.js') }}"></script>
+<script src="{{ asset('js/inline-ligne-editor.js') }}"></script>
+
 <script>
     (function() {
         function shouldScrollToLines() {
@@ -997,6 +1005,99 @@
         } else {
             initPieceForm();
         }
+    })();
+
+    // Ligne Creation Modal After Piece Creation
+    (function() {
+        var pieceId = {{ id|default(0) }};
+        var isNewPiece = {{ id == 0 ? 'true' : 'false' }};
+        var shouldOpenLigneModal = {{ app.request.query.get('showLigneModal') ? 'true' : 'false' }};
+
+        // Wait for external scripts to load
+        function waitForScriptsAndInit() {
+            var checkCount = 0;
+            var maxChecks = 50; // 50 * 100ms = 5 seconds max wait
+            
+            function checkScripts() {
+                checkCount++;
+                
+                // Check if both required classes are loaded
+                if (typeof LigneCreationModal === 'undefined' || typeof jQuery === 'undefined') {
+                    if (checkCount < maxChecks) {
+                        setTimeout(checkScripts, 100);
+                    } else {
+                        console.error('Scripts not loaded: LigneCreationModal=' + (typeof LigneCreationModal) + ', jQuery=' + (typeof jQuery));
+                    }
+                    return;
+                }
+                
+                // Scripts are loaded, now initialize
+                console.log('Scripts loaded successfully, initializing...');
+                initializeLigneHandlers();
+            }
+            
+            setTimeout(checkScripts, 50);
+        }
+        
+        function initializeLigneHandlers() {
+            // Listen for successful form submission
+            var form = document.getElementById('piece-edit-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    if (form.checkValidity() === false) {
+                        return;
+                    }
+                    // If this is a new piece creation, mark it for modal display
+                    if (isNewPiece) {
+                        console.log('Form submitted, setting showLigneModalAfterCreate flag');
+                        sessionStorage.setItem('showLigneModalAfterCreate', 'true');
+                    }
+                });
+            }
+
+            // Check if we should show the modal after page load
+            if (shouldOpenLigneModal || sessionStorage.getItem('showLigneModalAfterCreate') === 'true') {
+                console.log('showLigneModalAfterCreate flag found, preparing to show modal');
+                sessionStorage.removeItem('showLigneModalAfterCreate');
+
+                // Ensure modal appears with proper timing
+                if (pieceId > 0) {
+                    if (window.__ligneCreationModalOpenedFor === pieceId) {
+                        return;
+                    }
+                    window.__ligneCreationModalOpenedFor = pieceId;
+                    try {
+                        var piece = {
+                            id: pieceId,
+                            type: '{{ type|default("BL") }}'
+                        };
+                        var options = {
+                            tierType: '{{ typet|default("Client") }}' || 'Client'
+                        };
+                        
+                        // Show modal immediately
+                        console.log('Showing ligne creation modal for piece #' + pieceId);
+                        var modal = LigneCreationModal.showAfterPieceCreation(piece, options);
+                        if (shouldOpenLigneModal && window.history && window.URL) {
+                            var cleanUrl = new URL(window.location.href);
+                            cleanUrl.searchParams.delete('showLigneModal');
+                            window.history.replaceState({}, document.title, cleanUrl.toString());
+                            shouldOpenLigneModal = false;
+                        }
+                        console.log('Ligne creation modal shown successfully');
+                    } catch (error) {
+                        console.error('Error showing ligne creation modal:', error);
+                    }
+                } else {
+                    console.log('pieceId is ' + pieceId + ', not showing modal');
+                }
+            }
+        }
+        
+        // Start waiting for scripts to load
+        waitForScriptsAndInit();
+        document.addEventListener('turbo:load', waitForScriptsAndInit);
+        document.addEventListener('turbo:render', waitForScriptsAndInit);
     })();
 </script>
 {% endblock %}

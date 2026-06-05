@@ -62,4 +62,43 @@ class ArticleRepository extends ServiceEntityRepository
             $qb->andWhere('1 = 0');
         }
     }
+
+    /**
+     * Find articles with their associated lignepieces for stock calculation.
+     */
+    public function findWithStock(?SearchDataArt $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        
+        // Eager load lignepieces with related piece and code_operation
+        $qb->leftJoin('a.lignepieces', 'lp')
+           ->leftJoin('lp.piece', 'ep')
+           ->leftJoin('ep.code_operation', 'co')
+           ->addSelect('lp')
+           ->addSelect('ep')
+           ->addSelect('co')
+           ->distinct();
+        
+        return PaginationHelper::paginate($qb, $page);
+    }
+
+    /**
+     * Find all articles for a dossier with their stock information.
+     */
+    public function findAllWithStockByDossier(int $dossierId): array
+    {
+        return $this->createQueryBuilder('a')
+            ->where('a.dossier = :dossier')
+            ->setParameter('dossier', $dossierId)
+            ->leftJoin('a.lignepieces', 'lp')
+            ->leftJoin('lp.piece', 'ep')
+            ->leftJoin('ep.code_operation', 'co')
+            ->addSelect('lp')
+            ->addSelect('ep')
+            ->addSelect('co')
+            ->orderBy('a.libelle', 'ASC')
+            ->distinct()
+            ->getQuery()
+            ->getResult();
+    }
 }

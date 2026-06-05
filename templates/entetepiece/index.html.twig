@@ -572,9 +572,16 @@
         </div>
     </div>
 </div>
+
+{# Include ligne management components #}
+{% include "components/_ligne_creation_modal.html.twig" %}
+{% include "components/_inline_ligne_editor.html.twig" %}
+
 {% endblock %}
 
 {% block javascripts %}
+<script src="{{ asset('js/ligne-creation-modal.js') }}"></script>
+<script src="{{ asset('js/inline-ligne-editor.js') }}"></script>
 <script>
     (function() {
         function initPieceTransitions() {
@@ -654,6 +661,7 @@
             var $pieceImportForm = $('#pieceImportForm');
             var $pieceImportSubmit = $('#pieceImportSubmit');
             var quickCreateUrl = '{{ path('entetepiece.create_minimal') }}';
+            var autoInlineEditId = '{{ app.request.query.get('inlineEditId')|default('')|e('js') }}';
             var importUrl = '{{ path('entetepiece.import') }}';
             var $table = $('#piecesTable');
             var $tbody = $('#piecesTableBody');
@@ -1332,6 +1340,7 @@
                 $actions.addClass('d-none');
                 $actions.after(
                     '<div class="piece-inline-actions">' +
+                        '<button type="button" class="btn btn-action btn-view js-piece-inline-lignes" title="Gérer les lignes"><i class="fas fa-list"></i></button>' +
                         '<button type="button" class="btn btn-action btn-view js-piece-inline-save" title="Enregistrer"><i class="fas fa-check"></i></button>' +
                         '<button type="button" class="btn btn-action btn-delete js-piece-inline-cancel" title="Annuler"><i class="fas fa-times"></i></button>' +
                     '</div>'
@@ -1694,6 +1703,19 @@
                     beginInlineEdit($(this).closest('.piece-row'), 'tier');
                 });
 
+                $table.on('click.pieceList', '.js-piece-inline-lignes', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    var $row = $(this).closest('.piece-row');
+                    var pieceId = $row.data('row-id') || $row.data('item-id');
+                    var tierType = String($row.attr('data-tier-type') || 'Client');
+                    
+                    if (typeof InlineLigneEditor !== 'undefined') {
+                        var editor = InlineLigneEditor.getInstance(pieceId, tierType);
+                        editor.show($row);
+                    }
+                });
+
                 $table.on('click.pieceList', '.js-piece-inline-save', function(event) {
                     event.preventDefault();
                     event.stopPropagation();
@@ -1748,6 +1770,37 @@
                         saveInlineEdit($(this).closest('.piece-row'));
                     }
                 });
+
+                if (autoInlineEditId) {
+                    var $autoInlineRow = $('tr.piece-row[data-row-id="' + autoInlineEditId + '"], tr.piece-row[data-item-id="' + autoInlineEditId + '"]').first();
+                    var shouldOpenLigneModal = sessionStorage.getItem('showLigneModalAfterCreate') === 'true';
+                    if (shouldOpenLigneModal) {
+                        sessionStorage.removeItem('showLigneModalAfterCreate');
+                    }
+                    if ($autoInlineRow.length) {
+                        setTimeout(function() {
+                            $autoInlineRow[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            if (shouldOpenLigneModal && typeof LigneCreationModal !== 'undefined') {
+                                var tierType = String($autoInlineRow.attr('data-tier-type') || 'Client');
+                                LigneCreationModal.showAfterPieceCreation({
+                                    id: parseInt(autoInlineEditId, 10) || 0
+                                }, { tierType: tierType });
+                            } else {
+                                beginInlineEdit($autoInlineRow, 'tier');
+                            }
+                            if (window.history && window.URL) {
+                                var cleanUrl = new URL(window.location.href);
+                                cleanUrl.searchParams.delete('inlineEditId');
+                                window.history.replaceState({}, document.title, cleanUrl.toString());
+                            }
+                        }, 120);
+                    } else if (shouldOpenLigneModal && typeof LigneCreationModal !== 'undefined') {
+                        LigneCreationModal.showAfterPieceCreation({
+                            id: parseInt(autoInlineEditId, 10) || 0
+                        });
+                    }
+                    autoInlineEditId = '';
+                }
 
                 $bulkBar.on('click.pieceList', '[data-bulk-clear]', function(event) {
                     event.preventDefault();
@@ -1855,12 +1908,16 @@
                             return;
                         }
 
-                        showPieceToast(response.message || 'Piece creee avec succes.', 'success');
-                        $quickCreateModal.modal('hide');
-
                         var $row = appendCreatedRow(response.item);
                         if ($row && $row.length) {
-                            beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
+                            showPieceToast(response.message || 'Piece creee avec succes.', 'success');
+                            $quickCreateModal.one('hidden.bs.modal.pieceQuickInline', function() {
+                                beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
+                            });
+                            $quickCreateModal.modal('hide');
+                        } else {
+                            showPieceToast(response.message || 'Piece creee avec succes.', 'success');
+                            $quickCreateModal.modal('hide');
                         }
                     }).fail(function(xhr) {
                         var message = 'La creation rapide a echoue.';
@@ -1890,6 +1947,30 @@
                     }
                 });
             }
+
+            window.updatePieceLigneSummary = function(summary) {
+                if (!summary || !summary.id) {
+                    return;
+                }
+
+                var $row = $('tr.piece-row[data-row-id="' + summary.id + '"], tr.piece-row[data-item-id="' + summary.id + '"]').first();
+                if (!$row.length) {
+                    return;
+                }
+
+                var lineCount = parseInt(summary.lignes, 10);
+                if (!Number.isFinite(lineCount)) {
+                    lineCount = 0;
+                }
+
+                $row.find('td[data-column-key="lignes"]').html(
+                    '<span class="' + (lineCount > 0 ? 'badge badge-success' : 'badge badge-warning') + '">' + escapeHtml(String(lineCount)) + '</span>'
+                );
+
+                if (typeof summary.montantDisplay !== 'undefined') {
+                    $row.find('td[data-column-key="montant"]').html('<strong>' + escapeHtml(String(summary.montantDisplay)) + '</strong>');
+                }
+            };
 
             if ($pieceImportForm.length) {
                 $pieceImportForm.off('submit.pieceImport').on('submit.pieceImport', function(event) {
@@ -2743,3 +2824,4 @@
     }
 </style>
 {% endblock %}
+

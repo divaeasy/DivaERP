@@ -479,8 +479,8 @@ class EntetePieceFormType extends AbstractType
                 (string) $operation->getLibelle(),
                 $operation->getSens()->label()
             ),
-            'placeholder' => $isEdit ? false : 'Selectionner un code operation',
-            'required' => true,
+            'placeholder' => 'Selectionner un code operation',
+            'required' => false,
             'label' => 'Code operation',
             'disabled' => $readOnly,
             'data' => $selected,

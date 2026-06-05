@@ -1931,6 +1931,7 @@
                 <th data-column-key="modeSuivi" data-sort-key="modeSuivi">Mode suivi</th>
                 <th data-column-key="natureProduction" data-sort-key="natureProduction">Nature production</th>
                 <th data-column-key="sortiStock" data-sort-key="sortiStock">Sortie stock</th>
+                <th data-column-key="stockActuel" data-sort-key="stockActuel">Stock Actuel</th>
                 <th data-column-key="fournisseurHabituel" data-sort-key="fournisseurHabituel">Fournisseur habituel</th>
                 <th class="text-center" style="width: 130px;" data-column-key="actions">Actions</th>
             </tr>
@@ -1980,6 +1981,9 @@
                 <td data-field="modeSuivi" data-column-key="modeSuivi">{{ article.modeSuivi.value|default('____') }}</td>
                 <td data-field="natureProduction" data-column-key="natureProduction">{{ article.natureProduction|default('____') }}</td>
                 <td data-field="sortiStock" data-column-key="sortiStock">{{ article.sortiStock.value|default('____') }}</td>
+                <td data-field="stockActuel" data-column-key="stockActuel">
+                    <span class="badge badge-info">{{ article.getStockActuel()|number_format(2, '.', ',') }}</span>
+                </td>
                 <td data-field="fournisseurHabituel" data-column-key="fournisseurHabituel">{{ article.fournisseurHabituel|default('____') }}</td>
                 <td class="text-center article-actions-cell" data-column-key="actions">
                     <a href="{{ path('article.detail', {id: article.id}) }}" class="btn btn-action btn-view js-article-view-detail no-loading" title="Voir">

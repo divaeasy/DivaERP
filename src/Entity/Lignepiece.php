@@ -21,7 +21,7 @@ class Lignepiece
     #[ORM\ManyToOne(inversedBy: 'lignepieces')]
     private ?Entetepiece $piece = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(inversedBy: 'lignepieces')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Article $article = null;
 
@@ -46,6 +46,12 @@ class Lignepiece
 
     #[ORM\Column(length: 20, enumType: SensEnum::class, nullable: true)]
     private ?SensEnum $sens = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?float $qteSt = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $mouvementDeStock = null;
 
     public function getId(): ?int
     {
@@ -171,6 +177,30 @@ class Lignepiece
     public function setSens(?SensEnum $sens): static
     {
         $this->sens = $sens;
+
+        return $this;
+    }
+
+    public function getQteSt(): ?float
+    {
+        return $this->qteSt;
+    }
+
+    public function setQteSt(?float $qteSt): static
+    {
+        $this->qteSt = $qteSt;
+
+        return $this;
+    }
+
+    public function getMouvementDeStock(): ?string
+    {
+        return $this->mouvementDeStock;
+    }
+
+    public function setMouvementDeStock(?string $mouvementDeStock): static
+    {
+        $this->mouvementDeStock = $mouvementDeStock;
 
         return $this;
     }

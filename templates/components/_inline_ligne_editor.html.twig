@@ -1,0 +1,508 @@
+{# Floating Ligne Editor Modal #}
+<div class="modal fade" id="inlineLigneEditorModal" tabindex="-1" role="dialog" aria-labelledby="inlineLigneEditorModalLabel" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content ligne-editor-modal-content">
+            <div class="modal-header ligne-editor-modal-header">
+                <div>
+                    <h5 class="modal-title" id="inlineLigneEditorModalLabel">
+                        <i class="fas fa-list-ul mr-2"></i>Gestion des lignes
+                    </h5>
+                    <small id="inlineLigneEditorMeta">Piece selectionnee</small>
+                </div>
+                <button type="button" class="close text-white" id="closeLigneEditor" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body ligne-editor-modal-body">
+                {# Quick Add Form #}
+                <div class="ligne-editor-quickadd">
+                    <h6><i class="fas fa-plus-circle mr-2"></i>Ajouter une ligne</h6>
+                    <form id="inlineLigneQuickForm" class="ligne-editor-quickadd-form">
+                        <div class="form-group">
+                            <label for="inlineEditorArticleSelect">Article</label>
+                            <select id="inlineEditorArticleSelect" class="form-control form-control-sm inline-article-select" required>
+                                <option value="">Selectionner...</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-3">
+                                <label for="inlineEditorQteInput">Qte</label>
+                                <input type="number" id="inlineEditorQteInput" class="form-control form-control-sm inline-qty-input" min="0.01" step="0.01" value="1" required>
+                            </div>
+                            <div class="form-group col-md-2">
+                                <label for="inlineEditorPubInput">P.U.</label>
+                                <input type="number" id="inlineEditorPubInput" class="form-control form-control-sm inline-pub-input ligne-auto-price" min="0" step="0.01" value="0.00" readonly required>
+                            </div>
+                            <div class="form-group col-md-2">
+                                <label for="inlineEditorRemiseInput">Remise %</label>
+                                <input type="number" id="inlineEditorRemiseInput" class="form-control form-control-sm inline-remise-input" min="0" max="100" value="0">
+                            </div>
+                            <div class="form-group col-md-2">
+                                <label for="inlineEditorMontantDisplay">Montant</label>
+                                <input type="text" id="inlineEditorMontantDisplay" class="form-control form-control-sm" readonly value="0.00">
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label>&nbsp;</label>
+                                <button type="button" class="btn btn-primary btn-sm btn-block inline-add-ligne-btn">
+                                    <i class="fas fa-plus mr-1"></i>Ajouter
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                {# Lignes Table #}
+                <div class="ligne-editor-table">
+                    <div class="ligne-editor-section-head">
+                        <h6><i class="fas fa-table mr-2"></i>Lignes existantes</h6>
+                    </div>
+                    <div class="table-responsive ligne-editor-table-wrap">
+                        <table class="table table-sm table-hover mb-0" id="inlineLignesTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%;">Article</th>
+                                    <th class="text-right" style="width: 12%;">Qte</th>
+                                    <th class="text-right" style="width: 12%;">P.U.</th>
+                                    <th class="text-right" style="width: 12%;">Remise</th>
+                                    <th class="text-right" style="width: 15%;">Montant</th>
+                                    <th class="text-right" style="width: 10%;">QteSt</th>
+                                    <th class="text-center" style="width: 9%;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inlineLignesTableBody">
+                                <tr><td colspan="7" class="text-center text-muted py-4"><i class="fas fa-inbox mb-2" style="font-size: 1.5rem;"></i><br>Aucune ligne</td></tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-weight-bold bg-light">
+                                    <td colspan="4" class="text-right">Total</td>
+                                    <td class="text-right" id="inlineLigneTotal">0.00</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer ligne-editor-modal-footer">
+                <button type="button" class="btn btn-secondary" id="closeLigneEditorBtn">
+                    <i class="fas fa-times mr-1"></i>Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Edit Ligne Modal #}
+<div class="modal fade" id="editLigneModal" tabindex="-1" role="dialog" aria-labelledby="editLigneModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content ligne-edit-modal-content">
+            <div class="modal-header ligne-edit-modal-header">
+                <h5 class="modal-title" id="editLigneModalLabel">
+                    <i class="fas fa-edit mr-2"></i>Modifier la ligne
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body ligne-edit-modal-body">
+                <form id="editLigneForm">
+                    <input type="hidden" id="editLigneId">
+                    <input type="hidden" id="editLigneIndex">
+
+                    <div class="form-group">
+                        <label for="editArticleSelect">Article <span class="text-danger">*</span></label>
+                        <select id="editArticleSelect" class="form-control form-control-sm" required>
+                            <option value="">Selectionner un article...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="editQteInput">Quantite <span class="text-danger">*</span></label>
+                            <input type="number" id="editQteInput" class="form-control form-control-sm" min="0.01" step="0.01" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="editPubInput">P.U. <span class="text-danger">*</span></label>
+                            <input type="number" id="editPubInput" class="form-control form-control-sm" min="0" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="editRemiseInput">Remise %</label>
+                            <input type="number" id="editRemiseInput" class="form-control form-control-sm" min="0" max="100" step="0.01" value="0">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="editMontantDisplay">Montant</label>
+                            <input type="text" id="editMontantDisplay" class="form-control form-control-sm" readonly>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="form-group">
+                        <label for="editQteStDisplay">QteSt (Stock) <span class="text-muted small">(Lecture seule)</span></label>
+                        <input type="text" id="editQteStDisplay" class="form-control form-control-sm" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editMouvementDisplay">Mouvement de Stock <span class="text-muted small">(Lecture seule)</span></label>
+                        <input type="text" id="editMouvementDisplay" class="form-control form-control-sm" readonly>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer ligne-edit-modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Annuler
+                </button>
+                <button type="button" class="btn btn-primary" id="editLigneSaveBtn">
+                    <i class="fas fa-save mr-1"></i>Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Floating Ligne Editor Modal Styling */
+.ligne-editor-modal-content {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.24);
+    overflow: hidden;
+}
+
+.ligne-editor-modal-header {
+    background: #111827;
+    border: none;
+    color: white;
+    padding: 18px 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.ligne-editor-modal-header .modal-title {
+    font-weight: 700;
+    font-size: 1.08rem;
+    letter-spacing: 0;
+    margin: 0;
+}
+
+.ligne-editor-modal-header #inlineLigneEditorMeta {
+    color: #cbd5e1;
+    font-size: 0.84rem;
+    display: block;
+    margin-top: 3px;
+}
+
+.ligne-editor-modal-header .close {
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    font-size: 1.5rem;
+    padding: 0;
+}
+
+.ligne-editor-modal-header .close:hover {
+    opacity: 1;
+}
+
+.ligne-editor-modal-body {
+    padding: 20px 24px;
+    background: #f6f8fb;
+}
+
+/* Quick Add Form */
+.ligne-editor-quickadd {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+}
+
+.ligne-editor-quickadd h6 {
+    color: #111827;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0;
+    margin-bottom: 12px;
+}
+
+.ligne-editor-quickadd-form .form-group label {
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+}
+
+.ligne-editor-quickadd-form .form-control {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ligne-editor-quickadd-form .form-control:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.ligne-editor-quickadd-form input[readonly],
+.ligne-edit-modal-body input[readonly] {
+    background: #f8fafc;
+    color: #111827;
+    font-weight: 700;
+}
+
+.ligne-editor-quickadd-form .ligne-auto-price {
+    border-style: dashed;
+}
+
+.ligne-editor-quickadd-form .btn-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+    font-weight: 600;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.ligne-editor-quickadd-form .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.22);
+}
+
+.ligne-editor-quickadd-form .btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Table Section */
+.ligne-editor-table {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.ligne-editor-section-head {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.ligne-editor-section-head h6 {
+    color: #111827;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0;
+    margin: 0;
+}
+
+.ligne-editor-table-wrap {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.ligne-editor-table thead {
+    background: #f1f5f9;
+}
+
+.ligne-editor-table th {
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    border: none;
+    padding: 12px 8px;
+    vertical-align: middle;
+}
+
+.ligne-editor-table td {
+    padding: 12px 8px;
+    vertical-align: middle;
+    border-color: #e2e8f0;
+}
+
+.ligne-editor-table tbody tr {
+    transition: background-color 0.15s;
+}
+
+.ligne-editor-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.ligne-editor-table tfoot tr {
+    background: #f1f5f9;
+    border-top: 2px solid #e2e8f0;
+}
+
+.ligne-editor-table tfoot td {
+    color: #2c3e50;
+    font-weight: 600;
+    padding: 14px 8px;
+}
+
+/* Actions */
+.inline-ligne-actions {
+    display: inline-flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.inline-ligne-actions .btn {
+    align-items: center;
+    display: inline-flex;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    height: 30px;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.2s;
+    width: 30px;
+}
+
+.inline-ligne-actions .btn-outline-primary {
+    border-color: #93c5fd;
+    color: #2563eb;
+}
+
+.inline-ligne-actions .btn-outline-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+}
+
+.inline-ligne-actions .btn-outline-danger {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.inline-ligne-actions .btn-outline-danger:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.ligne-editor-modal-footer {
+    border-top: 1px solid #e2e8f0;
+    padding: 14px 24px;
+    background: white;
+}
+
+.ligne-editor-modal-footer .btn {
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 8px 20px;
+    transition: all 0.2s;
+}
+
+.ligne-editor-modal-footer .btn-secondary {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+}
+
+.ligne-editor-modal-footer .btn-secondary:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+}
+
+.ligne-edit-modal-content {
+    border: 0;
+    border-radius: 8px;
+    box-shadow: 0 22px 56px rgba(15, 23, 42, 0.22);
+    overflow: hidden;
+}
+
+.ligne-edit-modal-header {
+    align-items: center;
+    background: #111827;
+    border: 0;
+    color: #fff;
+    padding: 16px 20px;
+}
+
+.ligne-edit-modal-header .modal-title {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+.ligne-edit-modal-body {
+    background: #f6f8fb;
+    padding: 18px 20px;
+}
+
+.ligne-edit-modal-body form {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.ligne-edit-modal-body label {
+    color: #475569;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.ligne-edit-modal-body .form-control {
+    border-color: #cbd5e1;
+    border-radius: 6px;
+}
+
+.ligne-edit-modal-body .form-control:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.ligne-edit-modal-footer {
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    padding: 14px 20px;
+}
+
+.ligne-edit-modal-footer .btn {
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+.ligne-edit-modal-footer .btn-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+/* Modal backdrop customization */
+#inlineLigneEditorModal .modal-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .ligne-editor-modal-body {
+        padding: 16px;
+    }
+    
+    .ligne-editor-quickadd,
+    .ligne-editor-table {
+        padding: 16px;
+    }
+    
+    .ligne-editor-table .table {
+        font-size: 0.85rem;
+    }
+    
+    .ligne-editor-quickadd-form .form-row {
+        flex-direction: column;
+    }
+    
+    .ligne-editor-quickadd-form .col-md-3 {
+        width: 100%;
+    }
+}
+</style>

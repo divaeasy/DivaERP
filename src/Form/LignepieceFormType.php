@@ -73,6 +73,24 @@ class LignepieceFormType extends AbstractType
                     return $qb;
                 },
             ])
+            ->add('qteSt', null, [
+                'required' => false,
+                'label' => 'QteSt (Stock Quantity)',
+                'attr' => [
+                    'readonly' => true,
+                    'placeholder' => 'Auto-rempli pour Entree',
+                ],
+                'help' => 'Cette valeur est automatiquement calculée et mise à jour',
+            ])
+            ->add('mouvementDeStock', null, [
+                'required' => false,
+                'label' => 'Mouvement de Stock',
+                'attr' => [
+                    'readonly' => true,
+                    'placeholder' => 'Référence source (auto-rempli)',
+                ],
+                'help' => 'Référence de la pièce de stock consommée (FIFO/LIFO)',
+            ])
         ;
     }
 

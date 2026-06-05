@@ -61,6 +61,14 @@
                     <div class="detail-label">Fournisseur habituel</div>
                     <div class="detail-value">{{ article.fournisseurHabituel ?: '-' }}</div>
                 </div>
+                <div class="detail-row">
+                    <div class="detail-label">Stock Actuel</div>
+                    <div class="detail-value">
+                        <span class="badge badge-success" style="font-size: 1.1em; padding: 0.5em 0.75em;">
+                            {{ article.getStockActuel()|number_format(2, '.', ',') }} {{ article.unite ?: 'unités' }}
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

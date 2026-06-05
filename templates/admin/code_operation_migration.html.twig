@@ -173,7 +173,7 @@
             </div>
 
             <div class="code-op-actions">
-                <form method="post" action="{{ path('admin.code_operation_migration_run') }}" class="code-op-action">
+                <form method="post" action="{{ path('admin.code_operation_migration_run') }}" class="code-op-action" id="autoForm">
                     <input type="hidden" name="_token" value="{{ csrf_token('run_code_operation_migration') }}">
                     <input type="hidden" name="mode" value="auto">
                     <div class="code-op-action__content">
@@ -181,13 +181,13 @@
                             <h3>Mode automatique</h3>
                             <p>Execute la migration complete en une seule operation (recommande sur base faible ou moyenne).</p>
                         </div>
-                        <button class="btn btn-success" type="submit" {% if pendingTotal == 0 and missingCount == 0 %}disabled{% endif %}>
+                        <button class="btn btn-success" type="button" id="autoBatchBtn" onclick="startAutoBatch()" {% if pendingTotal == 0 and missingCount == 0 %}disabled{% endif %}>
                             <i class="fas fa-bolt mr-1"></i>Lancer
                         </button>
                     </div>
                 </form>
 
-                <form method="post" action="{{ path('admin.code_operation_migration_run') }}" class="code-op-action">
+                <form method="post" action="{{ path('admin.code_operation_migration_run') }}" class="code-op-action" id="manualForm">
                     <input type="hidden" name="_token" value="{{ csrf_token('run_code_operation_migration') }}">
                     <input type="hidden" name="mode" value="manual">
                     <div class="code-op-action__content code-op-action__content--stack">
@@ -198,7 +198,7 @@
                         <div class="code-op-inline">
                             <label for="migrationLimit" class="mb-0">Lot</label>
                             <input id="migrationLimit" class="form-control" type="number" name="limit" value="200" min="1" max="2000">
-                            <button class="btn btn-outline-primary" type="submit">
+                            <button class="btn btn-outline-primary" type="button" id="manualBatchBtn" onclick="runManualBatch()">
                                 <i class="fas fa-sliders-h mr-1"></i>Lancer
                             </button>
                         </div>
@@ -218,6 +218,150 @@
         </div>
     </section>
 </div>
+
+<!-- Migration Progress Modal -->
+<div class="code-op-modal" id="progressModal" style="display: none;">
+    <div class="code-op-modal__overlay"></div>
+    <div class="code-op-modal__content">
+        <div class="code-op-modal__header">
+            <h2>Migration en cours...</h2>
+        </div>
+        <div class="code-op-modal__body">
+            <div class="code-op-modal__progress">
+                <div class="code-op-modal__stat">
+                    <span class="code-op-modal__label">Pieces</span>
+                    <span class="code-op-modal__value" id="progressPieces">0</span>
+                    <span class="code-op-modal__percent" id="progressPiecesPercent">0%</span>
+                </div>
+                <div class="code-op-modal__stat">
+                    <span class="code-op-modal__label">Lignes</span>
+                    <span class="code-op-modal__value" id="progressLines">0</span>
+                    <span class="code-op-modal__percent" id="progressLinesPercent">0%</span>
+                </div>
+            </div>
+            <div class="code-op-modal__bar">
+                <div class="code-op-modal__fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <p class="code-op-modal__status" id="progressStatus">Initialisation...</p>
+        </div>
+        <div class="code-op-modal__footer">
+            <button class="btn btn-outline-secondary" type="button" id="cancelBtn" onclick="cancelMigration()">
+                <i class="fas fa-times mr-1"></i>Annuler
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.code-op-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.code-op-modal__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.code-op-modal__content {
+    position: relative;
+    z-index: 10001;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 500px;
+    padding: 2rem;
+}
+
+.code-op-modal__header h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.code-op-modal__body {
+    margin-top: 1.5rem;
+}
+
+.code-op-modal__progress {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.code-op-modal__stat {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem;
+    background: #f8fafc;
+}
+
+.code-op-modal__label {
+    display: block;
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.code-op-modal__value {
+    display: block;
+    font-size: 1.5rem;
+    color: #0f172a;
+    font-weight: 800;
+    margin: .2rem 0;
+}
+
+.code-op-modal__percent {
+    font-size: .8rem;
+    color: #0f766e;
+    font-weight: 700;
+}
+
+.code-op-modal__bar {
+    height: 10px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.code-op-modal__fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0f766e, #0891b2);
+    transition: width 0.3s ease;
+}
+
+.code-op-modal__status {
+    margin: 0;
+    color: #64748b;
+    font-size: .9rem;
+    text-align: center;
+}
+
+.code-op-modal__footer {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: .5rem;
+}
+
 
 <style>
 .code-op-page {
@@ -521,4 +665,156 @@
     }
 }
 </style>
+
+<script>
+let isMigrationRunning = false;
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                  document.querySelector('input[name="_token"]')?.value || '';
+
+function showProgressModal() {
+    document.getElementById('progressModal').style.display = 'flex';
+}
+
+function hideProgressModal() {
+    document.getElementById('progressModal').style.display = 'none';
+}
+
+function updateProgress(status) {
+    const totalPieces = status.totalPieces || 0;
+    const totalLines = status.totalLines || 0;
+    const piecesRemaining = status.piecesRemaining || 0;
+    const linesRemaining = status.linesRemaining || 0;
+    
+    const piecesProcessed = Math.max(0, totalPieces - piecesRemaining);
+    const linesProcessed = Math.max(0, totalLines - linesRemaining);
+    
+    const piecesPercent = totalPieces > 0 ? Math.round((piecesProcessed / totalPieces) * 100) : 0;
+    const linesPercent = totalLines > 0 ? Math.round((linesProcessed / totalLines) * 100) : 0;
+    
+    const overallPercent = ((piecesPercent + linesPercent) / 2);
+    
+    document.getElementById('progressPieces').textContent = piecesRemaining;
+    document.getElementById('progressPiecesPercent').textContent = piecesPercent + '%';
+    document.getElementById('progressLines').textContent = linesRemaining;
+    document.getElementById('progressLinesPercent').textContent = linesPercent + '%';
+    document.getElementById('progressFill').style.width = overallPercent + '%';
+    
+    document.getElementById('progressStatus').textContent = 
+        piecesRemaining > 0 || linesRemaining > 0 
+            ? `Traitement en cours... ${Math.round(overallPercent)}% complet`
+            : '✓ Migration terminée!';
+}
+
+async function runBatch(mode, limit = 200) {
+    const formData = new FormData();
+    formData.append('_token', csrfToken);
+    formData.append('mode', mode);
+    formData.append('limit', limit);
+    
+    try {
+        const response = await fetch('{{ path("admin.code_operation_migration_batch") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Erreur lors de la migration');
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('Migration error:', error);
+        throw error;
+    }
+}
+
+async function startAutoBatch() {
+    if (isMigrationRunning) return;
+    
+    const confirmed = confirm('Êtes-vous sûr de vouloir lancer la migration automatique?\nCette opération peut prendre plusieurs minutes pour les grandes bases de données.');
+    if (!confirmed) return;
+    
+    isMigrationRunning = true;
+    showProgressModal();
+    
+    try {
+        let isComplete = false;
+        let batchCount = 0;
+        
+        while (!isComplete && batchCount < 100) {
+            batchCount++;
+            const result = await runBatch('auto', 100);
+            
+            updateProgress(result.status);
+            
+            if (result.isComplete) {
+                isComplete = true;
+                setTimeout(() => {
+                    hideProgressModal();
+                    isMigrationRunning = false;
+                    // Refresh the page to show updated status
+                    location.reload();
+                }, 2000);
+            } else {
+                // Wait a bit before next batch to avoid server overload
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+        
+        if (batchCount >= 100) {
+            throw new Error('Nombre de lots maximum atteint. La migration s\'est peut-être arrêtée prématurément.');
+        }
+    } catch (error) {
+        console.error('Auto-batch error:', error);
+        document.getElementById('progressStatus').textContent = '✗ Erreur: ' + error.message;
+        document.getElementById('cancelBtn').textContent = 'Fermer';
+        isMigrationRunning = false;
+    }
+}
+
+async function runManualBatch() {
+    if (isMigrationRunning) return;
+    
+    const limit = parseInt(document.getElementById('migrationLimit').value) || 200;
+    
+    isMigrationRunning = true;
+    showProgressModal();
+    document.getElementById('progressStatus').textContent = `Traitement d'un lot de ${limit} éléments...`;
+    
+    try {
+        const result = await runBatch('manual', limit);
+        
+        updateProgress(result.status);
+        
+        if (result.isComplete) {
+            document.getElementById('progressStatus').textContent = '✓ Migration terminée!';
+            setTimeout(() => {
+                hideProgressModal();
+                isMigrationRunning = false;
+                location.reload();
+            }, 2000);
+        } else {
+            document.getElementById('progressStatus').textContent = 
+                `Lot complété. ${result.piecesRemaining} pièces et ${result.linesRemaining} lignes restantes. Lancez un autre lot?`;
+            document.getElementById('cancelBtn').textContent = 'Fermer';
+            isMigrationRunning = false;
+        }
+    } catch (error) {
+        console.error('Manual batch error:', error);
+        document.getElementById('progressStatus').textContent = '✗ Erreur: ' + error.message;
+        document.getElementById('cancelBtn').textContent = 'Fermer';
+        isMigrationRunning = false;
+    }
+}
+
+function cancelMigration() {
+    isMigrationRunning = false;
+    hideProgressModal();
+}
+</script>
 {% endblock %}

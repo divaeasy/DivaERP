@@ -8,6 +8,8 @@ use App\Enum\SortiStockMode;
 use App\Repository\ArticleRepository;
 use App\Traits\TimeStampTrait;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 #[ORM\HasLifecycleCallbacks()]
@@ -54,6 +56,14 @@ class Article
 
     #[ORM\ManyToOne]
     private ?Fournisseur $fournisseurHabituel = null;
+
+    #[ORM\OneToMany(mappedBy: 'article', targetEntity: Lignepiece::class)]
+    private Collection $lignepieces;
+
+    public function __construct()
+    {
+        $this->lignepieces = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -178,6 +188,63 @@ class Article
         $this->fournisseurHabituel = $fournisseurHabituel;
 
         return $this;
+    }
+
+    public function getLignepieces(): Collection
+    {
+        return $this->lignepieces;
+    }
+
+    public function addLignepiece(Lignepiece $lignepiece): static
+    {
+        if (!$this->lignepieces->contains($lignepiece)) {
+            $this->lignepieces->add($lignepiece);
+            $lignepiece->setArticle($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLignepiece(Lignepiece $lignepiece): static
+    {
+        $this->lignepieces->removeElement($lignepiece);
+
+        return $this;
+    }
+
+    /**
+     * Calculate current stock (QteSt sum - Sortie sum).
+     * This is a transient calculation, not persisted.
+     */
+    public function getStockActuel(): float
+    {
+        $stock = 0.0;
+        
+        foreach ($this->lignepieces as $ligne) {
+            $piece = $ligne->getPiece();
+            if ($piece === null) {
+                continue;
+            }
+            
+            $codeOp = $piece->getCodeOperation();
+            if ($codeOp === null) {
+                continue;
+            }
+            
+            $qteSt = $ligne->getQteSt();
+            if ($qteSt === null) {
+                continue;
+            }
+            
+            // Add for Entree (DEBIT), subtract for Sortie (CREDIT)
+            if ($codeOp->getSens()->value === 'Entree') {
+                $stock += $qteSt;
+            } else {
+                $stock -= $qteSt;
+            }
+        }
+        
+        return $stock;
     }
 
     public function __toString()

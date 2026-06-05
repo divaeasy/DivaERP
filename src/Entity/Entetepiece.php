@@ -33,7 +33,7 @@ class Entetepiece
     private ?int $tierId = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?CodeOperation $codeOperation = null;
 
     #[ORM\ManyToOne]
