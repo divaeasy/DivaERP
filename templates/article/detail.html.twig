@@ -65,7 +65,7 @@
                     <div class="detail-label">Stock Actuel</div>
                     <div class="detail-value">
                         <span class="badge badge-success" style="font-size: 1.1em; padding: 0.5em 0.75em;">
-                            {{ article.getStockActuel()|number_format(2, '.', ',') }} {{ article.unite ?: 'unités' }}
+                            {{ article.getStockActuel()|number_format(0) }} {{ article.unite ?: 'unités' }}
                         </span>
                     </div>
                 </div>

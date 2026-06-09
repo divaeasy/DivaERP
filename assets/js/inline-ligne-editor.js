@@ -49,6 +49,10 @@
         return numberValue(value).toFixed(2);
     }
 
+    function formatInteger(value) {
+        return Math.round(numberValue(value)).toString();
+    }
+
     async function readJsonResponse(response) {
         const text = await response.text();
         if (!text) {
@@ -458,9 +462,9 @@
                 const $row = $(
                     '<tr class="inline-ligne-row" data-ligne-id="' + escapeHtml(ligne.id) + '">' +
                         '<td>' + escapeHtml(articleDisplay) + '</td>' +
-                        '<td class="text-right">' + escapeHtml(formatMoney(ligne.qte || ligne.qty)) + '</td>' +
+                        '<td class="text-right">' + escapeHtml(formatInteger(ligne.qte || ligne.qty)) + '</td>' +
                         '<td class="text-right">' + escapeHtml(formatMoney(ligne.pub)) + '</td>' +
-                        '<td class="text-right">' + escapeHtml(formatMoney(ligne.remise || 0)) + '</td>' +
+                        '<td class="text-right">' + escapeHtml(formatInteger(ligne.remise || 0)) + '</td>' +
                         '<td class="text-right"><strong>' + escapeHtml(formatMoney(ligne.montant)) + '</strong></td>' +
                         '<td class="text-right">' + (ligne.qteSt == null ? '-' : escapeHtml(String(ligne.qteSt))) + '</td>' +
                         '<td class="text-center"><div class="inline-ligne-actions">' +

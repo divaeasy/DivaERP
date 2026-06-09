@@ -1982,7 +1982,7 @@
                 <td data-field="natureProduction" data-column-key="natureProduction">{{ article.natureProduction|default('____') }}</td>
                 <td data-field="sortiStock" data-column-key="sortiStock">{{ article.sortiStock.value|default('____') }}</td>
                 <td data-field="stockActuel" data-column-key="stockActuel">
-                    <span class="badge badge-info">{{ article.getStockActuel()|number_format(2, '.', ',') }}</span>
+                    <span class="badge badge-info">{{ article.getStockActuel()|number_format(0) }}</span>
                 </td>
                 <td data-field="fournisseurHabituel" data-column-key="fournisseurHabituel">{{ article.fournisseurHabituel|default('____') }}</td>
                 <td class="text-center article-actions-cell" data-column-key="actions">

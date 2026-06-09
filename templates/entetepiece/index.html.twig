@@ -2492,15 +2492,22 @@
         width: 220px;
         position: sticky;
         right: 0;
-        z-index: 3;
+        z-index: 50;
         background: #fff;
+        overflow: visible;
     }
     .pieces-table thead [data-column-key="actions"] {
         z-index: 5;
         background: var(--theme-primary);
     }
+    .pieces-table .piece-row {
+        overflow: visible;
+    }
     .pieces-table .piece-row.is-selected {
         background: rgba(37, 99, 235, 0.08);
+    }
+    .pieces-table .piece-row {
+        overflow: visible;
     }
     .pieces-table .piece-row.is-editing {
         position: relative;
@@ -2508,6 +2515,8 @@
         background: rgba(37, 99, 235, 0.06);
         box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
         cursor: default;
+        overflow: visible;
+    }
     }
     .pieces-table .piece-row.is-saving {
         opacity: 0.75;
@@ -2714,15 +2723,22 @@
         align-items: center;
         justify-content: center;
         gap: 2px;
+        position: relative;
+        z-index: 40;
+        overflow: visible;
     }
     .piece-action-slot {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         min-width: 38px;
+        position: relative;
+        z-index: 50;
+        overflow: visible;
     }
     .piece-action-slot .dropdown {
         display: inline-flex;
+        position: relative;
     }
     .btn-action.is-disabled-ui {
         opacity: 0.30;
@@ -2821,6 +2837,93 @@
         .inline-dropdown-menu {
             min-width: 180px;
         }
+    }
+    /* Fix: Ensure dropdown appears above table by increasing z-index of parent cell */
+    .piece-actions-cell:has(.inline-dropdown-shell.is-open) {
+        z-index: 25000 !important;
+        position: relative;
+        overflow: visible;
+    }
+    /* Ensure Bootstrap dropdown (convertir cette piece) is not clipped */
+    .piece-actions-cell {
+        overflow: visible !important;
+        position: relative;
+        z-index: 100;
+    }
+    .pieces-table [data-column-key="actions"] {
+        overflow: visible !important;
+    }
+    .piece-actions-cell .dropdown {
+        position: relative;
+        display: inline-flex;
+    }
+    .piece-actions-cell .dropdown-menu {
+        z-index: 99999 !important;
+        position: absolute;
+        top: calc(100% - 2px) !important;
+        
+        left: -50px !important;
+        display: none !important;
+        min-width: 200px;
+        margin-top: 0;
+        margin-bottom: 0;
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0.15s, opacity 0.15s;
+    }
+    .piece-actions-cell .dropdown-menu.show {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    .piece-actions-cell .dropdown-toggle::after {
+        display: none;
+    }
+    .piece-actions-cell .dropdown-item {
+        padding: 0.5rem 1rem;
+        display: block;
+        width: 100%;
+        text-align: left;
+        color: #333;
+        text-decoration: none;
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+        font-size: 0.9rem;
+    }
+    .piece-actions-cell .dropdown-item:hover {
+        background-color: #f1f3f5;
+        color: #0d6efd;
+    }
+    .piece-actions-cell .dropdown-divider {
+        margin: 0.5rem 0;
+    }
+    .piece-actions-cell .dropdown-menu form {
+        display: block;
+        padding: 0;
+        margin: 0;
+    }
+    .piece-actions-cell .dropdown-menu form button {
+        width: 100%;
+        padding: 0.5rem 1rem;
+        border: none;
+        background-color: transparent;
+        text-align: left;
+        cursor: pointer;
+        color: #333;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+    .piece-actions-cell .dropdown-menu form button:hover {
+        background-color: #f1f3f5;
+        color: #0d6efd;
+    }
+    /* Ensure table container doesn't clip dropdown */
+    .table-container,
+    .table-container--pieces {
+        overflow: visible !important;
+        position: relative;
     }
 </style>
 {% endblock %}
