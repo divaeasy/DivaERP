@@ -29,6 +29,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 #[Route('piece')]
 class EntetePController extends AbstractController
@@ -37,6 +38,7 @@ class EntetePController extends AbstractController
         private ManagerRegistry $doctrine2,
         private CodeOperationService $codeOperationService,
         private CodeOperationMigrationService $migrationService,
+        private CsrfTokenManagerInterface $csrfTokenManager,
     )
     {
     }
@@ -1690,6 +1692,12 @@ class EntetePController extends AbstractController
             'transitionTargets' => $transitionTargets,
             'transitionEnabled' => $transitionEnabled,
             'transitionDisabledReason' => $transitionReason,
+            'transitionUrl' => $this->generateUrl('entetepiece.transition', array_merge(
+                ['id' => (int) ($piece->getId() ?? 0)],
+                $this->buildPieceOriginQueryParams($origin)
+            )),
+            'transitionToken' => $this->csrfTokenManager->getToken('transition_piece_' . (int) ($piece->getId() ?? 0))->getValue(),
+            'eInvoicingUrl' => $this->generateUrl('invoice_einvoicing_test', ['id' => (int) ($piece->getId() ?? 0)]),
             'inlineUpdateUrl' => $this->generateUrl('entetepiece.inline_update', array_merge(
                 ['id' => (int) ($piece->getId() ?? 0)],
                 $this->buildPieceOriginQueryParams($origin)

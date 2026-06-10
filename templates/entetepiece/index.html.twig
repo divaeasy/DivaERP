@@ -278,16 +278,18 @@
                         
                         <span class="piece-action-slot">
                             {% if wf.showTransition|default(false) and wf.transitionEnabled|default(false) %}
-                                <div class="dropdown d-inline-block">
+                                <div class="dropdown d-inline-block piece-transition-dropdown">
                                     <button class="btn btn-action btn-convert dropdown-toggle no-loading"
                                             type="button"
                                             data-toggle="dropdown"
+                                            data-display="static"
+                                            data-boundary="viewport"
                                             aria-haspopup="true"
                                             aria-expanded="false"
                                             title="Convertir cette piece">
                                         <i class="fas fa-random"></i>
                                     </button>
-                                    <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                    <div class="dropdown-menu dropdown-menu-right shadow-sm piece-transition-menu">
                                         {% for targetType in wf.transitionTargets|default([]) %}
                                             <form method="post"
                                                   action="{{ path('entetepiece.transition', {id: entetepiece.id}|merge(pieceOriginParams)) }}"
@@ -593,8 +595,111 @@
             var $transitionModal = $('#transitionConfirmModal');
             var $pieceName = $('#transitionModalPieceName');
             var $targetType = $('#transitionModalTargetType');
+            var transitionDropdownNamespace = '.pieceTransitionDropdown';
 
-            $('.js-piece-transition-form').off('submit.pieceTransition').on('submit.pieceTransition', function(e) {
+            function prepareTransitionMenu($dropdown) {
+                var $menu = $dropdown.data('pieceTransitionMenu');
+                if ($menu && $menu.length) {
+                    return $menu;
+                }
+
+                $menu = $dropdown.find('.piece-transition-menu').first();
+                if (!$menu.length) {
+                    return $();
+                }
+
+                $dropdown.data('pieceTransitionMenu', $menu);
+                return $menu;
+            }
+
+            function positionTransitionDropdown($dropdown, allowHiddenMeasure) {
+                var $toggle = $dropdown.find('.btn-convert.dropdown-toggle').first();
+                var $menu = prepareTransitionMenu($dropdown);
+                if (!$toggle.length || !$menu.length || !$toggle[0]) {
+                    return;
+                }
+
+                if (allowHiddenMeasure && !$menu.hasClass('show')) {
+                    $menu.css({
+                        display: 'block',
+                        visibility: 'hidden'
+                    });
+                }
+
+                var toggleRect = $toggle[0].getBoundingClientRect();
+                var viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+                var viewportHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+                var menuWidth = $menu.outerWidth();
+                var menuHeight = $menu.outerHeight();
+                var gap = 8;
+                var gutter = 8;
+                var left = toggleRect.left + (toggleRect.width / 2) - (menuWidth / 2);
+                var top = toggleRect.bottom + gap;
+
+                if (top + menuHeight > viewportHeight - gutter && toggleRect.top - menuHeight - gap > gutter) {
+                    top = toggleRect.top - menuHeight - gap;
+                }
+
+                left = Math.max(gutter, Math.min(left, viewportWidth - menuWidth - gutter));
+                top = Math.max(gutter, top);
+
+                $menu.css({
+                    position: 'fixed',
+                    top: top + 'px',
+                    left: left + 'px',
+                    right: 'auto',
+                    bottom: 'auto',
+                    transform: 'none',
+                    zIndex: 30000
+                });
+
+                if (allowHiddenMeasure && !$menu.hasClass('show')) {
+                    $menu.css({
+                        display: '',
+                        visibility: ''
+                    });
+                }
+            }
+
+            function positionOpenTransitionDropdowns() {
+                $('.piece-transition-dropdown.show, .piece-transition-dropdown .piece-transition-menu.show').each(function() {
+                    positionTransitionDropdown($(this).closest('.piece-transition-dropdown'), false);
+                });
+            }
+
+            function initTransitionDropdowns() {
+                var $dropdowns = $('.piece-transition-dropdown');
+                $dropdowns.off(transitionDropdownNamespace);
+                $dropdowns.on('show.bs.dropdown' + transitionDropdownNamespace, function() {
+                    var $dropdown = $(this);
+                    var $menu = prepareTransitionMenu($dropdown);
+                    if ($menu.length && !$menu.parent().is('body')) {
+                        $menu.data('pieceTransitionHome', $('<span class="piece-transition-menu-home"></span>').insertBefore($menu));
+                        $menu.appendTo(document.body);
+                    }
+                    positionTransitionDropdown($dropdown, true);
+                });
+                $dropdowns.on('shown.bs.dropdown' + transitionDropdownNamespace, function() {
+                    positionTransitionDropdown($(this), false);
+                });
+                $dropdowns.on('hidden.bs.dropdown' + transitionDropdownNamespace, function() {
+                    var $menu = prepareTransitionMenu($(this));
+                    var $home = $menu.data('pieceTransitionHome');
+                    $menu.removeAttr('style');
+                    if ($home && $home.length) {
+                        $menu.insertAfter($home);
+                        $home.remove();
+                    }
+                });
+
+                $(window)
+                    .off('scroll' + transitionDropdownNamespace + ' resize' + transitionDropdownNamespace)
+                    .on('scroll' + transitionDropdownNamespace + ' resize' + transitionDropdownNamespace, positionOpenTransitionDropdowns);
+            }
+
+            initTransitionDropdowns();
+
+            $(document).off('submit.pieceTransition', '.js-piece-transition-form').on('submit.pieceTransition', '.js-piece-transition-form', function(e) {
                 e.preventDefault();
                 pendingTransitionForm = this;
                 if (window.hideLoading) {
@@ -631,7 +736,7 @@
                 }
             });
 
-            $('.js-disabled-transition, .js-disabled-action').off('click.pieceTransition').on('click.pieceTransition', function(e) {
+            $(document).off('click.pieceTransition', '.js-disabled-transition, .js-disabled-action').on('click.pieceTransition', '.js-disabled-transition, .js-disabled-action', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
             });
@@ -1428,6 +1533,8 @@
 
                     applySavedState($row, response.item);
                     closeInlineEdit($row, false);
+                    $row.find('.piece-actions-cell').html(buildPieceActionsCell(response.item));
+                    initTransitionDropdowns();
                     $row.addClass('is-saved');
                     window.setTimeout(function() {
                         $row.removeClass('is-saved');
@@ -1448,10 +1555,18 @@
             function buildPieceActionsCell(item) {
                 var canEdit = !!item.canEdit;
                 var canView = !!item.canView;
+                var canOpenEinvoicing = !!item.canOpenEinvoicing;
+                var transitionTargets = Array.isArray(item.transitionTargets) ? item.transitionTargets : [];
+                var transitionEnabled = !!item.transitionEnabled && transitionTargets.length > 0;
                 var editUrl = String(item.editUrl || '#');
                 var deleteUrl = String(item.deleteUrl || '#');
+                var transitionUrl = String(item.transitionUrl || '#');
+                var transitionToken = String(item.transitionToken || '');
+                var eInvoicingUrl = String(item.eInvoicingUrl || '#');
                 var inlineDisabledClass = canEdit ? '' : ' is-disabled-ui js-disabled-action';
                 var inlineDisabledTitle = canEdit ? 'Modifier' : 'Action indisponible';
+                var transitionDisabledTitle = String(item.transitionDisabledReason || 'Validez la piece pour pouvoir la convertir');
+                var einvoicingDisabledTitle = String(item.einvoicingDisabledReason || 'Validez la piece pour activer la e-facturation');
 
                 var html = '<div class="piece-actions">';
                 html += '<span class="piece-action-slot">';
@@ -1461,8 +1576,28 @@
                     html += '<button type="button" class="btn btn-action btn-edit js-piece-inline-edit' + inlineDisabledClass + '" title="' + escapeHtml(inlineDisabledTitle) + '"><i class="fas fa-edit"></i></button>';
                 }
                 html += '</span>';
-                html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-convert is-disabled-ui js-disabled-action" title="Validez la piece pour pouvoir la convertir"><i class="fas fa-random"></i></button></span>';
-                html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-einvoicing is-disabled-ui js-disabled-action" title="Validez la piece pour activer la e-facturation"><i class="fas fa-file-invoice"></i></button></span>';
+                html += '<span class="piece-action-slot">';
+                if (transitionEnabled) {
+                    html += '<div class="dropdown d-inline-block piece-transition-dropdown">';
+                    html += '<button class="btn btn-action btn-convert dropdown-toggle no-loading" type="button" data-toggle="dropdown" data-display="static" data-boundary="viewport" aria-haspopup="true" aria-expanded="false" title="Convertir cette piece"><i class="fas fa-random"></i></button>';
+                    html += '<div class="dropdown-menu dropdown-menu-right shadow-sm piece-transition-menu">';
+                    transitionTargets.forEach(function(targetType) {
+                        html += '<form method="post" action="' + escapeHtml(transitionUrl) + '" class="js-piece-transition-form no-loading px-2 py-1" data-target-type="' + escapeHtml(String(targetType)) + '" data-piece-label="Piece #' + escapeHtml(String(item.pieceno || item.id || '')) + '">';
+                        html += '<input type="hidden" name="targetType" value="' + escapeHtml(String(targetType)) + '">';
+                        html += '<input type="hidden" name="_token" value="' + escapeHtml(transitionToken) + '">';
+                        html += '<button type="submit" class="dropdown-item">Vers ' + escapeHtml(String(targetType)) + '</button>';
+                        html += '</form>';
+                    });
+                    html += '</div></div>';
+                } else {
+                    html += '<button type="button" class="btn btn-action btn-convert is-disabled-ui js-disabled-action" title="' + escapeHtml(transitionDisabledTitle) + '"><i class="fas fa-random"></i></button>';
+                }
+                html += '</span>';
+                if (canOpenEinvoicing) {
+                    html += '<span class="piece-action-slot"><a href="' + escapeHtml(eInvoicingUrl) + '" class="btn btn-action btn-einvoicing no-loading" title="Ouvrir la page e-facturation"><i class="fas fa-file-pdf"></i></a></span>';
+                } else {
+                    html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-einvoicing is-disabled-ui js-disabled-action" title="' + escapeHtml(einvoicingDisabledTitle) + '"><i class="fas fa-file-invoice"></i></button></span>';
+                }
                 html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-delete delete-btn" data-delete-url="' + escapeHtml(deleteUrl) + '" data-item-name="Piece #' + escapeHtml(String(item.pieceno || item.id || '')) + '" title="Supprimer"><i class="fas fa-trash"></i></button></span>';
                 html += '</div>';
                 return html;
@@ -2853,71 +2988,98 @@
     .pieces-table [data-column-key="actions"] {
         overflow: visible !important;
     }
-    .piece-actions-cell .dropdown {
+    .piece-actions-cell .piece-transition-dropdown {
         position: relative;
         display: inline-flex;
     }
-    .piece-actions-cell .dropdown-menu {
-        z-index: 99999 !important;
+    .piece-transition-menu {
+        background: #fff !important;
+        color: #333 !important;
+        border: 1px solid #e5e7eb !important;
+        z-index: 30000 !important;
         position: absolute;
-        top: calc(100% - 2px) !important;
-        
-        left: -50px !important;
-        display: none !important;
+        top: calc(100% + 8px);
+        left: 50%;
+        right: auto !important;
+        bottom: auto !important;
+        transform: translateX(-50%);
+        display: none;
         min-width: 200px;
         margin-top: 0;
         margin-bottom: 0;
         visibility: hidden;
         opacity: 0;
+        overflow: visible !important;
         transition: visibility 0.15s, opacity 0.15s;
     }
-    .piece-actions-cell .dropdown-menu.show {
+    .piece-transition-menu.show {
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
     }
+    .piece-transition-menu.show,
+    .piece-transition-menu.show * {
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    .piece-transition-menu.show form {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: relative;
+        z-index: 1;
+    }
     .piece-actions-cell .dropdown-toggle::after {
         display: none;
     }
-    .piece-actions-cell .dropdown-item {
+    .piece-transition-menu .dropdown-item {
         padding: 0.5rem 1rem;
         display: block;
         width: 100%;
         text-align: left;
-        color: #333;
+        color: #111827 !important;
         text-decoration: none;
-        background-color: transparent;
+        background-color: transparent !important;
         border: none;
         cursor: pointer;
         white-space: nowrap;
-        font-size: 0.9rem;
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        text-indent: 0 !important;
+        position: relative;
+        z-index: 2;
     }
-    .piece-actions-cell .dropdown-item:hover {
-        background-color: #f1f3f5;
-        color: #0d6efd;
+    .piece-transition-menu .dropdown-item:hover {
+        background-color: #f1f3f5 !important;
+        color: #0d6efd !important;
     }
     .piece-actions-cell .dropdown-divider {
         margin: 0.5rem 0;
     }
-    .piece-actions-cell .dropdown-menu form {
+    .piece-transition-menu form {
         display: block;
         padding: 0;
         margin: 0;
     }
-    .piece-actions-cell .dropdown-menu form button {
+    .piece-transition-menu form button {
         width: 100%;
         padding: 0.5rem 1rem;
         border: none;
-        background-color: transparent;
+        background-color: transparent !important;
         text-align: left;
         cursor: pointer;
-        color: #333;
-        font-size: 0.9rem;
+        color: #111827 !important;
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
         white-space: nowrap;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
-    .piece-actions-cell .dropdown-menu form button:hover {
-        background-color: #f1f3f5;
-        color: #0d6efd;
+    .piece-transition-menu form button:hover {
+        background-color: #f1f3f5 !important;
+        color: #0d6efd !important;
     }
     /* Ensure table container doesn't clip dropdown */
     .table-container,
