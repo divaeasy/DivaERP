@@ -315,6 +315,22 @@
                         .text(article.libelle)
                 );
             });
+            this.enableArticleSearch($select);
+        }
+
+        enableArticleSearch($select) {
+            if (!$select || !$select.length || typeof $select.select2 !== 'function') {
+                return;
+            }
+            if ($select.data('select2')) {
+                $select.select2('destroy');
+            }
+            $select.select2({
+                dropdownParent: $select.closest('.modal'),
+                width: '100%',
+                placeholder: 'Rechercher un article...',
+                allowClear: true
+            });
         }
 
         async prefillArticlePrice($select, $pubInput) {
@@ -524,6 +540,9 @@
 
         resetQuickForm() {
             this.$articleSelect.val('');
+            if (this.$articleSelect.data('select2')) {
+                this.$articleSelect.trigger('change.select2');
+            }
             this.$qtyInput.val('1');
             this.$pubInput.val('0.00');
             this.$remiseInput.val('0');

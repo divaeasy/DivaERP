@@ -17,11 +17,11 @@
             <div class="modal-body ligne-editor-modal-body">
                 {# Quick Add Form #}
                 <div class="ligne-editor-quickadd">
-                    <h6><i class="fas fa-plus-circle mr-2"></i>Ajouter une ligne</h6>
+                    <h6><i class="fas fa-plus mr-2"></i>Ajouter une ligne</h6>
                     <form id="inlineLigneQuickForm" class="ligne-editor-quickadd-form">
                         <div class="form-group">
                             <label for="inlineEditorArticleSelect">Article</label>
-                            <select id="inlineEditorArticleSelect" class="form-control form-control-sm inline-article-select" required>
+                            <select id="inlineEditorArticleSelect" class="form-control form-control-sm inline-article-select js-article-search-select" required>
                                 <option value="">Selectionner...</option>
                             </select>
                         </div>
@@ -55,7 +55,7 @@
                 {# Lignes Table #}
                 <div class="ligne-editor-table">
                     <div class="ligne-editor-section-head">
-                        <h6><i class="fas fa-table mr-2"></i>Lignes existantes</h6>
+                        <h6><i class="fas fa-list-ul mr-2"></i>Lignes existantes</h6>
                     </div>
                     <div class="table-responsive ligne-editor-table-wrap">
                         <table class="table table-sm table-hover mb-0" id="inlineLignesTable">

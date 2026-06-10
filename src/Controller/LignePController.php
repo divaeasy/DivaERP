@@ -108,6 +108,7 @@ class LignePController extends AbstractController
             $entityManager->flush();
             $stockWarning = $this->applyStockMovementIfNeeded($lignepiece);
             $this->recalculatePieceAmount($entityManager, $lignepiece->getPiece());
+            $this->markPieceValideeAfterCompleteLine($lignepiece->getPiece());
             $entityManager->flush();
 
             $this->addFlash('success', $message);
@@ -173,6 +174,7 @@ class LignePController extends AbstractController
             $entityManager->flush();
             $stockWarning = $this->applyStockMovementIfNeeded($lignepiece);
             $this->recalculatePieceAmount($entityManager, $entetePiece);
+            $this->markPieceValideeAfterCompleteLine($entetePiece);
             $entityManager->flush();
 
             $this->addFlash('success', 'La ligne piece est ajoutee avec succes');
@@ -278,6 +280,7 @@ class LignePController extends AbstractController
         $manager->flush();
         $stockWarning = $this->applyStockMovementIfNeeded($lignepiece);
         $this->recalculatePieceAmount($manager, $piece);
+        $this->markPieceValideeAfterCompleteLine($piece);
         $manager->flush();
 
         $lineCount = (int) $doctrine->getRepository(Lignepiece::class)->count(['piece' => $piece]);
@@ -329,6 +332,7 @@ class LignePController extends AbstractController
         $manager->flush();
         $stockWarning = $this->applyStockMovementIfNeeded($lignepiece);
         $this->recalculatePieceAmount($manager, $piece);
+        $this->markPieceValideeAfterCompleteLine($piece);
         $manager->flush();
 
         $lineCount = $piece instanceof Entetepiece
@@ -754,7 +758,31 @@ class LignePController extends AbstractController
             'lignes' => $lineCount,
             'montant' => $montant,
             'montantDisplay' => number_format($montant, 2, ',', ' '),
+            'statut' => (string) ($piece->getStatut() ?? ''),
+            'statutLabel' => $this->getPieceStatusDisplayLabel($piece->getStatut()),
         ];
+    }
+
+    private function markPieceValideeAfterCompleteLine(?Entetepiece $piece): void
+    {
+        if (!$piece instanceof Entetepiece || $this->isPieceReadOnly($piece)) {
+            return;
+        }
+
+        $piece->setStatut('Validee');
+    }
+
+    private function getPieceStatusDisplayLabel(?string $status): string
+    {
+        $normalized = $this->normalizeToken($status);
+
+        return match ($normalized) {
+            'brouillon' => 'Brouillon',
+            'active' => 'Active',
+            'validee', 'valide' => 'Validee',
+            'perimee', 'perime', 'archivee', 'archive' => 'Perimee',
+            default => trim((string) $status) !== '' ? (string) $status : '-',
+        };
     }
 
     private function recalculatePieceAmount(\Doctrine\ORM\EntityManagerInterface $entityManager, ?Entetepiece $piece): void

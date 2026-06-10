@@ -197,9 +197,28 @@
                     );
                 });
                 this.articlesLoaded = true;
+                this.enableArticleSearch();
             } catch (error) {
                 notify(error.message || 'Impossible de charger les articles.', 'error');
             }
+        }
+
+        enableArticleSearch() {
+            var $ = getJQuery();
+            if (!$ || !this.$articleSelect.length || typeof this.$articleSelect.select2 !== 'function') {
+                return;
+            }
+
+            if (this.$articleSelect.data('select2')) {
+                this.$articleSelect.select2('destroy');
+            }
+
+            this.$articleSelect.select2({
+                dropdownParent: this.$modal,
+                width: '100%',
+                placeholder: 'Rechercher un article...',
+                allowClear: true
+            });
         }
 
         async prefillArticlePrice() {
@@ -348,6 +367,9 @@
 
         resetForm() {
             this.$articleSelect.val('');
+            if (this.$articleSelect.data('select2')) {
+                this.$articleSelect.trigger('change.select2');
+            }
             this.$qtyInput.val('1');
             this.$pubInput.val('0.00').attr('placeholder', '');
             this.$remiseInput.val('0');

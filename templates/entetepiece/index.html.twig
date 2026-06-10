@@ -122,7 +122,7 @@
                     <input type="checkbox" id="pieceColumnToggle_devise" data-column-toggle="devise" checked>
                 </label>
                 <label class="piece-column-settings__item" for="pieceColumnToggle_annee">
-                    <span>Annee</span>
+                    <span>Date piece</span>
                     <input type="checkbox" id="pieceColumnToggle_annee" data-column-toggle="annee" checked>
                 </label>
             </div>
@@ -151,7 +151,7 @@
                 <th data-column-key="statut" data-sort-key="statut">Statut</th>
                 <th data-column-key="codeoperation" data-sort-key="codeoperation">Code operation</th>
                 <th data-column-key="devise" data-sort-key="devise">Devise</th>
-                <th data-column-key="annee" data-sort-key="annee" data-sort-type="number">Annee</th>
+                <th data-column-key="annee" data-sort-key="annee" data-sort-type="date">Date piece</th>
                 <th class="text-center" style="width: 220px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
@@ -207,7 +207,7 @@
                 data-statut-label="{{ wf.statusLabel|default(entetepiece.statut|default('-')) }}"
                 data-devise-id="{{ entetepiece.devise ? entetepiece.devise.id : '' }}"
                 data-devise-label="{{ entetepiece.devise ? entetepiece.devise.code : '' }}"
-                data-annee-value="{{ entetepiece.datep ? entetepiece.datep|date('Y') : '' }}"
+                data-annee-value="{{ entetepiece.datep ? entetepiece.datep|date('Y-m-d') : '' }}"
                 data-piece-ref-value="{{ entetepiece.pieceref|default('') }}"
                 data-remise-value="{{ display_remise|number_format(2, '.', '') }}"
                 tabindex="0">
@@ -251,7 +251,7 @@
                     {% endif %}
                 </td>
                 <td data-field="devise" data-column-key="devise">{{ entetepiece.devise }}</td>
-                <td data-field="annee" data-column-key="annee">{{ entetepiece.datep ? entetepiece.datep|date('Y') : '-' }}</td>
+                <td data-field="annee" data-column-key="annee">{{ entetepiece.datep ? entetepiece.datep|date('d/m/Y') : '-' }}</td>
                 <td class="text-center piece-actions-cell" data-column-key="actions" data-role="actions">
                     <div class="piece-actions">
                         <span class="piece-action-slot">
@@ -1002,6 +1002,15 @@
                 return formatNumber(value) + '%';
             }
 
+            function formatPieceDate(value) {
+                var normalized = $.trim(String(value || ''));
+                var match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (match) {
+                    return match[3] + '/' + match[2] + '/' + match[1];
+                }
+                return normalized === '' ? '-' : normalized;
+            }
+
             function escapeHtml(value) {
                 return String(value || '')
                     .replace(/&/g, '&amp;')
@@ -1202,7 +1211,7 @@
                 $row.find('td[data-field="remise"]').text(snapshot.remiseDisplay);
                 $row.find('td[data-field="statut"]').html('<span class="' + resolveStatusBadgeClass(snapshot.statutValue) + '">' + escapeHtml(fallbackDisplay(snapshot.statutLabel)) + '</span>');
                 $row.find('td[data-field="devise"]').text(fallbackDisplay(snapshot.deviseLabel));
-                $row.find('td[data-field="annee"]').text(snapshot.anneeValue !== '' ? snapshot.anneeValue : '-');
+                $row.find('td[data-field="annee"]').text(formatPieceDate(snapshot.anneeValue));
             }
 
             function closeDropdowns(exceptShell) {
@@ -1370,6 +1379,7 @@
                 var statutLabel = String(item.statutLabel || item.statut || '');
                 var deviseLabel = String(item.devise || '');
                 var anneeValue = String(item.annee || '');
+                var dateDisplay = String(item.dateDisplay || formatPieceDate(anneeValue));
                 var codeOperationLabel = String(item.codeOperationLabel || '');
                 var codeOperationSens = String(item.sens || '');
 
@@ -1414,6 +1424,7 @@
                 }
 
                 restoreRowSnapshot($row, readSnapshot($row));
+                $row.find('td[data-field="annee"]').text(dateDisplay);
             }
 
             function closeInlineEdit($row, restoreSnapshot) {
@@ -1562,8 +1573,8 @@
                     return;
                 }
 
-                if (annee !== '' && !/^\d{4}$/.test(annee)) {
-                    showPieceToast('L annee doit contenir 4 chiffres.', 'error');
+                if (annee !== '' && !/^\d{4}(-\d{2}-\d{2})?$/.test(annee)) {
+                    showPieceToast('La date doit etre au format AAAA-MM-JJ.', 'error');
                     focusEditableField($row, 'annee');
                     return;
                 }
@@ -1585,6 +1596,7 @@
                         remise: remise.toFixed(2),
                         statut: values.statut,
                         deviseId: values.deviseId,
+                        datep: annee,
                         annee: annee,
                         codeOperationId: currentCodeOperationId
                     },
@@ -1711,7 +1723,7 @@
                         '<td data-field="statut" data-column-key="statut"><span class="' + resolveStatusBadgeClass(item.statut) + '">' + escapeHtml(fallbackDisplay(item.statutLabel || item.statut || '-')) + '</span></td>',
                         '<td data-column-key="codeoperation">' + buildCodeOperationBadgeHtml(item.codeOperationLabel || '', item.sens || '') + '</td>',
                         '<td data-field="devise" data-column-key="devise">' + escapeHtml(fallbackDisplay(item.devise || '')) + '</td>',
-                        '<td data-field="annee" data-column-key="annee">' + escapeHtml(String(item.annee || '-')) + '</td>',
+                        '<td data-field="annee" data-column-key="annee">' + escapeHtml(String(item.dateDisplay || formatPieceDate(item.annee || ''))) + '</td>',
                         '<td class="text-center piece-actions-cell" data-column-key="actions" data-role="actions">' + buildPieceActionsCell(item) + '</td>',
                     '</tr>'
                 ].join('');
@@ -2122,7 +2134,13 @@
                         if ($row && $row.length) {
                             showPieceToast(response.message || 'Piece creee avec succes.', 'success');
                             $quickCreateModal.one('hidden.bs.modal.pieceQuickInline', function() {
-                                beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
+                                if (typeof LigneCreationModal !== 'undefined') {
+                                    LigneCreationModal.showAfterPieceCreation({
+                                        id: parseInt(response.item.id, 10) || 0
+                                    }, { tierType: String(response.item.typet || getDefaultTierTypeValue()) });
+                                } else {
+                                    beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
+                                }
                             });
                             $quickCreateModal.modal('hide');
                         } else {
@@ -2179,6 +2197,16 @@
 
                 if (typeof summary.montantDisplay !== 'undefined') {
                     $row.find('td[data-column-key="montant"]').html('<strong>' + escapeHtml(String(summary.montantDisplay)) + '</strong>');
+                }
+
+                if (summary.statut || summary.statutLabel) {
+                    var statusValue = String(summary.statut || summary.statutLabel || '');
+                    var statusLabel = String(summary.statutLabel || summary.statut || '');
+                    $row.attr('data-statut-value', statusValue);
+                    $row.attr('data-statut-label', statusLabel);
+                    $row.find('td[data-field="statut"]').html(
+                        '<span class="' + resolveStatusBadgeClass(statusValue) + '">' + escapeHtml(fallbackDisplay(statusLabel)) + '</span>'
+                    );
                 }
             };
 

@@ -676,7 +676,7 @@ font-size:10px;
 
 </table>
 
-<div class="subject">Intitule: '.$this->e($data['subject_text']).'<span class="subject-ref">&nbsp;'.$this->e($invoiceReferenceDisplay).'</span></div>
+<div class="subject">Intitulé: '.$this->e($data['subject_text']).'<span class="subject-ref">&nbsp;'.$this->e($invoiceReferenceDisplay).'</span></div>
 
 <table class="lines">
 
@@ -821,7 +821,7 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
     . '<table class="invoice-meta">'
     . '<tr><td class="meta-label">' . $this->e($data['piece_number_label']) . '</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($invoiceNumberDisplay) . '</td></tr>'
     . '<tr><td class="meta-label">Date</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($data['invoice_date']) . '</td></tr>'
-    . '<tr><td class="meta-label">N client</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($data['buyer_code']) . '</td></tr>'
+    . '<tr><td class="meta-label">N° client</td><td class="meta-sep">:</td><td class="meta-value">' . $this->e($data['buyer_code']) . '</td></tr>'
     . '</table></td>
 <td width="56%" class="right-wrap" style="vertical-align: top;"><div class="banner">' . $this->e($data['piece_type_label_upper']) . '</div><div class="right"><strong>' . $this->e($data['buyer_name']) . '</strong><br>'
     . $buyerLinesHtml . '<br>'
@@ -829,11 +829,11 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
     . $this->e($data['buyer_country']) . '</div></td>
 </tr></table>
 
-<div class="subject">Intitule: ' . $this->e($data['subject_text']) . '<span class="subject-ref">&nbsp;' . $this->e($invoiceReferenceDisplay) . '</span></div>
+<div class="subject">Intitulé: ' . $this->e($data['subject_text']) . '<span class="subject-ref">&nbsp;' . $this->e($invoiceReferenceDisplay) . '</span></div>
 
 
 <table class="lines">
-<thead><tr><th width="14%" class="c">Quantite</th><th width="44%">Designation</th><th width="21%" class="money-head">Prix HT</th><th width="21%" class="money-head">Montant HT</th></tr></thead>
+<thead><tr><th width="14%" class="c">Quantité</th><th width="44%">Désignation</th><th width="21%" class="money-head">Prix HT</th><th width="21%" class="money-head">Montant HT</th></tr></thead>
 <tbody>' . $rows . '</tbody>
 </table>
 
@@ -867,11 +867,11 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 15px; color: #203040; }
     private function getPieceNumberLabel(string $pieceTypeLabel): string
     {
         return match ($this->normalizeToken($pieceTypeLabel)) {
-            'devis' => 'N de devis',
-            'commande' => 'N de commande',
-            'bl' => 'N de BL',
-            'facture' => 'N de facture',
-            default => 'N de piece',
+            'devis' => 'N° de devis',
+            'commande' => 'N° de commande',
+            'bl' => 'N° de BL',
+            'facture' => 'N° de facture',
+            default => 'N° de piece',
         };
     }
 
