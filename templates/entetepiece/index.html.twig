@@ -281,9 +281,6 @@
                                 <div class="dropdown d-inline-block piece-transition-dropdown">
                                     <button class="btn btn-action btn-convert dropdown-toggle no-loading"
                                             type="button"
-                                            data-toggle="dropdown"
-                                            data-display="static"
-                                            data-boundary="viewport"
                                             aria-haspopup="true"
                                             aria-expanded="false"
                                             title="Convertir cette piece">
@@ -599,7 +596,7 @@
 
             function prepareTransitionMenu($dropdown) {
                 var $menu = $dropdown.data('pieceTransitionMenu');
-                if ($menu && $menu.length) {
+                if ($menu && $menu.length && $menu.closest('body').length) {
                     return $menu;
                 }
 
@@ -658,44 +655,115 @@
                         display: '',
                         visibility: ''
                     });
+                    void $menu[0].offsetHeight;
                 }
             }
 
             function positionOpenTransitionDropdowns() {
-                $('.piece-transition-dropdown.show, .piece-transition-dropdown .piece-transition-menu.show').each(function() {
-                    positionTransitionDropdown($(this).closest('.piece-transition-dropdown'), false);
+                $('.piece-transition-dropdown.show').each(function() {
+                    positionTransitionDropdown($(this), false);
+                });
+            }
+
+            function closeTransitionDropdown($dropdown) {
+                var $menu = prepareTransitionMenu($dropdown);
+                var $home = $menu.data('pieceTransitionHome');
+                $dropdown.removeClass('show');
+                $dropdown.find('.btn-convert.dropdown-toggle').attr('aria-expanded', 'false');
+                $menu.removeClass('show').removeAttr('style');
+                if ($home && $home.length) {
+                    $menu.insertAfter($home);
+                    $home.remove();
+                }
+            }
+
+            function closeAllTransitionDropdowns($except) {
+                $('.piece-transition-dropdown.show').each(function() {
+                    var $dropdown = $(this);
+                    if (!$except || !$except.length || $dropdown[0] !== $except[0]) {
+                        closeTransitionDropdown($dropdown);
+                    }
+                });
+            }
+
+            function openTransitionDropdown($dropdown) {
+                var $menu = prepareTransitionMenu($dropdown);
+                if (!$menu.length) {
+                    return;
+                }
+                closeAllTransitionDropdowns($dropdown);
+                if (!$menu.data('pieceTransitionHome') || !$menu.data('pieceTransitionHome').length) {
+                    $menu.data('pieceTransitionHome', $('<span class="piece-transition-menu-home"></span>').insertBefore($menu));
+                }
+                $menu.appendTo(document.body);
+                $dropdown.addClass('show');
+                $dropdown.find('.btn-convert.dropdown-toggle').attr('aria-expanded', 'true');
+                $menu.addClass('show');
+                positionTransitionDropdown($dropdown, false);
+            }
+
+            function initTransitionDropdown($dropdown) {
+                if (!$dropdown || !$dropdown.length) {
+                    return;
+                }
+                var $toggle = $dropdown.find('.btn-convert.dropdown-toggle').first();
+                if (!$toggle.length) {
+                    return;
+                }
+                if (typeof $toggle.dropdown === 'function') {
+                    try {
+                        $toggle.dropdown('dispose');
+                    } catch (error) {
+                        // Ignore stale Bootstrap instances.
+                    }
+                }
+                $toggle.removeData('bs.dropdown');
+                $dropdown.removeData('pieceTransitionMenu');
+                $toggle.off('click' + transitionDropdownNamespace).on('click' + transitionDropdownNamespace, function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                    if ($dropdown.hasClass('show')) {
+                        closeTransitionDropdown($dropdown);
+                    } else {
+                        openTransitionDropdown($dropdown);
+                    }
                 });
             }
 
             function initTransitionDropdowns() {
                 var $dropdowns = $('.piece-transition-dropdown');
                 $dropdowns.off(transitionDropdownNamespace);
-                $dropdowns.on('show.bs.dropdown' + transitionDropdownNamespace, function() {
-                    var $dropdown = $(this);
-                    var $menu = prepareTransitionMenu($dropdown);
-                    if ($menu.length && !$menu.parent().is('body')) {
-                        $menu.data('pieceTransitionHome', $('<span class="piece-transition-menu-home"></span>').insertBefore($menu));
-                        $menu.appendTo(document.body);
-                    }
-                    positionTransitionDropdown($dropdown, true);
+                $dropdowns.removeData('pieceTransitionMenu');
+                $dropdowns.each(function() {
+                    initTransitionDropdown($(this));
                 });
-                $dropdowns.on('shown.bs.dropdown' + transitionDropdownNamespace, function() {
-                    positionTransitionDropdown($(this), false);
-                });
-                $dropdowns.on('hidden.bs.dropdown' + transitionDropdownNamespace, function() {
-                    var $menu = prepareTransitionMenu($(this));
-                    var $home = $menu.data('pieceTransitionHome');
-                    $menu.removeAttr('style');
-                    if ($home && $home.length) {
-                        $menu.insertAfter($home);
-                        $home.remove();
-                    }
-                });
+
+                $(document)
+                    .off('click' + transitionDropdownNamespace)
+                    .on('click' + transitionDropdownNamespace, function(event) {
+                        var $target = $(event.target);
+                        if ($target.closest('.piece-transition-dropdown, .piece-transition-menu').length === 0) {
+                            closeAllTransitionDropdowns();
+                        }
+                    });
 
                 $(window)
                     .off('scroll' + transitionDropdownNamespace + ' resize' + transitionDropdownNamespace)
                     .on('scroll' + transitionDropdownNamespace + ' resize' + transitionDropdownNamespace, positionOpenTransitionDropdowns);
             }
+
+            function refreshTransitionDropdowns() {
+                window.requestAnimationFrame(function() {
+                    initTransitionDropdowns();
+                    window.setTimeout(initTransitionDropdowns, 0);
+                });
+            }
+
+            window.initPieceTransitionDropdown = function(dropdown) {
+                initTransitionDropdown($(dropdown));
+            };
+            window.refreshPieceTransitionDropdowns = refreshTransitionDropdowns;
 
             initTransitionDropdowns();
 
@@ -1533,8 +1601,14 @@
 
                     applySavedState($row, response.item);
                     closeInlineEdit($row, false);
-                    $row.find('.piece-actions-cell').html(buildPieceActionsCell(response.item));
-                    initTransitionDropdowns();
+                    var $actionCell = $row.find('.piece-actions-cell');
+                    $actionCell.html(buildPieceActionsCell(response.item));
+                    $actionCell.find('.piece-transition-dropdown').each(function() {
+                        if (typeof window.initPieceTransitionDropdown === 'function') {
+                            window.initPieceTransitionDropdown(this);
+                        }
+                    });
+                    
                     $row.addClass('is-saved');
                     window.setTimeout(function() {
                         $row.removeClass('is-saved');
@@ -1563,6 +1637,7 @@
                 var transitionUrl = String(item.transitionUrl || '#');
                 var transitionToken = String(item.transitionToken || '');
                 var eInvoicingUrl = String(item.eInvoicingUrl || '#');
+                var transitionToggleId = 'pieceTransitionToggle_' + String(item.id || item.pieceno || '').replace(/[^A-Za-z0-9_-]/g, '');
                 var inlineDisabledClass = canEdit ? '' : ' is-disabled-ui js-disabled-action';
                 var inlineDisabledTitle = canEdit ? 'Modifier' : 'Action indisponible';
                 var transitionDisabledTitle = String(item.transitionDisabledReason || 'Validez la piece pour pouvoir la convertir');
@@ -1579,8 +1654,8 @@
                 html += '<span class="piece-action-slot">';
                 if (transitionEnabled) {
                     html += '<div class="dropdown d-inline-block piece-transition-dropdown">';
-                    html += '<button class="btn btn-action btn-convert dropdown-toggle no-loading" type="button" data-toggle="dropdown" data-display="static" data-boundary="viewport" aria-haspopup="true" aria-expanded="false" title="Convertir cette piece"><i class="fas fa-random"></i></button>';
-                    html += '<div class="dropdown-menu dropdown-menu-right shadow-sm piece-transition-menu">';
+                    html += '<button id="' + escapeHtml(transitionToggleId) + '" class="btn btn-action btn-convert dropdown-toggle no-loading" type="button" aria-haspopup="true" aria-expanded="false" title="Convertir cette piece"><i class="fas fa-random"></i></button>';
+                    html += '<div class="dropdown-menu dropdown-menu-right shadow-sm piece-transition-menu" aria-labelledby="' + escapeHtml(transitionToggleId) + '">';
                     transitionTargets.forEach(function(targetType) {
                         html += '<form method="post" action="' + escapeHtml(transitionUrl) + '" class="js-piece-transition-form no-loading px-2 py-1" data-target-type="' + escapeHtml(String(targetType)) + '" data-piece-label="Piece #' + escapeHtml(String(item.pieceno || item.id || '')) + '">';
                         html += '<input type="hidden" name="targetType" value="' + escapeHtml(String(targetType)) + '">';
