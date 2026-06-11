@@ -1179,6 +1179,18 @@
                 var tierType = String($row.attr('data-tier-type') || '').trim();
                 var tierId = String($row.attr('data-tier-id') || '').trim();
                 var tierLabel = String($row.attr('data-tier-label') || '').trim();
+
+                try {
+                    console.log('[piece-inline-editor] snapshot', {
+                        rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
+                        tierId: tierId,
+                        tierLabel: tierLabel,
+                        tierType: tierType
+                    });
+                } catch (e) {
+                    // ignore
+                }
+
                 var piecerefValue = String($row.attr('data-piece-ref-value') || '').trim();
                 var remiseValue = parseNumber(String($row.attr('data-remise-value') || '0'));
                 var statutValue = String($row.attr('data-statut-value') || '').trim();
@@ -1330,8 +1342,11 @@
                 }
 
                 if (fieldName === 'tier') {
-                    openDropdownShell($row.find('.inline-dropdown-shell[data-name="tierId"]').first());
-                    $row.find('.inline-dropdown-shell[data-name="tierId"] .inline-dropdown-trigger').trigger('focus');
+                    // Ensure the tier dropdown is initialized/filled.
+                    // Then focus the dropdown trigger (which will open it on user click).
+                    var $tierShell = $row.find('.inline-dropdown-shell[data-name="tierId"]').first();
+                    var $trigger = $tierShell.find('.inline-dropdown-trigger').first();
+                    $trigger.trigger('focus');
                     return;
                 }
 
@@ -1448,7 +1463,31 @@
             }
 
             function renderTierSelectorForRow($row, tierTypeValue, selectedTierId, selectedTierLabel) {
+                // Inject immediately to ensure the container is never left empty.
+                // Options will be replaced once the async fetch completes.
+                var $tierSelectorHost = $row.find('.piece-inline-tier-selector').first();
+                if ($tierSelectorHost.length) {
+                    var emptyShell = buildInlineDropdown([], selectedTierId, selectedTierLabel, 'Selectionner un tiers')
+                        .attr('data-name', 'tierId');
+                    $tierSelectorHost.empty().append(emptyShell);
+                }
+
+                console.log('[piece-inline-editor] renderTierSelectorForRow input', {
+                    rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
+                    tierTypeValue: tierTypeValue,
+                    selectedTierId: selectedTierId,
+                    selectedTierLabel: selectedTierLabel
+                });
+
                 fetchTierOptions(tierTypeValue, false).done(function(tierOptions) {
+                    console.log('[piece-inline-editor] fetchTierOptions returned', {
+                        rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
+                        tierTypeValue: tierTypeValue,
+                        count: (tierOptions || []).length,
+                        tierOptions: tierOptions
+                    });
+
+
                     if (!$row || !$row.length || !$row.hasClass('is-editing')) {
                         return;
                     }
@@ -1460,11 +1499,21 @@
 
                     var tierShell = buildInlineDropdown(tierOptions, selectedTierId, selectedTierLabel, 'Selectionner un tiers').attr('data-name', 'tierId');
                     $tierSelectorHost.empty().append(tierShell);
-                    
+
                     // Ensure the value is set on the shell
                     if (selectedTierId && selectedTierId !== '') {
                         $tierSelectorHost.find('.inline-dropdown-shell').attr('data-value', selectedTierId);
                     }
+
+                    try {
+                        console.log('[piece-inline-editor] tier selector HTML', {
+                            rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
+                            html: $row.find('.piece-inline-tier-selector').first().html()
+                        });
+                    } catch (e) {
+                        // ignore
+                    }
+
                 });
             }
 
@@ -1472,6 +1521,17 @@
                 if (!$row.length || !isEditableRow($row)) {
                     return;
                 }
+
+                try {
+                    console.log('[piece-inline-editor] beginInlineEdit start', {
+                        rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
+                        focusField: focusField || null,
+                        forceTierType: forceTierType || null
+                    });
+                } catch (e) {
+                    // ignore
+                }
+
 
                 if (activeInlineRow && activeInlineRow.length && activeInlineRow[0] !== $row[0]) {
                     closeInlineEdit(activeInlineRow, true);
@@ -1494,7 +1554,10 @@
                         '<div class="piece-inline-tier-selector"></div>' +
                     '</div>'
                 );
+                // Fix: rendre le sélecteur de tiers dans la cellule tier.
+                // Même si snapshot.tierId est vide, on doit tenter de charger la liste selon tierType.
                 renderTierSelectorForRow($row, selectedTierType, snapshot.tierId, snapshot.tierLabel);
+
 
                 $row.find('td[data-field="pieceref"]').html(
                     $('<span class="piece-inline-text inline-editable-text" contenteditable="true" spellcheck="false" data-field="pieceref"></span>').text(snapshot.piecerefValue)

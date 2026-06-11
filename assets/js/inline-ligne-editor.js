@@ -239,6 +239,9 @@
         }
 
         async saveEditLigne() {
+            // NOTE: inline edit inside the ligne table is handled by entetepiece/index.html.twig (piece list inline editor)
+            // and assets/js/crud-list-enhancements.js; this module only manages the ligne editor modal.
+
             const ligneId = this.$editLigneId.val();
             const index = numberValue(this.$editLigneIndex.val());
 
