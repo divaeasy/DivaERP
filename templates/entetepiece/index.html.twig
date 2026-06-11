@@ -1479,7 +1479,10 @@
                     selectedTierLabel: selectedTierLabel
                 });
 
-                fetchTierOptions(tierTypeValue, false).done(function(tierOptions) {
+                    // Always fetch (or resolve from cache) before the user opens the dropdown.
+                    // Some browsers/timing issues cause the dropdown to render empty if opened
+                    // before this async call completes.
+                    fetchTierOptions(tierTypeValue, true).done(function(tierOptions) {
                     console.log('[piece-inline-editor] fetchTierOptions returned', {
                         rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
                         tierTypeValue: tierTypeValue,
