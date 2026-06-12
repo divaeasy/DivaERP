@@ -2266,6 +2266,13 @@ $quickCreateModal.one('hidden.bs.modal.pieceQuickInline', function() {
 
                                         // Ouvrir exactement le même parcours que "Gérer les lignes".
                                         if (editor && typeof editor.show === 'function') {
+                                            // Important: ouvrir le modal "Gestion des lignes" ET démarrer l'inline edit automatiquement.
+                                            // 1) ouvrir l'inline edit sur la ligne de la table
+                                            try {
+                                                beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
+                                            } catch (e) {}
+
+                                            // 2) ouvrir le modal de gestion des lignes
                                             editor.show($row);
                                         } else if (typeof LigneCreationModal !== 'undefined' && typeof LigneCreationModal.showAfterPieceCreation === 'function') {
                                             // Fallback (ancien comportement)
