@@ -1606,6 +1606,7 @@
                     return;
                 }
 
+
                 var updateUrl = String($row.attr('data-inline-update-url') || '').trim();
                 if (updateUrl === '' || inlineUpdateToken === '') {
                     showPieceToast('Edition inline indisponible.', 'error');
@@ -1660,7 +1661,28 @@
                         tierId: values.tierId,
                         pieceref: values.pieceref,
                         remise: remise.toFixed(2),
-                        statut: values.statut,
+                        // Fix: éviter d'envoyer un statut vide/inattendu qui déclenche "Le statut est invalide."
+                        // On retombe sur la valeur snapshot du row si values.statut n'est pas valide.
+                        statut: (function(){
+                            var rawStatut = String(values.statut || '').trim();
+                            var snapshotStatut = String($row.attr('data-statut-value') || '').trim();
+
+                            if (rawStatut !== '') {
+                                // Si une liste de statuts est fournie côté template, vérifier la cohérence.
+                                if (Array.isArray(inlinePieceStatuses) && inlinePieceStatuses.length > 0) {
+                                    var allowed = inlinePieceStatuses.map(function(s){
+                                        return String((s && (s.value != null ? s.value : s)) || '').trim();
+                                    }).filter(function(v){ return v !== ''; });
+
+                                    if (allowed.length > 0) {
+                                        return (allowed.indexOf(rawStatut) !== -1) ? rawStatut : snapshotStatut;
+                                    }
+                                }
+                                return rawStatut;
+                            }
+
+                            return snapshotStatut;
+                        })(),
                         deviseId: values.deviseId,
                         datep: annee,
                         annee: annee,
@@ -2065,28 +2087,48 @@
                     if (shouldOpenLigneModal) {
                         sessionStorage.removeItem('showLigneModalAfterCreate');
                     }
+
                     if ($autoInlineRow.length) {
                         setTimeout(function() {
                             $autoInlineRow[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            if (shouldOpenLigneModal && typeof LigneCreationModal !== 'undefined') {
+
+                            // 1) Entrer en inline edit (comme demandé)
+                            beginInlineEdit($autoInlineRow, 'tier');
+
+                            // 2) Ouvrir automatiquement le popup "Gestion des lignes" (InlineLigneEditor)
+                            if (shouldOpenLigneModal && typeof InlineLigneEditor !== 'undefined') {
                                 var tierType = String($autoInlineRow.attr('data-tier-type') || 'Client');
-                                LigneCreationModal.showAfterPieceCreation({
-                                    id: parseInt(autoInlineEditId, 10) || 0
-                                }, { tierType: tierType });
-                            } else {
-                                beginInlineEdit($autoInlineRow, 'tier');
+                                var pieceId = parseInt(autoInlineEditId, 10) || 0;
+
+                                // mini polling: on ouvre dès que possible
+                                var maxAttempts = 30;
+                                var attempt = 0;
+                                var pollTimer = window.setInterval(function() {
+                                    attempt += 1;
+                                    var $modal = $('#inlineLigneEditorModal');
+                                    var modalShown = $modal.length && $modal.hasClass('show');
+
+                                    if (pieceId > 0 && !modalShown) {
+                                        var editor = InlineLigneEditor.getInstance(pieceId, tierType || 'Client');
+                                        editor.show($autoInlineRow);
+                                        window.clearInterval(pollTimer);
+                                        return;
+                                    }
+
+                                    if (attempt >= maxAttempts) {
+                                        window.clearInterval(pollTimer);
+                                    }
+                                }, 50);
                             }
+
                             if (window.history && window.URL) {
                                 var cleanUrl = new URL(window.location.href);
                                 cleanUrl.searchParams.delete('inlineEditId');
                                 window.history.replaceState({}, document.title, cleanUrl.toString());
                             }
                         }, 120);
-                    } else if (shouldOpenLigneModal && typeof LigneCreationModal !== 'undefined') {
-                        LigneCreationModal.showAfterPieceCreation({
-                            id: parseInt(autoInlineEditId, 10) || 0
-                        });
                     }
+
                     autoInlineEditId = '';
                 }
 
@@ -2820,7 +2862,6 @@
         box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
         cursor: default;
         overflow: visible;
-    }
     }
     .pieces-table .piece-row.is-saving {
         opacity: 0.75;
