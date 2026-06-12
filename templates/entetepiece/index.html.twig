@@ -829,12 +829,13 @@
 
             var $quickCreateModal = $('#pieceQuickCreateModal');
             var $quickCreateForm = $('#pieceQuickCreateForm');
-            var $quickCreateSubmit = $('#pieceQuickCreateSubmit');
+var $quickCreateSubmit = $('#pieceQuickCreateSubmit');
             var $pieceImportModal = $('#pieceImportModal');
             var $pieceImportForm = $('#pieceImportForm');
             var $pieceImportSubmit = $('#pieceImportSubmit');
             var quickCreateUrl = '{{ path('entetepiece.create_minimal') }}';
-            var autoInlineEditId = '{{ app.request.query.get('inlineEditId')|default('')|e('js') }}';
+var autoInlineEditId = '{{ app.request.query.get('inlineEditId')|default('')|e('js') }}';
+            var autoPieceIdFromQuery = '{{ app.request.query.get('pieceId')|default('')|e('js') }}';
             var importUrl = '{{ path('entetepiece.import') }}';
             var $table = $('#piecesTable');
             var $tbody = $('#piecesTableBody');
@@ -2103,31 +2104,27 @@
                             // 1) inline edit
                             beginInlineEdit($autoInlineRow, 'tier');
 
-                            // 2) popup "Gestion des lignes"
+                            // 2) popup "Gestion des lignes" (déterministe, sans polling)
                             if (shouldOpenLigneModal && typeof InlineLigneEditor !== 'undefined') {
                                 var tierType = String($autoInlineRow.attr('data-tier-type') || 'Client');
                                 var pieceId = parseInt(autoInlineEditId, 10) || 0;
 
-                                var maxAttempts = 30;
-                                var attempt = 0;
-                                var pollTimer = window.setInterval(function() {
-                                    attempt += 1;
-
-                                    var $modal = $('#inlineLigneEditorModal');
-                                    var modalShown = $modal.length && $modal.hasClass('show');
-
-                                    if (pieceId > 0 && !modalShown) {
-                                        var editor = InlineLigneEditor.getInstance(pieceId, tierType || 'Client');
-                                        editor.show($autoInlineRow);
-                                        window.clearInterval(pollTimer);
-                                        return;
+                                if (pieceId > 0) {
+                                    // Réduit les conflits de modals pendant les transitions
+                                    var $quick = $('#pieceQuickCreateModal');
+                                    if ($quick && $quick.length && $quick.hasClass('show')) {
+                                        try { $quick.modal('hide'); } catch (e) {}
                                     }
 
-                                    if (attempt >= maxAttempts) {
-                                        window.clearInterval(pollTimer);
-                                    }
-                                }, 50);
+                                    window.requestAnimationFrame(function() {
+                                        window.setTimeout(function() {
+                                            var editor = InlineLigneEditor.getInstance(pieceId, tierType || 'Client');
+                                            editor.show($autoInlineRow);
+                                        }, 0);
+                                    });
+                                }
                             }
+
 
                             // Nettoyage pour éviter re-trigger au refresh/back
                             if (window.history && window.URL) {
@@ -2250,15 +2247,36 @@
 
                         var $row = appendCreatedRow(response.item);
                         if ($row && $row.length) {
+                            console.log('[pieceQuickCreate] ajax success response:', response);
+                            console.log('[pieceQuickCreate] LigneCreationModal:', window.LigneCreationModal);
+
                             showPieceToast(response.message || 'Piece creee avec succes.', 'success');
-                            $quickCreateModal.one('hidden.bs.modal.pieceQuickInline', function() {
-                                if (typeof LigneCreationModal !== 'undefined') {
-                                    LigneCreationModal.showAfterPieceCreation({
-                                        id: parseInt(response.item.id, 10) || 0
-                                    }, { tierType: String(response.item.typet || getDefaultTierTypeValue()) });
-                                } else {
-                                    beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
-                                }
+                            console.log('[pieceQuickCreate] open lines for pieceId:', response && response.item ? response.item.id : null);
+
+$quickCreateModal.one('hidden.bs.modal.pieceQuickInline', function() {
+                                // Garantit qu'on ne coupe pas la transition du modal de lignes
+                                window.setTimeout(function() {
+                                    console.log('[pieceQuickCreate] modal hidden callback fired');
+                                    if (typeof LigneCreationModal !== 'undefined') {
+                                        console.log('[pieceQuickCreate] calling LigneCreationModal.showAfterPieceCreation');
+                                        // Ouvrir le même parcours que le bouton "Gérer les lignes" (modal #ligneCreationModal)
+                                        var editor = (window.InlineLigneEditor && typeof window.InlineLigneEditor.getInstance === 'function')
+                                            ? window.InlineLigneEditor.getInstance(parseInt(response.item.id, 10) || 0, String(response.item.typet || getDefaultTierTypeValue()))
+                                            : null;
+
+                                        // Ouvrir exactement le même parcours que "Gérer les lignes".
+                                        if (editor && typeof editor.show === 'function') {
+                                            editor.show($row);
+                                        } else if (typeof LigneCreationModal !== 'undefined' && typeof LigneCreationModal.showAfterPieceCreation === 'function') {
+                                            // Fallback (ancien comportement)
+                                            LigneCreationModal.showAfterPieceCreation({
+                                                id: parseInt(response.item.id, 10) || 0
+                                            }, { tierType: String(response.item.typet || getDefaultTierTypeValue()) });
+                                        }
+                                    } else {
+                                        beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
+                                    }
+                                }, 0);
                             });
                             $quickCreateModal.modal('hide');
                         } else {

@@ -90,10 +90,12 @@
             });
     }
 
-    class LigneCreationModal {
+class LigneCreationModal {
         constructor(piece, options) {
+            console.log('[LigneCreationModal] entering constructor');
             this.piece = piece || {};
             this.options = options || {};
+
 
             // Supporte différents formats de payload selon les appels back
             // (ex: {id}, {pieceId}, etc.)
@@ -123,7 +125,13 @@
 
             window.__activeLigneCreationModal = this;
 
+            console.log('[LigneCreationModal] entering init');
+
             this.$modal = $('#ligneCreationModal');
+            console.log('[LigneCreationModal] #ligneCreationModal length', this.$modal && this.$modal.length ? this.$modal.length : 0);
+
+            console.log('[LigneCreationModal] this.$modal', this.$modal);
+            console.log('[LigneCreationModal] entering init (after cache)');
             this.$form = $('#quickLineForm');
             this.$tableBody = $('#lignesTableBody');
             this.$addBtn = $('#addLineQuickBtn');
@@ -139,9 +147,14 @@
             this.$montantDisplay = $('#quickMontantDisplay');
 
             if (!this.$modal.length || !this.$addBtn.length) {
-                console.error('Ligne creation modal markup is missing from the page.');
+                console.log('[LigneCreationModal] leaving init: missing DOM (modal/addBtn)', {
+                    modalLen: this.$modal && this.$modal.length ? this.$modal.length : 0,
+                    addBtnLen: this.$addBtn && this.$addBtn.length ? this.$addBtn.length : 0
+                });
+                console.error('[LigneCreationModal] Ligne creation modal markup is missing from the page.');
                 return;
             }
+
 
             this.resetState();
             this.bindEvents();
@@ -478,19 +491,82 @@
         }
 
         show() {
+            console.log('[LigneCreationModal] entering show');
+            var $q = getJQuery();
+            console.log('[LigneCreationModal] #ligneCreationModal length at show', ($q ? $q('#ligneCreationModal').length : 0));
+
             this.ensureAddButtonEnabled();
-            this.$modal.modal('show');
+
+            if (!this.$modal || !this.$modal.length) {
+                console.error('[LigneCreationModal] cannot show: #ligneCreationModal missing at show');
+                return;
+            }
+
+            var $ = getJQuery();
+            if (!$ || !$.fn) {
+                console.warn('[LigneCreationModal] jQuery/.fn missing at show');
+            }
+
+            console.log('[LigneCreationModal] before bootstrap modal');
+
+            var $q = getJQuery();
+            console.log('[LigneCreationModal] $.fn.modal exists?', !!($q && $q.fn && $q.fn.modal));
+
+            console.log('[LigneCreationModal] hasClass show BEFORE', this.$modal.hasClass('show'));
+            console.log('[LigneCreationModal] style BEFORE', this.$modal.attr('style'));
+            this.$modal.on('shown.bs.modal', function () {
+                console.log('[LigneCreationModal] shown.bs.modal fired');
+                var $q2 = getJQuery();
+                var hasShow = $q2 ? $q2(this).hasClass('show') : false;
+                console.log('[LigneCreationModal] hasClass show AFTER (shown)', hasShow);
+            });
+
+            this.$modal.on('hidden.bs.modal', function () {
+                console.log('[LigneCreationModal] hidden.bs.modal fired');
+            });
+            this.$modal.on('hide.bs.modal', function () {
+                console.log('[LigneCreationModal] hide.bs.modal fired');
+            });
+            this.$modal.on('show.bs.modal', function () {
+                console.log('[LigneCreationModal] show.bs.modal fired');
+            });
+
+            var $global = getJQuery();
+            var backdropBefore = ($global && $global('.modal-backdrop') && $global('.modal-backdrop').length) ? $global('.modal-backdrop').length : 0;
+            console.log('[LigneCreationModal] modal-backdrop count BEFORE', backdropBefore);
+            try {
+                this.$modal.modal('show');
+            } catch (e) {
+                console.error('[LigneCreationModal] bootstrap modal show threw', e);
+            }
+            console.log('[LigneCreationModal] after bootstrap modal');
+            console.log('[LigneCreationModal] hasClass show AFTER (post show)', this.$modal.hasClass('show'));
+            console.log('[LigneCreationModal] style AFTER (post show)', this.$modal.attr('style'));
+            var backdropAfter = ($global && $global('.modal-backdrop') && $global('.modal-backdrop').length) ? $global('.modal-backdrop').length : 0;
+            console.log('[LigneCreationModal] modal-backdrop count AFTER', backdropAfter);
+
+
         }
 
+
         static showAfterPieceCreation(piece, options) {
+            console.log('[LigneCreationModal] showAfterPieceCreation called', { piece: piece, options: options });
             var $ = getJQuery();
+            console.log('[LigneCreationModal] jQuery present?', !!$);
             if (!$) {
                 notify('jQuery est requis pour ouvrir le modal de lignes.', 'error');
                 return null;
             }
             bindGlobalHandlers($);
+            console.log('[LigneCreationModal] before new LigneCreationModal');
             var modal = new LigneCreationModal(piece, options);
-            modal.show();
+            console.log('[LigneCreationModal] after new LigneCreationModal', { modal: modal });
+            if (modal && typeof modal.show === 'function') {
+                console.log('[LigneCreationModal] calling modal.show()');
+                modal.show();
+            } else {
+                console.warn('[LigneCreationModal] modal.show not found');
+            }
             return modal;
         }
     }
