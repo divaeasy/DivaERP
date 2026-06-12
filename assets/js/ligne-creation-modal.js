@@ -93,8 +93,20 @@
     class LigneCreationModal {
         constructor(piece, options) {
             this.piece = piece || {};
-            this.pieceId = parseInt(this.piece.id, 10) || 0;
             this.options = options || {};
+
+            // Supporte différents formats de payload selon les appels back
+            // (ex: {id}, {pieceId}, etc.)
+            var rawId =
+                this.piece.id ??
+                this.piece.pieceId ??
+                this.piece.entetepieceId ??
+                this.piece.uuid ??
+                this.options.pieceId ??
+                this.options.id;
+
+            this.pieceId = parseInt(rawId, 10) || 0;
+
             this.lignesData = [];
             this.articlesLoaded = false;
             this.priceLoading = false;
@@ -415,11 +427,21 @@
 
                 notify(this.lignesData.length + ' ligne(s) enregistree(s).', 'success');
                 this.$modal.modal('hide');
+
                 if (typeof this.options.onFinish === 'function') {
                     this.options.onFinish(lastPieceSummary);
-                } else {
-                    window.location.href = window.location.pathname + '?scroll=piece-lines#piece-lines';
                 }
+
+                // Aller directement sur la page édition de la piece créée
+                // pour afficher immédiatement "Gestion des lignes".
+                var targetId = String(this.pieceId || 0);
+                var currentUrl = new URL(window.location.href);
+                currentUrl.pathname = '/piece/edit/' + encodeURIComponent(targetId);
+                currentUrl.searchParams.set('scroll', 'piece-lines');
+                currentUrl.searchParams.set('showLigneModal', '1');
+                currentUrl.hash = '#piece-lines';
+
+                window.location.href = currentUrl.toString();
             } catch (error) {
                 notify(error.message || 'Erreur lors de l enregistrement.', 'error');
                 this.$finishBtn.prop('disabled', false).html('<i class="fas fa-check mr-2"></i>Terminer et editer');
@@ -430,9 +452,29 @@
 
         skipToInlineEdit() {
             this.$modal.modal('hide');
-            if (typeof this.options.onSkip === 'function') {
-                this.options.onSkip();
+
+            var targetId = String(this.pieceId || 0);
+            if (!targetId || targetId === '0') {
+                notify('Piece introuvable (ID manquant). Rechargez la page.', 'error');
+                return;
             }
+
+            // Conserve les query params existants (ex: origin=client/fournisseur/interne)
+            var currentUrl = new URL(window.location.href);
+            currentUrl.pathname = '/piece/edit/' + encodeURIComponent(targetId);
+            currentUrl.searchParams.set('scroll', 'piece-lines');
+            currentUrl.searchParams.set('showLigneModal', '1');
+            currentUrl.hash = '#piece-lines';
+
+            if (typeof this.options.onSkip === 'function') {
+                try {
+                    this.options.onSkip();
+                } catch (e) {
+                    // ignore
+                }
+            }
+
+            window.location.href = currentUrl.toString();
         }
 
         show() {

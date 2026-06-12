@@ -2083,28 +2083,36 @@
 
                 if (autoInlineEditId) {
                     var $autoInlineRow = $('tr.piece-row[data-row-id="' + autoInlineEditId + '"], tr.piece-row[data-item-id="' + autoInlineEditId + '"]').first();
-                    var shouldOpenLigneModal = sessionStorage.getItem('showLigneModalAfterCreate') === 'true';
-                    if (shouldOpenLigneModal) {
+
+                    // Déclencheur fiable après redirect backend: ?showLigneModal=1
+                    var urlParams = new URL(window.location.href).searchParams;
+                    var showLigneModalFlag = String(urlParams.get('showLigneModal') || '').trim() === '1';
+
+                    // Compatibilité legacy (si un autre flux utilisait sessionStorage)
+                    var legacyFlag = sessionStorage.getItem('showLigneModalAfterCreate') === 'true';
+                    if (legacyFlag) {
                         sessionStorage.removeItem('showLigneModalAfterCreate');
                     }
+
+                    var shouldOpenLigneModal = showLigneModalFlag || legacyFlag;
 
                     if ($autoInlineRow.length) {
                         setTimeout(function() {
                             $autoInlineRow[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-                            // 1) Entrer en inline edit (comme demandé)
+                            // 1) inline edit
                             beginInlineEdit($autoInlineRow, 'tier');
 
-                            // 2) Ouvrir automatiquement le popup "Gestion des lignes" (InlineLigneEditor)
+                            // 2) popup "Gestion des lignes"
                             if (shouldOpenLigneModal && typeof InlineLigneEditor !== 'undefined') {
                                 var tierType = String($autoInlineRow.attr('data-tier-type') || 'Client');
                                 var pieceId = parseInt(autoInlineEditId, 10) || 0;
 
-                                // mini polling: on ouvre dès que possible
                                 var maxAttempts = 30;
                                 var attempt = 0;
                                 var pollTimer = window.setInterval(function() {
                                     attempt += 1;
+
                                     var $modal = $('#inlineLigneEditorModal');
                                     var modalShown = $modal.length && $modal.hasClass('show');
 
@@ -2121,9 +2129,11 @@
                                 }, 50);
                             }
 
+                            // Nettoyage pour éviter re-trigger au refresh/back
                             if (window.history && window.URL) {
                                 var cleanUrl = new URL(window.location.href);
                                 cleanUrl.searchParams.delete('inlineEditId');
+                                cleanUrl.searchParams.delete('showLigneModal');
                                 window.history.replaceState({}, document.title, cleanUrl.toString());
                             }
                         }, 120);
@@ -2450,6 +2460,37 @@
                 event.preventDefault();
                 submitBulkDeleteSelection();
             });
+
+            // Single delete (dynamic buttons): handler must be delegated so it works after inline edit rebuild
+            // and without requiring a full page refresh.
+            $(document)
+                .off('click.pieceSingleDelete', '.delete-btn')
+                .on('click.pieceSingleDelete', '.delete-btn', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (!$deleteConfirmModal || $deleteConfirmModal.length === 0) {
+                        return;
+                    }
+
+                    var deleteUrl = String($(this).attr('data-delete-url') || '').trim();
+                    var itemName = String($(this).attr('data-item-name') || '').trim();
+
+                    if (!deleteUrl) {
+                        return;
+                    }
+
+                    $deleteModalItemName.text(itemName || 'cette piece');
+                    resetBulkDeleteConfirmState();
+                    $confirmDeleteBtn
+                        .attr('href', deleteUrl)
+                        .removeAttr('data-bulk-delete');
+
+                    // For safety: disable loading class if present
+                    setBulkDeleteConfirmButtonLoading(false);
+
+                    $deleteConfirmModal.modal('show');
+                });
 
             if ($deleteConfirmModal.length) {
                 $deleteConfirmModal.off('hidden.bs.modal.pieceBulkDelete').on('hidden.bs.modal.pieceBulkDelete', function() {
