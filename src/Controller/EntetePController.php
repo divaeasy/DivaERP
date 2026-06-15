@@ -29,6 +29,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 #[Route('piece')]
 class EntetePController extends AbstractController
@@ -37,6 +38,7 @@ class EntetePController extends AbstractController
         private ManagerRegistry $doctrine2,
         private CodeOperationService $codeOperationService,
         private CodeOperationMigrationService $migrationService,
+        private CsrfTokenManagerInterface $csrfTokenManager,
     )
     {
     }
@@ -1026,23 +1028,29 @@ class EntetePController extends AbstractController
             $piece->setDevise($devise);
         }
 
-        $yearRaw = trim((string) $request->request->get('annee', ''));
-        if ($yearRaw !== '') {
-            if (!ctype_digit($yearRaw)) {
-                return $this->json(['success' => false, 'message' => 'L annee est invalide.'], 422);
+        $dateRaw = trim((string) $request->request->get('datep', (string) $request->request->get('annee', '')));
+        if ($dateRaw !== '') {
+            if (preg_match('/^\d{4}$/', $dateRaw)) {
+                $baseDate = $piece->getDatep() instanceof \DateTimeInterface
+                    ? \DateTimeImmutable::createFromMutable(\DateTime::createFromInterface($piece->getDatep()))
+                    : new \DateTimeImmutable('today');
+                $year = (int) $dateRaw;
+                if ($year < 1900 || $year > 2100) {
+                    return $this->json(['success' => false, 'message' => 'La date doit etre comprise entre 1900 et 2100.'], 422);
+                }
+                $month = (int) $baseDate->format('m');
+                $day = (int) $baseDate->format('d');
+                $safeDay = min($day, cal_days_in_month(CAL_GREGORIAN, $month, $year));
+                $piece->setDatep(new \DateTimeImmutable(sprintf('%04d-%02d-%02d', $year, $month, $safeDay)));
+            } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateRaw)) {
+                $datep = \DateTimeImmutable::createFromFormat('Y-m-d', $dateRaw);
+                if (!$datep instanceof \DateTimeImmutable) {
+                    return $this->json(['success' => false, 'message' => 'La date est invalide.'], 422);
+                }
+                $piece->setDatep($datep);
+            } else {
+                return $this->json(['success' => false, 'message' => 'La date est invalide.'], 422);
             }
-            $year = (int) $yearRaw;
-            if ($year < 1900 || $year > 2100) {
-                return $this->json(['success' => false, 'message' => 'L annee doit etre comprise entre 1900 et 2100.'], 422);
-            }
-            $baseDate = $piece->getDatep() instanceof \DateTimeInterface
-                ? \DateTimeImmutable::createFromMutable(\DateTime::createFromInterface($piece->getDatep()))
-                : new \DateTimeImmutable('today');
-            $month = (int) $baseDate->format('m');
-            $day = (int) $baseDate->format('d');
-            $maxDay = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-            $safeDay = min($day, $maxDay);
-            $piece->setDatep(new \DateTimeImmutable(sprintf('%04d-%02d-%02d', $year, $month, $safeDay)));
         } elseif (!$piece->getDatep() instanceof \DateTimeInterface) {
             $piece->setDatep(new \DateTimeImmutable('today'));
         }
@@ -1682,7 +1690,8 @@ class EntetePController extends AbstractController
             'statusKey' => $statusKey,
             'deviseId' => $piece->getDevise()?->getId(),
             'devise' => (string) ($piece->getDevise()?->getCode() ?? ''),
-            'annee' => $datep ? $datep->format('Y') : '-',
+            'annee' => $datep ? $datep->format('Y-m-d') : '',
+            'dateDisplay' => $datep ? $datep->format('d/m/Y') : '-',
             'lineCount' => $lineCount,
             'canEdit' => !$isPerimee,
             'canView' => $isPerimee,
@@ -1690,6 +1699,12 @@ class EntetePController extends AbstractController
             'transitionTargets' => $transitionTargets,
             'transitionEnabled' => $transitionEnabled,
             'transitionDisabledReason' => $transitionReason,
+            'transitionUrl' => $this->generateUrl('entetepiece.transition', array_merge(
+                ['id' => (int) ($piece->getId() ?? 0)],
+                $this->buildPieceOriginQueryParams($origin)
+            )),
+            'transitionToken' => $this->csrfTokenManager->getToken('transition_piece_' . (int) ($piece->getId() ?? 0))->getValue(),
+            'eInvoicingUrl' => $this->generateUrl('invoice_einvoicing_test', ['id' => (int) ($piece->getId() ?? 0)]),
             'inlineUpdateUrl' => $this->generateUrl('entetepiece.inline_update', array_merge(
                 ['id' => (int) ($piece->getId() ?? 0)],
                 $this->buildPieceOriginQueryParams($origin)

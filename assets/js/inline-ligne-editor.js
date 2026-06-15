@@ -239,6 +239,9 @@
         }
 
         async saveEditLigne() {
+            // NOTE: inline edit inside the ligne table is handled by entetepiece/index.html.twig (piece list inline editor)
+            // and assets/js/crud-list-enhancements.js; this module only manages the ligne editor modal.
+
             const ligneId = this.$editLigneId.val();
             const index = numberValue(this.$editLigneIndex.val());
 
@@ -314,6 +317,22 @@
                         .prop('selected', String(article.id) === String(selectedId || ''))
                         .text(article.libelle)
                 );
+            });
+            this.enableArticleSearch($select);
+        }
+
+        enableArticleSearch($select) {
+            if (!$select || !$select.length || typeof $select.select2 !== 'function') {
+                return;
+            }
+            if ($select.data('select2')) {
+                $select.select2('destroy');
+            }
+            $select.select2({
+                dropdownParent: $select.closest('.modal'),
+                width: '100%',
+                placeholder: 'Rechercher un article...',
+                allowClear: true
             });
         }
 
@@ -524,6 +543,9 @@
 
         resetQuickForm() {
             this.$articleSelect.val('');
+            if (this.$articleSelect.data('select2')) {
+                this.$articleSelect.trigger('change.select2');
+            }
             this.$qtyInput.val('1');
             this.$pubInput.val('0.00');
             this.$remiseInput.val('0');

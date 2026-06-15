@@ -406,7 +406,7 @@
                         <div class="einv-step-content">
                             <div class="einv-step-title">
                                 {% if is_facture_type %}
-                                    Generer la Facture-X
+                                    Imprimer la facture
                                 {% else %}
                                     Generer la {{ piece_type_label }}
                                 {% endif %}
@@ -420,7 +420,7 @@
                                     Le modele 2 est genere. Le modele 1 ne sera genere que si vous cliquez sur "Generer modele 1".
                                 {% else %}
                                     {% if is_facture_type %}
-                                        Generez le PDF Facture-X pour cette piece (avec XML integre), puis choisissez le modele visuel a telecharger.
+                                        Imprimez le PDF de la facture, puis choisissez le modele visuel a telecharger.
                                     {% else %}
                                         Generez le PDF de la {{ piece_type_label }}, puis choisissez le modele visuel a telecharger.
                                     {% endif %}
@@ -509,7 +509,7 @@
                                     {% elseif step2_active %}
                                         Envoyer la piece {{ piece_type_label }} au PDP Tiime pour transmission à la plateforme publique de facturation (PPF).
                                     {% else %}
-                                        Vous devez d'abord générer la Facture-X avant de pouvoir la transmettre.
+                                        Vous devez d'abord imprimer la facture avant de pouvoir la transmettre.
                                     {% endif %}
                                 </div>
                                 <div class="einv-step-action">
@@ -721,7 +721,7 @@
                 <div class="d-flex align-items-start mb-3" style="gap: 10px;">
                     <span class="einv-badge einv-badge-info" style="min-width: 24px; justify-content: center;">1</span>
                     <small class="text-muted">
-                        <strong>Générer</strong> —
+                        <strong>Imprimer</strong> —
                         {% if is_facture_type %}
                             Crée le PDF et XML conformes à Facture-X
                         {% else %}

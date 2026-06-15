@@ -90,11 +90,25 @@
             });
     }
 
-    class LigneCreationModal {
+class LigneCreationModal {
         constructor(piece, options) {
+            console.log('[LigneCreationModal] entering constructor');
             this.piece = piece || {};
-            this.pieceId = parseInt(this.piece.id, 10) || 0;
             this.options = options || {};
+
+
+            // Supporte différents formats de payload selon les appels back
+            // (ex: {id}, {pieceId}, etc.)
+            var rawId =
+                this.piece.id ??
+                this.piece.pieceId ??
+                this.piece.entetepieceId ??
+                this.piece.uuid ??
+                this.options.pieceId ??
+                this.options.id;
+
+            this.pieceId = parseInt(rawId, 10) || 0;
+
             this.lignesData = [];
             this.articlesLoaded = false;
             this.priceLoading = false;
@@ -111,7 +125,13 @@
 
             window.__activeLigneCreationModal = this;
 
+            console.log('[LigneCreationModal] entering init');
+
             this.$modal = $('#ligneCreationModal');
+            console.log('[LigneCreationModal] #ligneCreationModal length', this.$modal && this.$modal.length ? this.$modal.length : 0);
+
+            console.log('[LigneCreationModal] this.$modal', this.$modal);
+            console.log('[LigneCreationModal] entering init (after cache)');
             this.$form = $('#quickLineForm');
             this.$tableBody = $('#lignesTableBody');
             this.$addBtn = $('#addLineQuickBtn');
@@ -127,9 +147,14 @@
             this.$montantDisplay = $('#quickMontantDisplay');
 
             if (!this.$modal.length || !this.$addBtn.length) {
-                console.error('Ligne creation modal markup is missing from the page.');
+                console.log('[LigneCreationModal] leaving init: missing DOM (modal/addBtn)', {
+                    modalLen: this.$modal && this.$modal.length ? this.$modal.length : 0,
+                    addBtnLen: this.$addBtn && this.$addBtn.length ? this.$addBtn.length : 0
+                });
+                console.error('[LigneCreationModal] Ligne creation modal markup is missing from the page.');
                 return;
             }
+
 
             this.resetState();
             this.bindEvents();
@@ -197,9 +222,28 @@
                     );
                 });
                 this.articlesLoaded = true;
+                this.enableArticleSearch();
             } catch (error) {
                 notify(error.message || 'Impossible de charger les articles.', 'error');
             }
+        }
+
+        enableArticleSearch() {
+            var $ = getJQuery();
+            if (!$ || !this.$articleSelect.length || typeof this.$articleSelect.select2 !== 'function') {
+                return;
+            }
+
+            if (this.$articleSelect.data('select2')) {
+                this.$articleSelect.select2('destroy');
+            }
+
+            this.$articleSelect.select2({
+                dropdownParent: this.$modal,
+                width: '100%',
+                placeholder: 'Rechercher un article...',
+                allowClear: true
+            });
         }
 
         async prefillArticlePrice() {
@@ -348,6 +392,9 @@
 
         resetForm() {
             this.$articleSelect.val('');
+            if (this.$articleSelect.data('select2')) {
+                this.$articleSelect.trigger('change.select2');
+            }
             this.$qtyInput.val('1');
             this.$pubInput.val('0.00').attr('placeholder', '');
             this.$remiseInput.val('0');
@@ -393,11 +440,21 @@
 
                 notify(this.lignesData.length + ' ligne(s) enregistree(s).', 'success');
                 this.$modal.modal('hide');
+
                 if (typeof this.options.onFinish === 'function') {
                     this.options.onFinish(lastPieceSummary);
-                } else {
-                    window.location.href = window.location.pathname + '?scroll=piece-lines#piece-lines';
                 }
+
+                // Aller directement sur la page édition de la piece créée
+                // pour afficher immédiatement "Gestion des lignes".
+                var targetId = String(this.pieceId || 0);
+                var currentUrl = new URL(window.location.href);
+                currentUrl.pathname = '/piece/edit/' + encodeURIComponent(targetId);
+                currentUrl.searchParams.set('scroll', 'piece-lines');
+                currentUrl.searchParams.set('showLigneModal', '1');
+                currentUrl.hash = '#piece-lines';
+
+                window.location.href = currentUrl.toString();
             } catch (error) {
                 notify(error.message || 'Erreur lors de l enregistrement.', 'error');
                 this.$finishBtn.prop('disabled', false).html('<i class="fas fa-check mr-2"></i>Terminer et editer');
@@ -408,25 +465,108 @@
 
         skipToInlineEdit() {
             this.$modal.modal('hide');
-            if (typeof this.options.onSkip === 'function') {
-                this.options.onSkip();
+
+            var targetId = String(this.pieceId || 0);
+            if (!targetId || targetId === '0') {
+                notify('Piece introuvable (ID manquant). Rechargez la page.', 'error');
+                return;
             }
+
+            // Conserve les query params existants (ex: origin=client/fournisseur/interne)
+            var currentUrl = new URL(window.location.href);
+            currentUrl.pathname = '/piece/edit/' + encodeURIComponent(targetId);
+            currentUrl.searchParams.set('scroll', 'piece-lines');
+            currentUrl.searchParams.set('showLigneModal', '1');
+            currentUrl.hash = '#piece-lines';
+
+            if (typeof this.options.onSkip === 'function') {
+                try {
+                    this.options.onSkip();
+                } catch (e) {
+                    // ignore
+                }
+            }
+
+            window.location.href = currentUrl.toString();
         }
 
         show() {
+            console.log('[LigneCreationModal] entering show');
+            var $q = getJQuery();
+            console.log('[LigneCreationModal] #ligneCreationModal length at show', ($q ? $q('#ligneCreationModal').length : 0));
+
             this.ensureAddButtonEnabled();
-            this.$modal.modal('show');
+
+            if (!this.$modal || !this.$modal.length) {
+                console.error('[LigneCreationModal] cannot show: #ligneCreationModal missing at show');
+                return;
+            }
+
+            var $ = getJQuery();
+            if (!$ || !$.fn) {
+                console.warn('[LigneCreationModal] jQuery/.fn missing at show');
+            }
+
+            console.log('[LigneCreationModal] before bootstrap modal');
+
+            var $q = getJQuery();
+            console.log('[LigneCreationModal] $.fn.modal exists?', !!($q && $q.fn && $q.fn.modal));
+
+            console.log('[LigneCreationModal] hasClass show BEFORE', this.$modal.hasClass('show'));
+            console.log('[LigneCreationModal] style BEFORE', this.$modal.attr('style'));
+            this.$modal.on('shown.bs.modal', function () {
+                console.log('[LigneCreationModal] shown.bs.modal fired');
+                var $q2 = getJQuery();
+                var hasShow = $q2 ? $q2(this).hasClass('show') : false;
+                console.log('[LigneCreationModal] hasClass show AFTER (shown)', hasShow);
+            });
+
+            this.$modal.on('hidden.bs.modal', function () {
+                console.log('[LigneCreationModal] hidden.bs.modal fired');
+            });
+            this.$modal.on('hide.bs.modal', function () {
+                console.log('[LigneCreationModal] hide.bs.modal fired');
+            });
+            this.$modal.on('show.bs.modal', function () {
+                console.log('[LigneCreationModal] show.bs.modal fired');
+            });
+
+            var $global = getJQuery();
+            var backdropBefore = ($global && $global('.modal-backdrop') && $global('.modal-backdrop').length) ? $global('.modal-backdrop').length : 0;
+            console.log('[LigneCreationModal] modal-backdrop count BEFORE', backdropBefore);
+            try {
+                this.$modal.modal('show');
+            } catch (e) {
+                console.error('[LigneCreationModal] bootstrap modal show threw', e);
+            }
+            console.log('[LigneCreationModal] after bootstrap modal');
+            console.log('[LigneCreationModal] hasClass show AFTER (post show)', this.$modal.hasClass('show'));
+            console.log('[LigneCreationModal] style AFTER (post show)', this.$modal.attr('style'));
+            var backdropAfter = ($global && $global('.modal-backdrop') && $global('.modal-backdrop').length) ? $global('.modal-backdrop').length : 0;
+            console.log('[LigneCreationModal] modal-backdrop count AFTER', backdropAfter);
+
+
         }
 
+
         static showAfterPieceCreation(piece, options) {
+            console.log('[LigneCreationModal] showAfterPieceCreation called', { piece: piece, options: options });
             var $ = getJQuery();
+            console.log('[LigneCreationModal] jQuery present?', !!$);
             if (!$) {
                 notify('jQuery est requis pour ouvrir le modal de lignes.', 'error');
                 return null;
             }
             bindGlobalHandlers($);
+            console.log('[LigneCreationModal] before new LigneCreationModal');
             var modal = new LigneCreationModal(piece, options);
-            modal.show();
+            console.log('[LigneCreationModal] after new LigneCreationModal', { modal: modal });
+            if (modal && typeof modal.show === 'function') {
+                console.log('[LigneCreationModal] calling modal.show()');
+                modal.show();
+            } else {
+                console.warn('[LigneCreationModal] modal.show not found');
+            }
             return modal;
         }
     }

@@ -122,7 +122,7 @@
                     <input type="checkbox" id="pieceColumnToggle_devise" data-column-toggle="devise" checked>
                 </label>
                 <label class="piece-column-settings__item" for="pieceColumnToggle_annee">
-                    <span>Annee</span>
+                    <span>Date piece</span>
                     <input type="checkbox" id="pieceColumnToggle_annee" data-column-toggle="annee" checked>
                 </label>
             </div>
@@ -151,7 +151,7 @@
                 <th data-column-key="statut" data-sort-key="statut">Statut</th>
                 <th data-column-key="codeoperation" data-sort-key="codeoperation">Code operation</th>
                 <th data-column-key="devise" data-sort-key="devise">Devise</th>
-                <th data-column-key="annee" data-sort-key="annee" data-sort-type="number">Annee</th>
+                <th data-column-key="annee" data-sort-key="annee" data-sort-type="date">Date piece</th>
                 <th class="text-center" style="width: 220px;" data-column-key="actions">Actions</th>
             </tr>
         </thead>
@@ -207,7 +207,7 @@
                 data-statut-label="{{ wf.statusLabel|default(entetepiece.statut|default('-')) }}"
                 data-devise-id="{{ entetepiece.devise ? entetepiece.devise.id : '' }}"
                 data-devise-label="{{ entetepiece.devise ? entetepiece.devise.code : '' }}"
-                data-annee-value="{{ entetepiece.datep ? entetepiece.datep|date('Y') : '' }}"
+                data-annee-value="{{ entetepiece.datep ? entetepiece.datep|date('Y-m-d') : '' }}"
                 data-piece-ref-value="{{ entetepiece.pieceref|default('') }}"
                 data-remise-value="{{ display_remise|number_format(2, '.', '') }}"
                 tabindex="0">
@@ -251,7 +251,7 @@
                     {% endif %}
                 </td>
                 <td data-field="devise" data-column-key="devise">{{ entetepiece.devise }}</td>
-                <td data-field="annee" data-column-key="annee">{{ entetepiece.datep ? entetepiece.datep|date('Y') : '-' }}</td>
+                <td data-field="annee" data-column-key="annee">{{ entetepiece.datep ? entetepiece.datep|date('d/m/Y') : '-' }}</td>
                 <td class="text-center piece-actions-cell" data-column-key="actions" data-role="actions">
                     <div class="piece-actions">
                         <span class="piece-action-slot">
@@ -278,16 +278,15 @@
                         
                         <span class="piece-action-slot">
                             {% if wf.showTransition|default(false) and wf.transitionEnabled|default(false) %}
-                                <div class="dropdown d-inline-block">
+                                <div class="dropdown d-inline-block piece-transition-dropdown">
                                     <button class="btn btn-action btn-convert dropdown-toggle no-loading"
                                             type="button"
-                                            data-toggle="dropdown"
                                             aria-haspopup="true"
                                             aria-expanded="false"
                                             title="Convertir cette piece">
                                         <i class="fas fa-random"></i>
                                     </button>
-                                    <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                                    <div class="dropdown-menu dropdown-menu-right shadow-sm piece-transition-menu">
                                         {% for targetType in wf.transitionTargets|default([]) %}
                                             <form method="post"
                                                   action="{{ path('entetepiece.transition', {id: entetepiece.id}|merge(pieceOriginParams)) }}"
@@ -593,8 +592,182 @@
             var $transitionModal = $('#transitionConfirmModal');
             var $pieceName = $('#transitionModalPieceName');
             var $targetType = $('#transitionModalTargetType');
+            var transitionDropdownNamespace = '.pieceTransitionDropdown';
 
-            $('.js-piece-transition-form').off('submit.pieceTransition').on('submit.pieceTransition', function(e) {
+            function prepareTransitionMenu($dropdown) {
+                var $menu = $dropdown.data('pieceTransitionMenu');
+                if ($menu && $menu.length && $menu.closest('body').length) {
+                    return $menu;
+                }
+
+                $menu = $dropdown.find('.piece-transition-menu').first();
+                if (!$menu.length) {
+                    return $();
+                }
+
+                $dropdown.data('pieceTransitionMenu', $menu);
+                return $menu;
+            }
+
+            function positionTransitionDropdown($dropdown, allowHiddenMeasure) {
+                var $toggle = $dropdown.find('.btn-convert.dropdown-toggle').first();
+                var $menu = prepareTransitionMenu($dropdown);
+                if (!$toggle.length || !$menu.length || !$toggle[0]) {
+                    return;
+                }
+
+                if (allowHiddenMeasure && !$menu.hasClass('show')) {
+                    $menu.css({
+                        display: 'block',
+                        visibility: 'hidden'
+                    });
+                }
+
+                var toggleRect = $toggle[0].getBoundingClientRect();
+                var viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+                var viewportHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+                var menuWidth = $menu.outerWidth();
+                var menuHeight = $menu.outerHeight();
+                var gap = 8;
+                var gutter = 8;
+                var left = toggleRect.left + (toggleRect.width / 2) - (menuWidth / 2);
+                var top = toggleRect.bottom + gap;
+
+                if (top + menuHeight > viewportHeight - gutter && toggleRect.top - menuHeight - gap > gutter) {
+                    top = toggleRect.top - menuHeight - gap;
+                }
+
+                left = Math.max(gutter, Math.min(left, viewportWidth - menuWidth - gutter));
+                top = Math.max(gutter, top);
+
+                $menu.css({
+                    position: 'fixed',
+                    top: top + 'px',
+                    left: left + 'px',
+                    right: 'auto',
+                    bottom: 'auto',
+                    transform: 'none',
+                    zIndex: 30000
+                });
+
+                if (allowHiddenMeasure && !$menu.hasClass('show')) {
+                    $menu.css({
+                        display: '',
+                        visibility: ''
+                    });
+                    void $menu[0].offsetHeight;
+                }
+            }
+
+            function positionOpenTransitionDropdowns() {
+                $('.piece-transition-dropdown.show').each(function() {
+                    positionTransitionDropdown($(this), false);
+                });
+            }
+
+            function closeTransitionDropdown($dropdown) {
+                var $menu = prepareTransitionMenu($dropdown);
+                var $home = $menu.data('pieceTransitionHome');
+                $dropdown.removeClass('show');
+                $dropdown.find('.btn-convert.dropdown-toggle').attr('aria-expanded', 'false');
+                $menu.removeClass('show').removeAttr('style');
+                if ($home && $home.length) {
+                    $menu.insertAfter($home);
+                    $home.remove();
+                }
+            }
+
+            function closeAllTransitionDropdowns($except) {
+                $('.piece-transition-dropdown.show').each(function() {
+                    var $dropdown = $(this);
+                    if (!$except || !$except.length || $dropdown[0] !== $except[0]) {
+                        closeTransitionDropdown($dropdown);
+                    }
+                });
+            }
+
+            function openTransitionDropdown($dropdown) {
+                var $menu = prepareTransitionMenu($dropdown);
+                if (!$menu.length) {
+                    return;
+                }
+                closeAllTransitionDropdowns($dropdown);
+                if (!$menu.data('pieceTransitionHome') || !$menu.data('pieceTransitionHome').length) {
+                    $menu.data('pieceTransitionHome', $('<span class="piece-transition-menu-home"></span>').insertBefore($menu));
+                }
+                $menu.appendTo(document.body);
+                $dropdown.addClass('show');
+                $dropdown.find('.btn-convert.dropdown-toggle').attr('aria-expanded', 'true');
+                $menu.addClass('show');
+                positionTransitionDropdown($dropdown, false);
+            }
+
+            function initTransitionDropdown($dropdown) {
+                if (!$dropdown || !$dropdown.length) {
+                    return;
+                }
+                var $toggle = $dropdown.find('.btn-convert.dropdown-toggle').first();
+                if (!$toggle.length) {
+                    return;
+                }
+                if (typeof $toggle.dropdown === 'function') {
+                    try {
+                        $toggle.dropdown('dispose');
+                    } catch (error) {
+                        // Ignore stale Bootstrap instances.
+                    }
+                }
+                $toggle.removeData('bs.dropdown');
+                $dropdown.removeData('pieceTransitionMenu');
+                $toggle.off('click' + transitionDropdownNamespace).on('click' + transitionDropdownNamespace, function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                    if ($dropdown.hasClass('show')) {
+                        closeTransitionDropdown($dropdown);
+                    } else {
+                        openTransitionDropdown($dropdown);
+                    }
+                });
+            }
+
+            function initTransitionDropdowns() {
+                var $dropdowns = $('.piece-transition-dropdown');
+                $dropdowns.off(transitionDropdownNamespace);
+                $dropdowns.removeData('pieceTransitionMenu');
+                $dropdowns.each(function() {
+                    initTransitionDropdown($(this));
+                });
+
+                $(document)
+                    .off('click' + transitionDropdownNamespace)
+                    .on('click' + transitionDropdownNamespace, function(event) {
+                        var $target = $(event.target);
+                        if ($target.closest('.piece-transition-dropdown, .piece-transition-menu').length === 0) {
+                            closeAllTransitionDropdowns();
+                        }
+                    });
+
+                $(window)
+                    .off('scroll' + transitionDropdownNamespace + ' resize' + transitionDropdownNamespace)
+                    .on('scroll' + transitionDropdownNamespace + ' resize' + transitionDropdownNamespace, positionOpenTransitionDropdowns);
+            }
+
+            function refreshTransitionDropdowns() {
+                window.requestAnimationFrame(function() {
+                    initTransitionDropdowns();
+                    window.setTimeout(initTransitionDropdowns, 0);
+                });
+            }
+
+            window.initPieceTransitionDropdown = function(dropdown) {
+                initTransitionDropdown($(dropdown));
+            };
+            window.refreshPieceTransitionDropdowns = refreshTransitionDropdowns;
+
+            initTransitionDropdowns();
+
+            $(document).off('submit.pieceTransition', '.js-piece-transition-form').on('submit.pieceTransition', '.js-piece-transition-form', function(e) {
                 e.preventDefault();
                 pendingTransitionForm = this;
                 if (window.hideLoading) {
@@ -631,7 +804,7 @@
                 }
             });
 
-            $('.js-disabled-transition, .js-disabled-action').off('click.pieceTransition').on('click.pieceTransition', function(e) {
+            $(document).off('click.pieceTransition', '.js-disabled-transition, .js-disabled-action').on('click.pieceTransition', '.js-disabled-transition, .js-disabled-action', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
             });
@@ -656,12 +829,13 @@
 
             var $quickCreateModal = $('#pieceQuickCreateModal');
             var $quickCreateForm = $('#pieceQuickCreateForm');
-            var $quickCreateSubmit = $('#pieceQuickCreateSubmit');
+var $quickCreateSubmit = $('#pieceQuickCreateSubmit');
             var $pieceImportModal = $('#pieceImportModal');
             var $pieceImportForm = $('#pieceImportForm');
             var $pieceImportSubmit = $('#pieceImportSubmit');
             var quickCreateUrl = '{{ path('entetepiece.create_minimal') }}';
-            var autoInlineEditId = '{{ app.request.query.get('inlineEditId')|default('')|e('js') }}';
+var autoInlineEditId = '{{ app.request.query.get('inlineEditId')|default('')|e('js') }}';
+            var autoPieceIdFromQuery = '{{ app.request.query.get('pieceId')|default('')|e('js') }}';
             var importUrl = '{{ path('entetepiece.import') }}';
             var $table = $('#piecesTable');
             var $tbody = $('#piecesTableBody');
@@ -827,6 +1001,15 @@
 
             function formatRemise(value) {
                 return formatNumber(value) + '%';
+            }
+
+            function formatPieceDate(value) {
+                var normalized = $.trim(String(value || ''));
+                var match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (match) {
+                    return match[3] + '/' + match[2] + '/' + match[1];
+                }
+                return normalized === '' ? '-' : normalized;
             }
 
             function escapeHtml(value) {
@@ -997,6 +1180,18 @@
                 var tierType = String($row.attr('data-tier-type') || '').trim();
                 var tierId = String($row.attr('data-tier-id') || '').trim();
                 var tierLabel = String($row.attr('data-tier-label') || '').trim();
+
+                try {
+                    console.log('[piece-inline-editor] snapshot', {
+                        rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
+                        tierId: tierId,
+                        tierLabel: tierLabel,
+                        tierType: tierType
+                    });
+                } catch (e) {
+                    // ignore
+                }
+
                 var piecerefValue = String($row.attr('data-piece-ref-value') || '').trim();
                 var remiseValue = parseNumber(String($row.attr('data-remise-value') || '0'));
                 var statutValue = String($row.attr('data-statut-value') || '').trim();
@@ -1029,7 +1224,7 @@
                 $row.find('td[data-field="remise"]').text(snapshot.remiseDisplay);
                 $row.find('td[data-field="statut"]').html('<span class="' + resolveStatusBadgeClass(snapshot.statutValue) + '">' + escapeHtml(fallbackDisplay(snapshot.statutLabel)) + '</span>');
                 $row.find('td[data-field="devise"]').text(fallbackDisplay(snapshot.deviseLabel));
-                $row.find('td[data-field="annee"]').text(snapshot.anneeValue !== '' ? snapshot.anneeValue : '-');
+                $row.find('td[data-field="annee"]').text(formatPieceDate(snapshot.anneeValue));
             }
 
             function closeDropdowns(exceptShell) {
@@ -1148,8 +1343,11 @@
                 }
 
                 if (fieldName === 'tier') {
-                    openDropdownShell($row.find('.inline-dropdown-shell[data-name="tierId"]').first());
-                    $row.find('.inline-dropdown-shell[data-name="tierId"] .inline-dropdown-trigger').trigger('focus');
+                    // Ensure the tier dropdown is initialized/filled.
+                    // Then focus the dropdown trigger (which will open it on user click).
+                    var $tierShell = $row.find('.inline-dropdown-shell[data-name="tierId"]').first();
+                    var $trigger = $tierShell.find('.inline-dropdown-trigger').first();
+                    $trigger.trigger('focus');
                     return;
                 }
 
@@ -1197,6 +1395,7 @@
                 var statutLabel = String(item.statutLabel || item.statut || '');
                 var deviseLabel = String(item.devise || '');
                 var anneeValue = String(item.annee || '');
+                var dateDisplay = String(item.dateDisplay || formatPieceDate(anneeValue));
                 var codeOperationLabel = String(item.codeOperationLabel || '');
                 var codeOperationSens = String(item.sens || '');
 
@@ -1241,6 +1440,7 @@
                 }
 
                 restoreRowSnapshot($row, readSnapshot($row));
+                $row.find('td[data-field="annee"]').text(dateDisplay);
             }
 
             function closeInlineEdit($row, restoreSnapshot) {
@@ -1264,7 +1464,34 @@
             }
 
             function renderTierSelectorForRow($row, tierTypeValue, selectedTierId, selectedTierLabel) {
-                fetchTierOptions(tierTypeValue, false).done(function(tierOptions) {
+                // Inject immediately to ensure the container is never left empty.
+                // Options will be replaced once the async fetch completes.
+                var $tierSelectorHost = $row.find('.piece-inline-tier-selector').first();
+                if ($tierSelectorHost.length) {
+                    var emptyShell = buildInlineDropdown([], selectedTierId, selectedTierLabel, 'Selectionner un tiers')
+                        .attr('data-name', 'tierId');
+                    $tierSelectorHost.empty().append(emptyShell);
+                }
+
+                console.log('[piece-inline-editor] renderTierSelectorForRow input', {
+                    rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
+                    tierTypeValue: tierTypeValue,
+                    selectedTierId: selectedTierId,
+                    selectedTierLabel: selectedTierLabel
+                });
+
+                    // Always fetch (or resolve from cache) before the user opens the dropdown.
+                    // Some browsers/timing issues cause the dropdown to render empty if opened
+                    // before this async call completes.
+                    fetchTierOptions(tierTypeValue, true).done(function(tierOptions) {
+                    console.log('[piece-inline-editor] fetchTierOptions returned', {
+                        rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
+                        tierTypeValue: tierTypeValue,
+                        count: (tierOptions || []).length,
+                        tierOptions: tierOptions
+                    });
+
+
                     if (!$row || !$row.length || !$row.hasClass('is-editing')) {
                         return;
                     }
@@ -1276,11 +1503,21 @@
 
                     var tierShell = buildInlineDropdown(tierOptions, selectedTierId, selectedTierLabel, 'Selectionner un tiers').attr('data-name', 'tierId');
                     $tierSelectorHost.empty().append(tierShell);
-                    
+
                     // Ensure the value is set on the shell
                     if (selectedTierId && selectedTierId !== '') {
                         $tierSelectorHost.find('.inline-dropdown-shell').attr('data-value', selectedTierId);
                     }
+
+                    try {
+                        console.log('[piece-inline-editor] tier selector HTML', {
+                            rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
+                            html: $row.find('.piece-inline-tier-selector').first().html()
+                        });
+                    } catch (e) {
+                        // ignore
+                    }
+
                 });
             }
 
@@ -1288,6 +1525,17 @@
                 if (!$row.length || !isEditableRow($row)) {
                     return;
                 }
+
+                try {
+                    console.log('[piece-inline-editor] beginInlineEdit start', {
+                        rowId: String($row.attr('data-row-id') || $row.attr('data-item-id') || ''),
+                        focusField: focusField || null,
+                        forceTierType: forceTierType || null
+                    });
+                } catch (e) {
+                    // ignore
+                }
+
 
                 if (activeInlineRow && activeInlineRow.length && activeInlineRow[0] !== $row[0]) {
                     closeInlineEdit(activeInlineRow, true);
@@ -1310,7 +1558,10 @@
                         '<div class="piece-inline-tier-selector"></div>' +
                     '</div>'
                 );
+                // Fix: rendre le sélecteur de tiers dans la cellule tier.
+                // Même si snapshot.tierId est vide, on doit tenter de charger la liste selon tierType.
                 renderTierSelectorForRow($row, selectedTierType, snapshot.tierId, snapshot.tierLabel);
+
 
                 $row.find('td[data-field="pieceref"]').html(
                     $('<span class="piece-inline-text inline-editable-text" contenteditable="true" spellcheck="false" data-field="pieceref"></span>').text(snapshot.piecerefValue)
@@ -1356,6 +1607,7 @@
                     return;
                 }
 
+
                 var updateUrl = String($row.attr('data-inline-update-url') || '').trim();
                 if (updateUrl === '' || inlineUpdateToken === '') {
                     showPieceToast('Edition inline indisponible.', 'error');
@@ -1389,8 +1641,8 @@
                     return;
                 }
 
-                if (annee !== '' && !/^\d{4}$/.test(annee)) {
-                    showPieceToast('L annee doit contenir 4 chiffres.', 'error');
+                if (annee !== '' && !/^\d{4}(-\d{2}-\d{2})?$/.test(annee)) {
+                    showPieceToast('La date doit etre au format AAAA-MM-JJ.', 'error');
                     focusEditableField($row, 'annee');
                     return;
                 }
@@ -1410,8 +1662,30 @@
                         tierId: values.tierId,
                         pieceref: values.pieceref,
                         remise: remise.toFixed(2),
-                        statut: values.statut,
+                        // Fix: éviter d'envoyer un statut vide/inattendu qui déclenche "Le statut est invalide."
+                        // On retombe sur la valeur snapshot du row si values.statut n'est pas valide.
+                        statut: (function(){
+                            var rawStatut = String(values.statut || '').trim();
+                            var snapshotStatut = String($row.attr('data-statut-value') || '').trim();
+
+                            if (rawStatut !== '') {
+                                // Si une liste de statuts est fournie côté template, vérifier la cohérence.
+                                if (Array.isArray(inlinePieceStatuses) && inlinePieceStatuses.length > 0) {
+                                    var allowed = inlinePieceStatuses.map(function(s){
+                                        return String((s && (s.value != null ? s.value : s)) || '').trim();
+                                    }).filter(function(v){ return v !== ''; });
+
+                                    if (allowed.length > 0) {
+                                        return (allowed.indexOf(rawStatut) !== -1) ? rawStatut : snapshotStatut;
+                                    }
+                                }
+                                return rawStatut;
+                            }
+
+                            return snapshotStatut;
+                        })(),
                         deviseId: values.deviseId,
+                        datep: annee,
                         annee: annee,
                         codeOperationId: currentCodeOperationId
                     },
@@ -1428,6 +1702,14 @@
 
                     applySavedState($row, response.item);
                     closeInlineEdit($row, false);
+                    var $actionCell = $row.find('.piece-actions-cell');
+                    $actionCell.html(buildPieceActionsCell(response.item));
+                    $actionCell.find('.piece-transition-dropdown').each(function() {
+                        if (typeof window.initPieceTransitionDropdown === 'function') {
+                            window.initPieceTransitionDropdown(this);
+                        }
+                    });
+                    
                     $row.addClass('is-saved');
                     window.setTimeout(function() {
                         $row.removeClass('is-saved');
@@ -1448,10 +1730,19 @@
             function buildPieceActionsCell(item) {
                 var canEdit = !!item.canEdit;
                 var canView = !!item.canView;
+                var canOpenEinvoicing = !!item.canOpenEinvoicing;
+                var transitionTargets = Array.isArray(item.transitionTargets) ? item.transitionTargets : [];
+                var transitionEnabled = !!item.transitionEnabled && transitionTargets.length > 0;
                 var editUrl = String(item.editUrl || '#');
                 var deleteUrl = String(item.deleteUrl || '#');
+                var transitionUrl = String(item.transitionUrl || '#');
+                var transitionToken = String(item.transitionToken || '');
+                var eInvoicingUrl = String(item.eInvoicingUrl || '#');
+                var transitionToggleId = 'pieceTransitionToggle_' + String(item.id || item.pieceno || '').replace(/[^A-Za-z0-9_-]/g, '');
                 var inlineDisabledClass = canEdit ? '' : ' is-disabled-ui js-disabled-action';
                 var inlineDisabledTitle = canEdit ? 'Modifier' : 'Action indisponible';
+                var transitionDisabledTitle = String(item.transitionDisabledReason || 'Validez la piece pour pouvoir la convertir');
+                var einvoicingDisabledTitle = String(item.einvoicingDisabledReason || 'Validez la piece pour activer la e-facturation');
 
                 var html = '<div class="piece-actions">';
                 html += '<span class="piece-action-slot">';
@@ -1461,8 +1752,28 @@
                     html += '<button type="button" class="btn btn-action btn-edit js-piece-inline-edit' + inlineDisabledClass + '" title="' + escapeHtml(inlineDisabledTitle) + '"><i class="fas fa-edit"></i></button>';
                 }
                 html += '</span>';
-                html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-convert is-disabled-ui js-disabled-action" title="Validez la piece pour pouvoir la convertir"><i class="fas fa-random"></i></button></span>';
-                html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-einvoicing is-disabled-ui js-disabled-action" title="Validez la piece pour activer la e-facturation"><i class="fas fa-file-invoice"></i></button></span>';
+                html += '<span class="piece-action-slot">';
+                if (transitionEnabled) {
+                    html += '<div class="dropdown d-inline-block piece-transition-dropdown">';
+                    html += '<button id="' + escapeHtml(transitionToggleId) + '" class="btn btn-action btn-convert dropdown-toggle no-loading" type="button" aria-haspopup="true" aria-expanded="false" title="Convertir cette piece"><i class="fas fa-random"></i></button>';
+                    html += '<div class="dropdown-menu dropdown-menu-right shadow-sm piece-transition-menu" aria-labelledby="' + escapeHtml(transitionToggleId) + '">';
+                    transitionTargets.forEach(function(targetType) {
+                        html += '<form method="post" action="' + escapeHtml(transitionUrl) + '" class="js-piece-transition-form no-loading px-2 py-1" data-target-type="' + escapeHtml(String(targetType)) + '" data-piece-label="Piece #' + escapeHtml(String(item.pieceno || item.id || '')) + '">';
+                        html += '<input type="hidden" name="targetType" value="' + escapeHtml(String(targetType)) + '">';
+                        html += '<input type="hidden" name="_token" value="' + escapeHtml(transitionToken) + '">';
+                        html += '<button type="submit" class="dropdown-item">Vers ' + escapeHtml(String(targetType)) + '</button>';
+                        html += '</form>';
+                    });
+                    html += '</div></div>';
+                } else {
+                    html += '<button type="button" class="btn btn-action btn-convert is-disabled-ui js-disabled-action" title="' + escapeHtml(transitionDisabledTitle) + '"><i class="fas fa-random"></i></button>';
+                }
+                html += '</span>';
+                if (canOpenEinvoicing) {
+                    html += '<span class="piece-action-slot"><a href="' + escapeHtml(eInvoicingUrl) + '" class="btn btn-action btn-einvoicing no-loading" title="Ouvrir la page e-facturation"><i class="fas fa-file-pdf"></i></a></span>';
+                } else {
+                    html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-einvoicing is-disabled-ui js-disabled-action" title="' + escapeHtml(einvoicingDisabledTitle) + '"><i class="fas fa-file-invoice"></i></button></span>';
+                }
                 html += '<span class="piece-action-slot"><button type="button" class="btn btn-action btn-delete delete-btn" data-delete-url="' + escapeHtml(deleteUrl) + '" data-item-name="Piece #' + escapeHtml(String(item.pieceno || item.id || '')) + '" title="Supprimer"><i class="fas fa-trash"></i></button></span>';
                 html += '</div>';
                 return html;
@@ -1501,7 +1812,7 @@
                         '<td data-field="statut" data-column-key="statut"><span class="' + resolveStatusBadgeClass(item.statut) + '">' + escapeHtml(fallbackDisplay(item.statutLabel || item.statut || '-')) + '</span></td>',
                         '<td data-column-key="codeoperation">' + buildCodeOperationBadgeHtml(item.codeOperationLabel || '', item.sens || '') + '</td>',
                         '<td data-field="devise" data-column-key="devise">' + escapeHtml(fallbackDisplay(item.devise || '')) + '</td>',
-                        '<td data-field="annee" data-column-key="annee">' + escapeHtml(String(item.annee || '-')) + '</td>',
+                        '<td data-field="annee" data-column-key="annee">' + escapeHtml(String(item.dateDisplay || formatPieceDate(item.annee || ''))) + '</td>',
                         '<td class="text-center piece-actions-cell" data-column-key="actions" data-role="actions">' + buildPieceActionsCell(item) + '</td>',
                     '</tr>'
                 ].join('');
@@ -1773,32 +2084,58 @@
 
                 if (autoInlineEditId) {
                     var $autoInlineRow = $('tr.piece-row[data-row-id="' + autoInlineEditId + '"], tr.piece-row[data-item-id="' + autoInlineEditId + '"]').first();
-                    var shouldOpenLigneModal = sessionStorage.getItem('showLigneModalAfterCreate') === 'true';
-                    if (shouldOpenLigneModal) {
+
+                    // Déclencheur fiable après redirect backend: ?showLigneModal=1
+                    var urlParams = new URL(window.location.href).searchParams;
+                    var showLigneModalFlag = String(urlParams.get('showLigneModal') || '').trim() === '1';
+
+                    // Compatibilité legacy (si un autre flux utilisait sessionStorage)
+                    var legacyFlag = sessionStorage.getItem('showLigneModalAfterCreate') === 'true';
+                    if (legacyFlag) {
                         sessionStorage.removeItem('showLigneModalAfterCreate');
                     }
+
+                    var shouldOpenLigneModal = showLigneModalFlag || legacyFlag;
+
                     if ($autoInlineRow.length) {
                         setTimeout(function() {
                             $autoInlineRow[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            if (shouldOpenLigneModal && typeof LigneCreationModal !== 'undefined') {
+
+                            // 1) inline edit
+                            beginInlineEdit($autoInlineRow, 'tier');
+
+                            // 2) popup "Gestion des lignes" (déterministe, sans polling)
+                            if (shouldOpenLigneModal && typeof InlineLigneEditor !== 'undefined') {
                                 var tierType = String($autoInlineRow.attr('data-tier-type') || 'Client');
-                                LigneCreationModal.showAfterPieceCreation({
-                                    id: parseInt(autoInlineEditId, 10) || 0
-                                }, { tierType: tierType });
-                            } else {
-                                beginInlineEdit($autoInlineRow, 'tier');
+                                var pieceId = parseInt(autoInlineEditId, 10) || 0;
+
+                                if (pieceId > 0) {
+                                    // Réduit les conflits de modals pendant les transitions
+                                    var $quick = $('#pieceQuickCreateModal');
+                                    if ($quick && $quick.length && $quick.hasClass('show')) {
+                                        try { $quick.modal('hide'); } catch (e) {}
+                                    }
+
+                                    window.requestAnimationFrame(function() {
+                                        window.setTimeout(function() {
+                                            var editor = InlineLigneEditor.getInstance(pieceId, tierType || 'Client');
+                                            editor.show($autoInlineRow);
+                                        }, 0);
+                                    });
+                                }
                             }
+
+
+                            // Nettoyage pour éviter re-trigger au refresh/back
                             if (window.history && window.URL) {
                                 var cleanUrl = new URL(window.location.href);
                                 cleanUrl.searchParams.delete('inlineEditId');
+                                cleanUrl.searchParams.delete('showLigneModal');
                                 window.history.replaceState({}, document.title, cleanUrl.toString());
                             }
                         }, 120);
-                    } else if (shouldOpenLigneModal && typeof LigneCreationModal !== 'undefined') {
-                        LigneCreationModal.showAfterPieceCreation({
-                            id: parseInt(autoInlineEditId, 10) || 0
-                        });
                     }
+
                     autoInlineEditId = '';
                 }
 
@@ -1910,9 +2247,43 @@
 
                         var $row = appendCreatedRow(response.item);
                         if ($row && $row.length) {
+                            console.log('[pieceQuickCreate] ajax success response:', response);
+                            console.log('[pieceQuickCreate] LigneCreationModal:', window.LigneCreationModal);
+
                             showPieceToast(response.message || 'Piece creee avec succes.', 'success');
-                            $quickCreateModal.one('hidden.bs.modal.pieceQuickInline', function() {
-                                beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
+                            console.log('[pieceQuickCreate] open lines for pieceId:', response && response.item ? response.item.id : null);
+
+$quickCreateModal.one('hidden.bs.modal.pieceQuickInline', function() {
+                                // Garantit qu'on ne coupe pas la transition du modal de lignes
+                                window.setTimeout(function() {
+                                    console.log('[pieceQuickCreate] modal hidden callback fired');
+                                    if (typeof LigneCreationModal !== 'undefined') {
+                                        console.log('[pieceQuickCreate] calling LigneCreationModal.showAfterPieceCreation');
+                                        // Ouvrir le même parcours que le bouton "Gérer les lignes" (modal #ligneCreationModal)
+                                        var editor = (window.InlineLigneEditor && typeof window.InlineLigneEditor.getInstance === 'function')
+                                            ? window.InlineLigneEditor.getInstance(parseInt(response.item.id, 10) || 0, String(response.item.typet || getDefaultTierTypeValue()))
+                                            : null;
+
+                                        // Ouvrir exactement le même parcours que "Gérer les lignes".
+                                        if (editor && typeof editor.show === 'function') {
+                                            // Important: ouvrir le modal "Gestion des lignes" ET démarrer l'inline edit automatiquement.
+                                            // 1) ouvrir l'inline edit sur la ligne de la table
+                                            try {
+                                                beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
+                                            } catch (e) {}
+
+                                            // 2) ouvrir le modal de gestion des lignes
+                                            editor.show($row);
+                                        } else if (typeof LigneCreationModal !== 'undefined' && typeof LigneCreationModal.showAfterPieceCreation === 'function') {
+                                            // Fallback (ancien comportement)
+                                            LigneCreationModal.showAfterPieceCreation({
+                                                id: parseInt(response.item.id, 10) || 0
+                                            }, { tierType: String(response.item.typet || getDefaultTierTypeValue()) });
+                                        }
+                                    } else {
+                                        beginInlineEdit($row, 'tier', String(response.item.typet || getDefaultTierTypeValue()));
+                                    }
+                                }, 0);
                             });
                             $quickCreateModal.modal('hide');
                         } else {
@@ -1969,6 +2340,16 @@
 
                 if (typeof summary.montantDisplay !== 'undefined') {
                     $row.find('td[data-column-key="montant"]').html('<strong>' + escapeHtml(String(summary.montantDisplay)) + '</strong>');
+                }
+
+                if (summary.statut || summary.statutLabel) {
+                    var statusValue = String(summary.statut || summary.statutLabel || '');
+                    var statusLabel = String(summary.statutLabel || summary.statut || '');
+                    $row.attr('data-statut-value', statusValue);
+                    $row.attr('data-statut-label', statusLabel);
+                    $row.find('td[data-field="statut"]').html(
+                        '<span class="' + resolveStatusBadgeClass(statusValue) + '">' + escapeHtml(fallbackDisplay(statusLabel)) + '</span>'
+                    );
                 }
             };
 
@@ -2104,6 +2485,37 @@
                 event.preventDefault();
                 submitBulkDeleteSelection();
             });
+
+            // Single delete (dynamic buttons): handler must be delegated so it works after inline edit rebuild
+            // and without requiring a full page refresh.
+            $(document)
+                .off('click.pieceSingleDelete', '.delete-btn')
+                .on('click.pieceSingleDelete', '.delete-btn', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (!$deleteConfirmModal || $deleteConfirmModal.length === 0) {
+                        return;
+                    }
+
+                    var deleteUrl = String($(this).attr('data-delete-url') || '').trim();
+                    var itemName = String($(this).attr('data-item-name') || '').trim();
+
+                    if (!deleteUrl) {
+                        return;
+                    }
+
+                    $deleteModalItemName.text(itemName || 'cette piece');
+                    resetBulkDeleteConfirmState();
+                    $confirmDeleteBtn
+                        .attr('href', deleteUrl)
+                        .removeAttr('data-bulk-delete');
+
+                    // For safety: disable loading class if present
+                    setBulkDeleteConfirmButtonLoading(false);
+
+                    $deleteConfirmModal.modal('show');
+                });
 
             if ($deleteConfirmModal.length) {
                 $deleteConfirmModal.off('hidden.bs.modal.pieceBulkDelete').on('hidden.bs.modal.pieceBulkDelete', function() {
@@ -2517,7 +2929,6 @@
         cursor: default;
         overflow: visible;
     }
-    }
     .pieces-table .piece-row.is-saving {
         opacity: 0.75;
         pointer-events: none;
@@ -2853,71 +3264,98 @@
     .pieces-table [data-column-key="actions"] {
         overflow: visible !important;
     }
-    .piece-actions-cell .dropdown {
+    .piece-actions-cell .piece-transition-dropdown {
         position: relative;
         display: inline-flex;
     }
-    .piece-actions-cell .dropdown-menu {
-        z-index: 99999 !important;
+    .piece-transition-menu {
+        background: #fff !important;
+        color: #333 !important;
+        border: 1px solid #e5e7eb !important;
+        z-index: 30000 !important;
         position: absolute;
-        top: calc(100% - 2px) !important;
-        
-        left: -50px !important;
-        display: none !important;
+        top: calc(100% + 8px);
+        left: 50%;
+        right: auto !important;
+        bottom: auto !important;
+        transform: translateX(-50%);
+        display: none;
         min-width: 200px;
         margin-top: 0;
         margin-bottom: 0;
         visibility: hidden;
         opacity: 0;
+        overflow: visible !important;
         transition: visibility 0.15s, opacity 0.15s;
     }
-    .piece-actions-cell .dropdown-menu.show {
+    .piece-transition-menu.show {
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
     }
+    .piece-transition-menu.show,
+    .piece-transition-menu.show * {
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    .piece-transition-menu.show form {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: relative;
+        z-index: 1;
+    }
     .piece-actions-cell .dropdown-toggle::after {
         display: none;
     }
-    .piece-actions-cell .dropdown-item {
+    .piece-transition-menu .dropdown-item {
         padding: 0.5rem 1rem;
         display: block;
         width: 100%;
         text-align: left;
-        color: #333;
+        color: #111827 !important;
         text-decoration: none;
-        background-color: transparent;
+        background-color: transparent !important;
         border: none;
         cursor: pointer;
         white-space: nowrap;
-        font-size: 0.9rem;
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        text-indent: 0 !important;
+        position: relative;
+        z-index: 2;
     }
-    .piece-actions-cell .dropdown-item:hover {
-        background-color: #f1f3f5;
-        color: #0d6efd;
+    .piece-transition-menu .dropdown-item:hover {
+        background-color: #f1f3f5 !important;
+        color: #0d6efd !important;
     }
     .piece-actions-cell .dropdown-divider {
         margin: 0.5rem 0;
     }
-    .piece-actions-cell .dropdown-menu form {
+    .piece-transition-menu form {
         display: block;
         padding: 0;
         margin: 0;
     }
-    .piece-actions-cell .dropdown-menu form button {
+    .piece-transition-menu form button {
         width: 100%;
         padding: 0.5rem 1rem;
         border: none;
-        background-color: transparent;
+        background-color: transparent !important;
         text-align: left;
         cursor: pointer;
-        color: #333;
-        font-size: 0.9rem;
+        color: #111827 !important;
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
         white-space: nowrap;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
-    .piece-actions-cell .dropdown-menu form button:hover {
-        background-color: #f1f3f5;
-        color: #0d6efd;
+    .piece-transition-menu form button:hover {
+        background-color: #f1f3f5 !important;
+        color: #0d6efd !important;
     }
     /* Ensure table container doesn't clip dropdown */
     .table-container,

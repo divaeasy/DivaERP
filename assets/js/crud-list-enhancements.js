@@ -2043,12 +2043,19 @@
                     inferredMeta.options = collectFieldOptions($table, field, String($table.data('placeholder') || '____'));
                 }
 
+                // Force tier to be editable select-like even if its header/data-type is not properly inferred.
+                if (isFieldForcedSelectType(field)) {
+                    inferredMeta.type = 'select';
+                    inferredMeta.options = collectFieldOptions($table, field, String($table.data('placeholder') || '____'));
+                }
+
                 fields.push(inferredMeta);
                 fieldMap[field] = inferredMeta;
             });
 
             return fields;
         }
+
 
         function buildInlineEditorHtml(fieldMeta, currentValue, placeholder) {
             var normalizedType = String(fieldMeta.type || 'string').toLowerCase();
@@ -2112,6 +2119,18 @@
             var normalized = String(type || '').toLowerCase().trim();
             return normalized === 'entity' || normalized === 'enum' || normalized === 'select';
         }
+
+        // Ensure some fields are always treated as editable selects when they are rendered as such in the UI.
+        // Fix: entetepiece table "tier" column should always become an inline editor control.
+        function isFieldForcedSelectType(fieldName) {
+            var key = String(fieldName || '').toLowerCase().trim();
+            // Pieces list uses the column key "tier" for the Tiers column.
+            // Fix: ensure the custom inline editor (built in entetepiece/index.html.twig) treats the Tiers cell as editable.
+            return key === 'tier' || key === 'tiers';
+        }
+
+
+
 
         function getCrudDetailFieldTypeLabel(type) {
             var normalized = String(type || '').toLowerCase().trim();
