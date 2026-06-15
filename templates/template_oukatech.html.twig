@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 
 <head>
@@ -4253,8 +4253,8 @@
 
         <!-- Sidebar -->
         {% set currentRoute = app.request.attributes.get('_route') %}
-        {% set commercialRoutes = ['client.list', 'client.edit', 'prospect.list', 'prospect.edit', 'fournisseur.list', 'fournisseur.edit', 'article.list', 'article.edit', 'tarif.list', 'tarif.edit', 'tarifvente.list', 'tarifvente.edit', 'app_tiers_interne_index', 'app_tiers_interne_new', 'app_tiers_interne_edit', 'app_tiers_interne_show'] %}
-        {% set accountingRoutes = ['entetepiece.list', 'entetepiece.client_list', 'entetepiece.fournisseur_list', 'entetepiece.interne_list', 'entetepiece.edit', 'reglement.list', 'reglement.edit', 'devise.list', 'devise.edit', 'unite.list', 'unite.edit', 'admin.code_operation_migration'] %}
+        {% set commercialRoutes = ['client.list', 'client.edit', 'prospect.list', 'prospect.edit', 'fournisseur.list', 'fournisseur.edit', 'article.list', 'article.edit', 'tarif.list', 'tarif.edit', 'tarifvente.list', 'tarifvente.edit', 'app_tiers_interne_index', 'app_tiers_interne_new', 'app_tiers_interne_edit', 'app_tiers_interne_show', 'entetepiece.list', 'entetepiece.client_list', 'entetepiece.fournisseur_list', 'entetepiece.interne_list', 'entetepiece.edit', 'entetepiece.add'] %}
+        {% set accountingRoutes = ['reglement.list', 'reglement.edit', 'devise.list', 'devise.edit', 'unite.list', 'unite.edit', 'admin.code_operation_migration'] %}
         {% set administrationRoutes = ['dossier.list', 'dossier.edit', 'pays.list', 'pays.edit', 'ville.list', 'ville.edit', 'app_nature_production_index', 'app_nature_production_new', 'app_nature_production_edit', 'app_nature_production_show', 'app_depot_index', 'app_depot_new', 'app_depot_edit', 'app_depot_show'] %}
         {% set initialSidebarPanel = '' %}
         {% set isDashboardRoute = currentRoute == 'app_dash_bord' %}
@@ -4286,12 +4286,12 @@
             'tarif.edit': {'module': 'Commercial', 'section': 'Tarifs', 'page': 'Fiche tarif'},
             'tarifvente.list': {'module': 'Commercial', 'section': 'Tarifs vente', 'page': 'Liste des tarifs vente'},
             'tarifvente.edit': {'module': 'Commercial', 'section': 'Tarifs vente', 'page': 'Fiche tarif vente'},
-            'entetepiece.list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Liste des pièces'},
-            'entetepiece.client_list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Pièces client'},
-            'entetepiece.fournisseur_list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Pièces fournisseur'},
-            'entetepiece.interne_list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Pièces interne'},
-            'entetepiece.edit': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Fiche pièce'},
-            'entetepiece.add': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Nouvelle pièce'},
+            'entetepiece.list': {'module': 'Commercial', 'section': 'Documents', 'page': 'Liste des pièces'},
+            'entetepiece.client_list': {'module': 'Commercial', 'section': 'Documents', 'page': 'Pièces client'},
+            'entetepiece.fournisseur_list': {'module': 'Commercial', 'section': 'Documents', 'page': 'Pièces fournisseur'},
+            'entetepiece.interne_list': {'module': 'Commercial', 'section': 'Documents', 'page': 'Pièces interne'},
+            'entetepiece.edit': {'module': 'Commercial', 'section': 'Documents', 'page': 'Fiche pièce'},
+            'entetepiece.add': {'module': 'Commercial', 'section': 'Documents', 'page': 'Nouvelle pièce'},
             'reglement.list': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Liste des règlements'},
             'reglement.edit': {'module': 'Comptabilité', 'section': 'Documents', 'page': 'Fiche règlement'},
             'devise.list': {'module': 'Comptabilité', 'section': 'Référentiels', 'page': 'Liste des devises'},
@@ -4594,27 +4594,8 @@
                                     <i data-lucide="hash"></i>
                                     <span>{{ currentDossier.id }}</span>
                                 </span>
-                                {% if currentDossierLocation %}
-                                    <span class="sidebar-panel-header__badge">
-                                        <i data-lucide="map-pin"></i>
-                                        <span>{{ currentDossierLocation }}</span>
-                                    </span>
-                                {% endif %}
                             </div>
                         {% endif %}
-                        {# <div class="sidebar-panel-header__subtitle">Accès rapide par module</div> #}
-                        <div class="sidebar-panel-header__breadcrumb"
-                             id="sidebarPanelBreadcrumb"
-                             data-route-panel="{{ initialSidebarPanel }}"
-                             data-route-module="{{ sidebarContext.module }}"
-                             data-route-section="{{ sidebarContext.section }}"
-                             data-route-page="{{ sidebarContext.page }}">
-                            <span class="sidebar-panel-header__crumb" data-breadcrumb-module>{{ sidebarContext.module }}</span>
-                            <span class="sidebar-panel-header__crumb-divider" aria-hidden="true">></span>
-                            <span class="sidebar-panel-header__crumb" data-breadcrumb-section>{{ sidebarContext.section }}</span>
-                            <span class="sidebar-panel-header__crumb-divider" aria-hidden="true">></span>
-                            <span class="sidebar-panel-header__crumb sidebar-panel-header__crumb--active" data-breadcrumb-page>{{ sidebarContext.page }}</span>
-                        </div>
                     </div>
 
                     <div class="sidebar-panel-scroll">
@@ -4677,6 +4658,31 @@
                                 </div>
                                 </div>
                             </div>
+                            <div class="sidebar-panel-section is-open" data-section-key="commercial-documents">
+                                <button type="button" class="sidebar-panel-section-toggle" aria-expanded="true">
+                                    <span class="sidebar-panel-section-toggle__label">Documents</span>
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                                <div class="sidebar-panel-section-body">
+                                <div class="sidebar-panel-links">
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces sidebar-panel-link--pieces-client {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute == 'entetepiece.client_list' %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('entetepiece.client_list') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="users"></i>
+                                        <span>Pièce client</span>
+                                    </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces sidebar-panel-link--pieces-fournisseur {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute == 'entetepiece.fournisseur_list' %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('entetepiece.fournisseur_list') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="truck"></i>
+                                        <span>Pièce fournisseur</span>
+                                    </a>
+                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces sidebar-panel-link--pieces-interne {% if not is_granted('ROLE_COMMERCIAL') %}nav-disabled{% endif %} {% if currentRoute == 'entetepiece.interne_list' %}active{% endif %}"
+                                       href="{% if is_granted('ROLE_COMMERCIAL') %}{{ path('entetepiece.interne_list') }}{% else %}javascript:void(0){% endif %}">
+                                        <i data-lucide="building-2"></i>
+                                        <span>Pièce interne</span>
+                                    </a>
+                                </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="sidebar-panel-content {% if initialSidebarPanel == 'accounting' %}is-active{% endif %}" data-sidebar-panel="accounting">
@@ -4700,21 +4706,7 @@
                                 </button>
                                 <div class="sidebar-panel-section-body">
                                 <div class="sidebar-panel-links">
-                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces sidebar-panel-link--pieces-client {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute == 'entetepiece.client_list' %}active{% endif %}"
-                                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('entetepiece.client_list') }}{% else %}javascript:void(0){% endif %}">
-                                        <i data-lucide="users"></i>
-                                        <span>Pièce client</span>
-                                    </a>
-                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces sidebar-panel-link--pieces-fournisseur {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute == 'entetepiece.fournisseur_list' %}active{% endif %}"
-                                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('entetepiece.fournisseur_list') }}{% else %}javascript:void(0){% endif %}">
-                                        <i data-lucide="truck"></i>
-                                        <span>Pièce fournisseur</span>
-                                    </a>
-                                    <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--pieces sidebar-panel-link--pieces-interne {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute == 'entetepiece.interne_list' %}active{% endif %}"
-                                       href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('entetepiece.interne_list') }}{% else %}javascript:void(0){% endif %}">
-                                        <i data-lucide="building-2"></i>
-                                        <span>Pièce interne</span>
-                                    </a>
+
                                     <a class="nav-link nav-loading sidebar-panel-link sidebar-panel-link--reglements {% if not is_granted('ROLE_COMPTABLE') %}nav-disabled{% endif %} {% if currentRoute in ['reglement.list', 'reglement.edit'] %}active{% endif %}"
                                        href="{% if is_granted('ROLE_COMPTABLE') %}{{ path('reglement.list') }}{% else %}javascript:void(0){% endif %}">
                                         <i data-lucide="banknote"></i>
