@@ -84,9 +84,7 @@ class NatureProductionController extends AbstractController
             $this->addFlash('success', $new ? 'La nature de production a ete ajoutee avec succes.' : 'La nature de production a ete mise a jour avec succes.');
 
             return $this->redirectToRoute('app_nature_production_index');
-        }
-
-        return $this->render($new ? 'nature_production/create.html.twig' : 'nature_production/edit.html.twig', [
+        }       return $this->render($new ? 'nature_production/create.html.twig' : 'nature_production/edit.html.twig', [
             'form' => $form->createView(),
             'id' => $id,
             'natureProduction' => $natureProduction,
