@@ -141,7 +141,7 @@
                 event.preventDefault();
                 this.addLigne();
             });
-            this.$qtyInput.add(this.$remiseInput)
+            this.$qtyInput.add(this.$remiseInput).add(this.$pubInput)
                 .off('keydown.inlineLigne input.inlineLigne')
                 .on('keydown.inlineLigne input.inlineLigne', (event) => {
                     this.updateInlineMontantDisplay();
@@ -341,6 +341,9 @@
             const targetInput = $pubInput || this.$pubInput;
             if (!articleId) {
                 targetInput.val('0.00');
+                if (!$pubInput) {
+                    this.setQuickPubEditable(false);
+                }
                 this.updateInlineMontantDisplay();
                 return;
             }
@@ -348,6 +351,7 @@
             const isQuickAddPrice = !$pubInput;
             if (isQuickAddPrice) {
                 this.priceLoading = true;
+                this.setQuickPubEditable(false);
             }
             targetInput.val('').attr('placeholder', 'Chargement...');
 
@@ -386,7 +390,16 @@
                 if (isQuickAddPrice) {
                     this.priceLoading = false;
                     this.pricePromise = null;
+                    // Pas de tarif pour cet article : le P.U. est saisi a la main
+                    this.setQuickPubEditable(numberValue(targetInput.val()) <= 0);
                 }
+            }
+        }
+
+        setQuickPubEditable(editable) {
+            this.$pubInput.prop('readonly', !editable).toggleClass('ligne-auto-price', !editable);
+            if (editable) {
+                this.$pubInput.attr('placeholder', 'Saisir le prix').trigger('focus').trigger('select');
             }
         }
 

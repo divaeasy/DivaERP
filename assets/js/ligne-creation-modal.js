@@ -175,7 +175,7 @@ class LigneCreationModal {
                 this.prefillArticlePrice();
                 this.updateMontantDisplay();
             });
-            this.$qtyInput.add(this.$remiseInput)
+            this.$qtyInput.add(this.$remiseInput).add(this.$pubInput)
                 .off('keydown.ligneCreation input.ligneCreation')
                 .on('keydown.ligneCreation input.ligneCreation', (event) => {
                     this.updateMontantDisplay();
@@ -250,12 +250,14 @@ class LigneCreationModal {
             const articleId = this.$articleSelect.val();
             if (!articleId) {
                 this.$pubInput.val('0.00');
+                this.setPubEditable(false);
                 this.updateMontantDisplay();
                 return;
             }
 
             const requestId = ++this.priceRequestId;
             this.priceLoading = true;
+            this.setPubEditable(false);
             this.$pubInput.val('').attr('placeholder', 'Chargement...');
 
             try {
@@ -288,8 +290,17 @@ class LigneCreationModal {
                     this.priceLoading = false;
                     this.pricePromise = null;
                     this.$pubInput.attr('placeholder', '');
+                    // Pas de tarif pour cet article : le P.U. est saisi a la main
+                    this.setPubEditable(numberValue(this.$pubInput.val()) <= 0);
                     this.updateMontantDisplay();
                 }
+            }
+        }
+
+        setPubEditable(editable) {
+            this.$pubInput.prop('readonly', !editable).toggleClass('ligne-auto-price', !editable);
+            if (editable) {
+                this.$pubInput.attr('placeholder', 'Saisir le prix').trigger('focus').trigger('select');
             }
         }
 
@@ -397,6 +408,7 @@ class LigneCreationModal {
             }
             this.$qtyInput.val('1');
             this.$pubInput.val('0.00').attr('placeholder', '');
+            this.setPubEditable(false);
             this.$remiseInput.val('0');
             this.updateMontantDisplay();
             this.$articleSelect.trigger('focus');
