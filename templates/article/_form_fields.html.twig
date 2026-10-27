@@ -1,0 +1,105 @@
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            {{ form_label(form.libelle, 'Designation', {'label_attr': {'class': 'required'}}) }}
+            {{ form_widget(form.libelle, {'attr': {'class': 'form-control', 'placeholder': 'Entrez la designation de l\'article'}}) }}
+            <div class="invalid-feedback">La designation est obligatoire</div>
+            {{ form_errors(form.libelle) }}
+        </div>
+    </div>
+    {% set article = article is defined ? article : form.vars.data %}
+    <div class="col-md-6">
+        <div class="form-group article-image-group">
+            {{ form_label(form.imageFile, "Image de l'article") }}
+            <div class="article-image-field">
+                <div class="article-image-field__preview" id="articleImagePreview">
+                    {% if article and article.image %}
+                        <img src="{{ article.image }}" alt="Image actuelle de l'article" id="articleImagePreviewImage">
+                    {% else %}
+                        <div class="article-image-field__placeholder" id="articleImagePreviewPlaceholder">
+                            <i class="fas fa-image"></i>
+                            <span>Apercu de l'image</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="article-image-field__controls">
+                    <div class="article-image-trigger-wrap">
+                        <button type="button" class="article-image-trigger" id="articleImageUploadButton">
+                            <i class="fas fa-upload mr-2"></i>Choisir une image
+                        </button>
+                        {{ form_widget(form.imageFile, {'attr': {'class': 'article-image-input', 'id': 'articleImageUpload', 'accept': 'image/*'}}) }}
+                    </div>
+                    <span class="article-image-filename" id="articleImageFileName">{% if article and article.image %}Image actuelle chargee{% else %}Aucun fichier selectionne{% endif %}</span>
+                    <small class="text-muted">{{ form.imageFile.vars.help }}</small>
+                    {{ form_errors(form.imageFile) }}
+                    {% if article and article.image %}
+                        <div class="form-check article-remove-check mb-0">
+                            <input class="form-check-input" type="checkbox" value="1" id="articleRemoveImage" name="remove_image">
+                            <label class="form-check-label" for="articleRemoveImage">
+                                Supprimer l'image actuelle
+                            </label>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.unite, 'Unite de mesure') }}
+            {{ form_widget(form.unite, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+            {{ form_errors(form.unite) }}
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.tarif, 'Grille tarifaire') }}
+            {{ form_widget(form.tarif, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+            {{ form_errors(form.tarif) }}
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.modeGestion, 'Mode de gestion') }}
+            {{ form_widget(form.modeGestion, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.modeGestion) }}
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.modeSuivi, 'Mode de suivi') }}
+            {{ form_widget(form.modeSuivi, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.modeSuivi) }}
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.natureProduction, 'Nature de production') }}
+            {{ form_widget(form.natureProduction, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+            {{ form_errors(form.natureProduction) }}
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            {{ form_label(form.sortiStock, 'Sortie de stock') }}
+            <div class="article-sorti-stock-group">
+                {% for child in form.sortiStock %}
+                    <div class="article-sorti-stock-option">
+                        <label class="article-sorti-stock-label" for="{{ child.vars.id }}">
+                            {{ form_widget(child, {'attr': {'class': 'article-sorti-stock-input'}}) }}
+                            <span>{{ child.vars.label }}</span>
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+            {{ form_errors(form.sortiStock) }}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            {{ form_label(form.fournisseurHabituel, 'Fournisseur habituel') }}
+            {{ form_widget(form.fournisseurHabituel, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+            {{ form_errors(form.fournisseurHabituel) }}
+        </div>
+    </div>
+</div>

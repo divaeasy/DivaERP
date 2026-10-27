@@ -1,0 +1,150 @@
+{# templates/components/breadcrumbs.html.twig #}
+{#
+    Breadcrumbs Navigation Component
+    
+    Usage:
+    {% include 'components/breadcrumbs.html.twig' with {
+        'breadcrumbs': [
+            {'label': 'Dashboard', 'route': path('dashboard')},
+            {'label': 'Invoices', 'route': path('invoice.list')},
+            {'label': 'INV-001', 'route': null}
+        ]
+    } %}
+#}
+
+{% if breadcrumbs|length > 0 %}
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <ol class="breadcrumb breadcrumb-striped">
+        <li class="breadcrumb-item">
+            <a href="{{ path('dashboard') }}" title="Tableau de bord">
+                <i class="fas fa-home"></i> <span class="d-none d-sm-inline">Accueil</span>
+            </a>
+        </li>
+        
+        {% for breadcrumb in breadcrumbs %}
+            {% if loop.last %}
+                <li class="breadcrumb-item active" aria-current="page">
+                    {% if breadcrumb.icon %}
+                        <i class="fas fa-{{ breadcrumb.icon }}"></i>
+                    {% endif %}
+                    <span>{{ breadcrumb.label }}</span>
+                </li>
+            {% else %}
+                <li class="breadcrumb-item">
+                    {% if breadcrumb.route %}
+                        <a href="{{ breadcrumb.route }}" title="{{ breadcrumb.label }}">
+                            {% if breadcrumb.icon %}
+                                <i class="fas fa-{{ breadcrumb.icon }}"></i>
+                            {% endif %}
+                            <span class="d-none d-md-inline">{{ breadcrumb.label }}</span>
+                        </a>
+                    {% else %}
+                        {% if breadcrumb.icon %}
+                            <i class="fas fa-{{ breadcrumb.icon }}"></i>
+                        {% endif %}
+                        <span>{{ breadcrumb.label }}</span>
+                    {% endif %}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ol>
+</nav>
+
+<style>
+    .breadcrumb-nav {
+        margin-bottom: 1.5rem;
+        padding: 0;
+    }
+
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0.5rem 0;
+        margin-bottom: 0;
+        display: flex;
+        flex-wrap: wrap;
+        list-style: none;
+    }
+
+    .breadcrumb-item {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        display: inline-block;
+        padding: 0 0.5rem;
+        color: #a0a3b1;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .breadcrumb-item a {
+        color: #4e73df;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .breadcrumb-item a:hover {
+        color: #224abe;
+        text-decoration: underline;
+    }
+
+    .breadcrumb-item.active {
+        color: #334155;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .breadcrumb-item i {
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb-item span {
+        word-break: break-word;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        .breadcrumb {
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            padding: 0 0.3rem;
+            font-size: 0.95rem;
+        }
+
+        .breadcrumb-item span {
+            max-width: 150px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .breadcrumb {
+            font-size: 0.85rem;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            padding: 0 0.25rem;
+            font-size: 0.85rem;
+        }
+
+        .breadcrumb-item span {
+            max-width: 80px;
+        }
+
+        .breadcrumb-item i {
+            display: none;
+        }
+    }
+</style>
+{% endif %}

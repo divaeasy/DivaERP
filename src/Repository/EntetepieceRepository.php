@@ -3,58 +3,298 @@
 namespace App\Repository;
 
 use App\Entity\Entetepiece;
+use App\Entity\Lignepiece;
+use App\Entity\User;
+use App\Model\SearchPiece;
+use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * @extends ServiceEntityRepository<Entetepiece>
  */
 class EntetepieceRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, private Security $security)
     {
         parent::__construct($registry, Entetepiece::class);
     }
 
     public function getCaParAnnee($annee): array
-   {
-       $fields = array('year(ep.datep)','month(ep.datep) as mois');
-       return $this->createQueryBuilder('ep')
-           ->select($fields)
-           ->addSelect("SUM(ep.montant) As mont")
-           //->groupBy('a.nom')
-           //->addGroupBy('a.prenom')
-           //->addGroupBy('an.annee')
-           ->Where("YEAR(ep.datep) = YEAR(CURRENT_DATE()) - $annee ")
-           ->groupBy('mois')
-            //->addGroupBy("YEAR(ep.datep)")
-           ->getQuery()
-           ->getScalarResult()
-       ;
+    {
+        $currentYear = (int)date('Y');
+        $targetYear = $currentYear - $annee;
+        $startDate = "{$targetYear}-01-01";
+        $endDate = "{$targetYear}-12-31";
+
+        $params = [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+
+        $sql = "
+            SELECT 
+                MONTH(ep.datep) as mois,
+                SUM(ep.montant) as mont
+            FROM entetepiece ep
+            WHERE ep.datep >= :startDate 
+                AND ep.datep <= :endDate
+            GROUP BY MONTH(ep.datep)
+            ORDER BY MONTH(ep.datep) ASC
+        ";
+
+        $sql = $this->applyDossierFilterSql($sql, 'ep', $params);
+        
+        $connection = $this->getEntityManager()->getConnection();
+        $statement = $connection->prepare($sql);
+        $result = $statement->executeQuery($params);
+        
+        return $result->fetchAllAssociative();
     }
 
-    //    /**
-    //     * @return Entetepiece[] Returns an array of Entetepiece objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('e')
-    //            ->andWhere('e.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('e.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function getSearchQueryBuilder(?SearchPiece $searchData = null, string|array|null $forcedTierType = null): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('e')
+            ->leftJoin('e.codeOperation', 'co')
+            ->orderBy('e.id', 'DESC');
 
-    //    public function findOneBySomeField($value): ?Entetepiece
-    //    {
-    //        return $this->createQueryBuilder('e')
-    //            ->andWhere('e.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        $this->applyDossierFilter($qb, 'e');
+
+        if ($searchData && !empty($searchData->pieceref)) {
+            $qb->andWhere('e.pieceref LIKE :ref')
+               ->setParameter('ref', "%{$searchData->pieceref}%");
+        }
+
+        if ($searchData && !empty($searchData->statut)) {
+            $qb->andWhere('e.statut LIKE :statut')
+               ->setParameter('statut', "%{$searchData->statut}%");
+        }
+
+        $codeOperationId = trim((string) ($searchData?->codeOperationId ?? ''));
+        if ($codeOperationId !== '' && ctype_digit($codeOperationId)) {
+            $qb->andWhere('co.id = :codeOperationId')
+                ->setParameter('codeOperationId', (int) $codeOperationId);
+        }
+
+        $sens = trim((string) ($searchData?->sens ?? ''));
+        if ($sens !== '') {
+            $qb->andWhere('co.sens = :sens')
+                ->setParameter('sens', $sens);
+        }
+
+        $tierTypes = $this->resolveTierFilters($forcedTierType, $searchData);
+        if ($tierTypes !== []) {
+            $normalizedTierTypes = array_values(array_unique(array_map(
+                static fn (string $type): string => mb_strtolower(trim($type), 'UTF-8'),
+                $tierTypes
+            )));
+
+            if (count($normalizedTierTypes) === 1) {
+                $qb->andWhere('LOWER(e.typet) = :tierType')
+                    ->setParameter('tierType', $normalizedTierTypes[0]);
+            } else {
+                $qb->andWhere('LOWER(e.typet) IN (:tierTypes)')
+                    ->setParameter('tierTypes', $normalizedTierTypes);
+            }
+        }
+
+        return $qb;
+    }
+
+    public function findBySearch(SearchPiece $searchData, string|array|null $forcedTierType = null): array
+    {
+        return $this->getSearchQueryBuilder($searchData, $forcedTierType)->getQuery()->getResult();
+    }
+
+    public function findPaginated(?SearchPiece $searchData = null, int $page = 1, string|array|null $forcedTierType = null): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData, $forcedTierType);
+        return PaginationHelper::paginate($qb, $page);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function resolveTierFilters(string|array|null $forcedTierType, ?SearchPiece $searchData): array
+    {
+        if (is_array($forcedTierType)) {
+            $forcedValues = array_values(array_filter(array_map(
+                static fn (mixed $type): string => trim((string) $type),
+                $forcedTierType
+            )));
+            if ($forcedValues !== []) {
+                return $forcedValues;
+            }
+        } elseif (is_string($forcedTierType)) {
+            $forcedValue = trim($forcedTierType);
+            if ($forcedValue !== '') {
+                return [$forcedValue];
+            }
+        }
+
+        $searchValue = trim((string) ($searchData?->typet ?? ''));
+        if ($searchValue !== '') {
+            return [$searchValue];
+        }
+
+        return [];
+    }
+
+    /**
+     * Compute weighted average remise per invoice based on line items.
+     *
+     * @param array<int> $invoiceIds
+     * @return array<int, float> Map of invoiceId => remise percentage
+     */
+    public function getWeightedRemiseByInvoiceIds(array $invoiceIds): array
+    {
+        $invoiceIds = array_values(array_filter(array_map('intval', $invoiceIds)));
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('IDENTITY(lp.piece) AS invoice_id')
+            ->addSelect('SUM(COALESCE(lp.qte, 0) * COALESCE(lp.pub, 0)) AS base_total')
+            ->addSelect('SUM(COALESCE(lp.qte, 0) * COALESCE(lp.pub, 0) * COALESCE(lp.remise, 0)) AS remise_weighted')
+            ->from(Lignepiece::class, 'lp')
+            ->where($qb->expr()->in('lp.piece', ':ids'))
+            ->setParameter('ids', $invoiceIds)
+            ->groupBy('lp.piece');
+
+        $rows = $qb->getQuery()->getArrayResult();
+        $result = [];
+        foreach ($rows as $row) {
+            $invoiceId = (int) ($row['invoice_id'] ?? 0);
+            $baseTotal = (float) ($row['base_total'] ?? 0);
+            $weighted = (float) ($row['remise_weighted'] ?? 0);
+            $result[$invoiceId] = $baseTotal > 0 ? ($weighted / $baseTotal) : 0.0;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<int> $invoiceIds
+     * @return array<int, float> Map of invoiceId => total amount
+     */
+    public function getTotalAmountByInvoiceIds(array $invoiceIds): array
+    {
+        $invoiceIds = array_values(array_filter(array_map('intval', $invoiceIds)));
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('IDENTITY(lp.piece) AS invoice_id')
+            ->addSelect('COALESCE(SUM((COALESCE(lp.qte, 0) * COALESCE(lp.pub, 0)) * (1 - (COALESCE(lp.remise, 0) / 100))), 0) AS total_amount')
+            ->from(Lignepiece::class, 'lp')
+            ->where($qb->expr()->in('lp.piece', ':ids'))
+            ->setParameter('ids', $invoiceIds)
+            ->groupBy('lp.piece');
+
+        $rows = $qb->getQuery()->getArrayResult();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(int) ($row['invoice_id'] ?? 0)] = (float) ($row['total_amount'] ?? 0.0);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<int> $invoiceIds
+     * @return array<int, int> Map of invoiceId => line count
+     */
+    public function getLineCountByInvoiceIds(array $invoiceIds): array
+    {
+        $invoiceIds = array_values(array_filter(array_map('intval', $invoiceIds)));
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('IDENTITY(lp.piece) AS invoice_id')
+            ->addSelect('COUNT(lp.id) AS line_count')
+            ->from(Lignepiece::class, 'lp')
+            ->where($qb->expr()->in('lp.piece', ':ids'))
+            ->setParameter('ids', $invoiceIds)
+            ->groupBy('lp.piece');
+
+        $rows = $qb->getQuery()->getArrayResult();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(int) ($row['invoice_id'] ?? 0)] = (int) ($row['line_count'] ?? 0);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<int> $invoiceIds
+     * @return array<int, int> Map of invoiceId => invalid line count
+     */
+    public function getInvalidLineCountByInvoiceIds(array $invoiceIds): array
+    {
+        $invoiceIds = array_values(array_filter(array_map('intval', $invoiceIds)));
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('IDENTITY(lp.piece) AS invoice_id')
+            ->addSelect('SUM(CASE WHEN lp.article IS NULL OR COALESCE(lp.qte, 0) <= 0 OR COALESCE(lp.pub, 0) <= 0 THEN 1 ELSE 0 END) AS invalid_line_count')
+            ->from(Lignepiece::class, 'lp')
+            ->where($qb->expr()->in('lp.piece', ':ids'))
+            ->setParameter('ids', $invoiceIds)
+            ->groupBy('lp.piece');
+
+        $rows = $qb->getQuery()->getArrayResult();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(int) ($row['invoice_id'] ?? 0)] = (int) ($row['invalid_line_count'] ?? 0);
+        }
+
+        return $result;
+    }
+
+    private function applyDossierFilter(QueryBuilder $qb, string $alias): void
+    {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            return;
+        }
+
+        $currentDossier = $user->getCurrentDossier();
+        if ($currentDossier !== null) {
+            $qb->andWhere(sprintf('%s.dossier = :dossier', $alias))
+               ->setParameter('dossier', $currentDossier);
+        } else {
+            $qb->andWhere('1 = 0');
+        }
+    }
+
+    private function applyDossierFilterSql(string $sql, string $alias, array &$params): string
+    {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            return $sql;
+        }
+
+        $filter = ' AND 1 = 0';
+        $currentDossier = $user->getCurrentDossier();
+        if ($currentDossier !== null) {
+            $params['dossierId'] = $currentDossier->getId();
+            $filter = sprintf(' AND %s.dossier_id = :dossierId', $alias);
+        }
+
+        if (preg_match('/\b(GROUP BY|ORDER BY|LIMIT)\b/i', $sql, $match, PREG_OFFSET_CAPTURE)) {
+            $pos = $match[0][1];
+            return substr($sql, 0, $pos) . $filter . ' ' . substr($sql, $pos);
+        }
+
+        return $sql . $filter;
+    }
 }

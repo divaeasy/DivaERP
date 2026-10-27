@@ -1,0 +1,99 @@
+# Deploiement de myerp sur l'hebergement mutualise OVH (myerp.divaeasy.com)
+#
+# - Automatique : a chaque push sur la branche "production" (simulation seule sur "deploy-test")
+# - Manuel : onglet Actions > "Deploy OVH" > Run workflow (simulation "dry_run" cochee par defaut)
+#
+# Le build (vendor, assets) se fait ici ; le serveur ne recoit que des fichiers via rsync/SSH.
+# Jamais envoyes / jamais supprimes sur le serveur : .env*, var/, public/uploads/, .ssh/ (cle de deploiement).
+#
+# Secrets GitHub requis (Settings > Secrets and variables > Actions) :
+#   OVH_SSH_KEY   cle privee SSH (la cle publique est dans ~/.ssh/authorized_keys sur OVH)
+#   OVH_SSH_USER  login SSH (divaeao-deploy, dont le dossier de connexion est www/myerp)
+
+name: Deploy OVH
+
+on:
+  push:
+    # production : deploiement reel ; deploy-test : simulation uniquement
+    branches: [production, deploy-test]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Simulation : liste ce qui serait envoye/supprime sans rien modifier"
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-ovh
+  cancel-in-progress: false
+
+env:
+  OVH_HOST: ssh.cluster100.hosting.ovh.net
+  # Dossier de myerp relatif au dossier de connexion SSH (www/myerp)
+  OVH_PATH: .
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          # Meme version que la prod (mpdf 8.2.0 verrouille n'accepte pas PHP > 8.2)
+          php-version: "8.2"
+          extensions: gd, intl, zip, fileinfo, mbstring, pdo_mysql
+          tools: composer:v2
+
+      - name: Dependances PHP (sans dev)
+        env:
+          APP_ENV: prod
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
+
+      - name: Assets (importmap + asset-map)
+        env:
+          APP_ENV: prod
+          APP_DEBUG: "0"
+          # Valeurs factices : le kernel doit demarrer pour compiler les assets, aucune connexion n'est faite
+          APP_SECRET: build-only
+          DATABASE_URL: "mysql://build:build@127.0.0.1:3306/build?serverVersion=8.0"
+          TIIME_API_BASE_URL: "http://127.0.0.1:9"
+          TIIME_ENVIRONMENT: sandbox
+        run: |
+          php bin/console importmap:install
+          php bin/console asset-map:compile
+          rm -rf var/cache/prod
+
+      - name: Cle SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.OVH_SSH_KEY }}" > ~/.ssh/id_ovh
+          chmod 600 ~/.ssh/id_ovh
+          ssh-keyscan -H "$OVH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Envoi des fichiers (rsync)
+        run: |
+          DRY=""
+          if [ "${{ github.ref_name }}" = "deploy-test" ] || { [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; }; then
+            DRY="--dry-run"
+            echo "::notice::Simulation uniquement, rien n'est modifie sur le serveur"
+          fi
+          rsync -rlz --delete --itemize-changes $DRY \
+            -e "ssh -i ~/.ssh/id_ovh" \
+            --exclude='/.ssh/' \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='/var/' \
+            --exclude='/public/uploads/' \
+            --exclude='/public/node_modules/' \
+            --exclude='/node_modules/' \
+            --exclude='/vendor/mpdf/mpdf/tmp/' \
+            --exclude='/.bash_history' \
+            --exclude='/tests/' \
+            ./ "${{ secrets.OVH_SSH_USER }}@$OVH_HOST:$OVH_PATH/"
+
+      - name: Vidage du cache Symfony
+        if: ${{ github.ref_name != 'deploy-test' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        run: ssh -i ~/.ssh/id_ovh "${{ secrets.OVH_SSH_USER }}@$OVH_HOST" "rm -rf '$OVH_PATH/var/cache/prod'"

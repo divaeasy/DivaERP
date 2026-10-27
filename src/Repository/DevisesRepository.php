@@ -3,7 +3,10 @@
 namespace App\Repository;
 
 use App\Entity\Devises;
+use App\Model\SearchGeneric;
+use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -16,28 +19,27 @@ class DevisesRepository extends ServiceEntityRepository
         parent::__construct($registry, Devises::class);
     }
 
-    //    /**
-    //     * @return Devises[] Returns an array of Devises objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('d')
-    //            ->andWhere('d.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('d.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function getSearchQueryBuilder(?SearchGeneric $searchData = null): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('d')
+            ->orderBy('d.code', 'ASC');
 
-    //    public function findOneBySomeField($value): ?Devises
-    //    {
-    //        return $this->createQueryBuilder('d')
-    //            ->andWhere('d.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        if ($searchData && !empty($searchData->q)) {
+            $qb->andWhere('d.code LIKE :q OR d.libelle LIKE :q')
+               ->setParameter('q', "%{$searchData->q}%");
+        }
+
+        return $qb;
+    }
+
+    public function findBySearch(SearchGeneric $searchData): array
+    {
+        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+    }
+
+    public function findPaginated(?SearchGeneric $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        return PaginationHelper::paginate($qb, $page);
+    }
 }

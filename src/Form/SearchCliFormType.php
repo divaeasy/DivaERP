@@ -16,14 +16,14 @@ class SearchCliFormType extends AbstractType
         $builder
             ->add('nom', TextType::class, [
                 'attr' => [
-                    'placeholder' => 'Recherche par nom...'
+                    'placeholder' => 'Rechercher par nom...'
                 ],
                 'empty_data' => '',
                 'required' => false
             ])
             ->add('tel', TextType::class, [
                 'attr' => [
-                    'placeholder' => 'Recherche par Tel...'
+                    'placeholder' => 'Rechercher par téléphone...'
                 ],
                 'empty_data' => '',
                 'required' => false

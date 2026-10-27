@@ -1,28 +1,2232 @@
-{% extends "template_oukatech.html.twig" %}
-{% block PageTitle%}
-    Dossier
-{% endblock %}
-{% block title %}Dossier{% endblock %}
+﻿{% extends "template_oukatech.html.twig" %}
+{% block PageTitle %}Dossier{% endblock %}
+
 {% block body %}
-{{ form_start(dossier)}}
-    <div class="row">
-        <div class="col">{{form_row(dossier.nom)}}</div>
-        <div class="col">{{form_row(dossier.adresse)}}</div>
+{% set dossierEntity = dossier is defined ? dossier.vars.data : null %}
+<div class="page-header dossier-editor__header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('dossier.list') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 mb-1 text-gray-800">{{ id > 0 ? 'Modifier le dossier' : 'Nouveau dossier' }}</h1>
+        </div>
     </div>
+</div>
+
+<div class="dossier-editor">
+    {{ form_start(dossier, {'attr': {'class': 'needs-validation dossier-editor__form', 'novalidate': 'novalidate'}}) }}
+
     <div class="row">
-        
-        <div class="col">{{form_row(dossier.logo)}}</div>
-        <div class="col">{{form_row(dossier.rc)}}</div>
-        <div class="col">{{ form_row(dossier.devise,{'attr': {'class': 'form-control js-example-basic-single'}}) }}</div>
+        <div class="col-xl-7 mb-4">
+            <section class="form-card dossier-panel mb-4">
+                <div class="dossier-panel__head">
+                    <h5><i class="fas fa-folder-open mr-2"></i>Identite du dossier</h5>
+                    <p>Nom, adresse, reference et devise utilises dans toute l'application.</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            {{ form_label(dossier.nom, 'Nom', {'label_attr': {'class': 'required'}}) }}
+                            {{ form_widget(dossier.nom, {'attr': {'class': 'form-control', 'placeholder': 'Nom du dossier'}}) }}
+                            {{ form_errors(dossier.nom) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    {{ form_label(dossier.adresse, 'Adresse') }}
+                    {{ form_widget(dossier.adresse, {'attr': {'class': 'form-control', 'placeholder': 'Adresse du dossier'}}) }}
+                    {{ form_errors(dossier.adresse) }}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form_label(dossier.codepostal, 'Code postal') }}
+                            {{ form_widget(dossier.codepostal, {'attr': {'class': 'form-control', 'placeholder': 'Code postal'}}) }}
+                            {{ form_errors(dossier.codepostal) }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form_label(dossier.ville, 'Ville') }}
+                            {{ form_widget(dossier.ville, {'attr': {'class': 'form-control', 'placeholder': 'Ville'}}) }}
+                            {{ form_errors(dossier.ville) }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form_label(dossier.pays, 'Pays') }}
+                            {{ form_widget(dossier.pays, {'attr': {'class': 'form-control', 'placeholder': 'Pays'}}) }}
+                            {{ form_errors(dossier.pays) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-0">
+                    {{ form_label(dossier.devise, 'Devise') }}
+                    {{ form_widget(dossier.devise, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                    {{ form_errors(dossier.devise) }}
+                </div>
+            </section>
+
+            <section class="form-card dossier-panel mb-4 dossier-panel--compact">
+                <div class="dossier-panel__head">
+                    <h5><i class="fas fa-id-card mr-2"></i>Infos legales et contact</h5>
+                    <p>Ces informations sont reutilisees dans le PDF facture (pied de page).</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.siret, 'SIRET / ICE') }}
+                            {{ form_widget(dossier.siret, {'attr': {'class': 'form-control', 'placeholder': 'Ex: 12345678901234'}}) }}
+                            {{ form_errors(dossier.siret) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.naf, 'Code NAF') }}
+                            {{ form_widget(dossier.naf, {'attr': {'class': 'form-control', 'placeholder': 'Code NAF'}}) }}
+                            {{ form_errors(dossier.naf) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.tvaintra, 'TVA Intra') }}
+                            {{ form_widget(dossier.tvaintra, {'attr': {'class': 'form-control', 'placeholder': 'Numero TVA'}}) }}
+                            {{ form_errors(dossier.tvaintra) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form_label(dossier.tel, 'Telephone') }}
+                            {{ form_widget(dossier.tel, {'attr': {'class': 'form-control', 'placeholder': 'Telephone'}}) }}
+                            {{ form_errors(dossier.tel) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-0">
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.email, 'Email') }}
+                            {{ form_widget(dossier.email, {'attr': {'class': 'form-control', 'placeholder': 'contact@entreprise.com'}}) }}
+                            {{ form_errors(dossier.email) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.rc, 'RC') }}
+                            {{ form_widget(dossier.rc, {'attr': {'class': 'form-control', 'placeholder': 'Registre du commerce'}}) }}
+                            {{ form_errors(dossier.rc) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mt-3 mb-0">
+                    {{ form_label(dossier.penalitesretard, 'Texte legal retard (modele 1)') }}
+                    {{ form_widget(dossier.penalitesretard, {'attr': {'class': 'form-control', 'rows': 3, 'placeholder': 'Pénalités de retard... (facultatif)'}}) }}
+                    {{ form_errors(dossier.penalitesretard) }}
+                </div>
+            </section>
+
+            <section class="form-card dossier-panel mb-4 dossier-panel--compact">
+                <div class="dossier-panel__head">
+                    <h5><i class="fas fa-university mr-2"></i>Coordonnees bancaires</h5>
+                </div>
+                <div class="row mb-0">
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.iban, 'IBAN') }}
+                            {{ form_widget(dossier.iban, {'attr': {'class': 'form-control', 'placeholder': 'IBAN'}}) }}
+                            {{ form_errors(dossier.iban) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.bic, 'BIC') }}
+                            {{ form_widget(dossier.bic, {'attr': {'class': 'form-control', 'placeholder': 'BIC / SWIFT'}}) }}
+                            {{ form_errors(dossier.bic) }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-card dossier-panel mb-4 dossier-panel--compact">
+                <div class="dossier-panel__head">
+                    <h5><i class="fas fa-hashtag mr-2"></i>Numerotations</h5>
+                    <p>Numéros initiaux pour chaque type de pièce. Le système incrémente automatiquement à chaque création avec des séquences indépendantes.</p>
+                </div>
+                <div class="row mb-0">
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.devisno, 'Devis') }}
+                            {{ form_widget(dossier.devisno, {'attr': {'class': 'form-control', 'min': 0, 'placeholder': 'N° devis'}}) }}
+                            {{ form_errors(dossier.devisno) }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.cmdno, 'Commande') }}
+                            {{ form_widget(dossier.cmdno, {'attr': {'class': 'form-control', 'min': 0, 'placeholder': 'N° commande'}}) }}
+                            {{ form_errors(dossier.cmdno) }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.blno, 'BL') }}
+                            {{ form_widget(dossier.blno, {'attr': {'class': 'form-control', 'min': 0, 'placeholder': 'N° BL'}}) }}
+                            {{ form_errors(dossier.blno) }}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-0">
+                            {{ form_label(dossier.factureno, 'Facture') }}
+                            {{ form_widget(dossier.factureno, {'attr': {'class': 'form-control', 'min': 0, 'placeholder': 'N° facture'}}) }}
+                            {{ form_errors(dossier.factureno) }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-card dossier-panel dossier-panel--compact">
+                <div class="dossier-panel__head">
+                    <h5><i class="fas fa-image mr-2"></i>Logo</h5>
+                    <p>Ajoutez un logo propre pour le switcher de dossier, les fiches utilisateurs et les vues de gestion.</p>
+                </div>
+
+                <div class="logo-uploader">
+                    <div class="logo-uploader__preview logo-uploader__preview--large" id="logoPreview">
+                        {% if dossierEntity is defined and dossierEntity and dossierEntity.logo %}
+                            <img src="{{ dossierEntity.logo }}" alt="Logo actuel" id="logoPreviewImage">
+                        {% else %}
+                            <div class="logo-uploader__placeholder" id="logoPreviewPlaceholder">
+                                <i class="fas fa-image"></i>
+                                <span>Aperçu du logo</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="logo-uploader__controls">
+                        <div class="logo-upload-trigger-wrap">
+                            <button type="button" class="logo-upload-trigger" id="logoUploadButton">
+                                <i class="fas fa-upload mr-2"></i>Choisir un logo
+                            </button>
+                            {{ form_widget(dossier.logoFile, {'attr': {'class': 'logo-upload-input', 'id': 'logoUpload', 'accept': 'image/*', 'onchange': 'window.handleDossierLogoChange && window.handleDossierLogoChange(this)'}}) }}
+                        </div>
+                        <span class="logo-upload-filename" id="logoFileName">{% if dossierEntity is defined and dossierEntity and dossierEntity.logo %}Logo actuel chargé{% else %}Aucun fichier sélectionné{% endif %}</span>
+                        <small class="text-muted">Formats conseillés : PNG ou JPG. Le logo sera affiché avec le nom du dossier.</small>
+                        {{ form_errors(dossier.logoFile) }}
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-card dossier-panel dossier-panel--compact mt-4 dossier-stock-panel">
+                <div class="dossier-panel__head dossier-stock-panel__head">
+                    <h5><i class="fas fa-warehouse mr-2"></i>Gestion des stocks</h5>
+                    <p>Activez la gestion de stock et definissez le comportement par defaut du dossier.</p>
+                </div>
+
+                <div class="row dossier-stock-fields">
+                    <div class="col-md-6">
+                        <div class="form-group dossier-stock-field">
+                            {{ form_label(dossier.natureStock, 'Nature de stock') }}
+                            {{ form_widget(dossier.natureStock, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                            {{ form_errors(dossier.natureStock) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group dossier-stock-field">
+                            {{ form_label(dossier.sortiStockDefaut, 'Sortie de stock par defaut') }}
+                            {{ form_widget(dossier.sortiStockDefaut, {'attr': {'class': 'form-control'}}) }}
+                            {{ form_errors(dossier.sortiStockDefaut) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-0 dossier-stock-toggles">
+                    <div class="col-md-6">
+                        <div class="form-group mb-0 dossier-stock-toggle">
+                            <div class="form-check dossier-stock-toggle__control">
+                                {{ form_widget(dossier.gererStocks, {'attr': {'class': 'form-check-input'}}) }}
+                                {{ form_label(dossier.gererStocks, 'Gerer les stocks', {'label_attr': {'class': 'form-check-label'}}) }}
+                            </div>
+                            {{ form_errors(dossier.gererStocks) }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-0 dossier-stock-toggle">
+                            <div class="form-check dossier-stock-toggle__control">
+                                {{ form_widget(dossier.autoriserStockNegatif, {'attr': {'class': 'form-check-input'}}) }}
+                                {{ form_label(dossier.autoriserStockNegatif, 'Autoriser le stock negatif', {'label_attr': {'class': 'form-check-label'}}) }}
+                            </div>
+                            {{ form_errors(dossier.autoriserStockNegatif) }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-xl-5 mb-4">
+            <section class="form-card dossier-panel dossier-panel--compact dossier-panel--sticky">
+                <div class="dossier-panel__head dossier-panel__head--with-action">
+                    <div>
+                        <h5><i class="fas fa-palette mr-2"></i>Palette du dossier</h5>
+                        <p>Le theme choisi pilote les couleurs principales du menu, des boutons et des contenus.</p>
+                    </div>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <button type="button" class="theme-settings-trigger js-open-theme-modal" title="Creer un nouveau theme">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="theme-option-grid" id="themeOptionGrid">
+                    {% for child in dossier.theme %}
+                        {% set themeName = child.vars.attr['data-theme-name']|default(child.vars.label|default('Theme')) %}
+                        {% set themeDescription = child.vars.attr['data-theme-description']|default('Palette personnalisee') %}
+                        {% set themePrimary = child.vars.attr['data-theme-primary']|default('#475569') %}
+                        {% set themeSecondary = child.vars.attr['data-theme-secondary']|default('#334155') %}
+                        {% set themeAccent = child.vars.attr['data-theme-accent']|default('#94a3b8') %}
+                        {% set themeId = child.vars.attr['data-theme-id']|default('') %}
+                        {% set themeSystemRaw = child.vars.attr['data-theme-system']|default('0') %}
+                        {% set themeIsSystem = themeSystemRaw in ['1', 1, true, 'true'] %}
+                        <div
+                            class="theme-option"
+                            data-theme-id="{{ themeId }}"
+                            data-theme-name="{{ themeName }}"
+                            data-theme-description="{{ themeDescription }}"
+                            data-theme-primary="{{ themePrimary }}"
+                            data-theme-secondary="{{ themeSecondary }}"
+                            data-theme-accent="{{ themeAccent }}"
+                            data-theme-is-system="{{ themeIsSystem ? '1' : '0' }}"
+                        >
+                            <input
+                                type="radio"
+                                class="theme-radio-input"
+                                id="{{ child.vars.id }}"
+                                name="{{ child.vars.full_name }}"
+                                value="{{ child.vars.value }}"
+                                {% if child.vars.checked %}checked{% endif %}
+                                {% if child.vars.required %}required{% endif %}
+                                data-theme-id="{{ themeId }}"
+                            >
+                            <label for="{{ child.vars.id }}" class="theme-option__card" data-theme-card="true">
+                                <span class="theme-option__preview">
+                                    <span class="theme-option__dot" style="background: {{ themePrimary }};"></span>
+                                    <span class="theme-option__dot" style="background: {{ themeSecondary }};"></span>
+                                    <span class="theme-option__dot" style="background: {{ themeAccent }};"></span>
+                                </span>
+                                <span class="theme-option__content">
+                                    <span class="theme-option__title">{{ themeName }}</span>
+                                    <span class="theme-option__text" title="{{ themeDescription }}">{{ themeDescription }}</span>
+                                </span>
+                                <span class="theme-option__check">
+                                    <i class="fas fa-check"></i>
+                                </span>
+                            </label>
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <div class="theme-option__menu">
+                                    <button
+                                        type="button"
+                                        class="theme-option__menu-toggle no-loading"
+                                        data-no-loading="true"
+                                        data-theme-menu-toggle="true"
+                                        aria-haspopup="true"
+                                        aria-expanded="false"
+                                        aria-label="Actions du theme"
+                                    >
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                    <div class="theme-option__menu-dropdown" data-theme-menu-dropdown hidden>
+                                        <button type="button" class="theme-option__menu-item" data-theme-action="edit">
+                                            <i class="fas fa-pen mr-2"></i>Modifier
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="theme-option__menu-item theme-option__menu-item--danger"
+                                            data-theme-action="delete"
+                                            {% if themeIsSystem %}disabled title="Theme systeme non supprimable"{% endif %}
+                                        >
+                                            <i class="fas fa-trash mr-2"></i>Supprimer
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="theme-empty-state">
+                            <i class="fas fa-palette"></i>
+                            <span>Aucun theme disponible.</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="theme-pagination" id="themePagination">
+                    <button type="button" class="theme-pagination__arrow" id="themePagePrev" aria-label="Themes precedents">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="theme-pagination__dots" id="themePagerDots" role="tablist" aria-label="Pagination des themes"></div>
+                    <button type="button" class="theme-pagination__arrow" id="themePageNext" aria-label="Themes suivants">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                {{ form_errors(dossier.theme) }}
+            </section>
+        </div>
     </div>
-    
-    <button type="submit" class="btn btn-lg btn-primary mt-2">Enregistrer</button>
-{{form_rest(dossier)}}
+
+    <div class="form-actions dossier-editor__actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ id > 0 ? 'Mettre a jour' : 'Enregistrer' }}
+        </button>
+        <a href="{{ path('dossier.list') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_widget(dossier._token) }}
+    {{ form_end(dossier, {'render_rest': false}) }}
+</div>
+
+{% if is_granted('ROLE_ADMIN') %}
+{% set themeUpdateUrlTemplate = path('dossier.theme.update', {id: 999999})|replace({'999999': '__ID__'}) %}
+{% set themeDeleteUrlTemplate = path('dossier.theme.delete', {id: 999999})|replace({'999999': '__ID__'}) %}
+<div
+    class="theme-modal"
+    id="themeCreateModal"
+    aria-hidden="true"
+    data-create-url="{{ path('dossier.theme.create') }}"
+    data-update-url-template="{{ themeUpdateUrlTemplate }}"
+    data-delete-url-template="{{ themeDeleteUrlTemplate }}"
+    data-csrf-token="{{ csrf_token('create_dossier_theme') }}"
+    data-manage-csrf-token="{{ csrf_token('manage_dossier_theme') }}"
+>
+    <div class="theme-modal__backdrop" data-theme-modal-close="true"></div>
+    <div class="theme-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="themeCreateModalTitle">
+        <button type="button" class="theme-modal__close" data-theme-modal-close="true" aria-label="Fermer">&times;</button>
+
+        <div class="theme-modal__icon">
+            <i class="fas fa-palette"></i>
+        </div>
+
+        <h4 id="themeCreateModalTitle">Nouveau theme</h4>
+        <p class="theme-modal__subtitle" id="themeCreateModalSubtitle">Ajoutez une palette personnalisee qui sera disponible immediatement dans ce dossier.</p>
+
+        <div class="theme-modal__message-slot">
+            <div class="theme-modal__alert" id="themeCreateMessage" hidden></div>
+        </div>
+
+        <form id="themeCreateForm" class="theme-modal__form no-loading" data-no-loading="true" novalidate>
+            <input type="hidden" id="themeEditId" name="themeId" value="">
+            <div class="form-group mb-3">
+                <label for="themeName" class="required">Nom du theme</label>
+                <input type="text" id="themeName" name="name" class="form-control" placeholder="Ex: Bleu ocean premium" required>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="themeDescription">Description</label>
+                <input type="text" id="themeDescription" name="description" class="form-control" placeholder="Ex: Palette elegante pour pilotage commercial">
+            </div>
+
+            <div class="theme-color-grid">
+                <div class="theme-color-row" data-color-role="primary">
+                    <label for="themePrimaryColor" class="required">Couleur primaire</label>
+                    <div class="theme-color-inputs">
+                        <input type="color" id="themePrimaryColor" name="primaryColor" value="#4F46E5" data-color-input data-color-role="primary">
+                        <input type="text" class="form-control" value="#4F46E5" data-hex-input data-color-role="primary" maxlength="7" required>
+                    </div>
+                </div>
+                  
+                <div class="theme-color-row theme-color-row--readonly" data-color-role="accent">
+                    <label for="themeAccentColor">Couleur accent<span class="theme-color-row__hint">Auto</span></label>
+                    <div class="theme-color-inputs">
+                        <input type="color" id="themeAccentColor" value="#818CF8" data-color-input data-color-role="accent" disabled tabindex="-1" aria-readonly="true">
+                        <input type="text" class="form-control" value="#818CF8" data-hex-input data-color-role="accent" maxlength="7" readonly aria-readonly="true">
+                    </div>
+                </div>
+            </div>
+
+            <div class="theme-modal__actions">
+                <button type="button" class="btn btn-secondary" data-theme-modal-close="true">Annuler</button>
+                <button type="submit" class="btn btn-primary" id="themeCreateSubmitBtn">
+                    <span class="theme-submit-label"><i class="fas fa-plus mr-2"></i><span id="themeSubmitLabelText">Creer le theme</span></span>
+                    <span class="theme-submit-loading" hidden><i class="fas fa-circle-notch fa-spin mr-2"></i><span id="themeSubmitLoadingText">Creation...</span></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
+
 {% block javascripts %}
-    <script>
-        $(document).ready(function() {
-            $('.js-example-basic-single').select2();
+<script>
+(function () {
+    var HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
+
+    window.handleDossierLogoChange = function (inputElement) {
+        var preview = document.getElementById('logoPreview');
+        var fileName = document.getElementById('logoFileName');
+        var file = inputElement && inputElement.files && inputElement.files[0] ? inputElement.files[0] : null;
+
+        if (!preview || !fileName) {
+            return;
+        }
+
+        if (!file) {
+            fileName.textContent = '{% if dossierEntity is defined and dossierEntity and dossierEntity.logo %}Logo actuel charge{% else %}Aucun fichier selectionne{% endif %}';
+            return;
+        }
+
+        fileName.textContent = file.name;
+
+        if (!file.type.match(/^image\//)) {
+            return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function (loadEvent) {
+            preview.innerHTML = '<img src="' + loadEvent.target.result + '" alt="Apercu du logo" id="logoPreviewImage">';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    function initDossierForm() {
+        if (window.jQuery && $.fn.select2) {
+            $('.js-example-basic-single').each(function () {
+                if (!$(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2({
+                        theme: 'bootstrap-5',
+                        allowClear: true,
+                        width: '100%'
+                    });
+                }
+            });
+        }
+
+        var input = document.getElementById('logoUpload');
+        var preview = document.getElementById('logoPreview');
+        var themeGrid = document.getElementById('themeOptionGrid');
+        var themePagination = document.getElementById('themePagination');
+        var themePagePrevButton = document.getElementById('themePagePrev');
+        var themePageNextButton = document.getElementById('themePageNext');
+        var themePagerDots = document.getElementById('themePagerDots');
+        var THEME_PAGE_SIZE = 8;
+        var currentThemePage = 0;
+        var isAdmin = {{ is_granted('ROLE_ADMIN') ? 'true' : 'false' }};
+
+        function getThemeOptions() {
+            return themeGrid ? Array.from(themeGrid.querySelectorAll('.theme-option')) : [];
+        }
+
+        function syncThemePaginationDots(pageCount) {
+            if (!themePagerDots) {
+                return;
+            }
+
+            themePagerDots.innerHTML = '';
+
+            for (var page = 0; page < pageCount; page += 1) {
+                var dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = 'theme-pagination__dot' + (page === currentThemePage ? ' is-active' : '');
+                dot.setAttribute('aria-label', 'Aller a la page ' + (page + 1));
+                dot.setAttribute('aria-current', page === currentThemePage ? 'true' : 'false');
+                dot.setAttribute('data-theme-page', String(page));
+                themePagerDots.appendChild(dot);
+            }
+        }
+
+        function applyThemePage() {
+            var options = getThemeOptions();
+            var pageCount = Math.max(1, Math.ceil(options.length / THEME_PAGE_SIZE));
+            if (currentThemePage >= pageCount) {
+                currentThemePage = pageCount - 1;
+            }
+            if (currentThemePage < 0) {
+                currentThemePage = 0;
+            }
+
+            options.forEach(function (option, index) {
+                var optionPage = Math.floor(index / THEME_PAGE_SIZE);
+                option.hidden = optionPage !== currentThemePage;
+            });
+
+            if (themePagination) {
+                themePagination.classList.toggle('is-hidden', options.length <= THEME_PAGE_SIZE);
+            }
+            if (themePagePrevButton) {
+                themePagePrevButton.disabled = currentThemePage <= 0;
+            }
+            if (themePageNextButton) {
+                themePageNextButton.disabled = currentThemePage >= (pageCount - 1);
+            }
+
+            syncThemePaginationDots(pageCount);
+        }
+
+        function showGlobalToast(message, type) {
+            if (!message) {
+                return;
+            }
+
+            if (typeof window.showAppToast === 'function') {
+                window.showAppToast({
+                    message: message,
+                    type: type || 'info'
+                });
+                return;
+            }
+
+            if (type === 'error') {
+                console.error(message);
+            } else {
+                console.log(message);
+            }
+        }
+
+        function syncThemeSelection() {
+            var selectedIndex = -1;
+            var options = getThemeOptions();
+
+            options.forEach(function (option, index) {
+                var radio = option.querySelector('.theme-radio-input');
+                var isSelected = !!(radio && radio.checked);
+                option.classList.toggle('theme-option--selected', isSelected);
+                if (isSelected) {
+                    selectedIndex = index;
+                }
+            });
+
+            if (selectedIndex >= 0) {
+                currentThemePage = Math.floor(selectedIndex / THEME_PAGE_SIZE);
+            }
+
+            applyThemePage();
+        }
+
+        function getThemeDataFromOption(option) {
+            if (!option) {
+                return null;
+            }
+
+            return {
+                id: parseInt(option.getAttribute('data-theme-id') || '', 10),
+                name: option.getAttribute('data-theme-name') || 'Theme',
+                description: option.getAttribute('data-theme-description') || 'Palette personnalisee',
+                primaryColor: option.getAttribute('data-theme-primary') || '#475569',
+                secondaryColor: option.getAttribute('data-theme-secondary') || '#334155',
+                accentColor: option.getAttribute('data-theme-accent') || '#94a3b8',
+                isSystem: String(option.getAttribute('data-theme-is-system') || '0') === '1'
+            };
+        }
+
+        function setThemeDataOnOption(option, theme) {
+            if (!option || !theme) {
+                return;
+            }
+
+            var themeDescription = theme.description || 'Palette personnalisee';
+            option.setAttribute('data-theme-id', String(theme.id));
+            option.setAttribute('data-theme-name', String(theme.name || 'Theme'));
+            option.setAttribute('data-theme-description', String(themeDescription));
+            option.setAttribute('data-theme-primary', String(theme.primaryColor || '#475569'));
+            option.setAttribute('data-theme-secondary', String(theme.secondaryColor || '#334155'));
+            option.setAttribute('data-theme-accent', String(theme.accentColor || '#94a3b8'));
+            option.setAttribute('data-theme-is-system', theme.isSystem ? '1' : '0');
+        }
+
+        function closeAllThemeMenus(exceptOption) {
+            getThemeOptions().forEach(function (option) {
+                if (exceptOption && option === exceptOption) {
+                    return;
+                }
+
+                var menu = option.querySelector('.theme-option__menu');
+                var toggle = option.querySelector('[data-theme-menu-toggle="true"]');
+                var dropdown = option.querySelector('[data-theme-menu-dropdown]');
+                if (dropdown) {
+                    dropdown.hidden = true;
+                }
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+                if (menu) {
+                    menu.classList.remove('theme-option__menu--open');
+                }
+            });
+        }
+
+        function openThemeDeleteModal(themeData) {
+            var deleteModal = document.getElementById('deleteConfirmModal');
+            var deleteItemName = document.getElementById('deleteModalItemName');
+            var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+            if (!themeData || Number.isNaN(themeData.id) || !deleteModal || !confirmDeleteBtn) {
+                return;
+            }
+
+            if (deleteItemName) {
+                deleteItemName.textContent = 'le theme "' + themeData.name + '"';
+            }
+
+            confirmDeleteBtn.setAttribute('href', '#');
+            confirmDeleteBtn.setAttribute('data-theme-delete-id', String(themeData.id));
+
+            if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+                window.jQuery(deleteModal).modal('show');
+            }
+        }
+
+        function bindThemeActionMenu(option) {
+            if (!isAdmin || !option || option.dataset.actionsBound === '1') {
+                return;
+            }
+
+            var menuContainer = option.querySelector('.theme-option__menu');
+            var menuToggle = option.querySelector('[data-theme-menu-toggle="true"]');
+            var menuDropdown = option.querySelector('[data-theme-menu-dropdown]');
+            if (!menuContainer || !menuToggle || !menuDropdown) {
+                return;
+            }
+
+            option.dataset.actionsBound = '1';
+
+            menuToggle.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                var shouldOpen = menuDropdown.hidden;
+                closeAllThemeMenus(shouldOpen ? option : null);
+                menuDropdown.hidden = !shouldOpen;
+                menuToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+                menuContainer.classList.toggle('theme-option__menu--open', shouldOpen);
+            });
+
+            menuDropdown.addEventListener('click', function (event) {
+                var actionButton = event.target && event.target.closest ? event.target.closest('[data-theme-action]') : null;
+                if (!actionButton || actionButton.disabled) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                var action = actionButton.getAttribute('data-theme-action');
+                var themeData = getThemeDataFromOption(option);
+                menuDropdown.hidden = true;
+                menuToggle.setAttribute('aria-expanded', 'false');
+                menuContainer.classList.remove('theme-option__menu--open');
+
+                if (action === 'edit') {
+                    openModal('edit', themeData);
+                    return;
+                }
+
+                if (action === 'delete') {
+                    openThemeDeleteModal(themeData);
+                }
+            });
+        }
+
+        function bindThemeOption(option) {
+            if (!option || option.dataset.bound === '1') {
+                return;
+            }
+
+            option.dataset.bound = '1';
+            var radio = option.querySelector('.theme-radio-input');
+            var card = option.querySelector('[data-theme-card="true"]');
+
+            if (card && radio) {
+                card.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change', { bubbles: true }));
+                    syncThemeSelection();
+                });
+            }
+
+            if (radio) {
+                radio.addEventListener('change', syncThemeSelection);
+            }
+
+            bindThemeActionMenu(option);
+        }
+
+        if (themePagination && themePagination.dataset.bound !== '1') {
+            themePagination.dataset.bound = '1';
+
+            if (themePagePrevButton) {
+                themePagePrevButton.addEventListener('click', function () {
+                    currentThemePage -= 1;
+                    applyThemePage();
+                });
+            }
+
+            if (themePageNextButton) {
+                themePageNextButton.addEventListener('click', function () {
+                    currentThemePage += 1;
+                    applyThemePage();
+                });
+            }
+
+            if (themePagerDots) {
+                themePagerDots.addEventListener('click', function (event) {
+                    var target = event.target;
+                    if (!(target instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    var dot = target.closest('[data-theme-page]');
+                    if (!dot) {
+                        return;
+                    }
+
+                    var nextPage = parseInt(dot.getAttribute('data-theme-page') || '', 10);
+                    if (!Number.isNaN(nextPage)) {
+                        currentThemePage = nextPage;
+                        applyThemePage();
+                    }
+                });
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function buildThemeActionsMarkup(theme) {
+            if (!isAdmin) {
+                return '';
+            }
+
+            var disabledDeleteAttr = theme.isSystem ? ' disabled title="Theme systeme non supprimable"' : '';
+            return '' +
+                '<div class="theme-option__menu">' +
+                    '<button type="button" class="theme-option__menu-toggle no-loading" data-no-loading="true" data-theme-menu-toggle="true" aria-haspopup="true" aria-expanded="false" aria-label="Actions du theme">' +
+                        '<i class="fas fa-ellipsis-h"></i>' +
+                    '</button>' +
+                    '<div class="theme-option__menu-dropdown" data-theme-menu-dropdown hidden>' +
+                        '<button type="button" class="theme-option__menu-item" data-theme-action="edit"><i class="fas fa-pen mr-2"></i>Modifier</button>' +
+                        '<button type="button" class="theme-option__menu-item theme-option__menu-item--danger" data-theme-action="delete"' + disabledDeleteAttr + '><i class="fas fa-trash mr-2"></i>Supprimer</button>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        function updateThemeOption(theme) {
+            if (!themeGrid || !theme || !theme.id) {
+                return false;
+            }
+
+            var option = themeGrid.querySelector('.theme-option[data-theme-id="' + String(theme.id) + '"]');
+            if (!option) {
+                return false;
+            }
+
+            var description = theme.description || 'Palette personnalisee';
+            setThemeDataOnOption(option, theme);
+
+            var titleNode = option.querySelector('.theme-option__title');
+            if (titleNode) {
+                titleNode.textContent = theme.name || 'Theme';
+            }
+
+            var textNode = option.querySelector('.theme-option__text');
+            if (textNode) {
+                textNode.textContent = description;
+                textNode.setAttribute('title', description);
+            }
+
+            var dots = option.querySelectorAll('.theme-option__dot');
+            if (dots[0]) {
+                dots[0].style.background = theme.primaryColor || '#475569';
+            }
+            if (dots[1]) {
+                dots[1].style.background = theme.secondaryColor || '#334155';
+            }
+            if (dots[2]) {
+                dots[2].style.background = theme.accentColor || '#94a3b8';
+            }
+
+            var deleteButton = option.querySelector('[data-theme-action="delete"]');
+            if (deleteButton) {
+                deleteButton.disabled = !!theme.isSystem;
+                if (theme.isSystem) {
+                    deleteButton.setAttribute('title', 'Theme systeme non supprimable');
+                } else {
+                    deleteButton.removeAttribute('title');
+                }
+            }
+
+            bindThemeOption(option);
+            return true;
+        }
+
+        function ensureThemeEmptyState() {
+            if (!themeGrid) {
+                return;
+            }
+
+            if (themeGrid.querySelector('.theme-option')) {
+                return;
+            }
+
+            if (themeGrid.querySelector('.theme-empty-state')) {
+                return;
+            }
+
+            var emptyState = document.createElement('div');
+            emptyState.className = 'theme-empty-state';
+            emptyState.innerHTML = '<i class="fas fa-palette"></i><span>Aucun theme disponible.</span>';
+            themeGrid.appendChild(emptyState);
+        }
+
+        function appendThemeOption(theme) {
+            if (!themeGrid || !theme || !theme.id) {
+                return;
+            }
+
+            if (updateThemeOption(theme)) {
+                var existingRadio = themeGrid.querySelector('.theme-option[data-theme-id="' + String(theme.id) + '"] .theme-radio-input');
+                if (existingRadio) {
+                    existingRadio.checked = true;
+                    existingRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                syncThemeSelection();
+                return;
+            }
+
+            var firstRadio = themeGrid.querySelector('.theme-radio-input');
+            var inputName = firstRadio ? firstRadio.getAttribute('name') : 'dossier_form[theme]';
+            var firstId = firstRadio ? firstRadio.id : 'dossier_form_theme_0';
+            var inputRequired = firstRadio ? firstRadio.required : true;
+            var idBase = firstId ? firstId.replace(/_\d+$/, '') : 'dossier_form_theme';
+            var optionId = idBase + '_' + String(theme.id);
+            var description = theme.description || 'Palette personnalisee';
+
+            var option = document.createElement('div');
+            option.className = 'theme-option';
+            option.innerHTML = '' +
+                '<input type="radio" class="theme-radio-input" id="' + optionId + '" name="' + escapeHtml(inputName) + '" value="' + String(theme.id) + '"' + (inputRequired ? ' required' : '') + '>' +
+                '<label for="' + optionId + '" class="theme-option__card" data-theme-card="true">' +
+                    '<span class="theme-option__preview">' +
+                        '<span class="theme-option__dot" style="background:' + escapeHtml(theme.primaryColor || '#475569') + ';"></span>' +
+                        '<span class="theme-option__dot" style="background:' + escapeHtml(theme.secondaryColor || '#334155') + ';"></span>' +
+                        '<span class="theme-option__dot" style="background:' + escapeHtml(theme.accentColor || '#94a3b8') + ';"></span>' +
+                    '</span>' +
+                    '<span class="theme-option__content">' +
+                        '<span class="theme-option__title">' + escapeHtml(theme.name || 'Theme') + '</span>' +
+                        '<span class="theme-option__text" title="' + escapeHtml(description) + '">' + escapeHtml(description) + '</span>' +
+                    '</span>' +
+                    '<span class="theme-option__check"><i class="fas fa-check"></i></span>' +
+                '</label>' +
+                buildThemeActionsMarkup(theme);
+
+            setThemeDataOnOption(option, theme);
+
+            var emptyState = themeGrid.querySelector('.theme-empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            themeGrid.prepend(option);
+            bindThemeOption(option);
+
+            var radio = option.querySelector('.theme-radio-input');
+            if (radio) {
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            syncThemeSelection();
+        }
+
+        function removeThemeOption(themeId, fallbackThemeId) {
+            if (!themeGrid || !themeId) {
+                return;
+            }
+
+            var option = themeGrid.querySelector('.theme-option[data-theme-id="' + String(themeId) + '"]');
+            if (!option) {
+                return;
+            }
+
+            var radio = option.querySelector('.theme-radio-input');
+            var wasSelected = !!(radio && radio.checked);
+            option.remove();
+
+            if (wasSelected) {
+                var nextSelectedRadio = null;
+                if (fallbackThemeId) {
+                    nextSelectedRadio = themeGrid.querySelector('.theme-option[data-theme-id="' + String(fallbackThemeId) + '"] .theme-radio-input');
+                }
+                if (!nextSelectedRadio) {
+                    nextSelectedRadio = themeGrid.querySelector('.theme-option .theme-radio-input');
+                }
+                if (nextSelectedRadio) {
+                    nextSelectedRadio.checked = true;
+                    nextSelectedRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+
+            ensureThemeEmptyState();
+            syncThemeSelection();
+        }
+
+        getThemeOptions().forEach(bindThemeOption);
+        syncThemeSelection();
+
+        if (input && preview && input.dataset.enhanced !== '1') {
+            input.dataset.enhanced = '1';
+            input.classList.add('logo-upload-input--ready');
+            input.addEventListener('change', function () {
+                window.handleDossierLogoChange(input);
+            });
+        }
+
+        if (!window.__themeMenusGlobalBound) {
+            window.__themeMenusGlobalBound = true;
+            document.addEventListener('click', function (event) {
+                if (!event.target || !event.target.closest) {
+                    return;
+                }
+
+                if (!event.target.closest('.theme-option__menu')) {
+                    var themeMenus = document.querySelectorAll('.theme-option__menu');
+                    themeMenus.forEach(function (menu) {
+                        var toggle = menu.querySelector('[data-theme-menu-toggle="true"]');
+                        var dropdown = menu.querySelector('[data-theme-menu-dropdown]');
+                        if (dropdown) {
+                            dropdown.hidden = true;
+                        }
+                        if (toggle) {
+                            toggle.setAttribute('aria-expanded', 'false');
+                        }
+                        menu.classList.remove('theme-option__menu--open');
+                    });
+                }
+            });
+        }
+
+        var modal = document.getElementById('themeCreateModal');
+        if (!modal || modal.dataset.bound === '1') {
+            return;
+        }
+
+        modal.dataset.bound = '1';
+        var modalOpenBtn = document.querySelector('.js-open-theme-modal');
+        var modalCloseButtons = Array.from(modal.querySelectorAll('[data-theme-modal-close="true"]'));
+        var modalForm = document.getElementById('themeCreateForm');
+        var modalMessage = document.getElementById('themeCreateMessage');
+        var submitButton = document.getElementById('themeCreateSubmitBtn');
+        var modalTitle = document.getElementById('themeCreateModalTitle');
+        var modalSubtitle = document.getElementById('themeCreateModalSubtitle');
+        var modalEditIdInput = document.getElementById('themeEditId');
+        var themeNameInput = document.getElementById('themeName');
+        var themeDescriptionInput = document.getElementById('themeDescription');
+        var submitLabelText = document.getElementById('themeSubmitLabelText');
+        var submitLoadingText = document.getElementById('themeSubmitLoadingText');
+        var deleteConfirmModal = document.getElementById('deleteConfirmModal');
+        var deleteConfirmButton = document.getElementById('confirmDeleteBtn');
+        var primaryColorInput = modal.querySelector('[data-color-input][data-color-role="primary"]');
+        var primaryHexInput = modal.querySelector('[data-hex-input][data-color-role="primary"]');
+        var secondaryColorInput = modal.querySelector('[data-color-input][data-color-role="secondary"]');
+        var secondaryHexInput = modal.querySelector('[data-hex-input][data-color-role="secondary"]');
+        var accentColorInput = modal.querySelector('[data-color-input][data-color-role="accent"]');
+        var accentHexInput = modal.querySelector('[data-hex-input][data-color-role="accent"]');
+
+        function showModalMessage(message, type) {
+            if (!modalMessage) {
+                return;
+            }
+
+            modalMessage.hidden = false;
+            modalMessage.classList.remove('theme-modal__alert--error', 'theme-modal__alert--success');
+            modalMessage.classList.add(type === 'success' ? 'theme-modal__alert--success' : 'theme-modal__alert--error');
+            modalMessage.textContent = message;
+        }
+
+        function hideModalMessage() {
+            if (!modalMessage) {
+                return;
+            }
+
+            modalMessage.hidden = true;
+            modalMessage.textContent = '';
+            modalMessage.classList.remove('theme-modal__alert--error', 'theme-modal__alert--success');
+        }
+
+        function setSubmitting(isSubmitting) {
+            if (!submitButton) {
+                return;
+            }
+
+            submitButton.disabled = !!isSubmitting;
+            var label = submitButton.querySelector('.theme-submit-label');
+            var loading = submitButton.querySelector('.theme-submit-loading');
+            if (label) {
+                label.hidden = !!isSubmitting;
+            }
+            if (loading) {
+                loading.hidden = !isSubmitting;
+            }
+        }
+
+        function hideGlobalLoadingOverlay() {
+            if (typeof window.hideLoading === 'function') {
+                window.hideLoading();
+                return;
+            }
+
+            var globalOverlay = document.getElementById('loadingOverlay');
+            if (globalOverlay) {
+                globalOverlay.classList.remove('active');
+            }
+        }
+
+        function buildThemeApiUrl(template, themeId) {
+            if (!template) {
+                return '';
+            }
+
+            return template.replace('__ID__', String(themeId));
+        }
+
+        function normalizeHexColor(rawValue, fallback) {
+            var normalized = (rawValue || '').toString().trim().toUpperCase();
+            return HEX_COLOR_REGEX.test(normalized) ? normalized : fallback;
+        }
+
+        function shadeHexColor(hexColor, percent) {
+            var hex = normalizeHexColor(hexColor, '#475569').slice(1);
+            var red = parseInt(hex.slice(0, 2), 16);
+            var green = parseInt(hex.slice(2, 4), 16);
+            var blue = parseInt(hex.slice(4, 6), 16);
+
+            if (Number.isNaN(red) || Number.isNaN(green) || Number.isNaN(blue)) {
+                return '#475569';
+            }
+
+            if (percent < 0) {
+                var factor = 1 + percent;
+                red = red * factor;
+                green = green * factor;
+                blue = blue * factor;
+            } else {
+                red = red + ((255 - red) * percent);
+                green = green + ((255 - green) * percent);
+                blue = blue + ((255 - blue) * percent);
+            }
+
+            red = Math.max(0, Math.min(255, Math.round(red)));
+            green = Math.max(0, Math.min(255, Math.round(green)));
+            blue = Math.max(0, Math.min(255, Math.round(blue)));
+
+            return '#' + [red, green, blue].map(function (value) {
+                return value.toString(16).padStart(2, '0');
+            }).join('').toUpperCase();
+        }
+
+        function applyColorPair(colorInput, hexInput, value) {
+            if (colorInput) {
+                colorInput.value = value;
+            }
+            if (hexInput) {
+                hexInput.value = value;
+            }
+        }
+
+        function syncGeneratedPalette() {
+            var baseColor = normalizeHexColor(
+                primaryHexInput ? primaryHexInput.value : (primaryColorInput ? primaryColorInput.value : ''),
+                '#4F46E5'
+            );
+
+            applyColorPair(primaryColorInput, primaryHexInput, baseColor);
+            applyColorPair(secondaryColorInput, secondaryHexInput, shadeHexColor(baseColor, -0.22));
+            applyColorPair(accentColorInput, accentHexInput, shadeHexColor(baseColor, 0.24));
+        }
+
+        function bindPaletteInputs() {
+            if (!primaryColorInput || primaryColorInput.dataset.bound === '1') {
+                return;
+            }
+
+            primaryColorInput.dataset.bound = '1';
+            primaryColorInput.addEventListener('input', function () {
+                if (primaryHexInput) {
+                    primaryHexInput.value = (primaryColorInput.value || '').toUpperCase();
+                }
+                syncGeneratedPalette();
+            });
+
+            if (!primaryHexInput || primaryHexInput.dataset.bound === '1') {
+                return;
+            }
+
+            primaryHexInput.dataset.bound = '1';
+            primaryHexInput.addEventListener('input', function () {
+                var normalized = (primaryHexInput.value || '').trim().toUpperCase();
+                if (HEX_COLOR_REGEX.test(normalized) && primaryColorInput) {
+                    primaryColorInput.value = normalized;
+                    syncGeneratedPalette();
+                }
+            });
+
+            primaryHexInput.addEventListener('blur', function () {
+                primaryHexInput.value = normalizeHexColor(primaryHexInput.value, primaryColorInput ? primaryColorInput.value : '#4F46E5');
+                syncGeneratedPalette();
+            });
+        }
+
+        function setModalMode(mode, themeData) {
+            if (mode === 'edit' && themeData && !Number.isNaN(themeData.id)) {
+                modal.setAttribute('data-mode', 'edit');
+                if (modalTitle) {
+                    modalTitle.textContent = 'Modifier le theme';
+                }
+                if (modalSubtitle) {
+                    modalSubtitle.textContent = 'Mettez a jour ce theme sans quitter la creation du dossier.';
+                }
+                if (submitLabelText) {
+                    submitLabelText.textContent = 'Mettre a jour le theme';
+                }
+                if (submitLoadingText) {
+                    submitLoadingText.textContent = 'Mise a jour...';
+                }
+                if (modalEditIdInput) {
+                    modalEditIdInput.value = String(themeData.id);
+                }
+                if (themeNameInput) {
+                    themeNameInput.value = themeData.name || '';
+                }
+                if (themeDescriptionInput) {
+                    themeDescriptionInput.value = themeData.description || '';
+                }
+                applyColorPair(primaryColorInput, primaryHexInput, normalizeHexColor(themeData.primaryColor, '#4F46E5'));
+                syncGeneratedPalette();
+                return;
+            }
+
+            modal.setAttribute('data-mode', 'create');
+            if (modalTitle) {
+                modalTitle.textContent = 'Nouveau theme';
+            }
+            if (modalSubtitle) {
+                modalSubtitle.textContent = 'Ajoutez une palette personnalisee qui sera disponible immediatement dans ce dossier.';
+            }
+            if (submitLabelText) {
+                submitLabelText.textContent = 'Creer le theme';
+            }
+            if (submitLoadingText) {
+                submitLoadingText.textContent = 'Creation...';
+            }
+            if (modalEditIdInput) {
+                modalEditIdInput.value = '';
+            }
+            if (modalForm) {
+                modalForm.reset();
+            }
+            applyColorPair(primaryColorInput, primaryHexInput, '#4F46E5');
+            syncGeneratedPalette();
+        }
+
+        function openModal(mode, themeData) {
+            hideGlobalLoadingOverlay();
+            hideModalMessage();
+            closeAllThemeMenus();
+            setModalMode(mode || 'create', themeData || null);
+            modal.classList.add('is-open');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('theme-modal-open');
+        }
+
+        function closeModal() {
+            hideGlobalLoadingOverlay();
+            modal.classList.remove('is-open');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('theme-modal-open');
+            setSubmitting(false);
+            setModalMode('create');
+        }
+
+        function resetThemeDeleteState() {
+            if (!deleteConfirmButton) {
+                return;
+            }
+
+            deleteConfirmButton.removeAttribute('data-theme-delete-id');
+        }
+
+        function performThemeDelete(themeId) {
+            if (!themeId) {
+                return;
+            }
+
+            var deleteUrl = buildThemeApiUrl(modal.getAttribute('data-delete-url-template') || '', themeId);
+            var payload = {
+                _token: modal.getAttribute('data-manage-csrf-token') || ''
+            };
+
+            if (!deleteUrl) {
+                showGlobalToast('Action de suppression indisponible pour le moment.', 'error');
+                return;
+            }
+
+            deleteConfirmButton.classList.add('disabled');
+            deleteConfirmButton.setAttribute('aria-disabled', 'true');
+
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(function (response) {
+                var contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Reponse invalide: format non-JSON recu');
+                }
+
+                return response.json().then(function (json) {
+                    if (!response.ok) {
+                        throw new Error((json && json.message) ? json.message : ('Erreur serveur: ' + response.status + ' ' + response.statusText));
+                    }
+
+                    return json;
+                });
+            })
+            .then(function (json) {
+                if (!json || json.success !== true) {
+                    throw new Error((json && json.message) ? json.message : 'Suppression impossible.');
+                }
+
+                removeThemeOption(json.deletedThemeId || themeId, json.fallbackThemeId || null);
+                showGlobalToast(json.message || 'Theme supprime avec succes.', 'success');
+
+                if (window.jQuery && deleteConfirmModal && typeof window.jQuery.fn.modal === 'function') {
+                    window.jQuery(deleteConfirmModal).modal('hide');
+                }
+            })
+            .catch(function (error) {
+                showGlobalToast(error && error.message ? error.message : 'Une erreur est survenue lors de la suppression du theme.', 'error');
+            })
+            .finally(function () {
+                deleteConfirmButton.classList.remove('disabled');
+                deleteConfirmButton.setAttribute('aria-disabled', 'false');
+                resetThemeDeleteState();
+            });
+        }
+
+        bindPaletteInputs();
+        syncGeneratedPalette();
+
+        if (modalOpenBtn) {
+            modalOpenBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                openModal('create');
+            });
+        }
+
+        modalCloseButtons.forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                closeModal();
+            });
         });
-    </script>
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+                closeModal();
+            }
+
+            if (event.key === 'Escape') {
+                closeAllThemeMenus();
+            }
+        });
+
+        if (deleteConfirmButton && deleteConfirmButton.dataset.themeBound !== '1') {
+            deleteConfirmButton.dataset.themeBound = '1';
+            deleteConfirmButton.addEventListener('click', function (event) {
+                var pendingThemeId = parseInt(deleteConfirmButton.getAttribute('data-theme-delete-id') || '', 10);
+                if (Number.isNaN(pendingThemeId)) {
+                    return;
+                }
+
+                event.preventDefault();
+                performThemeDelete(pendingThemeId);
+            });
+        }
+
+        if (window.jQuery && deleteConfirmModal && deleteConfirmModal.dataset.themeModalBound !== '1') {
+            deleteConfirmModal.dataset.themeModalBound = '1';
+            window.jQuery(deleteConfirmModal).on('hidden.bs.modal', resetThemeDeleteState);
+        }
+
+        if (modalForm) {
+            modalForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                hideGlobalLoadingOverlay();
+                hideModalMessage();
+
+                var modalMode = modal.getAttribute('data-mode') || 'create';
+                var editingThemeId = parseInt((modalEditIdInput ? modalEditIdInput.value : '') || '', 10);
+                var formData = new FormData(modalForm);
+                var payload = {
+                    _token: modalMode === 'edit'
+                        ? (modal.getAttribute('data-manage-csrf-token') || '')
+                        : (modal.getAttribute('data-csrf-token') || ''),
+                    name: (formData.get('name') || '').toString().trim(),
+                    description: (formData.get('description') || '').toString().trim(),
+                    primaryColor: normalizeHexColor(formData.get('primaryColor'), '#4F46E5')
+                };
+
+                var requestUrl = modal.getAttribute('data-create-url') || '';
+                if (modalMode === 'edit') {
+                    if (Number.isNaN(editingThemeId)) {
+                        showModalMessage('Theme invalide pour la mise a jour.', 'error');
+                        return;
+                    }
+
+                    requestUrl = buildThemeApiUrl(modal.getAttribute('data-update-url-template') || '', editingThemeId);
+                }
+
+                if (!requestUrl) {
+                    showModalMessage('Action indisponible. Veuillez recharger la page.', 'error');
+                    return;
+                }
+
+                if (!payload.name) {
+                    showModalMessage('Le nom du theme est obligatoire.', 'error');
+                    return;
+                }
+
+                if (!HEX_COLOR_REGEX.test(payload.primaryColor)) {
+                    showModalMessage('La couleur primaire doit etre au format #RRGGBB.', 'error');
+                    return;
+                }
+
+                setSubmitting(true);
+
+                var requestTimeout = setTimeout(function () {
+                    showModalMessage('La création du thème a pris trop de temps. Veuillez réessayer.', 'error');
+                    setSubmitting(false);
+                    hideGlobalLoadingOverlay();
+                }, 15000);
+
+                fetch(requestUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(function (response) {
+                    var contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error('Réponse invalide: format non-JSON reçu');
+                    }
+
+                    return response.json().then(function (json) {
+                        if (!response.ok) {
+                            throw new Error((json && json.message) ? json.message : ('Erreur serveur: ' + response.status + ' ' + response.statusText));
+                        }
+
+                        return json;
+                    });
+                })
+                .then(function (json) {
+                    clearTimeout(requestTimeout);
+                    hideGlobalLoadingOverlay();
+
+                    if (!json || !json.theme || !json.theme.id) {
+                        var errorMsg = (json && json.message) ? json.message : 'Donnees de theme invalides recues du serveur.';
+                        console.error('Theme API response invalid:', json);
+                        throw new Error(errorMsg);
+                    }
+
+                    setSubmitting(false);
+
+                    appendThemeOption(json.theme);
+                    showGlobalToast(
+                        json.message || (modalMode === 'edit' ? 'Theme mis a jour avec succes.' : 'Theme cree avec succes.'),
+                        'success'
+                    );
+
+                    closeModal();
+                })
+                .catch(function (error) {
+                    clearTimeout(requestTimeout);
+                    setSubmitting(false);
+                    hideGlobalLoadingOverlay();
+                    showModalMessage(error && error.message ? error.message : 'Une erreur est survenue lors de la creation du theme.', 'error');
+                });
+            });
+        }
+    }
+
+    if (document.readyState !== 'loading') {
+        initDossierForm();
+    }
+
+    document.addEventListener('DOMContentLoaded', initDossierForm);
+    document.addEventListener('turbo:load', initDossierForm);
+    document.addEventListener('turbo:render', initDossierForm);
+})();
+</script>
+
+<style>
+    .dossier-editor__header {
+        margin-bottom: 1.5rem;
+    }
+
+    .dossier-editor__form {
+        margin-bottom: 0;
+    }
+
+    .dossier-panel {
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 18px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+        padding: 1.6rem;
+    }
+
+    .dossier-panel .row {
+        margin-left: -3.1rem;
+        margin-right: -3.1rem;
+    }
+
+    .dossier-panel .row > [class*='col'] {
+        padding-left: 1.6rem;
+        padding-right: 1.6rem;
+    }
+
+    .dossier-panel--compact {
+        padding: 1.4rem;
+    }
+
+    .dossier-panel__head {
+        margin-bottom: 1.25rem;
+    }
+
+    .dossier-panel__head--with-action {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.8rem;
+    }
+
+    .dossier-panel__eyebrow {
+        display: inline-block;
+        margin-bottom: 0.45rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--theme-primary);
+    }
+
+    .dossier-panel__head h5 {
+        margin-bottom: 0.35rem;
+        color: #0f172a;
+        font-weight: 700;
+    }
+
+    .dossier-panel__head p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.92rem;
+        line-height: 1.55;
+    }
+
+    .dossier-stock-panel {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border-color: rgba(148, 163, 184, 0.24);
+    }
+
+    .dossier-stock-panel__head h5 i {
+        color: var(--theme-primary);
+    }
+
+    .dossier-stock-fields {
+        row-gap: 0.35rem;
+    }
+
+    .dossier-stock-field {
+        margin-bottom: 0;
+        padding: 0.65rem 0.75rem 0.8rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+
+    .dossier-stock-field label {
+        margin-bottom: 0.45rem;
+        font-weight: 600;
+        font-size: 0.78rem;
+        letter-spacing: 0.01em;
+        color: #475569;
+    }
+
+    .dossier-stock-toggles {
+        margin-top: 0.85rem;
+    }
+
+    .dossier-stock-toggle {
+        margin-bottom: 0;
+        padding: 0.6rem 0.75rem;
+        border-radius: 10px;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .dossier-stock-toggle__control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+    }
+
+    .dossier-stock-toggle__control .form-check-input {
+        position: static;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .dossier-stock-toggle__control .form-check-label {
+        margin: 0;
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .theme-settings-trigger {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+        color: #334155;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .theme-settings-trigger:hover {
+        color: var(--theme-primary);
+        border-color: rgba(37, 99, 235, 0.28);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        transform: translateY(-1px);
+    }
+
+    .theme-option-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        min-height: 236px;
+        align-content: start;
+    }
+
+    .theme-option {
+        position: relative;
+        min-width: 0;
+    }
+
+    .theme-option__menu {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        z-index: 8;
+    }
+
+    .theme-option__menu.theme-option__menu--open {
+        z-index: 60;
+    }
+
+    .theme-option__menu-toggle {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(255, 255, 255, 0.92);
+        color: #475569;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.64rem;
+        transition: all 0.2s ease;
+    }
+
+    .theme-option__menu-toggle:hover {
+        color: var(--theme-primary);
+        border-color: rgba(37, 99, 235, 0.35);
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.16);
+    }
+
+    .theme-option__menu-dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        min-width: 140px;
+        z-index: 61;
+        background: #fff;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 10px;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.2);
+        padding: 0.25rem;
+    }
+
+    .theme-option__menu-item {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: #1e293b;
+        text-align: left;
+        font-size: 0.75rem;
+        border-radius: 8px;
+        padding: 0.38rem 0.5rem;
+        transition: all 0.15s ease;
+    }
+
+    .theme-option__menu-item:hover {
+        background: rgba(37, 99, 235, 0.09);
+        color: var(--theme-primary);
+    }
+
+    .theme-option__menu-item--danger {
+        color: #b91c1c;
+    }
+
+    .theme-option__menu-item--danger:hover {
+        background: rgba(220, 38, 38, 0.08);
+        color: #b91c1c;
+    }
+
+    .theme-option__menu-item:disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
+    }
+
+    .theme-empty-state {
+        grid-column: 1 / -1;
+        border: 1px dashed #cbd5e1;
+        border-radius: 14px;
+        min-height: 92px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 0.45rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .theme-radio-input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+        z-index: -1;
+    }
+
+    .theme-option__card {
+        display: flex;
+        align-items: center;
+        gap: 0.62rem;
+        min-height: 66px;
+        height: 100%;
+        padding: 0.58rem 2.25rem 0.58rem 0.7rem;
+        border: 1px solid #dbe3f0;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        margin-bottom: 0;
+    }
+
+    .theme-option__card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+        border-color: rgba(37, 99, 235, 0.25);
+    }
+
+    .theme-option__preview {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex-shrink: 0;
+    }
+
+    .theme-option__dot {
+        width: 10px;
+        height: 25px;
+        border-radius: 999px;
+        box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.35);
+    }
+
+    .theme-option__content {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .theme-option__title {
+        color: #0f172a;
+        font-weight: 600;
+        font-size: 0.78rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .theme-option__text {
+        color: #64748b;
+        font-size: 0.64rem;
+        line-height: 1.2;
+        margin-top: 0.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .theme-pagination {
+        margin-top: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+    }
+
+    .theme-pagination.is-hidden {
+        display: none;
+    }
+
+    .theme-pagination__arrow {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.48);
+        background: #fff;
+        color: #334155;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .theme-pagination__arrow:hover:not(:disabled) {
+        border-color: rgba(37, 99, 235, 0.5);
+        color: var(--theme-primary);
+        box-shadow: 0 8px 14px rgba(15, 23, 42, 0.1);
+    }
+
+    .theme-pagination__arrow:disabled {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+    .theme-pagination__dots {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.36rem;
+    }
+
+    .theme-pagination__dot {
+        width: 8px;
+        height: 8px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.55);
+        padding: 0;
+        transition: all 0.2s ease;
+    }
+
+    .theme-pagination__dot.is-active {
+        width: 18px;
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+    }
+
+    .theme-option__check {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        color: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        flex-shrink: 0;
+        transition: all 0.18s ease;
+        font-size: 0.75rem;
+    }
+
+    .theme-radio-input:checked + .theme-option__card {
+        border-color: var(--theme-primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.11), 0 20px 35px rgba(15, 23, 42, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(239, 246, 255, 0.9) 100%);
+    }
+
+    .theme-radio-input:checked + .theme-option__card .theme-option__check {
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        color: #ffffff;
+    }
+
+    .theme-option--selected .theme-option__card {
+        border-color: var(--theme-primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.11), 0 20px 35px rgba(15, 23, 42, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(239, 246, 255, 0.9) 100%);
+    }
+
+    .theme-option--selected .theme-option__check {
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        color: #ffffff;
+    }
+
+    .logo-uploader {
+        display: grid;
+        grid-template-columns: 196px minmax(0, 1fr);
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .logo-uploader__preview {
+        min-height: 156px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        overflow: hidden;
+    }
+
+    .logo-uploader__preview--large {
+        min-height: 188px;
+    }
+
+    .logo-uploader__preview img {
+        max-width: 100%;
+        max-height: 148px;
+        object-fit: contain;
+        display: block;
+    }
+
+    .logo-uploader__placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.6rem;
+        color: #94a3b8;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+    .logo-uploader__placeholder i {
+        font-size: 1.45rem;
+        color: var(--theme-primary);
+    }
+
+    .logo-uploader__controls {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.65rem;
+        min-width: 0;
+    }
+
+    .logo-upload-input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .logo-upload-trigger-wrap {
+        position: relative;
+        display: inline-flex;
+        width: 100%;
+    }
+
+    .logo-upload-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0.85rem 1rem;
+        border-radius: 14px;
+        background: linear-gradient(180deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        color: #ffffff;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        margin-bottom: 0;
+        border: 0;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+        width: 100%;
+    }
+
+    .logo-upload-trigger:hover {
+        color: #ffffff;
+        text-decoration: none;
+    }
+
+    .logo-upload-trigger:focus {
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14), 0 14px 28px rgba(15, 23, 42, 0.12);
+    }
+
+    .logo-upload-filename {
+        font-size: 0.88rem;
+        color: #475569;
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .dossier-editor__actions {
+        margin-top: 0;
+        padding-top: 1rem;
+    }
+
+    .dossier-panel--sticky {
+        position: sticky;
+        top: 90px;
+        align-self: flex-start;
+    }
+
+    .theme-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 2080;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.2rem;
+    }
+
+    .theme-modal.is-open {
+        display: flex;
+    }
+
+    .theme-modal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.38);
+        backdrop-filter: blur(2px);
+    }
+
+    .theme-modal__dialog {
+        position: relative;
+        width: min(720px, calc(100vw - 2rem));
+        max-height: calc(100vh - 2.4rem);
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        border-radius: 22px;
+        background: #ffffff;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        box-shadow: 0 35px 70px rgba(15, 23, 42, 0.32);
+        padding: 1.55rem;
+    }
+
+    .theme-modal__dialog::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+    }
+
+    .theme-modal__close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 0;
+        background: transparent;
+        color: #94a3b8;
+        font-size: 28px;
+        line-height: 1;
+        transition: all 0.2s ease;
+    }
+
+    .theme-modal__close:hover {
+        color: #334155;
+        background: rgba(15, 23, 42, 0.06);
+    }
+
+    .theme-modal__icon {
+        width: 76px;
+        height: 76px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        color: #fff;
+        font-size: 1.5rem;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24);
+    }
+
+    .theme-modal h4 {
+        text-align: center;
+        margin-bottom: 0.25rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .theme-modal__subtitle {
+        text-align: center;
+        color: #64748b;
+        margin-bottom: 1rem;
+    }
+
+    .theme-modal__message-slot {
+        min-height: 64px;
+        margin-bottom: 0.5rem;
+    }
+
+    .theme-modal__alert {
+        border-radius: 10px;
+        padding: 0.65rem 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0;
+        font-size: 0.9rem;
+    }
+
+    .theme-modal__alert--error {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+
+    .theme-modal__alert--success {
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+    }
+
+    .theme-color-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.85rem;
+    }
+
+    .theme-color-row label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 0.38rem;
+        display: block;
+    }
+
+    .theme-color-row__hint {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #64748b;
+        margin-left: 0.3rem;
+    }
+
+    .theme-color-inputs {
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr);
+        gap: 0.55rem;
+        align-items: center;
+    }
+
+    .theme-color-inputs input[type='color'] {
+        width: 58px;
+        height: 42px;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        padding: 0.2rem;
+        background: #fff;
+    }
+
+    .theme-color-row--readonly .theme-color-inputs input[type='color'] {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .theme-color-row--readonly .theme-color-inputs .form-control {
+        background: #f8fafc;
+        color: #64748b;
+        cursor: not-allowed;
+    }
+
+    .theme-modal__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.7rem;
+        margin-top: 1rem;
+    }
+
+    body.theme-modal-open {
+        overflow: hidden;
+    }
+
+    @media (max-width: 991.98px) {
+        .logo-uploader {
+            grid-template-columns: 1fr;
+        }
+
+        .logo-uploader__preview {
+            min-height: 180px;
+        }
+
+        .theme-color-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dossier-panel--sticky {
+            position: static;
+            top: auto;
+            max-height: none;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .theme-option-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            min-height: 220px;
+        }
+
+        .theme-option__card {
+            min-height: 62px;
+            padding: 0.52rem 0.62rem;
+        }
+
+        .theme-option__title {
+            font-size: 0.72rem;
+        }
+
+        .theme-option__text {
+            font-size: 0.58rem;
+        }
+
+        .theme-modal__actions {
+            flex-direction: column-reverse;
+        }
+
+        .theme-modal__actions .btn {
+            width: 100%;
+        }
+    }
+</style>
 {% endblock %}

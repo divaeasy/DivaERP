@@ -1,0 +1,16 @@
+{% extends "template_oukatech.html.twig" %}
+
+{% block PageTitle %}Modifier Tiers Interne{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_tiers_interne_index') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Modifier le tiers interne</h1>
+    </div>
+</div>
+
+{% include 'tiers_interne/_form.html.twig' with {form: form, submit_label: 'Mettre a jour'} %}
+{% endblock %}

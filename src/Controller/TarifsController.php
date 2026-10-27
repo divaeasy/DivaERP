@@ -3,7 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\Tarifs;
+use App\Entity\User;
 use App\Form\TarifsFormType;
+use App\Form\SearchGenericFormType;
+use App\Model\SearchGeneric;
+use App\Repository\TarifsRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,23 +19,39 @@ use Symfony\Component\Routing\Attribute\Route;
 class TarifsController extends AbstractController
 {
     #[Route('/', name: 'tarif.list')]
-    public function index(ManagerRegistry $doctrine): Response
+    public function index(Request $request, TarifsRepository $tarifsRepository, ManagerRegistry $doctrine): Response
     {
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        $repository = $doctrine->getRepository(Tarifs::class);
-        $tarifs = $repository->findAll();
-         return $this->render('tarifs/index.html.twig', [
-             'tarifs' => $tarifs,
-         ]);
+        $page = $request->query->getInt('page', 1);
+        $searchData = new SearchGeneric();
+        $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par libellé...']);
+        $searchForm->handleRequest($request);
+
+        $searchActive = null;
+        if ($searchForm->isSubmitted() && $searchForm->isValid()) {
+            $searchActive = $searchData;
+        }
+
+        $pagination = $tarifsRepository->findPaginated($searchActive, $page);
+
+        return $this->render('tarifs/index.html.twig', [
+            'search' => $searchForm->createView(),
+            'tarifs' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
+        ]);
     }
     #[Route('/edit/{id?0}', name: 'tarif.edit')]
     public function addTarif(ManagerRegistry $doctrine, Request $request, $id): Response
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Tarifs::class);
-        $tarif = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $tarif = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         $new = false;
         if(!$tarif){
             $tarif = new Tarifs();
@@ -64,8 +84,8 @@ class TarifsController extends AbstractController
         return $this->redirectToRoute('tarif.list');
        }else{
             return $this->render('tarifs/add-tarif.html.twig', [
-     
-                'tarif'=>$form->createView()
+                'tarif'=>$form->createView(),
+                'id' => $id
             ]);
        }
         
@@ -76,7 +96,9 @@ class TarifsController extends AbstractController
     {
         //$this->denyAccessUnlessGranted('ROLE_ACMAR');
         $repository = $doctrine->getRepository(Tarifs::class);
-        $tarif = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $tarif = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
         if($tarif){
             $manager = $doctrine->getManager();
             $manager->remove($tarif);

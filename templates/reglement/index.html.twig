@@ -1,47 +1,95 @@
 {% extends 'template_oukatech.html.twig' %}
 
-{% block title %}Réglements{% endblock %}
+{% block PageTitle%}
+    Gestion des Règlements
+{% endblock %}
 
 {% block body %}
-
-<br/>
-<div class="input-group"  >
-
-<a class="btn btn-primary" href="{{path('reglement.edit')}}" role="button">Ajouter</a>
-
-
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Gestion des Règlements</h1>
+    </div>
 </div>
 
-<br/>
-<div class="row">
+<div class="action-bar">
+    <div class="action-buttons">
+        <a class="btn-add" href="{{ path('reglement.edit') }}">
+            <i class="fas fa-plus"></i> Nouveau Règlement
+        </a>
+        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.reglements') }}" title="Exporter CSV">
+            <i class="fas fa-file-csv mr-1"></i> Exporter
+        </a>
+    </div>
+    <div class="search-box">
+        {% include "components/search_data.html.twig" with {search: search} only %}
+    </div>
+</div>
 
-  <table class="table table-striped">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col">Id</th>
-        <th scope="col">Libellé</th>
-        <th scope="col">Echéance</th>
-        
-        <th scope="col"></th>
-  
-      </tr>
-    </thead>
-    <tbody>
-      {% for reglement in reglements %}
-      <tr>
-        <th scope="row"><a href="{{ path('reglement.edit',{id: reglement.id}) }}" >{{reglement.id}}</a></th>
-        <th scope="row">{{reglement.libelle}}</th>
-        <td>{{reglement.echeance}}</td>
-        
+<div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
 
-        
-        {%if is_granted('ROLE_ADMIN')%}
-        <td><a href="{{ path('reglement.edit',{id: reglement.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
+    {% if reglements|length > 0 %}
+    <table class="table js-crud-list-table"
+           data-table-id="reglement"
+           data-crud-resource="reglement"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_reglement') }}"
+           data-update-token="{{ csrf_token('crud_update_reglement') }}"
+           data-create-token="{{ csrf_token('crud_create_reglement') }}"
+           data-import-token="{{ csrf_token('crud_import_reglement') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
+           data-placeholder="____">
+        <thead>
+            <tr>
+                <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
+                <th data-sort-key="libelle" data-field="libelle" data-required="1" data-column-key="libelle">Libelle</th>
+                <th data-sort-key="echeance" data-sort-type="number" data-field="echeance" data-type="int" data-column-key="echeance">Echeance</th>
+                <th class="text-center" style="width: 120px;" data-column-key="actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reglement in reglements %}
+            <tr data-row-id="{{ reglement.id }}">
+                <td data-column-key="id"><strong>#{{ reglement.id }}</strong></td>
+                <td data-column-key="libelle" data-field="libelle" data-field-value="{{ reglement.libelle|default('') }}">{{ reglement.libelle|default('____') }}</td>
+                <td data-column-key="echeance" data-field="echeance" data-field-value="{{ reglement.echeance|default('') }}"><span class="badge badge-warning badge-lg">{{ reglement.echeance|default('____') }} jours</span></td>
+                <td class="text-center" data-column-key="actions" data-role="actions">
+                    <a href="{{ path('reglement.edit', {id: reglement.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-delete delete-btn"
+                            data-delete-url="{{ path('reglement.delete', {id: reglement.id}) }}"
+                            data-item-name="{{ reglement.libelle }}"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'reglement.list', routeParams: {}} %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <h5>Aucun règlement trouvé</h5>
+        <p>Commencez par créer votre premier mode de règlement pour gérer vos paiements.</p>
+        <a href="{{ path('reglement.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouveau règlement
+        </a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
+
+

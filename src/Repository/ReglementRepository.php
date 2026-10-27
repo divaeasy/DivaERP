@@ -3,7 +3,10 @@
 namespace App\Repository;
 
 use App\Entity\Reglement;
+use App\Model\SearchGeneric;
+use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -16,28 +19,27 @@ class ReglementRepository extends ServiceEntityRepository
         parent::__construct($registry, Reglement::class);
     }
 
-    //    /**
-    //     * @return Reglement[] Returns an array of Reglement objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('r.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function getSearchQueryBuilder(?SearchGeneric $searchData = null): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->orderBy('r.libelle', 'ASC');
 
-    //    public function findOneBySomeField($value): ?Reglement
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        if ($searchData && !empty($searchData->q)) {
+            $qb->andWhere('r.libelle LIKE :q')
+               ->setParameter('q', "%{$searchData->q}%");
+        }
+
+        return $qb;
+    }
+
+    public function findBySearch(SearchGeneric $searchData): array
+    {
+        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+    }
+
+    public function findPaginated(?SearchGeneric $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        return PaginationHelper::paginate($qb, $page);
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\SensEnum;
 use App\Repository\LignepieceRepository;
 use App\Traits\TimeStampTrait;
 use Doctrine\ORM\Mapping as ORM;
@@ -17,12 +18,15 @@ class Lignepiece
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(inversedBy: 'lignepieces')]
     private ?Entetepiece $piece = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(inversedBy: 'lignepieces')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Article $article = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $designation = null;
 
     #[ORM\Column]
     private ?float $qte = null;
@@ -39,6 +43,15 @@ class Lignepiece
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Dossier $dossier = null;
+
+    #[ORM\Column(length: 20, enumType: SensEnum::class, nullable: true)]
+    private ?SensEnum $sens = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?float $qteSt = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $mouvementDeStock = null;
 
     public function getId(): ?int
     {
@@ -65,6 +78,10 @@ class Lignepiece
     public function setPiece(?Entetepiece $piece): static
     {
         $this->piece = $piece;
+
+        if ($this->sens === null && $piece?->getCodeOperation() !== null) {
+            $this->sens = $piece->getCodeOperation()->getSens();
+        }
 
         return $this;
     }
@@ -127,5 +144,78 @@ class Lignepiece
         $this->remise = $remise;
 
         return $this;
+    }
+
+    public function getDesignation(): ?string
+    {
+        return $this->designation ?? ($this->article?->getLibelle());
+    }
+
+    public function setDesignation(?string $designation): static
+    {
+        $this->designation = $designation;
+
+        return $this;
+    }
+
+    // Alias methods for compatibility
+    public function getQuantite(): ?float
+    {
+        return $this->qte;
+    }
+
+    public function getPu(): ?float
+    {
+        return $this->pub;
+    }
+
+    public function getSens(): ?SensEnum
+    {
+        return $this->sens;
+    }
+
+    public function setSens(?SensEnum $sens): static
+    {
+        $this->sens = $sens;
+
+        return $this;
+    }
+
+    public function getQteSt(): ?float
+    {
+        return $this->qteSt;
+    }
+
+    public function setQteSt(?float $qteSt): static
+    {
+        $this->qteSt = $qteSt;
+
+        return $this;
+    }
+
+    public function getMouvementDeStock(): ?string
+    {
+        return $this->mouvementDeStock;
+    }
+
+    public function setMouvementDeStock(?string $mouvementDeStock): static
+    {
+        $this->mouvementDeStock = $mouvementDeStock;
+
+        return $this;
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function syncSensFromPiece(): void
+    {
+        if ($this->sens !== null) {
+            return;
+        }
+
+        $pieceOperation = $this->piece?->getCodeOperation();
+        if ($pieceOperation !== null) {
+            $this->sens = $pieceOperation->getSens();
+        }
     }
 }

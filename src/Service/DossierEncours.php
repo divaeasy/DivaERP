@@ -5,7 +5,6 @@ namespace App\Service;
 use App\Entity\Dossier;
 use App\Entity\User;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class DossierEncours 
 {
@@ -13,11 +12,20 @@ class DossierEncours
     public function __construct(private ManagerRegistry $doctrine){
         
     }
-    public function getDossier($user){
-       
-        $repository2 = $this->doctrine->getRepository(Dossier::class);
-        $dossier = $repository2->findBy(['id' => $user->getDossier()]);
-        return $dossier[0];
+    public function getDossier(User $user): ?Dossier
+    {
+        $current = $user->getCurrentDossier();
+        if ($current !== null) {
+            return $current;
+        }
+
+        $legacy = $user->getDossier();
+        if ($legacy !== null) {
+            return $legacy;
+        }
+
+        $first = $user->getDossiers()->first();
+        return $first instanceof Dossier ? $first : null;
     }
     /*public function getUserEncours(){
        

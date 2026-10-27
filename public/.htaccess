@@ -1,0 +1,30 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Skip existing files and directories
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  
+  # Rewrite all requests to index.php 
+  RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Cache control for static assets
+<FilesMatch "\.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "max-age=31536000, public"
+  </IfModule>
+</FilesMatch>
+
+# Set correct MIME types
+AddType application/javascript js
+AddType application/json json
+AddEncoding gzip svgz
+AddType image/svg+xml svg svgz
+
+# Compress files with gzip
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+

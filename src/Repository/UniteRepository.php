@@ -3,7 +3,10 @@
 namespace App\Repository;
 
 use App\Entity\Unite;
+use App\Model\SearchGeneric;
+use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -16,28 +19,27 @@ class UniteRepository extends ServiceEntityRepository
         parent::__construct($registry, Unite::class);
     }
 
-    //    /**
-    //     * @return Unite[] Returns an array of Unite objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('u.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function getSearchQueryBuilder(?SearchGeneric $searchData = null): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->orderBy('u.libelle', 'ASC');
 
-    //    public function findOneBySomeField($value): ?Unite
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        if ($searchData && !empty($searchData->q)) {
+            $qb->andWhere('u.code LIKE :q OR u.libelle LIKE :q')
+               ->setParameter('q', "%{$searchData->q}%");
+        }
+
+        return $qb;
+    }
+
+    public function findBySearch(SearchGeneric $searchData): array
+    {
+        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+    }
+
+    public function findPaginated(?SearchGeneric $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        return PaginationHelper::paginate($qb, $page);
+    }
 }

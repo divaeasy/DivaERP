@@ -1,0 +1,33 @@
+services:
+    # E-Invoicing Services
+    App\Service\EInvoicing\EN16931\FactureXBuilder:
+        public: true
+
+    App\Service\EInvoicing\FactureX\FactureXGenerator:
+        public: true
+
+    App\Service\EInvoicing\FactureX\FactureXEmbedder:
+        public: true
+
+    App\Service\EInvoicing\Tiime\TimeeApiClient:
+        public: true
+        arguments:
+            - '@http_client'
+            - '@Psr\Log\LoggerInterface'
+            - '%env(TIIME_API_BASE_URL)%'
+            - '%env(TIIME_API_KEY)%'
+            - '%env(TIIME_API_SECRET)%'
+            - '%env(TIIME_PARTNER_ID)%'
+            - '%env(TIIME_ENVIRONMENT)%'
+
+    App\Service\EInvoicing\InvoiceService:
+        public: true
+        arguments:
+            - '@App\Service\EInvoicing\EN16931\FactureXBuilder'
+            - '@App\Service\EInvoicing\FactureX\FactureXGenerator'
+            - '@App\Service\EInvoicing\FactureX\FactureXEmbedder'
+            - '@App\Service\EInvoicing\Tiime\TimeeApiClient'
+            - '@App\Service\EInvoicing\FileStorageService'
+            - '@doctrine.orm.entity_manager'
+            - '@Psr\Log\LoggerInterface'
+

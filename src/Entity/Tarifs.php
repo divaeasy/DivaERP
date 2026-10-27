@@ -40,6 +40,18 @@ class Tarifs
 
         return $this;
     }
+    public function getDossier(): ?Dossier
+    {
+        return $this->dossier;
+    }
+
+    public function setDossier(?Dossier $dossier): static
+    {
+        $this->dossier = $dossier;
+
+        return $this;
+    }
+
     public function __toString()
     {
         return $this->getLibelle();

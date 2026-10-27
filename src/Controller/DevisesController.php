@@ -4,8 +4,12 @@ namespace App\Controller;
 
 use App\Entity\Devises;
 use App\Form\DeviseFormType;
+use App\Form\SearchGenericFormType;
+use App\Model\SearchGeneric;
+use App\Repository\DevisesRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -14,16 +18,30 @@ use Symfony\Component\Routing\Attribute\Route;
 class DevisesController extends AbstractController
 {
     #[Route('/', name: 'devise.list')]
-    public function index(ManagerRegistry $doctrine): Response
+    public function index(Request $request, DevisesRepository $devisesRepository, ManagerRegistry $doctrine): Response
     {
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        $repository = $doctrine->getRepository(Devises::class);
-        $devises = $repository->findAll();
-         return $this->render('devises/index.html.twig', [
-             'devises' => $devises,
-         ]);
+        $page = $request->query->getInt('page', 1);
+        $searchData = new SearchGeneric();
+        $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par code ou libellé...']);
+        $searchForm->handleRequest($request);
+
+        $searchActive = null;
+        if ($searchForm->isSubmitted() && $searchForm->isValid()) {
+            $searchActive = $searchData;
+        }
+
+        $pagination = $devisesRepository->findPaginated($searchActive, $page);
+
+        return $this->render('devises/index.html.twig', [
+            'search' => $searchForm->createView(),
+            'devises' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
+        ]);
     }
     #[Route('/edit/{id?0}', name: 'devise.edit')]
     public function addDevise(ManagerRegistry $doctrine, Request $request, $id): Response
@@ -63,8 +81,8 @@ class DevisesController extends AbstractController
         return $this->redirectToRoute('devise.list');
        }else{
             return $this->render('devises/add-devise.html.twig', [
-     
-                'devise'=>$form->createView()
+                'devise'=>$form->createView(),
+                'id' => $id
             ]);
        }
         

@@ -3,74 +3,69 @@
 namespace App\Repository;
 
 use App\Entity\Clients;
+use App\Entity\User;
 use App\Model\SearchData;
+use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * @extends ServiceEntityRepository<Clients>
  */
 class ClientsRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, private Security $security)
     {
         parent::__construct($registry, Clients::class);
     }
 
-     /**
-     * Get published posts thanks to Search Data value
-     *
-     * @param SearchData $searchData
-     */
-    public function findBySearch(SearchData $searchData)
+    public function getSearchQueryBuilder(?SearchData $searchData = null): QueryBuilder
     {
-        $data = $this->createQueryBuilder('c')
+        $qb = $this->createQueryBuilder('c')
+            ->addOrderBy('c.nom', 'ASC');
 
-            ->addOrderBy('c.nom', 'DESC');
+        $this->applyDossierFilter($qb, 'c');
 
-        if (!empty($searchData->nom)) {
-            $data = $data
-                ->andWhere('c.nom LIKE :nom')
-                ->setParameter('nom', "%{$searchData->nom}%");
+        if ($searchData) {
+            if (!empty($searchData->nom)) {
+                $qb->andWhere('c.nom LIKE :nom')
+                   ->setParameter('nom', "%{$searchData->nom}%");
+            }
+            if (!empty($searchData->tel)) {
+                $qb->andWhere('c.tel LIKE :tel')
+                   ->setParameter('tel', "%{$searchData->tel}%");
+            }
         }
 
-        if (!empty($searchData->tel)) {
-            $data = $data
-                ->andWhere('c.tel LIKE :tel')
-                ->setParameter('tel', "%{$searchData->tel}%");
-        }
-      
-        $data = $data
-            ->getQuery()
-            ->getResult();
-
-        //$posts = $this->paginatorInterface->paginate($data, $searchData->page, 9);
-
-        return $data;
+        return $qb;
     }
 
-    //    /**
-    //     * @return Clients[] Returns an array of Clients objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchData $searchData)
+    {
+        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+    }
 
-    //    public function findOneBySomeField($value): ?Clients
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function findPaginated(?SearchData $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        return PaginationHelper::paginate($qb, $page);
+    }
+
+    private function applyDossierFilter(QueryBuilder $qb, string $alias): void
+    {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            return;
+        }
+
+        $currentDossier = $user->getCurrentDossier();
+        if ($currentDossier !== null) {
+            $qb->andWhere(sprintf('%s.dossier = :dossier', $alias))
+               ->setParameter('dossier', $currentDossier);
+        } else {
+            $qb->andWhere('1 = 0');
+        }
+    }
 }

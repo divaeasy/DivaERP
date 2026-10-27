@@ -1,0 +1,84 @@
+<div class="form-card">
+    {{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+
+    <div class="card-header-custom">
+        <h5><i class="fas fa-warehouse mr-2"></i>Informations du depot</h5>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(form.libelle, 'Libelle', {'label_attr': {'class': 'required'}}) }}
+                {{ form_widget(form.libelle, {'attr': {'class': 'form-control', 'placeholder': 'Nom du depot'}}) }}
+                {{ form_errors(form.libelle) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(form.tiersInterne, 'Tiers interne') }}
+                {{ form_widget(form.tiersInterne, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(form.tiersInterne) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(form.adr1, 'Adresse ligne 1') }}
+                {{ form_widget(form.adr1, {'attr': {'class': 'form-control'}}) }}
+                {{ form_errors(form.adr1) }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ form_label(form.adr2, 'Adresse ligne 2') }}
+                {{ form_widget(form.adr2, {'attr': {'class': 'form-control'}}) }}
+                {{ form_errors(form.adr2) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(form.rue, 'Rue') }}
+                {{ form_widget(form.rue, {'attr': {'class': 'form-control'}}) }}
+                {{ form_errors(form.rue) }}
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="form-group">
+                {{ form_label(form.codepostal, 'Code postal') }}
+                {{ form_widget(form.codepostal, {'attr': {'class': 'form-control'}}) }}
+                {{ form_errors(form.codepostal) }}
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                {{ form_label(form.ville, 'Ville') }}
+                {{ form_widget(form.ville, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(form.ville) }}
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                {{ form_label(form.pays, 'Pays') }}
+                {{ form_widget(form.pays, {'attr': {'class': 'form-control js-example-basic-single'}}) }}
+                {{ form_errors(form.pays) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>{{ submit_label }}
+        </button>
+        <a href="{{ path('app_depot_index') }}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Annuler
+        </a>
+    </div>
+
+    {{ form_rest(form) }}
+    {{ form_end(form) }}
+</div>

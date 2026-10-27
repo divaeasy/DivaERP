@@ -2,83 +2,105 @@
 
 namespace App\Controller;
 
-use App\Repository\EntetepieceRepository;
+use App\Service\DashboardService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 class DashBordController extends AbstractController
 {
     #[Route('/dashbord', name: 'app_dash_bord')]
-    public function index(EntetepieceRepository $repositoryPiece): Response
+    public function index(Request $request, DashboardService $dashboardService): Response
     {
-        $montantN = array(
-            0 => 0,
-            1 => 0,
-            2 => 0,
-            3 => 0,
-            4 => 0,
-            5 => 0,
-            6 => 0,
-            7 => 0,
-            8 => 0,
-            9 => 0,
-            10 => 0,
-            11 => 0,
-        );
-        $montantN1 = array(
-            0 => 0,
-            1 => 0,
-            2 => 0,
-            3 => 0,
-            4 => 0,
-            5 => 0,
-            6 => 0,
-            7 => 0,
-            8 => 0,
-            9 => 0,
-            10 => 0,
-            11 => 0,
-        );
-        $CaAnneeMois = $repositoryPiece->getCaParAnnee(0);            
-        $CaAnneeMoisN1 = $repositoryPiece->getCaParAnnee(1); 
-        
-        for ($i = 0; $i < 12; $i++){
-            if(isset($CaAnneeMois[$i])){
-                $montantN[$i] = $CaAnneeMois[$i]["mont"];
-            }
-            if(isset($CaAnneeMoisN1[$i])){
-                $montantN1[$i] = $CaAnneeMoisN1[$i]["mont"];
-            }
+        $availableYears = $dashboardService->getAvailableYears();
+        $fallbackYear = (int) date('Y');
+        $currentYear = $availableYears[0] ?? $fallbackYear;
+        $previousYear = $availableYears[1] ?? ($currentYear - 1);
+
+        $comparisonYearCandidates = array_merge($availableYears, [$currentYear, $previousYear]);
+        $comparisonYearMax = (int) max($comparisonYearCandidates);
+        $comparisonYearMin = (int) min($comparisonYearCandidates);
+        $comparisonYears = range($comparisonYearMax, $comparisonYearMin);
+
+        $compareYearA = $request->query->getInt('compareYearA', $currentYear);
+        $compareYearB = $request->query->getInt('compareYearB', $previousYear);
+
+        if (!in_array($compareYearA, $comparisonYears, true)) {
+            $compareYearA = $currentYear;
         }
-        
+        if (!in_array($compareYearB, $comparisonYears, true)) {
+            $compareYearB = $previousYear;
+        }
+        if ($compareYearA === $compareYearB && count($comparisonYears) > 1) {
+            $compareYearB = $comparisonYears[0] === $compareYearA ? $comparisonYears[1] : $comparisonYears[0];
+        }
+
+        $monthlySalesCurrentYear = $dashboardService->getMonthlySales($currentYear);
+        $monthlySalesCompareYearA = $dashboardService->getMonthlySales($compareYearA);
+        $monthlySalesCompareYearB = $dashboardService->getMonthlySales($compareYearB);
+
+        $totalRevenueCurrent = $dashboardService->getTotalRevenue($currentYear);
+        $totalRevenuePerv = $dashboardService->getTotalRevenue($previousYear);
+        $growthPercentage = $dashboardService->getYearGrowth($currentYear, $previousYear);
+        $invoiceCount = $dashboardService->getTotalInvoiceCount($currentYear);
+        $totalClients = $dashboardService->getTotalClients();
+        $newCustomersThisMonth = $dashboardService->getNewCustomersThisMonth();
+        $totalProductsSold = $dashboardService->getTotalProductsSold($currentYear);
+        $overdueInvoices = $dashboardService->getOverdueInvoices($currentYear);
+
+        $top5Products = $dashboardService->getTop5Products($currentYear);
+        $salesByCategory = $dashboardService->getSalesByCategory($currentYear);
+        $paymentStatus = $dashboardService->getPaymentStatus($currentYear);
+        $customerGrowth = $dashboardService->getCustomerGrowth($currentYear);
+
+        $chartMonths = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $currentYearValues = array_values($monthlySalesCurrentYear);
+        $compareYearAValues = array_values($monthlySalesCompareYearA);
+        $compareYearBValues = array_values($monthlySalesCompareYearB);
+
+        $productNames = array_column($top5Products, 'product_name');
+        $productQty = array_map(static fn ($p) => (float) $p['total_qty'], $top5Products);
+
+        $categoryNames = array_column($salesByCategory, 'category');
+        $categoryAmounts = array_map(static fn ($c) => (float) $c['amount'], $salesByCategory);
+
+        $paymentStatusLabels = array_column($paymentStatus, 'status');
+        $paymentStatusAmounts = array_map(static fn ($p) => (float) $p['amount'], $paymentStatus);
+
+        $customerCounts = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $customerCounts[$i] = $customerGrowth[$i]['customers'] ?? 0;
+        }
 
         return $this->render('dash_bord/index.html.twig', [
             'controller_name' => 'DashBordController',
-            'montantJanv'=> $montantN[0],
-            'montantFev'=> $montantN[1],
-            'montantMars'=> $montantN[2],
-            'montantAvr'=> $montantN[3],
-            'montantMai'=> $montantN[4],
-            'montantJuin'=> $montantN[5],
-            'montantJuil'=> $montantN[6],
-            'montantAout'=> $montantN[7],
-            'montantSept'=> $montantN[8],
-            'montantOct'=> $montantN[9],
-            'montantNov'=> $montantN[10],
-            'montantDec'=> $montantN[11],
-            'montantJanvN1'=> $montantN1[0],
-            'montantFevN1'=> $montantN1[1],
-            'montantMarsN1'=> $montantN1[2],
-            'montantAvrN1'=> $montantN1[3],
-            'montantMaiN1'=> $montantN1[4],
-            'montantJuinN1'=> $montantN1[5],
-            'montantJuilN1'=> $montantN1[6],
-            'montantAoutN1'=> $montantN1[7],
-            'montantSeptN1'=> $montantN1[8],
-            'montantOctN1'=> $montantN1[9],
-            'montantNovN1'=> $montantN1[10],
-            'montantDecN1'=> $montantN1[11]
+            'totalRevenueCurrent' => $totalRevenueCurrent,
+            'totalRevenuePerv' => $totalRevenuePerv,
+            'growthPercentage' => round($growthPercentage, 2),
+            'invoiceCount' => $invoiceCount,
+            'totalClients' => $totalClients,
+            'newCustomersThisMonth' => $newCustomersThisMonth,
+            'totalProductsSold' => $totalProductsSold,
+            'overdueInvoices' => $overdueInvoices,
+            'currentMonth' => (int) date('m'),
+            'chartMonths' => json_encode($chartMonths),
+            'currentYearValues' => json_encode($currentYearValues),
+            'compareYearAValues' => json_encode($compareYearAValues),
+            'compareYearBValues' => json_encode($compareYearBValues),
+            'currentYear' => $currentYear,
+            'previousYear' => $previousYear,
+            'compareYearA' => $compareYearA,
+            'compareYearB' => $compareYearB,
+            'productNames' => json_encode($productNames),
+            'productQty' => json_encode($productQty),
+            'categoryNames' => json_encode($categoryNames),
+            'categoryAmounts' => json_encode($categoryAmounts),
+            'paymentStatusLabels' => json_encode($paymentStatusLabels),
+            'paymentStatusAmounts' => json_encode($paymentStatusAmounts),
+            'customerCounts' => json_encode(array_values($customerCounts)),
+            'availableYears' => $comparisonYears,
         ]);
     }
 }
+

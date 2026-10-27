@@ -1,44 +1,93 @@
 {% extends 'template_oukatech.html.twig' %}
 
-{% block title %}Villes{% endblock %}
+{% block PageTitle%}
+    Gestion des Villes
+{% endblock %}
 
 {% block body %}
-
-<br/>
-<div class="input-group"  >
-
-<a class="btn btn-primary" href="{{path('ville.edit')}}" role="button">Ajouter</a>
-
-
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Gestion des Villes</h1>
+    </div>
 </div>
 
-<br/>
-<div class="row">
+<div class="action-bar">
+    <div class="action-buttons">
+        <a class="btn-add" href="{{ path('ville.edit') }}">
+            <i class="fas fa-plus"></i> Nouvelle Ville
+        </a>
+        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.villes') }}" title="Exporter CSV">
+            <i class="fas fa-file-csv mr-1"></i> Exporter
+        </a>
+    </div>
+    <div class="search-box">
+        {% include "components/search_data.html.twig" with {search: search} only %}
+    </div>
+</div>
 
-  <table class="table table-striped">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col">Id</th>
-        <th scope="col">Libellé</th>
-       
-        <th scope="col"></th>
-  
-      </tr>
-    </thead>
-    <tbody>
-      {% for ville in villes %}
-      <tr>
-        <th scope="row"><a href="{{ path('ville.edit',{id: ville.id}) }}" >{{ville.id}}</a></th>
-        <th scope="row">{{ville.libelle}}</th>
-       
-        
-        {%if is_granted('ROLE_ADMIN')%}
-        <td><a href="{{ path('ville.edit',{id: ville.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
 
+    {% if villes|length > 0 %}
+    <table class="table js-crud-list-table"
+           data-table-id="ville"
+           data-crud-resource="ville"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_ville') }}"
+           data-update-token="{{ csrf_token('crud_update_ville') }}"
+           data-create-token="{{ csrf_token('crud_create_ville') }}"
+           data-import-token="{{ csrf_token('crud_import_ville') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
+           data-placeholder="____">
+        <thead>
+            <tr>
+                <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
+                <th data-sort-key="libelle" data-field="libelle" data-required="1" data-column-key="libelle">Libelle</th>
+                <th class="text-center" style="width: 120px;" data-column-key="actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ville in villes %}
+            <tr data-row-id="{{ ville.id }}">
+                <td data-column-key="id"><strong>#{{ ville.id }}</strong></td>
+                <td data-column-key="libelle" data-field="libelle" data-field-value="{{ ville.libelle|default('') }}">{{ ville.libelle|default('____') }}</td>
+                <td class="text-center" data-column-key="actions" data-role="actions">
+                    <a href="{{ path('ville.edit', {id: ville.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-delete delete-btn"
+                            data-delete-url="{{ path('ville.delete', {id: ville.id}) }}"
+                            data-item-name="{{ ville.libelle }}"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'ville.list', routeParams: {}} %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-city"></i>
+        </div>
+        <h5>Aucune ville trouvée</h5>
+        <p>Ajoutez les villes nécessaires à votre gestion des adresses.</p>
+        <a href="{{ path('ville.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouvelle ville
+        </a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
+
+

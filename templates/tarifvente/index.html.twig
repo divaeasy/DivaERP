@@ -1,54 +1,135 @@
 {% extends 'template_oukatech.html.twig' %}
 
-{% block title %}Tarifs de vente{% endblock %}
+{% block PageTitle %}
+    Gestion des Tarifs de Vente
+{% endblock %}
 
 {% block body %}
-
-<br/>
-<div class="input-group"  >
-
-<a class="btn btn-primary" href="{{path('tarifvente.edit')}}" role="button">Ajouter</a>
-
-
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Gestion des Tarifs de Vente</h1>
+    </div>
 </div>
 
-<br/>
-<div class="row">
+<div class="action-bar">
+    <div class="action-buttons">
+        <button type="button" class="btn-add no-loading" data-toggle="modal" data-target="#tarifventeQuickCreateModal">
+            <i class="fas fa-plus"></i> Nouveau Tarif de Vente
+        </button>
+        <a class="btn btn-sm btn-outline-success ml-2 no-loading" href="{{ path('export.tarifs_vente') }}" title="Exporter CSV">
+            <i class="fas fa-file-csv mr-1"></i> Exporter
+        </a>
+        <button type="button" class="btn btn-sm btn-outline-primary ml-2 no-loading" data-toggle="modal" data-target="#tarifventeImportModal">
+            <i class="fas fa-file-import fa-md"></i> Importer
+        </button>
+    </div>
+    <div class="table-bulk-actions" id="tarifventesBulkActions" data-bulk-bar-for="tarifventes">
+        <div class="table-bulk-actions__content">
+            <div class="table-bulk-actions__left">
+                <span class="table-bulk-actions__badge">
+                    <i class="fas fa-check-circle"></i>
+                    <strong data-selection-count>0</strong>
+                </span>
+                <span class="table-bulk-actions__label" data-selection-label>Aucun tarif de vente selectionne</span>
+            </div>
+            <div class="table-bulk-actions__buttons">
+                <button type="button" class="btn btn-sm table-bulk-actions__delete-btn no-loading" data-bulk-action="delete">
+                    <i class="fas fa-trash-alt mr-1"></i> Supprimer
+                </button>
+                <button type="button" class="btn btn-sm table-bulk-actions__clear-btn no-loading" data-bulk-clear>
+                    Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="action-tools">
+        <div class="search-box">
+            {% include "components/search_data.html.twig" with {search: search} only %}
+        </div>
+    </div>
+</div>
 
-  <table class="table table-striped">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col">Id</th>
-        <th scope="col">Tarif</th>
-        <th scope="col">Client</th>
-        <th scope="col">Article</th>
-        <th scope="col">Devise</th>
-        <th scope="col">Date effet</th>
-        <th scope="col">Prix</th>
-        
-   
-        <th scope="col"></th>
-  
-      </tr>
-    </thead>
-    <tbody>
-      {% for tarifvente in tarifventes %}
-      <tr>
-        <th scope="row"><a href="{{ path('tarifvente.edit',{id: tarifvente.id}) }}" >{{tarifvente.id}}</a></th>
-        <th scope="row">{{tarifvente.tarif}}</th>
-        <th scope="row">{{tarifvente.client}}</th>
-        <th scope="row">{{tarifvente.article}}</th>
-        <th scope="row">{{tarifvente.devise}}</th>
-        <th scope="row">{{tarifvente.dateeffet|date('d/m/Y')}}</th>
-        <th scope="row">{{tarifvente.prix}}</th>      
-        
-        {%if is_granted('ROLE_ADMIN')%}
-        <td><a href="{{ path('tarifvente.edit',{id: tarifvente.id}) }}" ><i class="fa-solid fa-user-pen"></i></a></td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
+<div class="table-container">
+    <div class="crud-column-settings-floating">
+        <button type="button" class="no-loading crud-column-settings__trigger" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="crud-column-settings__menu"></div>
+    </div>
+    {% if tarifventes|length > 0 %}
+    <table class="table js-crud-list-table commercial-table"
+           id="tarifventesTable"
+           data-table-id="tarifventes"
+           data-crud-resource="tarifvente"
+           data-bulk-delete-token="{{ csrf_token('crud_bulk_delete_tarifvente') }}"
+           data-update-token="{{ csrf_token('crud_update_tarifvente') }}"
+           data-create-token="{{ csrf_token('crud_create_tarifvente') }}"
+           data-import-token="{{ csrf_token('crud_import_tarifvente') }}"
+           data-enable-quick-create="1"
+           data-enable-import="1"
+           data-placeholder="____">
+        <thead>
+            <tr>
+                <th class="row-selector-head" data-column-key="selector">
+                    <div class="form-check d-flex justify-content-center mb-0">
+                        <input class="form-check-input position-static" type="checkbox" data-select-all-checkbox aria-label="Selectionner toutes les lignes">
+                    </div>
+                </th>
+                <th data-sort-key="id" data-sort-type="number" data-column-key="id">ID</th>
+                <th data-sort-key="tarif" data-column-key="tarif" data-field="tarif" data-type="entity">Tarif</th>
+                <th data-sort-key="client" data-column-key="client" data-field="client" data-required="1" data-type="entity">Client</th>
+                <th data-sort-key="article" data-column-key="article" data-field="article" data-required="1" data-type="entity">Article</th>
+                <th data-sort-key="devise" data-column-key="devise" data-field="devise" data-type="entity">Devise</th>
+                <th data-sort-key="dateeffet" data-sort-type="date" data-column-key="dateeffet" data-field="dateeffet" data-type="date">Date effet</th>
+                <th data-sort-key="prix" data-sort-type="number" data-type="float" data-field="prix" class="text-right" data-column-key="prix">Prix</th>
+                <th class="text-center" style="width: 140px;" data-column-key="actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tarifvente in tarifventes %}
+            <tr data-row-id="{{ tarifvente.id }}" data-item-id="{{ tarifvente.id }}">
+                <td class="row-selector-cell" data-column-key="selector">
+                    <div class="form-check d-flex justify-content-center mb-0">
+                        <input class="form-check-input position-static" type="checkbox" value="{{ tarifvente.id }}" data-row-checkbox aria-label="Selectionner tarif vente {{ tarifvente.id }}">
+                    </div>
+                </td>
+                <td data-column-key="id"><strong>#{{ tarifvente.id }}</strong></td>
+                <td data-column-key="tarif" data-field="tarif">{{ tarifvente.tarif }}</td>
+                <td data-column-key="client" data-field="client">{{ tarifvente.client }}</td>
+                <td data-column-key="article" data-field="article">{{ tarifvente.article }}</td>
+                <td data-column-key="devise" data-field="devise"><span class="badge badge-info badge-lg">{{ tarifvente.devise }}</span></td>
+                <td data-column-key="dateeffet" data-field="dateeffet" data-field-value="{{ tarifvente.dateeffet ? tarifvente.dateeffet|date('Y-m-d') : '' }}">{{ tarifvente.dateeffet ? tarifvente.dateeffet|date('d/m/Y') : '____' }}</td>
+                <td class="text-right" data-column-key="prix" data-field="prix" data-field-value="{{ tarifvente.prix is not null ? tarifvente.prix : '' }}"><strong>{{ tarifvente.prix is not null ? tarifvente.prix|number_format(2, ',', ' ') : '____' }}</strong></td>
+                <td class="text-center" data-role="actions" data-column-key="actions">
+                    <a href="{{ path('tarifvente.edit', {id: tarifvente.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-delete delete-btn"
+                            data-delete-url="{{ path('tarifvente.delete', {id: tarifvente.id}) }}"
+                            data-item-name="Tarif #{{ tarifvente.id }}"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'tarifvente.list', routeParams: {}} %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-tag"></i>
+        </div>
+        <h5>Aucun tarif de vente trouve</h5>
+        <p>Configurez vos tarifs de vente pour personnaliser vos offres.</p>
+        <a href="{{ path('tarifvente.edit') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouveau tarif de vente
+        </a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

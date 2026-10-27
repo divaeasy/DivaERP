@@ -9,6 +9,12 @@ security:
             entity:
                 class: App\Entity\User
                 property: email
+
+    role_hierarchy:
+        ROLE_COMMERCIAL: ROLE_USER
+        ROLE_COMPTABLE: ROLE_COMMERCIAL
+        ROLE_ADMIN: ROLE_COMPTABLE
+
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -17,31 +23,24 @@ security:
             lazy: true
             provider: app_user_provider
             custom_authenticator: App\Security\LoginAuthenticator
+            user_checker: App\Security\UserChecker
             logout:
                 path: app_logout
                 target: app_login
-                # where to redirect after logout
-                # target: app_any_route
 
             remember_me:
                 secret: '%kernel.secret%'
                 lifetime: 604800
                 path: /
-                # by default, the feature is enabled by checking a checkbox in the
-                # login form, uncomment the following line to always enable it.
-                #always_remember_me: true
-
-            # activate different ways to authenticate
-            # https://symfony.com/doc/current/security.html#the-firewall
-
-            # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
          - { path: ^/login, roles: PUBLIC_ACCESS }
-         - { path: ^/, roles: ROLE_ADMIN }
+         - { path: ^/verify/email, roles: PUBLIC_ACCESS }
+         - { path: ^/users, roles: ROLE_ADMIN }
+         - { path: ^/user, roles: ROLE_ADMIN }
+         - { path: ^/, roles: IS_AUTHENTICATED }
 
 when@test:
     security:

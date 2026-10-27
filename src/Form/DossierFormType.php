@@ -4,25 +4,126 @@ namespace App\Form;
 
 use App\Entity\Devises;
 use App\Entity\Dossier;
+use App\Entity\NatureProduction;
+use App\Entity\Theme;
+use App\Enum\SortiStockMode;
+use App\Repository\ThemeRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\Regex;
 
 class DossierFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $dossier = $options['data'] ?? null;
+        $isEdit = $dossier instanceof Dossier && null !== $dossier->getId();
+
         $builder
             ->add('nom')
             ->add('adresse')
-            ->add('logo')
+            ->add('codepostal', null, ['required' => false])
+            ->add('ville', null, ['required' => false])
+            ->add('pays', null, ['required' => false])
+            ->add('logoFile', FileType::class, [
+                'label' => 'Logo',
+                'mapped' => false,
+                'required' => false,
+                'help' => 'PNG ou JPG, 1 Mo max.',
+            ])
             ->add('rc')
+            ->add('penalitesretard', TextareaType::class, ['required' => false])
+            ->add('siret', null, ['required' => false])
+            ->add('naf', null, ['required' => false])
+            ->add('tvaintra', null, ['required' => false])
+            ->add('email', null, ['required' => false])
+            ->add('tel', null, [
+                'required' => false,
+                'constraints' => [
+                    new Regex([
+                        'pattern' => '/^[+]?[0-9\s\-()\.]{7,20}$/',
+                        'message' => 'Format telephone invalide',
+                    ]),
+                ],
+            ])
+            ->add('email', EmailType::class, [
+                'required' => false,
+                'constraints' => [
+                    new Email(['message' => 'Format email invalide']),
+                ],
+            ])
+            ->add('iban', null, ['required' => false])
+            ->add('bic', null, ['required' => false])
+            ->add('devisno', IntegerType::class, ['required' => false])
+            ->add('cmdno', IntegerType::class, ['required' => false])
+            ->add('blno', IntegerType::class, ['required' => false])
+            ->add('factureno', IntegerType::class, ['required' => false])
+            ->add('theme', EntityType::class, [
+                'label' => false,
+                'required' => true,
+                'expanded' => true,
+                'multiple' => false,
+                'class' => Theme::class,
+                'choice_label' => 'name',
+                'query_builder' => static function (ThemeRepository $themeRepository) {
+                    return $themeRepository->createQueryBuilder('t')
+                        ->orderBy('t.isSystem', 'DESC')
+                        ->addOrderBy('t.name', 'ASC');
+                },
+                'choice_attr' => static function (?Theme $theme): array {
+                    if (!$theme instanceof Theme) {
+                        return ['class' => 'theme-radio-input'];
+                    }
+
+                    return [
+                        'class' => 'theme-radio-input',
+                        'data-theme-id' => (string) $theme->getId(),
+                        'data-theme-code' => (string) $theme->getCode(),
+                        'data-theme-system' => $theme->isSystem() ? '1' : '0',
+                        'data-theme-name' => (string) $theme->getName(),
+                        'data-theme-description' => (string) ($theme->getDescription() ?? ''),
+                        'data-theme-primary' => (string) $theme->getPrimaryColor(),
+                        'data-theme-secondary' => (string) $theme->getSecondaryColor(),
+                        'data-theme-accent' => (string) $theme->getAccentColor(),
+                        'data-theme-text' => (string) $theme->getTextColor(),
+                        'data-theme-bg' => (string) $theme->getBackgroundColor(),
+                    ];
+                },
+            ])
             ->add('devise', EntityType::class, [
                 'class' => Devises::class,
-                'choice_label' => 'id',
+                'choice_label' => 'code',
+                'placeholder' => $isEdit ? false : 'Selectionner une devise',
             ])
-        ;
+            ->add('natureStock', EntityType::class, [
+                'class' => NatureProduction::class,
+                'choice_label' => 'libelle',
+                'required' => false,
+                'placeholder' => 'Selectionner une nature de stock',
+            ])
+            ->add('sortiStockDefaut', EnumType::class, [
+                'class' => SortiStockMode::class,
+                'choices' => array_filter(
+                    SortiStockMode::cases(),
+                    static fn (SortiStockMode $choice): bool => $choice !== SortiStockMode::DOSSIER
+                ),
+                'choice_label' => static fn (SortiStockMode $choice): string => $choice->value,
+            ])
+            ->add('gererStocks', CheckboxType::class, [
+                'required' => false,
+            ])
+            ->add('autoriserStockNegatif', CheckboxType::class, [
+                'required' => false,
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

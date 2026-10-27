@@ -16,7 +16,7 @@ class SearchArtFormType extends AbstractType
         $builder
             ->add('libelle', TextType::class, [
                 'attr' => [
-                    'placeholder' => 'Recherche par libellé...'
+                    'placeholder' => 'Rechercher par désignation...'
                 ],
                 'empty_data' => '',
                 'required' => false

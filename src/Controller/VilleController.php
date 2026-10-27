@@ -4,6 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Ville;
 use App\Form\VilleFormType;
+use App\Form\SearchGenericFormType;
+use App\Model\SearchGeneric;
+use App\Repository\VilleRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -15,16 +18,30 @@ use Symfony\Component\Routing\Attribute\Route;
 class VilleController extends AbstractController
 {
     #[Route('/', name: 'ville.list')]
-    public function index(ManagerRegistry $doctrine): Response
+    public function index(Request $request, VilleRepository $villeRepository, ManagerRegistry $doctrine): Response
     {
 
         //$this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        $repository = $doctrine->getRepository(Ville::class);
-        $villes = $repository->findAll();
-         return $this->render('ville/index.html.twig', [
-             'villes' => $villes,
-         ]);
+        $page = $request->query->getInt('page', 1);
+        $searchData = new SearchGeneric();
+        $searchForm = $this->createForm(SearchGenericFormType::class, $searchData, ['placeholder' => 'Rechercher par libellé...']);
+        $searchForm->handleRequest($request);
+
+        $searchActive = null;
+        if ($searchForm->isSubmitted() && $searchForm->isValid()) {
+            $searchActive = $searchData;
+        }
+
+        $pagination = $villeRepository->findPaginated($searchActive, $page);
+
+        return $this->render('ville/index.html.twig', [
+            'search' => $searchForm->createView(),
+            'villes' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
+        ]);
     }
     #[Route('/edit/{id?0}', name: 'ville.edit')]
     public function addVille(ManagerRegistry $doctrine, Request $request, $id): Response
@@ -64,8 +81,8 @@ class VilleController extends AbstractController
         return $this->redirectToRoute('ville.list');
        }else{
             return $this->render('ville/add-ville.html.twig', [
-     
-                'ville'=>$form->createView()
+                'ville'=>$form->createView(),
+                'id' => $id
             ]);
        }
         

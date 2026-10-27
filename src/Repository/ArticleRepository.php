@@ -3,69 +3,102 @@
 namespace App\Repository;
 
 use App\Entity\Article;
-use App\Model\SearchData;
+use App\Entity\User;
+use App\Model\SearchDataArt;
+use App\Service\PaginationHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * @extends ServiceEntityRepository<Article>
  */
 class ArticleRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, private Security $security)
     {
         parent::__construct($registry, Article::class);
     }
 
-    /**
-     * Get published posts thanks to Search Data value
-     *
-     * @param SearchData $searchData
-     */
-    public function findBySearch(SearchData $searchData)
+    public function getSearchQueryBuilder(?SearchDataArt $searchData = null): QueryBuilder
     {
-        $data = $this->createQueryBuilder('a')
+        $qb = $this->createQueryBuilder('a')
+            ->addOrderBy('a.libelle', 'ASC');
 
-            ->addOrderBy('a.libelle', 'DESC');
+        $this->applyDossierFilter($qb, 'a');
 
-        if (!empty($searchData->nom)) {
-            $data = $data
-                ->andWhere('a.libelle LIKE :libelle')
-                ->setParameter('libelle', "%{$searchData->nom}%");
+        if ($searchData && !empty($searchData->libelle)) {
+            $qb->andWhere('a.libelle LIKE :libelle')
+               ->setParameter('libelle', "%{$searchData->libelle}%");
         }
 
-        
-        $data = $data
-            ->getQuery()
-            ->getResult();
-
-        //$posts = $this->paginatorInterface->paginate($data, $searchData->page, 9);
-
-        return $data;
+        return $qb;
     }
 
-    //    /**
-    //     * @return Article[] Returns an array of Article objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('a.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findBySearch(SearchDataArt $searchData)
+    {
+        return $this->getSearchQueryBuilder($searchData)->getQuery()->getResult();
+    }
 
-    //    public function findOneBySomeField($value): ?Article
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function findPaginated(?SearchDataArt $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        return PaginationHelper::paginate($qb, $page);
+    }
+
+    private function applyDossierFilter(QueryBuilder $qb, string $alias): void
+    {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            return;
+        }
+
+        $currentDossier = $user->getCurrentDossier();
+        if ($currentDossier !== null) {
+            $qb->andWhere(sprintf('%s.dossier = :dossier', $alias))
+               ->setParameter('dossier', $currentDossier);
+        } else {
+            $qb->andWhere('1 = 0');
+        }
+    }
+
+    /**
+     * Find articles with their associated lignepieces for stock calculation.
+     */
+    public function findWithStock(?SearchDataArt $searchData = null, int $page = 1): array
+    {
+        $qb = $this->getSearchQueryBuilder($searchData);
+        
+        // Eager load lignepieces with related piece and code_operation
+        $qb->leftJoin('a.lignepieces', 'lp')
+           ->leftJoin('lp.piece', 'ep')
+           ->leftJoin('ep.code_operation', 'co')
+           ->addSelect('lp')
+           ->addSelect('ep')
+           ->addSelect('co')
+           ->distinct();
+        
+        return PaginationHelper::paginate($qb, $page);
+    }
+
+    /**
+     * Find all articles for a dossier with their stock information.
+     */
+    public function findAllWithStockByDossier(int $dossierId): array
+    {
+        return $this->createQueryBuilder('a')
+            ->where('a.dossier = :dossier')
+            ->setParameter('dossier', $dossierId)
+            ->leftJoin('a.lignepieces', 'lp')
+            ->leftJoin('lp.piece', 'ep')
+            ->leftJoin('ep.code_operation', 'co')
+            ->addSelect('lp')
+            ->addSelect('ep')
+            ->addSelect('co')
+            ->orderBy('a.libelle', 'ASC')
+            ->distinct()
+            ->getQuery()
+            ->getResult();
+    }
 }

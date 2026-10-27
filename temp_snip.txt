@@ -1,0 +1,15 @@
+        <div class="card-soft">
+            <div class="card-soft__header">
+                <div class="label-eyebrow">Meta</div>
+                <h6 class="mb-0">Résumé</h6>
+            </div>
+            <div class="meta-list">
+                <div><span>ID</span><strong>#{{ user.id }}</strong></div>
+                <div><span>Email</span><strong>{{ user.email }}</strong></div>
+                <div><span>Statut email</span>{% if user.isVerified %}<span class="badge badge-success-soft">Vérifié</span>{% else %}<span class="badge badge-muted-soft">Non vérifié</span>{% endif %}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+

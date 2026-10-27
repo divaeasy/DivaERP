@@ -8,7 +8,6 @@ use App\Form\ClientFormType;
 use App\Form\SearchFormType;
 use App\Model\SearchData;
 use App\Repository\ClientsRepository;
-use App\Service\DossierEncours;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,27 +21,24 @@ class ClientController extends AbstractController
     #[Route('/', name: 'client.list')]
     public function index(Request $request, ClientsRepository $cliRepository ,ManagerRegistry $doctrine): Response
     {
-
-        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
-
+        $page = $request->query->getInt('page', 1);
         $searchData = new SearchData();
         $searchForm = $this->createForm(SearchFormType::class, $searchData);
         $searchForm->handleRequest($request); 
+        
+        $searchActive = null;
         if ($searchForm->isSubmitted() && $searchForm->isValid()) { 
-            $searchData->page = $request->query->getInt('page', 1);
-            $clients = $cliRepository->findBySearch($searchData);
-            return $this->render('client/index.html.twig', [
-                'search' => $searchForm->createView(),
-                'clients' => $clients
-            ]);
+            $searchActive = $searchData;
         }
 
+        $pagination = $cliRepository->findPaginated($searchActive, $page);
 
-       $repository = $doctrine->getRepository(Clients::class);
-       $clients = $repository->findBy([],['nom' => 'ASC']);
         return $this->render('client/index.html.twig', [
             'search' => $searchForm->createView(),
-            'clients' => $clients,
+            'clients' => $pagination['items'],
+            'currentPage' => $pagination['currentPage'],
+            'totalPages' => $pagination['totalPages'],
+            'totalItems' => $pagination['totalItems'],
         ]);
     }
    
@@ -51,7 +47,9 @@ class ClientController extends AbstractController
     public function detail(ManagerRegistry $doctrine,$id): Response
     {
         $repository = $doctrine->getRepository(Clients::class);
-        $client = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $client = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
        if(!$client){
             $this->addFlash(
             'error',
@@ -71,7 +69,9 @@ class ClientController extends AbstractController
        // $this->denyAccessUnlessGranted('ROLE_ADMIN');
        
         $repository = $doctrine->getRepository(Clients::class);
-        $client = $repository->find($id);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $client = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
        
         
         $new = false;
@@ -84,7 +84,6 @@ class ClientController extends AbstractController
         
        
        $form = $this->createForm(ClientFormType::class, $client);
-       $form->remove('dossier');
        $form->handleRequest($request);
        $newFilename = '';
        if($form->isSubmitted() && $form->isValid()){
@@ -106,8 +105,7 @@ class ClientController extends AbstractController
            'success',
            $message
         );
-        return $this->redirectToRoute('client.edit', array('id' => $client->getId()));
-        //return $this->redirectToRoute('client.list');
+        return $this->redirectToRoute('client.list');
         
        }else{
             return $this->render('client/add-client.html.twig', [
@@ -121,6 +119,29 @@ class ClientController extends AbstractController
         
     }
 
-    
+    #[Route('/delete/{id}', name: 'client.delete')]
+    public function deleteClient(ManagerRegistry $doctrine, $id): Response
+    {
+        //$this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $repository = $doctrine->getRepository(Clients::class);
+        $user = $this->getUser();
+        $currentDossier = $user instanceof User ? $user->getCurrentDossier() : null;
+        $client = $repository->findOneBy(['id' => $id, 'dossier' => $currentDossier]);
+        if($client){
+            $manager = $doctrine->getManager();
+            $manager->remove($client);
+            $manager->flush();
+            $this->addFlash(
+               'success',
+               "Le client a été supprimé avec succès"
+            );
+        }else{
+            $this->addFlash(
+                'error',
+                "Le client demandé n'existe pas"
+             );
+        }
+        return $this->redirectToRoute('client.list');
+    }
 }
 

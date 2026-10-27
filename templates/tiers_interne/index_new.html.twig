@@ -1,0 +1,171 @@
+{% extends 'template_oukatech.html.twig' %}
+
+{% block PageTitle %}Gestion des Tiers Internes{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a href="{{ path('app_dash_bord') }}" class="btn-back mr-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="h3 mb-0 text-gray-800">Gestion des Tiers Internes</h1>
+    </div>
+</div>
+
+<div class="action-bar">
+    <div class="action-buttons">
+        <a class="btn-add" href="{{ path('app_tiers_interne_new') }}">
+            <i class="fas fa-plus"></i> Nouveau tiers interne
+        </a>
+    </div>
+    <div class="table-bulk-actions" id="tiersInternesBulkActions" data-bulk-bar-for="tiersinternes">
+        <div class="table-bulk-actions__content">
+            <div class="table-bulk-actions__left">
+                <span class="table-bulk-actions__badge"><i class="fas fa-check-circle"></i> <span data-selection-count>0</span></span>
+                <span class="table-bulk-actions__label" data-selection-label></span>
+            </div>
+            <div class="table-bulk-actions__buttons">
+                <button type="button" class="btn btn-sm table-bulk-actions__clear-btn no-loading" data-bulk-clear>Annuler</button>
+                <button type="button" class="btn btn-sm table-bulk-actions__delete-btn no-loading" data-bulk-action="delete"><i class="fas fa-trash mr-1"></i> Supprimer</button>
+            </div>
+        </div>
+    </div>
+    <div class="action-tools">
+        <div class="search-box">
+            {% include "components/search_data.html.twig" with {search: search} only %}
+        </div>
+    </div>
+</div>
+
+<div class="table-container">
+    {% if tiersInternes|length > 0 %}
+    <table class="table table-enhanced" id="tiersInternesTable" data-table-id="tiersinternes">
+        <thead>
+            <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox" data-select-all-checkbox></th>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Adresse</th>
+                <th>Ville</th>
+                <th>Pays</th>
+                <th>Telephone</th>
+                <th>Email</th>
+                <th>Tarif</th>
+                <th class="text-center" style="width: 150px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tiersInterne in tiersInternes %}
+            <tr class="table-row" data-item-id="{{ tiersInterne.id }}" data-item-name="{{ tiersInterne.nom }}">
+                <td style="text-align: center;"><input type="checkbox" data-row-checkbox value="{{ tiersInterne.id }}"></td>
+                <td><strong>#{{ tiersInterne.id }}</strong></td>
+                <td data-field="nom">{{ tiersInterne.nom|default('____') }}</td>
+                <td>{{ tiersInterne.adr1|default('____') }}</td>
+                <td>{{ tiersInterne.ville|default('____') }}</td>
+                <td>{{ tiersInterne.pays|default('____') }}</td>
+                <td>{{ tiersInterne.tel|default('____') }}</td>
+                <td>{{ tiersInterne.email|default('____') }}</td>
+                <td>{{ tiersInterne.tarif|default('____') }}</td>
+                <td class="text-center" data-field="actions">
+                    <a href="{{ path('app_tiers_interne_show', {id: tiersInterne.id}) }}" class="btn btn-action btn-view" title="Voir">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{{ path('app_tiers_interne_edit', {id: tiersInterne.id}) }}" class="btn btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-delete delete-btn"
+                            data-delete-url="{{ path('app_tiers_interne_delete', {id: tiersInterne.id}) }}"
+                            data-item-name="{{ tiersInterne.nom }}"
+                            title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "components/_pagination.html.twig" with {currentPage: currentPage, totalPages: totalPages, totalItems: totalItems, route: 'app_tiers_interne_index', routeParams: {}} %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-people-arrows"></i>
+        </div>
+        <h5>Aucun tiers interne trouve</h5>
+        <p>Ajoutez vos tiers internes pour rattacher vos depots et flux logistiques.</p>
+        <a href="{{ path('app_tiers_interne_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Nouveau tiers interne
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.table-enhanced { table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+.table-enhanced thead th { background: var(--theme-primary, #2563eb); color: white; font-weight: 600; padding: 12px 8px; text-align: left; border: none; }
+.table-enhanced thead th:first-child { border-top-left-radius: 8px; }
+.table-enhanced thead th:last-child { border-top-right-radius: 8px; }
+.table-enhanced tbody td { padding: 10px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+.table-enhanced tbody tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+.table-enhanced tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+.table-enhanced tbody tr.is-selected { background: rgba(37, 99, 235, 0.08); }
+.table-enhanced tbody tr.is-editing { background: rgba(37, 99, 235, 0.06); box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22); }
+.table-row input[type="checkbox"] { accent-color: var(--theme-primary, #2563eb); }
+.table-bulk-actions { position: absolute; left: 50%; top: 50%; transform: translate(-50%, calc(-50% + 14px)); opacity: 0; pointer-events: none; transition: transform 0.22s ease, opacity 0.22s ease; z-index: 8; width: min(50vw, 500px); min-width: 340px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.36); background: #fff; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12); }
+.table-bulk-actions.is-visible { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; }
+.table-bulk-actions__content { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.table-bulk-actions__left { display: inline-flex; align-items: center; gap: 10px; }
+.table-bulk-actions__badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(37, 99, 235, 0.12); color: #1e40af; border-radius: 999px; padding: 6px 12px; font-size: 0.875rem; font-weight: 600; white-space: nowrap; }
+.table-bulk-actions__label { font-size: 0.875rem; color: #475569; }
+.table-bulk-actions__buttons { display: flex; gap: 8px; }
+.table-bulk-actions__delete-btn { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; border: none; font-weight: 600; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2); }
+.table-bulk-actions__delete-btn:hover { color: white; box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3); }
+.table-bulk-actions__clear-btn { background: #f1f5f9; color: #334155; border: 1px solid #dbe3ec; font-weight: 600; }
+.table-bulk-actions__clear-btn:hover { background: #e2e8f0; color: #1f2937; }
+.action-bar { position: relative; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.action-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; }
+.inline-edit-input { font-size: 0.875rem; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
+.inline-edit-input:focus { border-color: var(--theme-primary, #2563eb); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); outline: none; }
+@media (max-width: 1200px) { .table-bulk-actions { position: static; width: 100%; min-width: 0; transform: translateY(14px); } .table-bulk-actions.is-visible { transform: translateY(0); } .action-bar { flex-direction: column; align-items: stretch; } .action-tools { margin-left: 0; } }
+</style>
+
+<script>
+$(function() {
+    const $table = $('#tiersInternesTable');
+    const bulkDeleteUrl = '{{ path("api.bulk_delete_tiersinternes") }}';
+    if ($table.length === 0) return;
+    const manager = new UniversalTableSelectionManager($table, {
+        bulkBarSelector: '[data-bulk-bar-for="tiersinternes"]',
+        onSelectionChange: (ids) => {
+            $('#tiersInternesBulkActions').find('[data-selection-label]').text(
+                ids.length > 1 ? `${ids.length} tiers sélectionnés` : (ids.length === 1 ? '1 tiers sélectionné' : '')
+            );
+        },
+        onBulkAction: (action, ids) => {
+            if (action === 'delete' && confirm(`Supprimer ${ids.length} élément(s) ?`)) {
+                $.post(bulkDeleteUrl, JSON.stringify({ids}), 'json').done(() => {
+                    ids.forEach(id => $(`tr[data-item-id="${id}"]`).fadeOut(() => $(`tr[data-item-id="${id}"]`).remove()));
+                    manager.clearSelection();
+                }).fail(() => alert('Erreur'));
+            }
+        }
+    });
+    $table.on('click', '.delete-btn', function() {
+        const $row = $(this).closest('tr');
+        if (confirm(`Supprimer "${$row.data('item-name')}" ?`)) $.post($(this).data('delete-url'), {}, () => $row.fadeOut(() => $row.remove()));
+    });
+    $table.on('dblclick', 'tbody tr', function() {
+        const $row = $(this), $cell = $row.find('[data-field="nom"]');
+        if ($row.hasClass('is-editing')) return;
+        const val = $cell.text().trim();
+        const html = $row.find('[data-field="actions"]').html();
+        $cell.html(`<input class="inline-edit-input form-control form-control-sm" value="${val}">`);
+        $row.find('[data-field="actions"]').html(`<button class="btn btn-sm btn-success save"><i class="fas fa-check"></i></button><button class="btn btn-sm btn-secondary cancel"><i class="fas fa-times"></i></button>`);
+        $row.addClass('is-editing');
+        $cell.find('input').focus();
+        $row.find('.save').one('click', () => { const newVal = $cell.find('input').val(); $cell.text(newVal); $row.find('[data-field="actions"]').html(html); $row.removeClass('is-editing'); });
+        $row.find('.cancel').one('click', () => { $cell.text(val); $row.find('[data-field="actions"]').html(html); $row.removeClass('is-editing'); });
+    });
+});
+</script>
+{% endblock %}
