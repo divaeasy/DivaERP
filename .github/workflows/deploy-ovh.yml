@@ -8,8 +8,7 @@
 #
 # Secrets GitHub requis (Settings > Secrets and variables > Actions) :
 #   OVH_SSH_KEY   cle privee SSH (la cle publique est dans ~/.ssh/authorized_keys sur OVH)
-#   OVH_SSH_USER  login SSH (divaeao)
-#   OVH_PATH      dossier de myerp sur le serveur (ex. /home/divaeao/myerp)
+#   OVH_SSH_USER  login SSH (divaeao-deploy, dont le dossier de connexion est www/myerp)
 
 name: Deploy OVH
 
@@ -30,6 +29,8 @@ concurrency:
 
 env:
   OVH_HOST: ssh.cluster100.hosting.ovh.net
+  # Dossier de myerp relatif au dossier de connexion SSH (www/myerp)
+  OVH_PATH: .
 
 jobs:
   deploy:
@@ -39,7 +40,8 @@ jobs:
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.3"
+          # Meme version que la prod (mpdf 8.2.0 verrouille n'accepte pas PHP > 8.2)
+          php-version: "8.2"
           extensions: gd, intl, zip, fileinfo, mbstring, pdo_mysql
           tools: composer:v2
 
@@ -87,8 +89,8 @@ jobs:
             --exclude='/public/uploads/' \
             --exclude='/public/node_modules/' \
             --exclude='/tests/' \
-            ./ "${{ secrets.OVH_SSH_USER }}@$OVH_HOST:${{ secrets.OVH_PATH }}/"
+            ./ "${{ secrets.OVH_SSH_USER }}@$OVH_HOST:$OVH_PATH/"
 
       - name: Vidage du cache Symfony
         if: ${{ github.ref_name != 'deploy-test' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
-        run: ssh -i ~/.ssh/id_ovh "${{ secrets.OVH_SSH_USER }}@$OVH_HOST" "rm -rf '${{ secrets.OVH_PATH }}/var/cache/prod'"
+        run: ssh -i ~/.ssh/id_ovh "${{ secrets.OVH_SSH_USER }}@$OVH_HOST" "rm -rf '$OVH_PATH/var/cache/prod'"
