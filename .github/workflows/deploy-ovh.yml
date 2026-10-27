@@ -1,6 +1,6 @@
 # Deploiement de myerp sur l'hebergement mutualise OVH (myerp.divaeasy.com)
 #
-# - Automatique : a chaque push sur la branche "production"
+# - Automatique : a chaque push sur la branche "production" (simulation seule sur "deploy-test")
 # - Manuel : onglet Actions > "Deploy OVH" > Run workflow (simulation "dry_run" cochee par defaut)
 #
 # Le build (vendor, assets) se fait ici ; le serveur ne recoit que des fichiers via rsync/SSH.
@@ -15,7 +15,8 @@ name: Deploy OVH
 
 on:
   push:
-    branches: [production]
+    # production : deploiement reel ; deploy-test : simulation uniquement
+    branches: [production, deploy-test]
   workflow_dispatch:
     inputs:
       dry_run:
@@ -71,7 +72,7 @@ jobs:
       - name: Envoi des fichiers (rsync)
         run: |
           DRY=""
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+          if [ "${{ github.ref_name }}" = "deploy-test" ] || { [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; }; then
             DRY="--dry-run"
             echo "::notice::Simulation uniquement, rien n'est modifie sur le serveur"
           fi
@@ -89,5 +90,5 @@ jobs:
             ./ "${{ secrets.OVH_SSH_USER }}@$OVH_HOST:${{ secrets.OVH_PATH }}/"
 
       - name: Vidage du cache Symfony
-        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        if: ${{ github.ref_name != 'deploy-test' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
         run: ssh -i ~/.ssh/id_ovh "${{ secrets.OVH_SSH_USER }}@$OVH_HOST" "rm -rf '${{ secrets.OVH_PATH }}/var/cache/prod'"
