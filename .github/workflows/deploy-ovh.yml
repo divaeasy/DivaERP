@@ -4,7 +4,7 @@
 # - Manuel : onglet Actions > "Deploy OVH" > Run workflow (simulation "dry_run" cochee par defaut)
 #
 # Le build (vendor, assets) se fait ici ; le serveur ne recoit que des fichiers via rsync/SSH.
-# Jamais envoyes / jamais supprimes sur le serveur : .env*, var/, public/uploads/.
+# Jamais envoyes / jamais supprimes sur le serveur : .env*, var/, public/uploads/, .ssh/ (cle de deploiement).
 #
 # Secrets GitHub requis (Settings > Secrets and variables > Actions) :
 #   OVH_SSH_KEY   cle privee SSH (la cle publique est dans ~/.ssh/authorized_keys sur OVH)
@@ -77,6 +77,7 @@ jobs:
           fi
           rsync -rlz --delete --itemize-changes $DRY \
             -e "ssh -i ~/.ssh/id_ovh" \
+            --exclude='/.ssh/' \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='.env' \
