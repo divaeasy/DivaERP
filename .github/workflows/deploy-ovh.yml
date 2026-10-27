@@ -88,6 +88,9 @@ jobs:
             --exclude='/var/' \
             --exclude='/public/uploads/' \
             --exclude='/public/node_modules/' \
+            --exclude='/node_modules/' \
+            --exclude='/vendor/mpdf/mpdf/tmp/' \
+            --exclude='/.bash_history' \
             --exclude='/tests/' \
             ./ "${{ secrets.OVH_SSH_USER }}@$OVH_HOST:$OVH_PATH/"
 
