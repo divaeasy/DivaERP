@@ -23,6 +23,7 @@ security:
             lazy: true
             provider: app_user_provider
             custom_authenticator: App\Security\LoginAuthenticator
+            user_checker: App\Security\UserChecker
             logout:
                 path: app_logout
                 target: app_login
@@ -36,7 +37,6 @@ security:
     # Note: Only the *first* access control that matches will be used
     access_control:
          - { path: ^/login, roles: PUBLIC_ACCESS }
-         - { path: ^/register, roles: PUBLIC_ACCESS }
          - { path: ^/verify/email, roles: PUBLIC_ACCESS }
          - { path: ^/users, roles: ROLE_ADMIN }
          - { path: ^/user, roles: ROLE_ADMIN }
